@@ -19,6 +19,8 @@ export 'live_service.dart'
 // This provides a single, convenient import for all data structures
 // used by the API.
 export 'model/models.dart';
+export 'model/google_models.dart';
+export 'schema.dart';
 
 /// The primary class for interacting with the Google Generative AI API.
 ///

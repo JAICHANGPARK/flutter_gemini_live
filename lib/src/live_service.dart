@@ -8,6 +8,7 @@ import './platform/web_socket_service_stub.dart'
     if (dart.library.html) './platform/web_socket_service_web.dart'
     as ws_connector;
 
+import 'model/google_models.dart';
 import 'model/models.dart';
 
 // Live API 콜백 정의
@@ -26,12 +27,42 @@ class LiveConnectParameters {
   final LiveCallbacks callbacks;
   final GenerationConfig? config;
   final Content? systemInstruction;
+  final List<Tool>? tools;
+
+  /// Configures the realtime input behavior in BidiGenerateContent.
+  final RealtimeInputConfig? realtimeInputConfig;
+
+  /// Configures session resumption mechanism.
+  /// If included server will send SessionResumptionUpdate messages.
+  final SessionResumptionConfig? sessionResumption;
+
+  /// Configures context window compression mechanism.
+  /// If included, server will compress context window to fit into given length.
+  final ContextWindowCompressionConfig? contextWindowCompression;
+
+  /// The transcription of the input aligns with the input audio language.
+  final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// The transcription of the output aligns with the language code
+  /// specified for the output audio.
+  final AudioTranscriptionConfig? outputAudioTranscription;
+
+  /// Configures the proactivity of the model. This allows the model to
+  /// respond proactively to the input and to ignore irrelevant input.
+  final ProactivityConfig? proactivity;
 
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
     this.config,
     this.systemInstruction,
+    this.tools,
+    this.contextWindowCompression,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
+    this.proactivity,
+    this.realtimeInputConfig,
+    this.sessionResumption,
   });
 }
 
@@ -147,6 +178,13 @@ class LiveService {
           model: modelName,
           generationConfig: params.config,
           systemInstruction: params.systemInstruction,
+          tools: params.tools,
+          contextWindowCompression: params.contextWindowCompression,
+          inputAudioTranscription: params.inputAudioTranscription,
+          outputAudioTranscription: params.outputAudioTranscription,
+          proactivity: params.proactivity,
+          realtimeInputConfig: params.realtimeInputConfig,
+          sessionResumption: params.sessionResumption,
         ),
       );
       session.sendMessage(setupMessage);
@@ -205,6 +243,18 @@ class LiveSession {
         audio: Blob(mimeType: 'audio/pcm', data: base64Audio),
       ),
     );
+    sendMessage(message);
+  }
+
+  void sendFunctionResponse(FunctionResponse response) {
+    sendFunctionResponses([response]);
+  }
+
+  void sendFunctionResponses(List<FunctionResponse> responses) {
+    final message = LiveClientMessage(
+      toolResponse: LiveClientToolResponse(functionResponses: responses),
+    );
+
     sendMessage(message);
   }
 
