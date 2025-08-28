@@ -246,6 +246,18 @@ class LiveSession {
     sendMessage(message);
   }
 
+  void sendFunctionResponse(FunctionResponse response) {
+    sendFunctionResponses([response]);
+  }
+
+  void sendFunctionResponses(List<FunctionResponse> responses) {
+    final message = LiveClientMessage(
+      toolResponse: LiveClientToolResponse(functionResponses: responses),
+    );
+
+    sendMessage(message);
+  }
+
   Future<void> close() {
     return _channel.sink.close();
   }
