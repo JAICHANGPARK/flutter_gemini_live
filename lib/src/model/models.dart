@@ -1,6 +1,8 @@
 // lib/src/models.dart
 import 'package:json_annotation/json_annotation.dart';
 
+import 'google_models.dart';
+
 part 'models.g.dart';
 
 // Enums
@@ -30,10 +32,12 @@ enum Modality {
 class Part {
   final String? text;
   final Blob? inlineData;
-
-  Part({this.text, this.inlineData});
+  final FunctionCall? functionCall;
+  final FunctionResponse? functionResponse;
 
   factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
+
+  Part({this.text, this.inlineData, this.functionCall, this.functionResponse});
 
   Map<String, dynamic> toJson() => _$PartToJson(this);
 }
@@ -94,12 +98,24 @@ class LiveClientSetup {
   final GenerationConfig? generationConfig;
   final Content? systemInstruction;
   final List<Tool>? tools;
+  final RealtimeInputConfig? realtimeInputConfig;
+  final SessionResumptionConfig? sessionResumption;
+  final ContextWindowCompressionConfig? contextWindowCompression;
+  final AudioTranscriptionConfig? inputAudioTranscription;
+  final AudioTranscriptionConfig? outputAudioTranscription;
+  final ProactivityConfig? proactivity;
 
   LiveClientSetup({
     required this.model,
     this.generationConfig,
     this.systemInstruction,
     this.tools,
+    this.contextWindowCompression,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
+    this.proactivity,
+    this.realtimeInputConfig,
+    this.sessionResumption,
   });
 
   factory LiveClientSetup.fromJson(Map<String, dynamic> json) =>
@@ -126,7 +142,28 @@ class LiveClientRealtimeInput {
   final Blob? audio;
   final Blob? video; // *** 추가: 비디오/이미지 프레임용 필드 ***
 
-  LiveClientRealtimeInput({this.audio, this.video});
+  /// Indicates that the audio stream has ended, e.g. because the microphone was
+  /// turned off.
+  ///
+  /// This should only be sent when automatic activity detection is enabled
+  /// (which is the default).
+  ///
+  /// The client can reopen the stream by sending an audio message.
+  final bool? audioStreamEnd;
+
+  /// Marks the start of user activity.
+  final ActivityStart? activityStart;
+
+  /// Marks the end of user activity.
+  final ActivityEnd? activityEnd;
+
+  LiveClientRealtimeInput({
+    this.audio,
+    this.video,
+    this.audioStreamEnd,
+    this.activityEnd,
+    this.activityStart,
+  });
 
   factory LiveClientRealtimeInput.fromJson(Map<String, dynamic> json) =>
       _$LiveClientRealtimeInputFromJson(json);
@@ -139,8 +176,14 @@ class LiveClientMessage {
   final LiveClientSetup? setup;
   final LiveClientContent? clientContent;
   final LiveClientRealtimeInput? realtimeInput;
+  final LiveClientToolResponse? toolResponse;
 
-  LiveClientMessage({this.setup, this.clientContent, this.realtimeInput});
+  LiveClientMessage({
+    this.setup,
+    this.clientContent,
+    this.realtimeInput,
+    this.toolResponse,
+  });
 
   factory LiveClientMessage.fromJson(Map<String, dynamic> json) =>
       _$LiveClientMessageFromJson(json);
@@ -205,11 +248,26 @@ class LiveServerMessage {
   final LiveServerSetupComplete? setupComplete;
   final LiveServerContent? serverContent;
   final UsageMetadata? usageMetadata;
+  final ToolCall? toolCall;
+
+  /// Notification for the client that a previously issued `ToolCallMessage`
+  /// with the specified `id`s should have been not executed and should be cancelled.
+  final LiveServerToolCallCancellation? toolCallCancellation;
+
+  /// Server will disconnect soon.
+  final LiveServerGoAway? goAway;
+
+  /// Update of the session resumption state.
+  final LiveServerSessionResumptionUpdate? sessionResumptionUpdate;
 
   LiveServerMessage({
     this.setupComplete,
     this.serverContent,
     this.usageMetadata,
+    this.toolCall,
+    this.goAway,
+    this.sessionResumptionUpdate,
+    this.toolCallCancellation,
   });
 
   factory LiveServerMessage.fromJson(Map<String, dynamic> json) =>
@@ -220,6 +278,19 @@ class LiveServerMessage {
         ?.map((p) => p.text)
         .where((t) => t != null)
         .join('');
+  }
+
+  List<FunctionCall> get functionCalls {
+    List<FunctionCall> result =
+        serverContent?.modelTurn?.parts
+            ?.where((part) => part.functionCall != null)
+            .map((part) => part.functionCall!)
+            .toList() ??
+        [];
+
+    result.addAll(toolCall?.functionCalls ?? []);
+
+    return result;
   }
 }
 
@@ -243,11 +314,25 @@ class UsageMetadata {
       _$UsageMetadataFromJson(json);
 }
 
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+@JsonSerializable(includeIfNull: false)
 class Tool {
-  Tool();
+  final List<FunctionDeclaration> functionDeclarations;
+
+  Tool({this.functionDeclarations = const []});
 
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false)
+class ToolCall {
+  final List<FunctionCall> functionCalls;
+
+  ToolCall({this.functionCalls = const []});
+
+  factory ToolCall.fromJson(Map<String, dynamic> json) =>
+      _$ToolCallFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolCallToJson(this);
 }

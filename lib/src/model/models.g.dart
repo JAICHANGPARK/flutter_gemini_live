@@ -11,11 +11,21 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
   inlineData: json['inlineData'] == null
       ? null
       : Blob.fromJson(json['inlineData'] as Map<String, dynamic>),
+  functionCall: json['functionCall'] == null
+      ? null
+      : FunctionCall.fromJson(json['functionCall'] as Map<String, dynamic>),
+  functionResponse: json['functionResponse'] == null
+      ? null
+      : FunctionResponse.fromJson(
+          json['functionResponse'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
-  if (instance.text case final value?) 'text': value,
-  if (instance.inlineData case final value?) 'inlineData': value,
+  'text': ?instance.text,
+  'inlineData': ?instance.inlineData,
+  'functionCall': ?instance.functionCall,
+  'functionResponse': ?instance.functionResponse,
 };
 
 Blob _$BlobFromJson(Map<String, dynamic> json) =>
@@ -34,8 +44,8 @@ Content _$ContentFromJson(Map<String, dynamic> json) => Content(
 );
 
 Map<String, dynamic> _$ContentToJson(Content instance) => <String, dynamic>{
-  if (instance.parts case final value?) 'parts': value,
-  if (instance.role case final value?) 'role': value,
+  'parts': ?instance.parts,
+  'role': ?instance.role,
 };
 
 GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
@@ -49,17 +59,16 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$GenerationConfigToJson(
-  GenerationConfig instance,
-) => <String, dynamic>{
-  if (instance.temperature case final value?) 'temperature': value,
-  if (instance.topK case final value?) 'top_k': value,
-  if (instance.topP case final value?) 'top_p': value,
-  if (instance.maxOutputTokens case final value?) 'max_output_tokens': value,
-  if (instance.responseModalities?.map((e) => _$ModalityEnumMap[e]!).toList()
-      case final value?)
-    'response_modalities': value,
-};
+Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
+    <String, dynamic>{
+      'temperature': ?instance.temperature,
+      'top_k': ?instance.topK,
+      'top_p': ?instance.topP,
+      'max_output_tokens': ?instance.maxOutputTokens,
+      'response_modalities': ?instance.responseModalities
+          ?.map((e) => _$ModalityEnumMap[e]!)
+          .toList(),
+    };
 
 const _$ModalityEnumMap = {
   Modality.TEXT: 'TEXT',
@@ -67,32 +76,64 @@ const _$ModalityEnumMap = {
   Modality.AUDIO: 'AUDIO',
 };
 
-LiveClientSetup _$LiveClientSetupFromJson(Map<String, dynamic> json) =>
-    LiveClientSetup(
-      model: json['model'] as String,
-      generationConfig: json['generation_config'] == null
-          ? null
-          : GenerationConfig.fromJson(
-              json['generation_config'] as Map<String, dynamic>,
-            ),
-      systemInstruction: json['system_instruction'] == null
-          ? null
-          : Content.fromJson(
-              json['system_instruction'] as Map<String, dynamic>,
-            ),
-      tools: (json['tools'] as List<dynamic>?)
-          ?.map((e) => Tool.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
+LiveClientSetup _$LiveClientSetupFromJson(
+  Map<String, dynamic> json,
+) => LiveClientSetup(
+  model: json['model'] as String,
+  generationConfig: json['generation_config'] == null
+      ? null
+      : GenerationConfig.fromJson(
+          json['generation_config'] as Map<String, dynamic>,
+        ),
+  systemInstruction: json['system_instruction'] == null
+      ? null
+      : Content.fromJson(json['system_instruction'] as Map<String, dynamic>),
+  tools: (json['tools'] as List<dynamic>?)
+      ?.map((e) => Tool.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  contextWindowCompression: json['context_window_compression'] == null
+      ? null
+      : ContextWindowCompressionConfig.fromJson(
+          json['context_window_compression'] as Map<String, dynamic>,
+        ),
+  inputAudioTranscription: json['input_audio_transcription'] == null
+      ? null
+      : AudioTranscriptionConfig.fromJson(
+          json['input_audio_transcription'] as Map<String, dynamic>,
+        ),
+  outputAudioTranscription: json['output_audio_transcription'] == null
+      ? null
+      : AudioTranscriptionConfig.fromJson(
+          json['output_audio_transcription'] as Map<String, dynamic>,
+        ),
+  proactivity: json['proactivity'] == null
+      ? null
+      : ProactivityConfig.fromJson(json['proactivity'] as Map<String, dynamic>),
+  realtimeInputConfig: json['realtime_input_config'] == null
+      ? null
+      : RealtimeInputConfig.fromJson(
+          json['realtime_input_config'] as Map<String, dynamic>,
+        ),
+  sessionResumption: json['session_resumption'] == null
+      ? null
+      : SessionResumptionConfig.fromJson(
+          json['session_resumption'] as Map<String, dynamic>,
+        ),
+);
 
-Map<String, dynamic> _$LiveClientSetupToJson(
-  LiveClientSetup instance,
-) => <String, dynamic>{
-  'model': instance.model,
-  if (instance.generationConfig case final value?) 'generation_config': value,
-  if (instance.systemInstruction case final value?) 'system_instruction': value,
-  if (instance.tools case final value?) 'tools': value,
-};
+Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
+    <String, dynamic>{
+      'model': instance.model,
+      'generation_config': ?instance.generationConfig,
+      'system_instruction': ?instance.systemInstruction,
+      'tools': ?instance.tools,
+      'realtime_input_config': ?instance.realtimeInputConfig,
+      'session_resumption': ?instance.sessionResumption,
+      'context_window_compression': ?instance.contextWindowCompression,
+      'input_audio_transcription': ?instance.inputAudioTranscription,
+      'output_audio_transcription': ?instance.outputAudioTranscription,
+      'proactivity': ?instance.proactivity,
+    };
 
 LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
     LiveClientContent(
@@ -104,8 +145,8 @@ LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$LiveClientContentToJson(LiveClientContent instance) =>
     <String, dynamic>{
-      if (instance.turns case final value?) 'turns': value,
-      if (instance.turnComplete case final value?) 'turn_complete': value,
+      'turns': ?instance.turns,
+      'turn_complete': ?instance.turnComplete,
     };
 
 LiveClientRealtimeInput _$LiveClientRealtimeInputFromJson(
@@ -117,13 +158,23 @@ LiveClientRealtimeInput _$LiveClientRealtimeInputFromJson(
   video: json['video'] == null
       ? null
       : Blob.fromJson(json['video'] as Map<String, dynamic>),
+  audioStreamEnd: json['audio_stream_end'] as bool?,
+  activityEnd: json['activity_end'] == null
+      ? null
+      : ActivityEnd.fromJson(json['activity_end'] as Map<String, dynamic>),
+  activityStart: json['activity_start'] == null
+      ? null
+      : ActivityStart.fromJson(json['activity_start'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$LiveClientRealtimeInputToJson(
   LiveClientRealtimeInput instance,
 ) => <String, dynamic>{
-  if (instance.audio case final value?) 'audio': value,
-  if (instance.video case final value?) 'video': value,
+  'audio': ?instance.audio,
+  'video': ?instance.video,
+  'audio_stream_end': ?instance.audioStreamEnd,
+  'activity_start': ?instance.activityStart,
+  'activity_end': ?instance.activityEnd,
 };
 
 LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
@@ -141,13 +192,19 @@ LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
           : LiveClientRealtimeInput.fromJson(
               json['realtimeInput'] as Map<String, dynamic>,
             ),
+      toolResponse: json['toolResponse'] == null
+          ? null
+          : LiveClientToolResponse.fromJson(
+              json['toolResponse'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$LiveClientMessageToJson(LiveClientMessage instance) =>
     <String, dynamic>{
-      if (instance.setup case final value?) 'setup': value,
-      if (instance.clientContent case final value?) 'clientContent': value,
-      if (instance.realtimeInput case final value?) 'realtimeInput': value,
+      'setup': ?instance.setup,
+      'clientContent': ?instance.clientContent,
+      'realtimeInput': ?instance.realtimeInput,
+      'toolResponse': ?instance.toolResponse,
     };
 
 LiveServerSetupComplete _$LiveServerSetupCompleteFromJson(
@@ -196,6 +253,22 @@ LiveServerMessage _$LiveServerMessageFromJson(Map<String, dynamic> json) =>
           : UsageMetadata.fromJson(
               json['usageMetadata'] as Map<String, dynamic>,
             ),
+      toolCall: json['toolCall'] == null
+          ? null
+          : ToolCall.fromJson(json['toolCall'] as Map<String, dynamic>),
+      goAway: json['goAway'] == null
+          ? null
+          : LiveServerGoAway.fromJson(json['goAway'] as Map<String, dynamic>),
+      sessionResumptionUpdate: json['sessionResumptionUpdate'] == null
+          ? null
+          : LiveServerSessionResumptionUpdate.fromJson(
+              json['sessionResumptionUpdate'] as Map<String, dynamic>,
+            ),
+      toolCallCancellation: json['toolCallCancellation'] == null
+          ? null
+          : LiveServerToolCallCancellation.fromJson(
+              json['toolCallCancellation'] as Map<String, dynamic>,
+            ),
     );
 
 UsageMetadata _$UsageMetadataFromJson(Map<String, dynamic> json) =>
@@ -205,6 +278,26 @@ UsageMetadata _$UsageMetadataFromJson(Map<String, dynamic> json) =>
       totalTokenCount: (json['totalTokenCount'] as num).toInt(),
     );
 
-Tool _$ToolFromJson(Map<String, dynamic> json) => Tool();
+Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
+  functionDeclarations:
+      (json['functionDeclarations'] as List<dynamic>?)
+          ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+);
 
-Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{};
+Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
+  'functionDeclarations': instance.functionDeclarations,
+};
+
+ToolCall _$ToolCallFromJson(Map<String, dynamic> json) => ToolCall(
+  functionCalls:
+      (json['functionCalls'] as List<dynamic>?)
+          ?.map((e) => FunctionCall.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+);
+
+Map<String, dynamic> _$ToolCallToJson(ToolCall instance) => <String, dynamic>{
+  'functionCalls': instance.functionCalls,
+};
