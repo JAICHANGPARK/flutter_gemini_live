@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import './platform/web_socket_service_stub.dart'
@@ -39,6 +40,7 @@ class LiveConnectParameters {
 class LiveService {
   final String apiKey;
   final String apiVersion;
+  final bool printDebugInfo;
 
   // *** 추가: SDK 버전 및 User-Agent 정보 ***
   // final String _sdkVersion = '1.0.0'; // Dart SDK의 자체 버전
@@ -48,7 +50,15 @@ class LiveService {
     required this.apiKey,
     this.apiVersion = 'v1beta',
     // required String dartVersion,
+    this.printDebugInfo = false,
   });
+
+  /// debug print helper
+  void _debugPrint(String message) {
+    if (printDebugInfo) {
+      debugPrint(message);
+    }
+  }
 
   // *** 수정된 부분: 데이터 처리 로직을 별도 함수로 분리 ***
   void _handleWebSocketData(dynamic data, LiveCallbacks callbacks) {
@@ -70,7 +80,7 @@ class LiveService {
 
     try {
       final json = jsonDecode(jsonData);
-      print('📥 Received JSON: $jsonData');
+      _debugPrint('📥 Received JSON: $jsonData');
       final message = LiveServerMessage.fromJson(json);
       callbacks.onMessage?.call(message);
     } catch (e, st) {
@@ -80,13 +90,20 @@ class LiveService {
 
   // *** connect 메소드 전체를 아래 코드로 교체 ***
   Future<LiveSession> connect(LiveConnectParameters params) async {
-    final websocketUri = Uri.parse(
-      'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContent?key=$apiKey',
-    );
+    late Uri websocketUri;
+    if (apiKey.contains('auth_tokens')) {
+      websocketUri = Uri.parse(
+        'wss://generativelanguage.googleapis.com//ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContentConstrained?access_token=$apiKey',
+      );
+    } else {
+      websocketUri = Uri.parse(
+        'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContent?key=$apiKey',
+      );
+    }
 
     final userAgent = 'google-genai-sdk/1.20.0 dart/3.8';
 
-    print('🔌 Connecting to WebSocket at $websocketUri');
+    _debugPrint('🔌 Connecting to WebSocket at $websocketUri');
 
     try {
       final headers = {
@@ -105,7 +122,7 @@ class LiveService {
           final jsonData = data is String
               ? data
               : utf8.decode(data as List<int>);
-          print('📥 Received: $jsonData');
+          _debugPrint('📥 Received: $jsonData');
 
           if (!setupCompleter.isCompleted) {
             try {
@@ -161,7 +178,7 @@ class LiveService {
 
       return session;
     } catch (e) {
-      print("Failed to connect or setup WebSocket: $e");
+      _debugPrint("Failed to connect or setup WebSocket: $e");
       rethrow;
     }
   }
