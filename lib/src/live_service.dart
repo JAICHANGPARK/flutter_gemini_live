@@ -109,7 +109,7 @@ class LiveService {
 
           if (!setupCompleter.isCompleted) {
             try {
-              final json = jsonDecode(jsonData);
+              // final json = jsonDecode(jsonData);
               // setupComplete 응답이 별도로 오지 않고, 첫 응답이 오면 성공으로 간주
               setupCompleter.complete();
             } catch (e) {
