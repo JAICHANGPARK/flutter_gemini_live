@@ -23,9 +23,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   gemini_live:
     path: ../
-  image_picker: ^1.1.2
+  image_picker: ^1.2.0
   path_provider: ^2.1.5
-  record: ^6.0.0
+  record: ^6.1.2
   permission_handler: ^12.0.1
 
 

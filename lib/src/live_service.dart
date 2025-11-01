@@ -84,7 +84,7 @@ class LiveService {
       'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContent?key=$apiKey',
     );
 
-    final userAgent = 'google-genai-sdk/1.20.0 dart/3.8';
+    final userAgent = 'google-genai-sdk/1.28.0 dart/3.8';
 
     print('🔌 Connecting to WebSocket at $websocketUri');
 

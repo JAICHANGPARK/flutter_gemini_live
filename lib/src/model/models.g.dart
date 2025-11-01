@@ -14,8 +14,8 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
-  if (instance.text case final value?) 'text': value,
-  if (instance.inlineData case final value?) 'inlineData': value,
+  'text': ?instance.text,
+  'inlineData': ?instance.inlineData,
 };
 
 Blob _$BlobFromJson(Map<String, dynamic> json) =>
@@ -34,8 +34,8 @@ Content _$ContentFromJson(Map<String, dynamic> json) => Content(
 );
 
 Map<String, dynamic> _$ContentToJson(Content instance) => <String, dynamic>{
-  if (instance.parts case final value?) 'parts': value,
-  if (instance.role case final value?) 'role': value,
+  'parts': ?instance.parts,
+  'role': ?instance.role,
 };
 
 GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
@@ -49,17 +49,16 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$GenerationConfigToJson(
-  GenerationConfig instance,
-) => <String, dynamic>{
-  if (instance.temperature case final value?) 'temperature': value,
-  if (instance.topK case final value?) 'top_k': value,
-  if (instance.topP case final value?) 'top_p': value,
-  if (instance.maxOutputTokens case final value?) 'max_output_tokens': value,
-  if (instance.responseModalities?.map((e) => _$ModalityEnumMap[e]!).toList()
-      case final value?)
-    'response_modalities': value,
-};
+Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
+    <String, dynamic>{
+      'temperature': ?instance.temperature,
+      'top_k': ?instance.topK,
+      'top_p': ?instance.topP,
+      'max_output_tokens': ?instance.maxOutputTokens,
+      'response_modalities': ?instance.responseModalities
+          ?.map((e) => _$ModalityEnumMap[e]!)
+          .toList(),
+    };
 
 const _$ModalityEnumMap = {
   Modality.TEXT: 'TEXT',
@@ -85,14 +84,13 @@ LiveClientSetup _$LiveClientSetupFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$LiveClientSetupToJson(
-  LiveClientSetup instance,
-) => <String, dynamic>{
-  'model': instance.model,
-  if (instance.generationConfig case final value?) 'generation_config': value,
-  if (instance.systemInstruction case final value?) 'system_instruction': value,
-  if (instance.tools case final value?) 'tools': value,
-};
+Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
+    <String, dynamic>{
+      'model': instance.model,
+      'generation_config': ?instance.generationConfig,
+      'system_instruction': ?instance.systemInstruction,
+      'tools': ?instance.tools,
+    };
 
 LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
     LiveClientContent(
@@ -104,8 +102,8 @@ LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$LiveClientContentToJson(LiveClientContent instance) =>
     <String, dynamic>{
-      if (instance.turns case final value?) 'turns': value,
-      if (instance.turnComplete case final value?) 'turn_complete': value,
+      'turns': ?instance.turns,
+      'turn_complete': ?instance.turnComplete,
     };
 
 LiveClientRealtimeInput _$LiveClientRealtimeInputFromJson(
@@ -121,10 +119,7 @@ LiveClientRealtimeInput _$LiveClientRealtimeInputFromJson(
 
 Map<String, dynamic> _$LiveClientRealtimeInputToJson(
   LiveClientRealtimeInput instance,
-) => <String, dynamic>{
-  if (instance.audio case final value?) 'audio': value,
-  if (instance.video case final value?) 'video': value,
-};
+) => <String, dynamic>{'audio': ?instance.audio, 'video': ?instance.video};
 
 LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
     LiveClientMessage(
@@ -145,9 +140,9 @@ LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$LiveClientMessageToJson(LiveClientMessage instance) =>
     <String, dynamic>{
-      if (instance.setup case final value?) 'setup': value,
-      if (instance.clientContent case final value?) 'clientContent': value,
-      if (instance.realtimeInput case final value?) 'realtimeInput': value,
+      'setup': ?instance.setup,
+      'clientContent': ?instance.clientContent,
+      'realtimeInput': ?instance.realtimeInput,
     };
 
 LiveServerSetupComplete _$LiveServerSetupCompleteFromJson(
