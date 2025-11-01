@@ -1,3 +1,9 @@
+## 0.1.1
+
+- Update dependencies and generated model serialization
+- Update web_socket_service_web.dart
+- Update web_socket_service_stub.dart
+
 ## 0.1.0
 
 - Update Readme
