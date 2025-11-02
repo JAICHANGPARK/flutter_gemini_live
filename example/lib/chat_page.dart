@@ -12,6 +12,7 @@ import 'bubble.dart'; // A widget to display a single chat message bubble.
 import 'main.dart'; // Contains global variables like the API key.
 import 'message.dart'; // The data class for a chat message (ChatMessage).
 import 'package:record/record.dart'; // Package for recording audio.
+import 'package:http/http.dart' as http;
 
 /// Enum to manage the state of the WebSocket connection to the Gemini API.
 enum ConnectionStatus { connecting, connected, disconnected }
@@ -48,20 +49,62 @@ class _ChatScreenState extends State<ChatPage> {
 
   // --- Audio and Mode Management ---
   final AudioRecorder _audioRecorder = AudioRecorder(); // The main object for handling audio recording.
-  StreamSubscription<List<int>>? _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
+  StreamSubscription<List<int>>?
+  _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
   ResponseMode _responseMode = ResponseMode.text; // The default response mode is text.
   final StringBuffer _audioBuffer = StringBuffer(); // A buffer for audio data (not used in this implementation).
 
+  // Flag to determine if ephemeral token should be used.
+  // Set to true to use ephemeral tokens fetched from the backend.
+  // Set to false to use a static API key.
+  final bool _isUseEphemeralToken = true;
+
   /// Initializes the connection to the Gemini Live API when the widget is first created.
   Future<void> _initialize() async {
-    await _connectToLiveAPI();
+    try {
+      String apiKey = geminiApiKey;
+      String apiVersion = 'v1beta';
+      if (_isUseEphemeralToken) {
+        apiKey = await _fetchEphemeralToken() ?? '';
+        apiVersion = 'v1alpha';
+      }
+      if (apiKey.isEmpty) {
+        throw Exception("API key is missing.");
+      }
+      _genAI = GoogleGenAI(apiKey: apiKey, apiVersion: apiVersion);
+      await _connectToLiveAPI();
+    } catch (e) {
+      debugPrint('Initialization error: $e');
+      if (mounted) {
+        setState(() {
+          _statusText = "Initialization error: $e";
+          _connectionStatus = ConnectionStatus.disconnected;
+        });
+      }
+    }
+  }
+
+  /// Fetches an ephemeral token from the backend server.
+  Future<String?> _fetchEphemeralToken() async {
+    try {
+      // Replace with your actual backend URL
+      final res = await http.get(Uri.parse('https://your-backend.com/get-ephemeral-token'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['token'] as String?;
+      } else {
+        print('Failed to fetch token. Status code: ${res.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching token: $e');
+      return null;
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    // Initialize the GoogleGenAI instance with the API key.
-    _genAI = GoogleGenAI(apiKey: geminiApiKey);
     // Start the connection process.
     _initialize();
     // Subscribe to the audio recorder's state to update the UI (e.g., change the mic icon).
@@ -110,7 +153,7 @@ class _ChatScreenState extends State<ChatPage> {
     });
 
     try {
-      final modelName =  'gemini-2.0-flash-live-001';
+      final modelName = 'gemini-2.0-flash-live-001';
       // Initiate the connection with specified parameters.
       final session = await _genAI.live.connect(
         LiveConnectParameters(

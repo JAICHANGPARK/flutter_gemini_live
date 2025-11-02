@@ -56,16 +56,20 @@ class GoogleGenAI {
   /// This is marked as `late` because it is initialized in the constructor.
   late final LiveService live;
 
+
+  /// The version of the API being targeted.
+  final String apiVersion;
+
   /// Creates a new instance of the [GoogleGenAI] client.
   ///
   /// [apiKey] is your Google AI API key, which is required for all requests.
   /// [httpClient] is an optional client to use for making HTTP requests.
-  GoogleGenAI({required this.apiKey, this.httpClient}) {
+  GoogleGenAI({required this.apiKey, this.httpClient, this.apiVersion = 'v1beta'}) {
     // Initialize the internal API client with the provided credentials and HTTP client.
-    _apiClient = ApiClient(apiKey: apiKey, httpClient: httpClient);
+    _apiClient = ApiClient(apiKey: apiKey, httpClient: httpClient, apiVersion: apiVersion);
 
     // Initialize the LiveService, which handles real-time interactions.
-    live = LiveService(apiKey: apiKey);
+    live = LiveService(apiKey: apiKey, apiVersion: apiVersion);
   }
 
   /// Releases any resources held by the client.
