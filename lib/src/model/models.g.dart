@@ -82,6 +82,16 @@ LiveClientSetup _$LiveClientSetupFromJson(Map<String, dynamic> json) =>
       tools: (json['tools'] as List<dynamic>?)
           ?.map((e) => Tool.fromJson(e as Map<String, dynamic>))
           .toList(),
+      inputAudioTranscription: json['input_audio_transcription'] == null
+          ? null
+          : AudioTranscriptionConfig.fromJson(
+              json['input_audio_transcription'] as Map<String, dynamic>,
+            ),
+      outputAudioTranscription: json['output_audio_transcription'] == null
+          ? null
+          : AudioTranscriptionConfig.fromJson(
+              json['output_audio_transcription'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
@@ -90,6 +100,8 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'generation_config': ?instance.generationConfig,
       'system_instruction': ?instance.systemInstruction,
       'tools': ?instance.tools,
+      'input_audio_transcription': ?instance.inputAudioTranscription,
+      'output_audio_transcription': ?instance.outputAudioTranscription,
     };
 
 LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
@@ -157,21 +169,21 @@ Transcription _$TranscriptionFromJson(Map<String, dynamic> json) =>
 
 LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
     LiveServerContent(
-      modelTurn: json['modelTurn'] == null
+      modelTurn: json['model_turn'] == null
           ? null
-          : Content.fromJson(json['modelTurn'] as Map<String, dynamic>),
-      turnComplete: json['turnComplete'] as bool?,
-      inputTranscription: json['inputTranscription'] == null
-          ? null
-          : Transcription.fromJson(
-              json['inputTranscription'] as Map<String, dynamic>,
-            ),
-      outputTranscription: json['outputTranscription'] == null
+          : Content.fromJson(json['model_turn'] as Map<String, dynamic>),
+      turnComplete: json['turn_complete'] as bool?,
+      inputTranscription: json['input_transcription'] == null
           ? null
           : Transcription.fromJson(
-              json['outputTranscription'] as Map<String, dynamic>,
+              json['input_transcription'] as Map<String, dynamic>,
             ),
-      generationComplete: json['generationComplete'] as bool?,
+      outputTranscription: json['output_transcription'] == null
+          ? null
+          : Transcription.fromJson(
+              json['output_transcription'] as Map<String, dynamic>,
+            ),
+      generationComplete: json['generation_complete'] as bool?,
     );
 
 LiveServerMessage _$LiveServerMessageFromJson(Map<String, dynamic> json) =>
@@ -203,3 +215,11 @@ UsageMetadata _$UsageMetadataFromJson(Map<String, dynamic> json) =>
 Tool _$ToolFromJson(Map<String, dynamic> json) => Tool();
 
 Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{};
+
+AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
+  Map<String, dynamic> json,
+) => AudioTranscriptionConfig();
+
+Map<String, dynamic> _$AudioTranscriptionConfigToJson(
+  AudioTranscriptionConfig instance,
+) => <String, dynamic>{};

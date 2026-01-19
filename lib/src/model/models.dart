@@ -95,11 +95,19 @@ class LiveClientSetup {
   final Content? systemInstruction;
   final List<Tool>? tools;
 
+  /// Enable transcription of user audio input
+  final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// Enable transcription of model audio output
+  final AudioTranscriptionConfig? outputAudioTranscription;
+
   LiveClientSetup({
     required this.model,
     this.generationConfig,
     this.systemInstruction,
     this.tools,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
   });
 
   factory LiveClientSetup.fromJson(Map<String, dynamic> json) =>
@@ -179,7 +187,7 @@ class Transcription {
 @JsonSerializable(
   includeIfNull: false,
   createToJson: false,
-  // fieldRename: FieldRename.snake,
+  fieldRename: FieldRename.snake,
 )
 class LiveServerContent {
   final Content? modelTurn;
@@ -250,4 +258,16 @@ class Tool {
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
+}
+
+/// Configuration for audio transcription.
+/// When provided in the setup, enables transcription of audio input/output.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class AudioTranscriptionConfig {
+  AudioTranscriptionConfig();
+
+  factory AudioTranscriptionConfig.fromJson(Map<String, dynamic> json) =>
+      _$AudioTranscriptionConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AudioTranscriptionConfigToJson(this);
 }
