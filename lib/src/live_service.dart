@@ -27,11 +27,19 @@ class LiveConnectParameters {
   final GenerationConfig? config;
   final Content? systemInstruction;
 
+  /// Enable transcription of user audio input
+  final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// Enable transcription of model audio output
+  final AudioTranscriptionConfig? outputAudioTranscription;
+
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
     this.config,
     this.systemInstruction,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
   });
 }
 
@@ -147,6 +155,8 @@ class LiveService {
           model: modelName,
           generationConfig: params.config,
           systemInstruction: params.systemInstruction,
+          inputAudioTranscription: params.inputAudioTranscription,
+          outputAudioTranscription: params.outputAudioTranscription,
         ),
       );
       session.sendMessage(setupMessage);
