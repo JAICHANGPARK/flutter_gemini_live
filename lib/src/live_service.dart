@@ -35,6 +35,15 @@ class LiveConnectParameters {
   });
 }
 
+class LiveConnectError extends Error {
+  final String message;
+
+  LiveConnectError(this.message);
+
+  @override
+  String toString() => 'LiveConnectError: $message';
+}
+
 // Live API 서비스 클래스
 class LiveService {
   final String apiKey;
@@ -125,6 +134,14 @@ class LiveService {
           params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
+          if (setupCompleter.isCompleted) {
+            setupCompleter.completeError(
+              LiveConnectError(
+                'Connection closed before setup completed. Code: ${channel.closeCode}, Reason: ${channel.closeReason}',
+              ),
+              StackTrace.current,
+            );
+          }
           params.callbacks.onClose?.call(
             channel.closeCode,
             channel.closeReason,
