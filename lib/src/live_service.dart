@@ -39,6 +39,9 @@ class LiveConnectError extends Error {
   final String message;
 
   LiveConnectError(this.message);
+
+  @override
+  String toString() => 'LiveConnectError: $message';
 }
 
 // Live API 서비스 클래스
