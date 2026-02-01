@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:gemini_live/gemini_live.dart';
 
 /// Example: Complete Live API Features
@@ -22,7 +21,6 @@ void main() async {
   // Track state
   final pendingFunctionCalls = <String, FunctionCall>{};
   String? currentSessionHandle;
-  bool isExpectingResponse = false;
 
   // Will hold the session once connected
   late final LiveSession session;
