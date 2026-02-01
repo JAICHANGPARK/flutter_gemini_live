@@ -9,9 +9,9 @@
 ---
 
 - A Flutter package for using [the experimental Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
-- no Firebase / Firebase AI Logic dependency
-- support for the gemini-2.0-flash-live-001 model.
-- support Text, Audio response_modalities 
+- No Firebase / Firebase AI Logic dependency
+- Support for the gemini-2.0-flash-live-001 model.
+- Support for Text and Audio response_modalities 
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
@@ -22,6 +22,11 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 *   **Multimodal Input**: Send text, images, and audio in a single conversational turn.
 *   **Streaming Responses**: Receive text responses from the model as they are being generated.
 *   **Easy-to-use Callbacks**: Simple event-based handlers for `onOpen`, `onMessage`, `onError`, and `onClose`.
+*   **Function Calling**: Model can call external functions and receive results.
+*   **Session Resumption**: Resume sessions after connection drops.
+*   **Voice Activity Detection (VAD)**: Automatic or manual voice activity detection.
+*   **Realtime Media Chunks**: Send audio/video chunks in real-time.
+*   **Audio Transcription**: Transcribe voice input and output to text.
 
 | Demo 1: Chihuahua vs muffin | Demo 2: Labradoodle vs fried chicken |
 | :---: | :---: |
@@ -40,10 +45,10 @@ Add the package to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  gemini_live: ^0.1.0 # Use the latest version
+  gemini_live: ^0.2.0 # Use the latest version
 ```
 
-or run this command(Recommend):
+or run this command (Recommend):
 
 ```bash
 flutter pub add gemini_live
@@ -63,6 +68,8 @@ import 'package:gemini_live/gemini_live.dart';
 
 ## 🚀 Usage
 
+### Basic Example
+
 Here is a basic example of how to use the `gemini_live` package to start a session and send a message.
 
 **Security Note**: Do not hardcode your API key. It is highly recommended to use a `.env` file with a package like `flutter_dotenv` to keep your credentials secure.
@@ -78,20 +85,22 @@ LiveSession? session;
 Future<void> connect() async {
   try {
     session = await genAI.live.connect(
-      model: 'gemini-2.0-flash-live-001',
-      callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Connection opened'),
-        onMessage: (LiveServerMessage message) {
-          // 3. Handle incoming messages from the model
-          if (message.text != null) {
-            print('Received chunk: ${message.text}');
-          }
-          if (message.serverContent?.turnComplete ?? false) {
-            print('✅ Turn complete!');
-          }
-        },
-        onError: (e, s) => print('🚨 Error: $e'),
-        onClose: (code, reason) => print('🚪 Connection closed'),
+      LiveConnectParameters(
+        model: 'gemini-2.0-flash-live-001',
+        callbacks: LiveCallbacks(
+          onOpen: () => print('✅ Connection opened'),
+          onMessage: (LiveServerMessage message) {
+            // 3. Handle incoming messages from the model
+            if (message.text != null) {
+              print('Received chunk: ${message.text}');
+            }
+            if (message.serverContent?.turnComplete ?? false) {
+              print('✅ Turn complete!');
+            }
+          },
+          onError: (e, s) => print('🚨 Error: $e'),
+          onClose: (code, reason) => print('🚪 Connection closed'),
+        ),
       ),
     );
   } catch (e) {
@@ -101,20 +110,144 @@ Future<void> connect() async {
 
 // 4. Send a message to the model
 void sendMessage(String text) {
-  session?.sendMessage(
-    LiveClientMessage(
-      clientContent: LiveClientContent(
-        turns: [
-          Content(
-            role: "user",
-            parts: [Part(text: text)],
-          ),
-        ],
-        turnComplete: true,
+  session?.sendText(text);
+}
+```
+
+### 🆕 New Features (v0.2.0)
+
+#### Function Calling
+
+The model can call external functions and receive results:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    tools: [Tool()], // Add function declarations
+    callbacks: LiveCallbacks(
+      onMessage: (LiveServerMessage message) {
+        // Handle function calls
+        if (message.toolCall != null) {
+          for (final call in message.toolCall!.functionCalls!) {
+            print('Function call: ${call.name}');
+            
+            // Execute function and send response
+            session.sendFunctionResponse(
+              id: call.id!,
+              name: call.name!,
+              response: {'result': 'success'},
+            );
+          }
+        }
+      },
+    ),
+  ),
+);
+```
+
+#### Realtime Input
+
+Send audio, video, and text in real-time:
+
+```dart
+// Send real-time text
+session.sendRealtimeText('Realtime text input');
+
+// Send media chunks
+session.sendMediaChunks([
+  Blob(mimeType: 'audio/pcm', data: base64Audio),
+]);
+
+// Combined real-time input
+session.sendRealtimeInput(
+  audio: Blob(mimeType: 'audio/pcm', data: base64Audio),
+  video: Blob(mimeType: 'image/jpeg', data: base64Image),
+  text: 'Text description',
+);
+
+// Signal audio stream end
+session.sendAudioStreamEnd();
+```
+
+#### Manual Activity Detection
+
+Disable automatic VAD and control manually:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    realtimeInputConfig: RealtimeInputConfig(
+      automaticActivityDetection: AutomaticActivityDetection(
+        disabled: true, // Disable automatic detection
       ),
     ),
-  );
+  ),
+);
+
+// Signal activity start
+session.sendActivityStart();
+
+// Send voice data...
+
+// Signal activity end
+session.sendActivityEnd();
+```
+
+#### Session Resumption
+
+Resume sessions after connection drops:
+
+```dart
+// First connection with session resumption
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    sessionResumption: SessionResumptionConfig(
+      handle: previousSessionHandle, // Previous session handle
+      transparent: true,
+    ),
+  ),
+);
+
+// Receive session handle updates
+if (message.sessionResumptionUpdate != null) {
+  final newHandle = message.sessionResumptionUpdate!.newHandle;
+  // Save newHandle for later use
 }
+```
+
+#### Advanced Configuration
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    // Realtime input configuration
+    realtimeInputConfig: RealtimeInputConfig(
+      automaticActivityDetection: AutomaticActivityDetection(
+        disabled: false,
+        startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
+        endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+        prefixPaddingMs: 300,
+        silenceDurationMs: 500,
+      ),
+      activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
+      turnCoverage: TurnCoverage.TURN_INCLUDES_ALL_INPUT,
+    ),
+    // Audio transcription
+    inputAudioTranscription: AudioTranscriptionConfig(),
+    outputAudioTranscription: AudioTranscriptionConfig(),
+    // Context window compression
+    contextWindowCompression: ContextWindowCompressionConfig(
+      triggerTokens: '10000',
+      slidingWindow: SlidingWindow(targetTokens: '5000'),
+    ),
+    // Proactivity
+    proactivity: ProactivityConfig(proactiveAudio: true),
+  ),
+);
 ```
 
 ## 💬 Live Chat Demo
@@ -141,6 +274,16 @@ This repository includes a comprehensive example application demonstrating the f
     flutter run
     ```
 
+### Demo Pages
+
+The example app includes the following demo pages:
+
+1. **Chat Interface** - Basic chat (text, image, audio)
+2. **Live API Features** - Comprehensive demo of all new features
+   - VAD, transcription, session resumption, context compression, etc.
+3. **Function Calling** - Function calling demo (weather/time)
+4. **Realtime Media** - Real-time audio/video input demo
+
 ### How to Use the App
 
 1.  **Connect**: The app will attempt to connect to the Gemini API automatically. If the connection fails, tap the **"Reconnect"** button.
@@ -159,6 +302,37 @@ This repository includes a comprehensive example application demonstrating the f
     -   Tap the microphone (**🎤**) icon. Recording will start, and the icon will change to a red stop (**⏹️**) icon.
     -   Speak your message.
     -   Tap the stop (**⏹️**) icon again to finish. The audio will be sent automatically.
+
+## 📚 API Reference
+
+### LiveSession Methods
+
+- `sendText(String text)` - Send text message
+- `sendClientContent({List<Content>? turns, bool turnComplete})` - Send multi-turn content
+- `sendRealtimeInput({...})` - Send real-time input (audio, video, text)
+- `sendMediaChunks(List<Blob> mediaChunks)` - Send media chunks
+- `sendAudioStreamEnd()` - Signal audio stream end
+- `sendRealtimeText(String text)` - Send real-time text
+- `sendActivityStart()` / `sendActivityEnd()` - Signal activity start/end
+- `sendToolResponse({required List<FunctionResponse> functionResponses})` - Send tool response
+- `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - Send single function response
+- `sendVideo(List<int> videoBytes, {String mimeType})` - Send video
+- `sendAudio(List<int> audioBytes)` - Send audio
+- `close()` - Close connection
+- `isClosed` - Check connection status
+
+### LiveServerMessage Properties
+
+- `text` - Text response
+- `data` - Base64 encoded inline data
+- `serverContent` - Server content (modelTurn, turnComplete, etc.)
+- `toolCall` - Tool call request
+- `toolCallCancellation` - Tool call cancellation
+- `sessionResumptionUpdate` - Session resumption update
+- `voiceActivity` - Voice activity status
+- `voiceActivityDetectionSignal` - Voice activity detection signal
+- `goAway` - Server disconnect warning
+- `usageMetadata` - Token usage metadata
 
 ## 🤝 Contributing
 
