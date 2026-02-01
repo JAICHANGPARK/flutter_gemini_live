@@ -19,6 +19,11 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 *   **멀티모달 입력**: 하나의 대화 턴(turn)에서 텍스트, 이미지, 오디오를 함께 전송할 수 있습니다.
 *   **스트리밍 응답**: 모델이 생성하는 텍스트 응답을 실시간 스트리밍으로 수신합니다.
 *   **사용하기 쉬운 콜백**: `onOpen`, `onMessage`, `onError`, `onClose` 등 간단한 이벤트 기반 핸들러를 제공합니다.
+*   **함수 호출(Function Calling)**: 모델이 외부 함수를 호출하고 결과를 받을 수 있습니다.
+*   **세션 재개(Session Resumption)**: 연결이 끊어진 후 세션을 재개할 수 있습니다.
+*   **음성 활동 감지(VAD)**: 자동 또는 수동으로 음성 활동을 감지합니다.
+*   **실시간 미디어 청크**: 오디오/비디오 청크를 실시간으로 전송합니다.
+*   **오디오 전사(Transcription)**: 음성 입력과 출력을 텍스트로 전사합니다.
 
 | 데모 1: 치와와 vs 머핀 | 데모 2: 래브라두들 vs 프라이드 치킨 |
 | :---: | :---: |
@@ -37,7 +42,7 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 ```yaml
 dependencies:
-  gemini_live: ^0.1.0 # 최신 버전을 사용하세요
+  gemini_live: ^0.2.0 # 최신 버전을 사용하세요
 ```
 
 또는 아래 명령어를 실행하세요(추천):
@@ -60,6 +65,8 @@ import 'package:gemini_live/gemini_live.dart';
 
 ## 🚀 사용법
 
+### 기본 예제
+
 다음은 `gemini_live` 패키지를 사용하여 세션을 시작하고 메시지를 보내는 기본적인 예제입니다.
 
 **보안 참고**: API 키를 코드에 직접 하드코딩하지 마세요. `flutter_dotenv`와 같은 패키지를 사용하여 `.env` 파일에 자격 증명을 안전하게 보관하는 것을 강력히 권장합니다.
@@ -75,20 +82,22 @@ LiveSession? session;
 Future<void> connect() async {
   try {
     session = await genAI.live.connect(
-      model: 'gemini-2.0-flash-live-001',
-      callbacks: LiveCallbacks(
-        onOpen: () => print('✅ 연결 성공'),
-        onMessage: (LiveServerMessage message) {
-          // 3. 모델로부터 수신되는 메시지 처리
-          if (message.text != null) {
-            print('수신된 청크: ${message.text}');
-          }
-          if (message.serverContent?.turnComplete ?? false) {
-            print('✅ 턴(Turn) 완료!');
-          }
-        },
-        onError: (e, s) => print('🚨 오류 발생: $e'),
-        onClose: (code, reason) => print('🚪 연결 종료'),
+      LiveConnectParameters(
+        model: 'gemini-2.0-flash-live-001',
+        callbacks: LiveCallbacks(
+          onOpen: () => print('✅ 연결 성공'),
+          onMessage: (LiveServerMessage message) {
+            // 3. 모델로부터 수신되는 메시지 처리
+            if (message.text != null) {
+              print('수신된 청크: ${message.text}');
+            }
+            if (message.serverContent?.turnComplete ?? false) {
+              print('✅ 턴(Turn) 완료!');
+            }
+          },
+          onError: (e, s) => print('🚨 오류 발생: $e'),
+          onClose: (code, reason) => print('🚪 연결 종료'),
+        ),
       ),
     );
   } catch (e) {
@@ -98,20 +107,144 @@ Future<void> connect() async {
 
 // 4. 모델에 메시지 전송
 void sendMessage(String text) {
-  session?.sendMessage(
-    LiveClientMessage(
-      clientContent: LiveClientContent(
-        turns: [
-          Content(
-            role: "user",
-            parts: [Part(text: text)],
-          ),
-        ],
-        turnComplete: true,
+  session?.sendText(text);
+}
+```
+
+### 🆕 새로운 기능 (v0.2.0)
+
+#### 함수 호출 (Function Calling)
+
+모델이 외부 함수를 호출하고 결과를 받을 수 있습니다:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    tools: [Tool()], // 함수 선언 추가
+    callbacks: LiveCallbacks(
+      onMessage: (LiveServerMessage message) {
+        // 함수 호출 처리
+        if (message.toolCall != null) {
+          for (final call in message.toolCall!.functionCalls!) {
+            print('함수 호출: ${call.name}');
+            
+            // 함수 실행 후 응답 전송
+            session.sendFunctionResponse(
+              id: call.id!,
+              name: call.name!,
+              response: {'result': 'success'},
+            );
+          }
+        }
+      },
+    ),
+  ),
+);
+```
+
+#### 실시간 입력 (Realtime Input)
+
+오디오, 비디오, 텍스트를 실시간으로 전송:
+
+```dart
+// 실시간 텍스트 전송
+session.sendRealtimeText('실시간 텍스트 입력');
+
+// 미디어 청크 전송
+session.sendMediaChunks([
+  Blob(mimeType: 'audio/pcm', data: base64Audio),
+]);
+
+// 결합된 실시간 입력
+session.sendRealtimeInput(
+  audio: Blob(mimeType: 'audio/pcm', data: base64Audio),
+  video: Blob(mimeType: 'image/jpeg', data: base64Image),
+  text: '텍스트 설명',
+);
+
+// 오디오 스트림 종료 신호
+session.sendAudioStreamEnd();
+```
+
+#### 수동 활동 감지 (Manual Activity Detection)
+
+자동 VAD를 비활성화하고 수동으로 제어:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    realtimeInputConfig: RealtimeInputConfig(
+      automaticActivityDetection: AutomaticActivityDetection(
+        disabled: true, // 자동 감지 비활성화
       ),
     ),
-  );
+  ),
+);
+
+// 활동 시작 신호
+session.sendActivityStart();
+
+// 음성 데이터 전송...
+
+// 활동 종료 신호
+session.sendActivityEnd();
+```
+
+#### 세션 재개 (Session Resumption)
+
+연결이 끊어진 후 세션을 재개:
+
+```dart
+// 첫 연결 시 세션 재개 설정
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    sessionResumption: SessionResumptionConfig(
+      handle: previousSessionHandle, // 이전 세션 핸들
+      transparent: true,
+    ),
+  ),
+);
+
+// 세션 핸들 업데이트 수신
+if (message.sessionResumptionUpdate != null) {
+  final newHandle = message.sessionResumptionUpdate!.newHandle;
+  // newHandle을 저장하여 나중에 사용
 }
+```
+
+#### 고급 설정
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-2.0-flash-live-001',
+    // 실시간 입력 설정
+    realtimeInputConfig: RealtimeInputConfig(
+      automaticActivityDetection: AutomaticActivityDetection(
+        disabled: false,
+        startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
+        endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+        prefixPaddingMs: 300,
+        silenceDurationMs: 500,
+      ),
+      activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
+      turnCoverage: TurnCoverage.TURN_INCLUDES_ALL_INPUT,
+    ),
+    // 오디오 전사
+    inputAudioTranscription: AudioTranscriptionConfig(),
+    outputAudioTranscription: AudioTranscriptionConfig(),
+    // 컨텍스트 윈도우 압축
+    contextWindowCompression: ContextWindowCompressionConfig(
+      triggerTokens: '10000',
+      slidingWindow: SlidingWindow(targetTokens: '5000'),
+    ),
+    // 능동성 설정
+    proactivity: ProactivityConfig(proactiveAudio: true),
+  ),
+);
 ```
 
 ## 💬 라이브 채팅 데모
@@ -138,6 +271,16 @@ void sendMessage(String text) {
     flutter run
     ```
 
+### 데모 페이지
+
+예제 앱에는 다음 데모 페이지가 포함되어 있습니다:
+
+1. **Chat Interface** - 기본 채팅 (텍스트, 이미지, 오디오)
+2. **Live API Features** - 모든 새로운 기능 통합 데모
+   - VAD, 전사, 세션 재개, 컨텍스트 압축 등
+3. **Function Calling** - 함수 호출 데모 (날씨/시간)
+4. **Realtime Media** - 실시간 오디오/비디오 입력 데모
+
 ### 앱 사용 방법
 
 1.  **연결**: 앱이 자동으로 Gemini API에 연결을 시도합니다. 연결에 실패하면 **"재연결"** 버튼을 탭하세요.
@@ -156,6 +299,37 @@ void sendMessage(String text) {
     -   마이크(**🎤**) 아이콘을 탭하면 녹음이 시작되고 아이콘이 빨간색 정지(**⏹️**) 아이콘으로 바뀝니다.
     -   메시지를 말하세요.
     -   정지(**⏹️**) 아이콘을 다시 탭하면 녹음이 종료되고 오디오가 자동으로 전송됩니다.
+
+## 📚 API 참조
+
+### LiveSession 메서드
+
+- `sendText(String text)` - 텍스트 메시지 전송
+- `sendClientContent({List<Content>? turns, bool turnComplete})` - 멀티턴 콘텐츠 전송
+- `sendRealtimeInput({...})` - 실시간 입력 전송 (오디오, 비디오, 텍스트)
+- `sendMediaChunks(List<Blob> mediaChunks)` - 미디어 청크 전송
+- `sendAudioStreamEnd()` - 오디오 스트림 종료 신호
+- `sendRealtimeText(String text)` - 실시간 텍스트 전송
+- `sendActivityStart()` / `sendActivityEnd()` - 활동 시작/종료 신호
+- `sendToolResponse({required List<FunctionResponse> functionResponses})` - 툴 응답 전송
+- `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - 단일 함수 응답 전송
+- `sendVideo(List<int> videoBytes, {String mimeType})` - 비디오 전송
+- `sendAudio(List<int> audioBytes)` - 오디오 전송
+- `close()` - 연결 종료
+- `isClosed` - 연결 상태 확인
+
+### LiveServerMessage 속성
+
+- `text` - 텍스트 응답
+- `data` - Base64 인코딩된 인라인 데이터
+- `serverContent` - 서버 콘텐츠 (modelTurn, turnComplete 등)
+- `toolCall` - 툴 호출 요청
+- `toolCallCancellation` - 툴 호출 취소
+- `sessionResumptionUpdate` - 세션 재개 업데이트
+- `voiceActivity` - 음성 활동 상태
+- `voiceActivityDetectionSignal` - 음성 활동 감지 신호
+- `goAway` - 서버 연결 종료 예고
+- `usageMetadata` - 토큰 사용량 메타데이터
 
 ## 🤝 기여하기
 
