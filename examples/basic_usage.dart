@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:gemini_live/gemini_live.dart';
 
 /// Example: Basic Live API Usage
