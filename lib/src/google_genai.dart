@@ -13,7 +13,12 @@ import 'live_service.dart';
 // This allows users to access LiveCallbacks, LiveConnectParameters, and LiveSession
 // directly by importing this main library file, simplifying the public API.
 export 'live_service.dart'
-    show LiveCallbacks, LiveConnectParameters, LiveSession;
+    show
+        LiveCallbacks,
+        LiveConnectParameters,
+        LiveSession,
+        LiveService,
+        TimeoutException;
 
 // Re-export all model classes (e.g., Content, Part, GenerateContentResponse).
 // This provides a single, convenient import for all data structures
