@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -10,7 +11,11 @@ import './platform/web_socket_service_stub.dart'
 
 import 'model/models.dart';
 
-// Live API 콜백 정의
+// ============================================================================
+// Live API Callbacks
+// ============================================================================
+
+/// Callbacks for Live API events
 class LiveCallbacks {
   final void Function()? onOpen;
   final void Function(LiveServerMessage message)? onMessage;
@@ -20,43 +25,68 @@ class LiveCallbacks {
   LiveCallbacks({this.onOpen, this.onMessage, this.onError, this.onClose});
 }
 
-// LiveConnectParameters 클래스 수정
+// ============================================================================
+// Live Connect Parameters
+// ============================================================================
+
+/// Parameters for establishing a Live API connection
 class LiveConnectParameters {
   final String model;
   final LiveCallbacks callbacks;
   final GenerationConfig? config;
   final Content? systemInstruction;
+  final List<Tool>? tools;
+
+  // New configuration options
+  final RealtimeInputConfig? realtimeInputConfig;
+  final SessionResumptionConfig? sessionResumption;
+  final ContextWindowCompressionConfig? contextWindowCompression;
+  final AudioTranscriptionConfig? inputAudioTranscription;
+  final AudioTranscriptionConfig? outputAudioTranscription;
+  final ProactivityConfig? proactivity;
+  final bool? explicitVadSignal;
 
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
     this.config,
     this.systemInstruction,
+    this.tools,
+    this.realtimeInputConfig,
+    this.sessionResumption,
+    this.contextWindowCompression,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
+    this.proactivity,
+    this.explicitVadSignal,
   });
 }
 
-// Live API 서비스 클래스
+// ============================================================================
+// Live Service
+// ============================================================================
+
+/// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
   final String apiKey;
   final String apiVersion;
 
-  // *** 추가: SDK 버전 및 User-Agent 정보 ***
-  // final String _sdkVersion = '1.0.0'; // Dart SDK의 자체 버전
-  // final String _dartVersion; // Dart 런타임 버전
+  LiveService({required this.apiKey, this.apiVersion = 'v1beta'});
 
-  LiveService({
-    required this.apiKey,
-    this.apiVersion = 'v1beta',
-    // required String dartVersion,
-  });
+  /// Returns the current Dart version
+  static String dartVersion() {
+    final version = Platform.version;
+    // Extract major.minor version
+    final match = RegExp(r'(\d+)\.(\d+)').firstMatch(version);
+    return match != null ? '${match.group(1)}.${match.group(2)}' : '3.0';
+  }
 
-  // *** 수정된 부분: 데이터 처리 로직을 별도 함수로 분리 ***
+  /// Handles incoming WebSocket data and converts it to LiveServerMessage
   void _handleWebSocketData(dynamic data, LiveCallbacks callbacks) {
     String jsonData;
     if (data is String) {
       jsonData = data;
     } else if (data is List<int>) {
-      // Uint8List를 String으로 디코딩
       jsonData = utf8.decode(data);
     } else {
       callbacks.onError?.call(
@@ -78,13 +108,13 @@ class LiveService {
     }
   }
 
-  // *** connect 메소드 전체를 아래 코드로 교체 ***
+  /// Establishes a WebSocket connection to the Live API
   Future<LiveSession> connect(LiveConnectParameters params) async {
     final websocketUri = Uri.parse(
       'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContent?key=$apiKey',
     );
 
-    final userAgent = 'google-genai-sdk/1.28.0 dart/3.8';
+    final userAgent = 'google-genai-sdk/1.39.0 dart/${dartVersion()}';
 
     print('🔌 Connecting to WebSocket at $websocketUri');
 
@@ -109,11 +139,9 @@ class LiveService {
 
           if (!setupCompleter.isCompleted) {
             try {
-              // final json = jsonDecode(jsonData);
-              // setupComplete 응답이 별도로 오지 않고, 첫 응답이 오면 성공으로 간주
               setupCompleter.complete();
             } catch (e) {
-              // 파싱 실패 무시
+              // Ignore parsing errors during setup
             }
           }
           _handleWebSocketData(data, params.callbacks);
@@ -134,24 +162,30 @@ class LiveService {
         cancelOnError: true,
       );
 
-      // 3. 연결 성공 후 onOpen 콜백 호출
       params.callbacks.onOpen?.call();
 
       final modelName = params.model.startsWith('models/')
           ? params.model
           : 'models/${params.model}';
 
-      // 4. setup 메시지 생성 및 전송
+      // Create setup message with all configuration options
       final setupMessage = LiveClientMessage(
         setup: LiveClientSetup(
           model: modelName,
           generationConfig: params.config,
           systemInstruction: params.systemInstruction,
+          tools: params.tools,
+          realtimeInputConfig: params.realtimeInputConfig,
+          sessionResumption: params.sessionResumption,
+          contextWindowCompression: params.contextWindowCompression,
+          inputAudioTranscription: params.inputAudioTranscription,
+          outputAudioTranscription: params.outputAudioTranscription,
+          proactivity: params.proactivity,
+          explicitVadSignal: params.explicitVadSignal,
         ),
       );
       session.sendMessage(setupMessage);
 
-      // 5. 서버로부터 첫 응답 대기
       await setupCompleter.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
@@ -167,14 +201,26 @@ class LiveService {
   }
 }
 
-// LiveSession 클래스는 이전과 동일
+/// Exception for timeout errors
+class TimeoutException implements Exception {
+  final String message;
+  TimeoutException(this.message);
+  @override
+  String toString() => "TimeoutException: $message";
+}
+
+// ============================================================================
+// Live Session
+// ============================================================================
+
+/// Represents an active Live API session
 class LiveSession {
   final WebSocketChannel _channel;
 
   LiveSession._(this._channel);
 
+  /// Sends a message to the server
   void sendMessage(LiveClientMessage message) {
-    // 이미 채널이 닫혔는지 확인
     if (_channel.closeCode != null) {
       print(
         '⚠️ Warning: Attempted to send a message on a closed WebSocket channel.',
@@ -186,18 +232,20 @@ class LiveSession {
     _channel.sink.add(jsonString);
   }
 
+  /// Sends text content to the server
   void sendText(String text) {
     final message = LiveClientMessage(
       clientContent: LiveClientContent(
         turns: [
           Content(parts: [Part(text: text)]),
         ],
-        turnComplete: true, // 턴 완료 표시
+        turnComplete: true,
       ),
     );
     sendMessage(message);
   }
 
+  /// Sends audio data to the server
   void sendAudio(List<int> audioBytes) {
     final base64Audio = base64Encode(audioBytes);
     final message = LiveClientMessage(
@@ -208,7 +256,132 @@ class LiveSession {
     sendMessage(message);
   }
 
-  Future<void> close() {
-    return _channel.sink.close();
+  /// Sends video data to the server
+  void sendVideo(List<int> videoBytes, {String mimeType = 'image/jpeg'}) {
+    final base64Video = base64Encode(videoBytes);
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(
+        video: Blob(mimeType: mimeType, data: base64Video),
+      ),
+    );
+    sendMessage(message);
   }
+
+  /// Sends client content with optional turns and turn completion flag
+  void sendClientContent({List<Content>? turns, bool turnComplete = true}) {
+    final message = LiveClientMessage(
+      clientContent: LiveClientContent(
+        turns: turns,
+        turnComplete: turnComplete,
+      ),
+    );
+    sendMessage(message);
+  }
+
+  /// Sends realtime input with various media types
+  void sendRealtimeInput({
+    List<Blob>? mediaChunks,
+    Blob? audio,
+    Blob? video,
+    String? text,
+    bool? audioStreamEnd,
+    bool? activityStart,
+    bool? activityEnd,
+  }) {
+    LiveClientRealtimeInput? realtimeInput;
+
+    if (mediaChunks != null ||
+        audio != null ||
+        video != null ||
+        text != null ||
+        audioStreamEnd != null ||
+        activityStart != null ||
+        activityEnd != null) {
+      realtimeInput = LiveClientRealtimeInput(
+        mediaChunks: mediaChunks,
+        audio: audio,
+        video: video,
+        text: text,
+        audioStreamEnd: audioStreamEnd,
+        activityStart: activityStart == true ? ActivityStart() : null,
+        activityEnd: activityEnd == true ? ActivityEnd() : null,
+      );
+    }
+
+    if (realtimeInput != null) {
+      final message = LiveClientMessage(realtimeInput: realtimeInput);
+      sendMessage(message);
+    }
+  }
+
+  /// Sends media chunks for realtime input
+  void sendMediaChunks(List<Blob> mediaChunks) {
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(mediaChunks: mediaChunks),
+    );
+    sendMessage(message);
+  }
+
+  /// Sends a signal indicating the end of audio stream
+  void sendAudioStreamEnd() {
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(audioStreamEnd: true),
+    );
+    sendMessage(message);
+  }
+
+  /// Sends realtime text input
+  void sendRealtimeText(String text) {
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(text: text),
+    );
+    sendMessage(message);
+  }
+
+  /// Marks the start of user activity (when automatic VAD is disabled)
+  void sendActivityStart() {
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(activityStart: ActivityStart()),
+    );
+    sendMessage(message);
+  }
+
+  /// Marks the end of user activity (when automatic VAD is disabled)
+  void sendActivityEnd() {
+    final message = LiveClientMessage(
+      realtimeInput: LiveClientRealtimeInput(activityEnd: ActivityEnd()),
+    );
+    sendMessage(message);
+  }
+
+  /// Sends a tool response to the server
+  void sendToolResponse({required List<FunctionResponse> functionResponses}) {
+    final message = LiveClientMessage(
+      toolResponse: LiveClientToolResponse(
+        functionResponses: functionResponses,
+      ),
+    );
+    sendMessage(message);
+  }
+
+  /// Sends a single function response
+  void sendFunctionResponse({
+    required String id,
+    required String name,
+    required Map<String, dynamic> response,
+  }) {
+    sendToolResponse(
+      functionResponses: [
+        FunctionResponse(id: id, name: name, response: response),
+      ],
+    );
+  }
+
+  /// Closes the WebSocket connection
+  Future<void> close() async {
+    await _channel.sink.close();
+  }
+
+  /// Returns true if the connection is closed
+  bool get isClosed => _channel.closeCode != null;
 }
