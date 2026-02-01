@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:gemini_live/gemini_live.dart';
 
 /// Example: Realtime Audio and Video Input
