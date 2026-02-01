@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' show Platform;
 import 'package:gemini_live/gemini_live.dart';
 
 /// Example: Session Resumption
