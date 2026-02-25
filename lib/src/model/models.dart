@@ -1,4 +1,3 @@
-// lib/src/models.dart
 import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
@@ -26,12 +25,26 @@ enum Modality {
 }
 
 @JsonEnum(alwaysCreate: true)
+enum MediaResolution {
+  @JsonValue('MEDIA_RESOLUTION_UNSPECIFIED')
+  MEDIA_RESOLUTION_UNSPECIFIED,
+  @JsonValue('MEDIA_RESOLUTION_LOW')
+  MEDIA_RESOLUTION_LOW,
+  @JsonValue('MEDIA_RESOLUTION_MEDIUM')
+  MEDIA_RESOLUTION_MEDIUM,
+  @JsonValue('MEDIA_RESOLUTION_HIGH')
+  MEDIA_RESOLUTION_HIGH,
+}
+
+@JsonEnum(alwaysCreate: true)
 enum ActivityHandling {
   @JsonValue('ACTIVITY_HANDLING_UNSPECIFIED')
   ACTIVITY_HANDLING_UNSPECIFIED,
   @JsonValue('START_OF_ACTIVITY_INTERRUPTS')
   START_OF_ACTIVITY_INTERRUPTS,
-  @JsonValue('START_OF_ACTIVITY_DOES_NOT_INTERRUPT')
+  @JsonValue('NO_INTERRUPTION')
+  NO_INTERRUPTION,
+  @JsonValue('NO_INTERRUPTION')
   START_OF_ACTIVITY_DOES_NOT_INTERRUPT,
 }
 
@@ -65,6 +78,86 @@ enum EndSensitivity {
   END_SENSITIVITY_HIGH,
 }
 
+@JsonEnum(alwaysCreate: true)
+enum FunctionResponseScheduling {
+  @JsonValue('SCHEDULING_UNSPECIFIED')
+  SCHEDULING_UNSPECIFIED,
+  @JsonValue('SILENT')
+  SILENT,
+  @JsonValue('WHEN_IDLE')
+  WHEN_IDLE,
+  @JsonValue('INTERRUPT')
+  INTERRUPT,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum Behavior {
+  @JsonValue('UNSPECIFIED')
+  UNSPECIFIED,
+  @JsonValue('BLOCKING')
+  BLOCKING,
+  @JsonValue('NON_BLOCKING')
+  NON_BLOCKING,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum TurnCompleteReason {
+  @JsonValue('TURN_COMPLETE_REASON_UNSPECIFIED')
+  TURN_COMPLETE_REASON_UNSPECIFIED,
+  @JsonValue('MALFORMED_FUNCTION_CALL')
+  MALFORMED_FUNCTION_CALL,
+  @JsonValue('RESPONSE_REJECTED')
+  RESPONSE_REJECTED,
+  @JsonValue('NEED_MORE_INPUT')
+  NEED_MORE_INPUT,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum VadSignalType {
+  @JsonValue('VAD_SIGNAL_TYPE_UNSPECIFIED')
+  VAD_SIGNAL_TYPE_UNSPECIFIED,
+  @JsonValue('VAD_SIGNAL_TYPE_SOS')
+  VAD_SIGNAL_TYPE_SOS,
+  @JsonValue('VAD_SIGNAL_TYPE_EOS')
+  VAD_SIGNAL_TYPE_EOS,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum VoiceActivityType {
+  @JsonValue('TYPE_UNSPECIFIED')
+  TYPE_UNSPECIFIED,
+  @JsonValue('ACTIVITY_START')
+  ACTIVITY_START,
+  @JsonValue('ACTIVITY_END')
+  ACTIVITY_END,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum TrafficType {
+  @JsonValue('TRAFFIC_TYPE_UNSPECIFIED')
+  TRAFFIC_TYPE_UNSPECIFIED,
+  @JsonValue('ON_DEMAND')
+  ON_DEMAND,
+  @JsonValue('PROVISIONED_THROUGHPUT')
+  PROVISIONED_THROUGHPUT,
+}
+
+@JsonEnum(alwaysCreate: true)
+enum MediaModality {
+  @JsonValue('MODALITY_UNSPECIFIED')
+  MODALITY_UNSPECIFIED,
+  @JsonValue('TEXT')
+  TEXT,
+  @JsonValue('IMAGE')
+  IMAGE,
+  @JsonValue('VIDEO')
+  VIDEO,
+  @JsonValue('AUDIO')
+  AUDIO,
+  @JsonValue('DOCUMENT')
+  DOCUMENT,
+}
+
 // ============================================================================
 // Data Classes - Base
 // ============================================================================
@@ -72,11 +165,22 @@ enum EndSensitivity {
 @JsonSerializable(includeIfNull: false)
 class Part {
   final String? text;
+  final bool? thought;
   final Blob? inlineData;
   final FunctionCall? functionCall;
   final FunctionResponse? functionResponse;
+  final ExecutableCode? executableCode;
+  final CodeExecutionResult? codeExecutionResult;
 
-  Part({this.text, this.inlineData, this.functionCall, this.functionResponse});
+  Part({
+    this.text,
+    this.thought,
+    this.inlineData,
+    this.functionCall,
+    this.functionResponse,
+    this.executableCode,
+    this.codeExecutionResult,
+  });
 
   factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
 
@@ -86,7 +190,7 @@ class Part {
 @JsonSerializable(includeIfNull: false)
 class Blob {
   final String mimeType;
-  final String data; // Base64 encoded string
+  final String data;
 
   Blob({required this.mimeType, required this.data});
 
@@ -109,12 +213,67 @@ class Content {
 }
 
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class PrebuiltVoiceConfig {
+  final String? voiceName;
+
+  PrebuiltVoiceConfig({this.voiceName});
+
+  factory PrebuiltVoiceConfig.fromJson(Map<String, dynamic> json) =>
+      _$PrebuiltVoiceConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PrebuiltVoiceConfigToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class VoiceConfig {
+  final PrebuiltVoiceConfig? prebuiltVoiceConfig;
+
+  VoiceConfig({this.prebuiltVoiceConfig});
+
+  factory VoiceConfig.fromJson(Map<String, dynamic> json) =>
+      _$VoiceConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VoiceConfigToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SpeechConfig {
+  final VoiceConfig? voiceConfig;
+  final String? languageCode;
+
+  SpeechConfig({this.voiceConfig, this.languageCode});
+
+  factory SpeechConfig.fromJson(Map<String, dynamic> json) =>
+      _$SpeechConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SpeechConfigToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ThinkingConfig {
+  final bool? includeThoughts;
+  final int? thinkingBudget;
+
+  ThinkingConfig({this.includeThoughts, this.thinkingBudget});
+
+  factory ThinkingConfig.fromJson(Map<String, dynamic> json) =>
+      _$ThinkingConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ThinkingConfigToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class GenerationConfig {
   final double? temperature;
   final int? topK;
   final double? topP;
   final int? maxOutputTokens;
   final List<Modality>? responseModalities;
+  final MediaResolution? mediaResolution;
+  final int? seed;
+  final SpeechConfig? speechConfig;
+  final ThinkingConfig? thinkingConfig;
+  final bool? enableAffectiveDialog;
 
   GenerationConfig({
     this.temperature,
@@ -122,6 +281,11 @@ class GenerationConfig {
     this.topP,
     this.maxOutputTokens,
     this.responseModalities,
+    this.mediaResolution,
+    this.seed,
+    this.speechConfig,
+    this.thinkingConfig,
+    this.enableAffectiveDialog,
   });
 
   factory GenerationConfig.fromJson(Map<String, dynamic> json) =>
@@ -149,17 +313,181 @@ class FunctionCall {
 }
 
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class FunctionResponseBlob {
+  final String? mimeType;
+  final String? data;
+
+  FunctionResponseBlob({this.mimeType, this.data});
+
+  factory FunctionResponseBlob.fromJson(Map<String, dynamic> json) =>
+      _$FunctionResponseBlobFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FunctionResponseBlobToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class FunctionResponseFileData {
+  final String? fileUri;
+  final String? mimeType;
+
+  FunctionResponseFileData({this.fileUri, this.mimeType});
+
+  factory FunctionResponseFileData.fromJson(Map<String, dynamic> json) =>
+      _$FunctionResponseFileDataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FunctionResponseFileDataToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class FunctionResponsePart {
+  final FunctionResponseBlob? inlineData;
+  final FunctionResponseFileData? fileData;
+
+  FunctionResponsePart({this.inlineData, this.fileData});
+
+  factory FunctionResponsePart.fromJson(Map<String, dynamic> json) =>
+      _$FunctionResponsePartFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FunctionResponsePartToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionResponse {
   final String? id;
   final String? name;
   final Map<String, dynamic>? response;
+  final bool? willContinue;
+  final FunctionResponseScheduling? scheduling;
+  final List<FunctionResponsePart>? parts;
 
-  FunctionResponse({this.id, this.name, this.response});
+  FunctionResponse({
+    this.id,
+    this.name,
+    this.response,
+    this.willContinue,
+    this.scheduling,
+    this.parts,
+  });
 
   factory FunctionResponse.fromJson(Map<String, dynamic> json) =>
       _$FunctionResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$FunctionResponseToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class FunctionDeclaration {
+  final String? description;
+  final String? name;
+  final Map<String, dynamic>? parameters;
+  final dynamic parametersJsonSchema;
+  final Map<String, dynamic>? response;
+  final dynamic responseJsonSchema;
+  final Behavior? behavior;
+
+  FunctionDeclaration({
+    this.description,
+    this.name,
+    this.parameters,
+    this.parametersJsonSchema,
+    this.response,
+    this.responseJsonSchema,
+    this.behavior,
+  });
+
+  factory FunctionDeclaration.fromJson(Map<String, dynamic> json) =>
+      _$FunctionDeclarationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FunctionDeclarationToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class Interval {
+  final DateTime? startTime;
+  final DateTime? endTime;
+
+  Interval({this.startTime, this.endTime});
+
+  factory Interval.fromJson(Map<String, dynamic> json) =>
+      _$IntervalFromJson(json);
+
+  Map<String, dynamic> toJson() => _$IntervalToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class GoogleSearch {
+  final List<String>? excludeDomains;
+  final Interval? timeRangeFilter;
+  final String? blockingConfidence;
+
+  GoogleSearch({
+    this.excludeDomains,
+    this.timeRangeFilter,
+    this.blockingConfidence,
+  });
+
+  factory GoogleSearch.fromJson(Map<String, dynamic> json) =>
+      _$GoogleSearchFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GoogleSearchToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class DynamicRetrievalConfig {
+  final double? dynamicThreshold;
+  final String? mode;
+
+  DynamicRetrievalConfig({this.dynamicThreshold, this.mode});
+
+  factory DynamicRetrievalConfig.fromJson(Map<String, dynamic> json) =>
+      _$DynamicRetrievalConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DynamicRetrievalConfigToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class GoogleSearchRetrieval {
+  final DynamicRetrievalConfig? dynamicRetrievalConfig;
+
+  GoogleSearchRetrieval({this.dynamicRetrievalConfig});
+
+  factory GoogleSearchRetrieval.fromJson(Map<String, dynamic> json) =>
+      _$GoogleSearchRetrievalFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GoogleSearchRetrievalToJson(this);
+}
+
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class Tool {
+  final List<FunctionDeclaration>? functionDeclarations;
+  final GoogleSearch? googleSearch;
+  final GoogleSearchRetrieval? googleSearchRetrieval;
+  final Map<String, dynamic>? codeExecution;
+  final Map<String, dynamic>? urlContext;
+  final Map<String, dynamic>? googleMaps;
+  final Map<String, dynamic>? retrieval;
+  final Map<String, dynamic>? computerUse;
+  final Map<String, dynamic>? fileSearch;
+  final Map<String, dynamic>? enterpriseWebSearch;
+  final List<Map<String, dynamic>>? mcpServers;
+
+  Tool({
+    this.functionDeclarations,
+    this.googleSearch,
+    this.googleSearchRetrieval,
+    this.codeExecution,
+    this.urlContext,
+    this.googleMaps,
+    this.retrieval,
+    this.computerUse,
+    this.fileSearch,
+    this.enterpriseWebSearch,
+    this.mcpServers,
+  });
+
+  factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolToJson(this);
 }
 
 // ============================================================================
@@ -264,15 +592,6 @@ class ProactivityConfig {
       _$ProactivityConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$ProactivityConfigToJson(this);
-}
-
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
-class Tool {
-  Tool();
-
-  factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ToolToJson(this);
 }
 
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
@@ -408,23 +727,17 @@ class LiveClientMessage {
 // Live API Server Response Models
 // ============================================================================
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerSetupComplete {
-  LiveServerSetupComplete();
+  final String? sessionId;
+
+  LiveServerSetupComplete({this.sessionId});
 
   factory LiveServerSetupComplete.fromJson(Map<String, dynamic> json) =>
       _$LiveServerSetupCompleteFromJson(json);
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class Transcription {
   final String? text;
   final bool? finished;
@@ -435,31 +748,59 @@ class Transcription {
       _$TranscriptionFromJson(json);
 }
 
+@JsonSerializable(includeIfNull: false)
+class ExecutableCode {
+  final String? language;
+  final String? code;
+
+  ExecutableCode({this.language, this.code});
+
+  factory ExecutableCode.fromJson(Map<String, dynamic> json) =>
+      _$ExecutableCodeFromJson(json);
+}
+
+@JsonSerializable(includeIfNull: false)
+class CodeExecutionResult {
+  final String? outcome;
+  final String? output;
+
+  CodeExecutionResult({this.outcome, this.output});
+
+  factory CodeExecutionResult.fromJson(Map<String, dynamic> json) =>
+      _$CodeExecutionResultFromJson(json);
+}
+
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerContent {
   final Content? modelTurn;
   final bool? turnComplete;
+  final bool? interrupted;
+  final Map<String, dynamic>? groundingMetadata;
   final Transcription? inputTranscription;
   final Transcription? outputTranscription;
   final bool? generationComplete;
+  final Map<String, dynamic>? urlContextMetadata;
+  final TurnCompleteReason? turnCompleteReason;
+  final bool? waitingForInput;
 
   LiveServerContent({
     this.modelTurn,
     this.turnComplete,
+    this.interrupted,
+    this.groundingMetadata,
     this.inputTranscription,
     this.outputTranscription,
     this.generationComplete,
+    this.urlContextMetadata,
+    this.turnCompleteReason,
+    this.waitingForInput,
   });
 
   factory LiveServerContent.fromJson(Map<String, dynamic> json) =>
       _$LiveServerContentFromJson(json);
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerToolCall {
   final List<FunctionCall>? functionCalls;
 
@@ -469,11 +810,7 @@ class LiveServerToolCall {
       _$LiveServerToolCallFromJson(json);
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerToolCallCancellation {
   final List<String>? ids;
 
@@ -483,29 +820,28 @@ class LiveServerToolCallCancellation {
       _$LiveServerToolCallCancellationFromJson(json);
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerGoAway {
+  final String? timeLeft;
   final String? reason;
-  final int? timeRemaining;
 
-  LiveServerGoAway({this.reason, this.timeRemaining});
+  LiveServerGoAway({this.timeLeft, this.reason});
 
   factory LiveServerGoAway.fromJson(Map<String, dynamic> json) =>
       _$LiveServerGoAwayFromJson(json);
+
+  int? get timeRemaining {
+    if (timeLeft == null) return null;
+    final match = RegExp(r'^(\d+)s$').firstMatch(timeLeft!);
+    if (match == null) return null;
+    return int.tryParse(match.group(1)!);
+  }
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerSessionResumptionUpdate {
   final String? newHandle;
-  final String? resumable;
+  final bool? resumable;
   final int? lastConsumedClientMessageIndex;
 
   LiveServerSessionResumptionUpdate({
@@ -519,45 +855,72 @@ class LiveServerSessionResumptionUpdate {
   ) => _$LiveServerSessionResumptionUpdateFromJson(json);
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class VoiceActivityDetectionSignal {
-  final bool? start;
-  final bool? end;
+  final VadSignalType? vadSignalType;
 
-  VoiceActivityDetectionSignal({this.start, this.end});
+  VoiceActivityDetectionSignal({this.vadSignalType});
 
   factory VoiceActivityDetectionSignal.fromJson(Map<String, dynamic> json) =>
       _$VoiceActivityDetectionSignalFromJson(json);
+
+  bool get start => vadSignalType == VadSignalType.VAD_SIGNAL_TYPE_SOS;
+  bool get end => vadSignalType == VadSignalType.VAD_SIGNAL_TYPE_EOS;
 }
 
-@JsonSerializable(
-  includeIfNull: false,
-  createToJson: false,
-  fieldRename: FieldRename.snake,
-)
+@JsonSerializable(includeIfNull: false, createToJson: false)
 class VoiceActivity {
-  final bool? speechActive;
+  final VoiceActivityType? voiceActivityType;
 
-  VoiceActivity({this.speechActive});
+  VoiceActivity({this.voiceActivityType});
 
   factory VoiceActivity.fromJson(Map<String, dynamic> json) =>
       _$VoiceActivityFromJson(json);
+
+  bool? get speechActive {
+    if (voiceActivityType == VoiceActivityType.ACTIVITY_START) return true;
+    if (voiceActivityType == VoiceActivityType.ACTIVITY_END) return false;
+    return null;
+  }
+}
+
+@JsonSerializable(includeIfNull: false, createToJson: false)
+class ModalityTokenCount {
+  final MediaModality? modality;
+  final int? tokenCount;
+
+  ModalityTokenCount({this.modality, this.tokenCount});
+
+  factory ModalityTokenCount.fromJson(Map<String, dynamic> json) =>
+      _$ModalityTokenCountFromJson(json);
 }
 
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class UsageMetadata {
-  final int promptTokenCount;
-  final int responseTokenCount;
-  final int totalTokenCount;
+  final int? promptTokenCount;
+  final int? cachedContentTokenCount;
+  final int? responseTokenCount;
+  final int? toolUsePromptTokenCount;
+  final int? thoughtsTokenCount;
+  final int? totalTokenCount;
+  final List<ModalityTokenCount>? promptTokensDetails;
+  final List<ModalityTokenCount>? cacheTokensDetails;
+  final List<ModalityTokenCount>? responseTokensDetails;
+  final List<ModalityTokenCount>? toolUsePromptTokensDetails;
+  final TrafficType? trafficType;
 
   UsageMetadata({
-    required this.promptTokenCount,
-    required this.responseTokenCount,
-    required this.totalTokenCount,
+    this.promptTokenCount,
+    this.cachedContentTokenCount,
+    this.responseTokenCount,
+    this.toolUsePromptTokenCount,
+    this.thoughtsTokenCount,
+    this.totalTokenCount,
+    this.promptTokensDetails,
+    this.cacheTokensDetails,
+    this.responseTokensDetails,
+    this.toolUsePromptTokensDetails,
+    this.trafficType,
   });
 
   factory UsageMetadata.fromJson(Map<String, dynamic> json) =>
@@ -592,19 +955,26 @@ class LiveServerMessage {
       _$LiveServerMessageFromJson(json);
 
   String? get text {
-    final textParts = serverContent?.modelTurn?.parts
-        ?.map((p) => p.text)
-        .where((t) => t != null);
-    if (textParts == null || textParts.isEmpty) return null;
-    return textParts.join('');
+    final parts = serverContent?.modelTurn?.parts;
+    if (parts == null || parts.isEmpty) return null;
+    final chunks = <String>[];
+    for (final part in parts) {
+      final text = part.text;
+      if (text == null) continue;
+      if (part.thought == true) continue;
+      chunks.add(text);
+    }
+    return chunks.isEmpty ? null : chunks.join();
   }
 
   String? get data {
+    final parts = serverContent?.modelTurn?.parts;
+    if (parts == null || parts.isEmpty) return null;
     final buffer = StringBuffer();
-    for (final part in serverContent?.modelTurn?.parts ?? []) {
-      if (part.inlineData?.data != null) {
-        buffer.write(part.inlineData!.data);
-      }
+    for (final part in parts) {
+      final inline = part.inlineData;
+      if (inline?.data == null) continue;
+      buffer.write(inline!.data);
     }
     return buffer.isNotEmpty ? buffer.toString() : null;
   }

@@ -110,11 +110,27 @@ class LiveService {
 
   /// Establishes a WebSocket connection to the Live API
   Future<LiveSession> connect(LiveConnectParameters params) async {
-    final websocketUri = Uri.parse(
-      'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.BidiGenerateContent?key=$apiKey',
+    final usesEphemeralToken = apiKey.startsWith('auth_tokens/');
+    if (usesEphemeralToken && apiVersion != 'v1alpha') {
+      print(
+        '⚠️ Warning: Ephemeral token support is only available on v1alpha. Current apiVersion: $apiVersion',
+      );
+    }
+
+    final method = usesEphemeralToken
+        ? 'BidiGenerateContentConstrained'
+        : 'BidiGenerateContent';
+    final keyName = usesEphemeralToken ? 'access_token' : 'key';
+
+    final websocketUri = Uri(
+      scheme: 'wss',
+      host: 'generativelanguage.googleapis.com',
+      path:
+          '/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.$method',
+      queryParameters: {keyName: apiKey},
     );
 
-    final userAgent = 'google-genai-sdk/1.39.0 dart/${dartVersion()}';
+    final userAgent = 'google-genai-sdk/1.42.0 dart/${dartVersion()}';
 
     print('🔌 Connecting to WebSocket at $websocketUri');
 

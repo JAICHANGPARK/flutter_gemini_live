@@ -41,6 +41,9 @@ class GoogleGenAI {
   /// The API key used to authenticate requests.
   final String apiKey;
 
+  /// API version used by the live module.
+  final String apiVersion;
+
   /// An optional custom HTTP client for making network requests.
   ///
   /// This is useful for advanced scenarios, such as:
@@ -65,12 +68,16 @@ class GoogleGenAI {
   ///
   /// [apiKey] is your Google AI API key, which is required for all requests.
   /// [httpClient] is an optional client to use for making HTTP requests.
-  GoogleGenAI({required this.apiKey, this.httpClient}) {
+  GoogleGenAI({
+    required this.apiKey,
+    this.httpClient,
+    this.apiVersion = 'v1beta',
+  }) {
     // Initialize the internal API client with the provided credentials and HTTP client.
     _apiClient = ApiClient(apiKey: apiKey, httpClient: httpClient);
 
     // Initialize the LiveService, which handles real-time interactions.
-    live = LiveService(apiKey: apiKey);
+    live = LiveService(apiKey: apiKey, apiVersion: apiVersion);
   }
 
   /// Releases any resources held by the client.
