@@ -284,11 +284,8 @@ final genAI = GoogleGenAI(
 
 2.  **프로젝트 설정**:
     *   이 저장소를 클론(clone)하세요.
-    *   `example/lib/main.dart` 파일을 열고 API 키를 입력하세요:
-        ```dart
-        // example/lib/main.dart
-        const String geminiApiKey = 'YOUR_API_KEY_HERE';
-        ```
+    *   예제 앱에서 API 키를 화면에서 직접 입력할 수 있습니다.
+    *   앱 실행 후 우측 상단 **Settings** 아이콘에서 API 키를 붙여 넣으세요.
     *   필요에 따라 마이크 및 사진 라이브러리 접근을 위한 플랫폼별 권한을 설정하세요.
     *   `example` 디렉토리에서 `flutter pub get`을 실행하세요.
 

@@ -287,11 +287,8 @@ This repository includes a comprehensive example application demonstrating the f
 
 2.  **Set Up the Project**:
     *   Clone this repository.
-    *   Open the `example/lib/main.dart` file and insert your API key:
-        ```dart
-        // example/lib/main.dart
-        const String geminiApiKey = 'YOUR_API_KEY_HERE';
-        ```
+    *   The example app now supports API key input from the UI.
+    *   Run the app and open **Settings** (top-right icon) to paste your API key.
     *   Configure platform permissions for microphone and photo library access as needed.
     *   Run `flutter pub get` in the `example` directory.
 

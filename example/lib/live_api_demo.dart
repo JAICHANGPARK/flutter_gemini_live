@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
-import 'main.dart';
+import 'api_key_store.dart';
 
 /// A comprehensive demo page showcasing all new Gemini Live API features
 class LiveAPIDemoPage extends StatefulWidget {
@@ -34,7 +34,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   @override
   void initState() {
     super.initState();
-    _genAI = GoogleGenAI(apiKey: geminiApiKey);
+    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
   }
 
   @override
@@ -59,6 +59,10 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
 
   Future<void> _connect() async {
     if (_isConnecting) return;
+    if (!ApiKeyStore.hasApiKey) {
+      _addLog('ERROR', '❌ API key is not configured. Open Settings first.');
+      return;
+    }
 
     setState(() => _isConnecting = true);
     _addLog('SYSTEM', 'Connecting to Gemini Live API...');

@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gemini_live/gemini_live.dart';
-import 'main.dart';
+import 'api_key_store.dart';
 
 /// Demo page for realtime audio/video input features
 class RealtimeMediaDemoPage extends StatefulWidget {
@@ -32,7 +32,7 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
   @override
   void initState() {
     super.initState();
-    _genAI = GoogleGenAI(apiKey: geminiApiKey);
+    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
   }
 
   @override
@@ -52,6 +52,10 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
 
   Future<void> _connect() async {
     if (_isConnecting) return;
+    if (!ApiKeyStore.hasApiKey) {
+      _addLog('ERROR', '❌ API key is not configured. Open Settings first.');
+      return;
+    }
 
     setState(() => _isConnecting = true);
     _addLog('SYSTEM', 'Connecting to Live API...');

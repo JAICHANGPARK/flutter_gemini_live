@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+
+import 'api_key_store.dart';
 import 'chat_page.dart';
-import 'live_api_demo.dart';
 import 'function_calling_demo.dart';
+import 'live_api_demo.dart';
 import 'realtime_media_demo.dart';
 
-const String geminiApiKey = "";
-
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ApiKeyStore.load();
   runApp(const MyApp());
 }
 
@@ -28,8 +29,81 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  Future<void> _openApiKeySettings() async {
+    final controller = TextEditingController(text: ApiKeyStore.apiKey);
+
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Gemini API Key'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: 'Paste your API key',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await ApiKeyStore.save('');
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop(true);
+                }
+              },
+              child: const Text('Clear'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                await ApiKeyStore.save(controller.text);
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop(true);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if (changed == true && mounted) {
+      setState(() {});
+    }
+  }
+
+  void _openDemoPage(BuildContext context, Widget page) {
+    if (!ApiKeyStore.hasApiKey) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Gemini API 키가 설정되지 않았습니다. Settings에서 먼저 입력하세요.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: _openApiKeySettings,
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +111,13 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Gemini Live API Examples'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'API Key Settings',
+            onPressed: _openApiKeySettings,
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -51,7 +132,6 @@ class HomePage extends StatelessWidget {
             page: const ChatPage(),
           ),
           const SizedBox(height: 16),
-
           _buildHeader('New Features'),
           _buildDemoCard(
             context: context,
@@ -81,7 +161,6 @@ class HomePage extends StatelessWidget {
             page: const RealtimeMediaDemoPage(),
           ),
           const SizedBox(height: 24),
-
           _buildHeader('Setup'),
           Card(
             child: Padding(
@@ -94,26 +173,43 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Status:'),
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(
+                          ApiKeyStore.hasApiKey
+                              ? 'Configured (${ApiKeyStore.maskedApiKey})'
+                              : 'Not configured',
+                        ),
+                        backgroundColor: ApiKeyStore.hasApiKey
+                            ? Colors.green.shade50
+                            : Colors.orange.shade50,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    'Please set your Gemini API key in main.dart:\n'
-                    'const String geminiApiKey = "YOUR_API_KEY";',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                    ),
+                    'API 키를 앱 화면의 Settings 메뉴에서 입력/수정할 수 있습니다.',
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Get your API key from: https://aistudio.google.com/app/apikey',
                     style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
                   ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _openApiKeySettings,
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Open Settings'),
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-
           _buildHeader('New Features Included'),
           _buildFeatureChip('toolCall / LiveServerToolCall'),
           _buildFeatureChip('toolCallCancellation'),
@@ -159,12 +255,7 @@ class HomePage extends StatelessWidget {
     return Card(
       elevation: 2,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => page),
-          );
-        },
+        onTap: () => _openDemoPage(context, page),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -173,7 +264,7 @@ class HomePage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 32),

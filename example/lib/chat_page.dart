@@ -9,7 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 // Importing custom widgets and data models from the project.
 import 'bubble.dart'; // A widget to display a single chat message bubble.
-import 'main.dart'; // Contains global variables like the API key.
+import 'api_key_store.dart'; // Stores API key from settings.
 import 'message.dart'; // The data class for a chat message (ChatMessage).
 import 'package:record/record.dart'; // Package for recording audio.
 
@@ -61,7 +61,7 @@ class _ChatScreenState extends State<ChatPage> {
   void initState() {
     super.initState();
     // Initialize the GoogleGenAI instance with the API key.
-    _genAI = GoogleGenAI(apiKey: geminiApiKey);
+    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
     // Start the connection process.
     _initialize();
     // Subscribe to the audio recorder's state to update the UI (e.g., change the mic icon).
@@ -92,6 +92,22 @@ class _ChatScreenState extends State<ChatPage> {
   Future<void> _connectToLiveAPI() async {
     // Prevent multiple connection attempts if one is already in progress.
     if (_connectionStatus == ConnectionStatus.connecting) return;
+    if (!ApiKeyStore.hasApiKey) {
+      setState(() {
+        _session = null;
+        _connectionStatus = ConnectionStatus.disconnected;
+        _messages.clear();
+      });
+      _addMessage(
+        ChatMessage(
+          text:
+              "Gemini API key is not configured. Go back and open Settings on the home screen.",
+          author: Role.model,
+        ),
+      );
+      _updateStatus("API key is missing.");
+      return;
+    }
 
     // Safely close any pre-existing session before creating a new one.
     await _session?.close();

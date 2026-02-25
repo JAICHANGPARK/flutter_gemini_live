@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
-import 'main.dart';
+import 'api_key_store.dart';
 
 /// Demo page for function calling (tool calling) feature
 class FunctionCallingDemoPage extends StatefulWidget {
@@ -25,7 +25,7 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
   @override
   void initState() {
     super.initState();
-    _genAI = GoogleGenAI(apiKey: geminiApiKey);
+    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
   }
 
   @override
@@ -36,6 +36,10 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
 
   Future<void> _connect() async {
     if (_isConnecting) return;
+    if (!ApiKeyStore.hasApiKey) {
+      _addSystemMessage('❌ API key is not configured. Open Settings first.');
+      return;
+    }
 
     setState(() => _isConnecting = true);
     _addSystemMessage('Connecting with function calling enabled...');
