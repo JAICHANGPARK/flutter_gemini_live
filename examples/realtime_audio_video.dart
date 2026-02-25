@@ -28,7 +28,7 @@ void main() async {
       ),
       config: GenerationConfig(
         temperature: 0.7,
-        responseModalities: [Modality.AUDIO, Modality.TEXT],
+        responseModalities: [Modality.AUDIO],
       ),
       // Enable audio transcription
       inputAudioTranscription: AudioTranscriptionConfig(),

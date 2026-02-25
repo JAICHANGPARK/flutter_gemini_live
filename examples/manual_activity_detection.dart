@@ -28,7 +28,7 @@ void main() async {
       ),
       config: GenerationConfig(
         temperature: 0.7,
-        responseModalities: [Modality.AUDIO, Modality.TEXT],
+        responseModalities: [Modality.TEXT],
       ),
       // Disable automatic activity detection - client must send signals
       realtimeInputConfig: RealtimeInputConfig(

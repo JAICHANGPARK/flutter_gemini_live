@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'main.dart';
 
@@ -22,7 +20,6 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
 
   bool _isConnected = false;
   bool _isConnecting = false;
-  bool _isRecording = false;
   bool _isSendingVideo = false;
 
   final List<MediaLog> _logs = [];
@@ -62,10 +59,10 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
     try {
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-2.0-flash-live-001',
+          model: 'gemini-live-2.5-flash-preview',
           config: GenerationConfig(
             temperature: 0.7,
-            responseModalities: [Modality.TEXT, Modality.AUDIO],
+            responseModalities: [Modality.TEXT],
           ),
           // Configure based on manual activity mode
           realtimeInputConfig: _manualActivityMode
@@ -85,7 +82,6 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
                   ),
                 ),
           inputAudioTranscription: AudioTranscriptionConfig(),
-          outputAudioTranscription: AudioTranscriptionConfig(),
           callbacks: LiveCallbacks(
             onOpen: () {
               _addLog('CONNECTION', '✅ Connected');

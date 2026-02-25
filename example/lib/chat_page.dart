@@ -110,7 +110,7 @@ class _ChatScreenState extends State<ChatPage> {
     });
 
     try {
-      final modelName =  'gemini-2.0-flash-live-001';
+      final modelName = 'gemini-live-2.5-flash-preview';
       // Initiate the connection with specified parameters.
       final session = await _genAI.live.connect(
         LiveConnectParameters(

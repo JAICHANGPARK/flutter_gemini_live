@@ -308,6 +308,20 @@ final genAI = GoogleGenAI(
 3. **Function Calling** - 함수 호출 데모 (날씨/시간)
 4. **Realtime Media** - 실시간 오디오/비디오 입력 데모
 
+### CLI 스크립트 예제
+
+`examples/` 디렉토리에 실행 가능한 스크립트 예제가 추가로 포함되어 있습니다:
+
+- `examples/basic_usage.dart`
+- `examples/function_calling.dart`
+- `examples/realtime_audio_video.dart`
+- `examples/manual_activity_detection.dart`
+- `examples/session_resumption.dart`
+- `examples/complete_features.dart`
+- `examples/ephemeral_token.dart` (`GEMINI_EPHEMERAL_TOKEN`, `apiVersion: 'v1alpha'` 사용)
+
+실행 방법은 [examples/README.md](/Users/jaichang/Documents/GitHub/flutter_gemini_live/examples/README.md)를 참고하세요.
+
 ### 앱 사용 방법
 
 1.  **연결**: 앱이 자동으로 Gemini API에 연결을 시도합니다. 연결에 실패하면 **"재연결"** 버튼을 탭하세요.

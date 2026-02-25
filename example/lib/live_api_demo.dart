@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'main.dart';
@@ -28,7 +27,6 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   bool _enableTranscription = true;
   bool _enableSessionResumption = false;
   bool _enableContextCompression = true;
-  bool _enableProactivity = true;
 
   // Session handle for resumption
   String? _sessionHandle;
@@ -68,10 +66,10 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
     try {
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-2.0-flash-live-001',
+          model: 'gemini-live-2.5-flash-preview',
           config: GenerationConfig(
             temperature: 0.7,
-            responseModalities: [Modality.TEXT, Modality.AUDIO],
+            responseModalities: [Modality.TEXT],
           ),
           systemInstruction: Content(
             parts: [
@@ -101,9 +99,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
           inputAudioTranscription: _enableTranscription
               ? AudioTranscriptionConfig()
               : null,
-          outputAudioTranscription: _enableTranscription
-              ? AudioTranscriptionConfig()
-              : null,
+          outputAudioTranscription: null,
           // Session resumption
           sessionResumption: _enableSessionResumption && _sessionHandle != null
               ? SessionResumptionConfig(
@@ -117,10 +113,6 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
                   triggerTokens: '10000',
                   slidingWindow: SlidingWindow(targetTokens: '5000'),
                 )
-              : null,
-          // Proactivity
-          proactivity: _enableProactivity
-              ? ProactivityConfig(proactiveAudio: true)
               : null,
           callbacks: LiveCallbacks(
             onOpen: () {
@@ -354,11 +346,6 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
             'Context Compression',
             _enableContextCompression,
             (v) => setState(() => _enableContextCompression = v),
-          ),
-          _buildToggle(
-            'Proactivity',
-            _enableProactivity,
-            (v) => setState(() => _enableProactivity = v),
           ),
         ],
       ),

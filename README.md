@@ -311,6 +311,20 @@ The example app includes the following demo pages:
 3. **Function Calling** - Function calling demo (weather/time)
 4. **Realtime Media** - Real-time audio/video input demo
 
+### CLI Script Examples
+
+Additional runnable scripts are available under `examples/`:
+
+- `examples/basic_usage.dart`
+- `examples/function_calling.dart`
+- `examples/realtime_audio_video.dart`
+- `examples/manual_activity_detection.dart`
+- `examples/session_resumption.dart`
+- `examples/complete_features.dart`
+- `examples/ephemeral_token.dart` (uses `GEMINI_EPHEMERAL_TOKEN`, `apiVersion: 'v1alpha'`)
+
+See [examples/README.md](/Users/jaichang/Documents/GitHub/flutter_gemini_live/examples/README.md) for usage details.
+
 ### How to Use the App
 
 1.  **Connect**: The app will attempt to connect to the Gemini API automatically. If the connection fails, tap the **"Reconnect"** button.

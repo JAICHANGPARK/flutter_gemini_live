@@ -41,11 +41,9 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
     _addSystemMessage('Connecting with function calling enabled...');
 
     try {
-      // Note: In a real implementation, you would define proper function declarations
-      // The Tool() class would contain function declarations
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-2.0-flash-live-001',
+          model: 'gemini-live-2.5-flash-preview',
           config: GenerationConfig(
             temperature: 0.7,
             responseModalities: [Modality.TEXT],
@@ -60,7 +58,33 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
               ),
             ],
           ),
-          tools: [Tool()], // Add function declarations here in production
+          tools: [
+            Tool(
+              functionDeclarations: [
+                FunctionDeclaration(
+                  name: 'get_weather',
+                  description: 'Get weather by location',
+                  parameters: {
+                    'type': 'OBJECT',
+                    'properties': {
+                      'location': {'type': 'STRING'},
+                    },
+                    'required': ['location'],
+                  },
+                ),
+                FunctionDeclaration(
+                  name: 'get_current_time',
+                  description: 'Get current time for a timezone',
+                  parameters: {
+                    'type': 'OBJECT',
+                    'properties': {
+                      'timezone': {'type': 'STRING'},
+                    },
+                  },
+                ),
+              ],
+            ),
+          ],
           callbacks: LiveCallbacks(
             onOpen: () {
               _addSystemMessage('✅ Connected with function calling');

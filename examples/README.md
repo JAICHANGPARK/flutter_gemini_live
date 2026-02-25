@@ -94,6 +94,18 @@ A comprehensive example demonstrating all features:
 dart examples/complete_features.dart
 ```
 
+### 7. ephemeral_token.dart
+Shows how to connect with an ephemeral token (`auth_tokens/...`) in a client-to-server setup:
+- Uses `GoogleGenAI(apiVersion: 'v1alpha')`
+- Reads token from environment variable
+- Connects and sends text over Live API
+
+**Run:**
+```bash
+export GEMINI_EPHEMERAL_TOKEN="auth_tokens/your_token"
+dart examples/ephemeral_token.dart
+```
+
 ## Prerequisites
 
 1. **API Key**: All examples require a Gemini API key. Replace `'YOUR_API_KEY'` with your actual API key in each example, or set it as an environment variable:
@@ -218,7 +230,7 @@ onMessage: (message) {
 config: GenerationConfig(
   temperature: 0.7,
   maxOutputTokens: 1024,
-  responseModalities: [Modality.AUDIO, Modality.TEXT],
+  responseModalities: [Modality.TEXT], // exactly one modality per session
 )
 ```
 
@@ -274,7 +286,7 @@ proactivity: ProactivityConfig(proactiveAudio: true),
 
 4. **Check connection status**: Use `session.isClosed` to check if the connection is still open.
 
-5. **Use appropriate modalities**: Set `responseModalities` based on your use case (text only, audio only, or both).
+5. **Use appropriate modalities**: Set exactly one modality per session (`TEXT` or `AUDIO`).
 
 6. **Configure VAD properly**: Adjust `AutomaticActivityDetection` settings based on your audio input characteristics.
 

@@ -34,9 +34,31 @@ void main() async {
         },
       ),
       tools: [
-        // Define tools that the model can call
-        // In a real implementation, you would define FunctionDeclaration tools
-        Tool(),
+        Tool(
+          functionDeclarations: [
+            FunctionDeclaration(
+              name: 'get_weather',
+              description: 'Get weather by location',
+              parameters: {
+                'type': 'OBJECT',
+                'properties': {
+                  'location': {'type': 'STRING'},
+                },
+                'required': ['location'],
+              },
+            ),
+            FunctionDeclaration(
+              name: 'get_time',
+              description: 'Get current time by timezone',
+              parameters: {
+                'type': 'OBJECT',
+                'properties': {
+                  'timezone': {'type': 'STRING'},
+                },
+              },
+            ),
+          ],
+        ),
       ],
       config: GenerationConfig(
         temperature: 0.7,

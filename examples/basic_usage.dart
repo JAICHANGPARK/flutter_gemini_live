@@ -30,7 +30,7 @@ void main() async {
       ),
       config: GenerationConfig(
         temperature: 0.7,
-        responseModalities: [Modality.AUDIO, Modality.TEXT],
+        responseModalities: [Modality.TEXT],
       ),
       systemInstruction: Content(
         parts: [Part(text: 'You are a helpful assistant.')],

@@ -52,7 +52,7 @@ void main() async {
       config: GenerationConfig(
         temperature: 0.7,
         maxOutputTokens: 1024,
-        responseModalities: [Modality.AUDIO, Modality.TEXT],
+        responseModalities: [Modality.TEXT],
       ),
       // System instruction
       systemInstruction: Content(
@@ -64,7 +64,33 @@ void main() async {
         ],
       ),
       // Tools for function calling
-      tools: [Tool()],
+      tools: [
+        Tool(
+          functionDeclarations: [
+            FunctionDeclaration(
+              name: 'get_weather',
+              description: 'Get weather by location',
+              parameters: {
+                'type': 'OBJECT',
+                'properties': {
+                  'location': {'type': 'STRING'},
+                },
+                'required': ['location'],
+              },
+            ),
+            FunctionDeclaration(
+              name: 'get_time',
+              description: 'Get current time by timezone',
+              parameters: {
+                'type': 'OBJECT',
+                'properties': {
+                  'timezone': {'type': 'STRING'},
+                },
+              },
+            ),
+          ],
+        ),
+      ],
       // Realtime input configuration
       realtimeInputConfig: RealtimeInputConfig(
         automaticActivityDetection: AutomaticActivityDetection(
@@ -79,7 +105,6 @@ void main() async {
       ),
       // Audio transcription
       inputAudioTranscription: AudioTranscriptionConfig(),
-      outputAudioTranscription: AudioTranscriptionConfig(),
       // Session resumption
       sessionResumption: SessionResumptionConfig(
         handle: null, // New session
@@ -90,8 +115,6 @@ void main() async {
         triggerTokens: '10000',
         slidingWindow: SlidingWindow(targetTokens: '5000'),
       ),
-      // Proactivity config
-      proactivity: ProactivityConfig(proactiveAudio: true),
     ),
   );
 
