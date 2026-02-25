@@ -1,3 +1,24 @@
+## Unreleased
+
+### Added
+- Example app now supports in-app Gemini API key configuration via Settings UI.
+  - Users can save/update/clear API keys directly from the app screen.
+  - API key is persisted locally with `shared_preferences`.
+- Added `examples/ephemeral_token.dart`:
+  - demonstrates Live API connection using ephemeral tokens (`auth_tokens/...`)
+  - uses `GoogleGenAI(apiVersion: 'v1alpha')`
+
+### Changed
+- Expanded Function Calling demo in the example app:
+  - added richer tool declarations:
+    - `get_exchange_rate`
+    - `convert_currency`
+    - `search_places`
+    - `create_reminder` (non-blocking)
+  - improved simulated tool responses with structured payloads
+  - added quick prompt chips for multi-tool scenarios
+- Updated example/docs descriptions to reflect richer function calling capabilities.
+
 ## 0.2.1
 
 ### Added
