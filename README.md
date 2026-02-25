@@ -305,7 +305,7 @@ The example app includes the following demo pages:
 1. **Chat Interface** - Basic chat (text, image, audio)
 2. **Live API Features** - Comprehensive demo of all new features
    - VAD, transcription, session resumption, context compression, etc.
-3. **Function Calling** - Function calling demo (weather/time)
+3. **Function Calling** - Function calling demo (weather/time/fx/place/reminder)
 4. **Realtime Media** - Real-time audio/video input demo
 
 ### CLI Script Examples

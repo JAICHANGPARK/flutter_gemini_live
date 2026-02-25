@@ -146,7 +146,7 @@ class _HomePageState extends State<HomePage> {
           _buildDemoCard(
             context: context,
             title: 'Function Calling',
-            subtitle: 'Tool calling with weather and time functions',
+            subtitle: 'Tool calling with weather/time/fx/search/reminder',
             icon: Icons.functions,
             color: Colors.green,
             page: const FunctionCallingDemoPage(),

@@ -302,7 +302,7 @@ final genAI = GoogleGenAI(
 1. **Chat Interface** - 기본 채팅 (텍스트, 이미지, 오디오)
 2. **Live API Features** - 모든 새로운 기능 통합 데모
    - VAD, 전사, 세션 재개, 컨텍스트 압축 등
-3. **Function Calling** - 함수 호출 데모 (날씨/시간)
+3. **Function Calling** - 함수 호출 데모 (날씨/시간/환율/장소/리마인더)
 4. **Realtime Media** - 실시간 오디오/비디오 입력 데모
 
 ### CLI 스크립트 예제
