@@ -10,8 +10,8 @@
 
 - A Flutter package for using [the experimental Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - No Firebase / Firebase AI Logic dependency
-- Support for the gemini-2.0-flash-live-001 model.
-- Support for Text and Audio response_modalities 
+- Supports current Gemini Live model families (for example `gemini-live-2.5-flash-preview` and `gemini-2.5-flash-native-audio-preview-12-2025`).
+- Supports both `TEXT` and `AUDIO` response modalities (one modality per session).
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
@@ -45,7 +45,7 @@ Add the package to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  gemini_live: ^0.2.0 # Use the latest version
+  gemini_live: ^0.2.1 # Use the latest version
 ```
 
 or run this command (Recommend):
@@ -86,7 +86,7 @@ Future<void> connect() async {
   try {
     session = await genAI.live.connect(
       LiveConnectParameters(
-        model: 'gemini-2.0-flash-live-001',
+        model: 'gemini-live-2.5-flash-preview',
         callbacks: LiveCallbacks(
           onOpen: () => print('✅ Connection opened'),
           onMessage: (LiveServerMessage message) {
@@ -114,7 +114,7 @@ void sendMessage(String text) {
 }
 ```
 
-### 🆕 New Features (v0.2.0)
+### 🆕 New Features (v0.2.1)
 
 #### Function Calling
 
@@ -123,8 +123,24 @@ The model can call external functions and receive results:
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
-    tools: [Tool()], // Add function declarations
+    model: 'gemini-live-2.5-flash-preview',
+    tools: [
+      Tool(
+        functionDeclarations: [
+          FunctionDeclaration(
+            name: 'get_weather',
+            description: 'Get weather by city',
+            parameters: {
+              'type': 'OBJECT',
+              'properties': {
+                'city': {'type': 'STRING'},
+              },
+              'required': ['city'],
+            },
+          ),
+        ],
+      ),
+    ],
     callbacks: LiveCallbacks(
       onMessage: (LiveServerMessage message) {
         // Handle function calls
@@ -177,7 +193,7 @@ Disable automatic VAD and control manually:
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-live-2.5-flash-preview',
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
         disabled: true, // Disable automatic detection
@@ -203,7 +219,7 @@ Resume sessions after connection drops:
 // First connection with session resumption
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-live-2.5-flash-preview',
     sessionResumption: SessionResumptionConfig(
       handle: previousSessionHandle, // Previous session handle
       transparent: true,
@@ -223,7 +239,7 @@ if (message.sessionResumptionUpdate != null) {
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
     // Realtime input configuration
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
@@ -247,6 +263,17 @@ final session = await genAI.live.connect(
     // Proactivity
     proactivity: ProactivityConfig(proactiveAudio: true),
   ),
+);
+```
+
+#### Ephemeral Token (Client-to-Server)
+
+Use `apiVersion: 'v1alpha'` and pass the issued ephemeral token (`auth_tokens/...`) as `apiKey`:
+
+```dart
+final genAI = GoogleGenAI(
+  apiKey: 'auth_tokens/your_ephemeral_token',
+  apiVersion: 'v1alpha',
 );
 ```
 

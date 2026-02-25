@@ -1,3 +1,44 @@
+## 0.2.1
+
+### Added
+- Expanded Live tool schema support:
+  - `Tool.functionDeclarations`
+  - `Tool.googleSearch`
+  - `Tool.googleSearchRetrieval`
+- Added richer function response fields:
+  - `FunctionResponse.scheduling`
+  - `FunctionResponse.willContinue`
+  - `FunctionResponse.parts`
+- Added Live generation config parity fields:
+  - `GenerationConfig.mediaResolution`
+  - `GenerationConfig.speechConfig` (voice config)
+  - `GenerationConfig.thinkingConfig`
+  - `GenerationConfig.enableAffectiveDialog`
+  - `GenerationConfig.seed`
+- Added additional Live server metadata parsing:
+  - `LiveServerContent.interrupted`
+  - `LiveServerContent.waitingForInput`
+  - `LiveServerContent.turnCompleteReason`
+  - `LiveServerSetupComplete.sessionId`
+  - detailed `UsageMetadata` modality/token breakdown fields
+
+### Changed
+- Updated WebSocket connection behavior for Gemini Live ephemeral tokens:
+  - auto-switches to `BidiGenerateContentConstrained`
+  - uses `access_token` query parameter when API key starts with `auth_tokens/`
+- Added `apiVersion` option to `GoogleGenAI(...)` so Live API version can be configured from the top-level client.
+- Updated Live User-Agent version to `google-genai-sdk/1.42.0`.
+- Updated enums and compatibility mapping for current Live API:
+  - `ActivityHandling.NO_INTERRUPTION` (with backward-compatible alias)
+  - VAD/voice activity typed signals
+  - traffic/modality token metadata enums
+
+### Fixed
+- Fixed tool serialization so configured tools are actually sent in `setup`.
+- Fixed session resumption parsing type for `resumable` (`bool`).
+- Fixed GoAway parsing to align with `timeLeft` and added helper conversion to seconds (`timeRemaining`).
+- Improved `LiveServerMessage.text` getter to ignore thought-only parts.
+
 ## 0.2.0
 
 ### New Features (Based on js-genai v1.39.0 Gemini Live API Updates)

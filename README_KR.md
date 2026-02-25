@@ -8,8 +8,8 @@
 
 - Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [실험적인 Gemini Live API](https://ai.google.dev/gemini-api/docs/live)를 사용하기 위한 Flutter 패키지입니다.
 - 이 패키지는 Firebase / Firebase AI Logic 사용 없이 활용가능 합니다.
-- 그리고 `gemini-2.0-flash-live-001` 모델을 지원합니다.
-- response_modalities : TEXT, AUDIO 모두 지원 
+- `gemini-live-2.5-flash-preview`, `gemini-2.5-flash-native-audio-preview-12-2025` 등 최신 Gemini Live 모델 계열을 사용할 수 있습니다.
+- response_modalities : `TEXT`, `AUDIO` 모두 지원 (세션당 하나 선택)
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
@@ -42,7 +42,7 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 ```yaml
 dependencies:
-  gemini_live: ^0.2.0 # 최신 버전을 사용하세요
+  gemini_live: ^0.2.1 # 최신 버전을 사용하세요
 ```
 
 또는 아래 명령어를 실행하세요(추천):
@@ -83,7 +83,7 @@ Future<void> connect() async {
   try {
     session = await genAI.live.connect(
       LiveConnectParameters(
-        model: 'gemini-2.0-flash-live-001',
+        model: 'gemini-live-2.5-flash-preview',
         callbacks: LiveCallbacks(
           onOpen: () => print('✅ 연결 성공'),
           onMessage: (LiveServerMessage message) {
@@ -111,7 +111,7 @@ void sendMessage(String text) {
 }
 ```
 
-### 🆕 새로운 기능 (v0.2.0)
+### 🆕 새로운 기능 (v0.2.1)
 
 #### 함수 호출 (Function Calling)
 
@@ -120,8 +120,24 @@ void sendMessage(String text) {
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
-    tools: [Tool()], // 함수 선언 추가
+    model: 'gemini-live-2.5-flash-preview',
+    tools: [
+      Tool(
+        functionDeclarations: [
+          FunctionDeclaration(
+            name: 'get_weather',
+            description: '도시별 날씨 조회',
+            parameters: {
+              'type': 'OBJECT',
+              'properties': {
+                'city': {'type': 'STRING'},
+              },
+              'required': ['city'],
+            },
+          ),
+        ],
+      ),
+    ],
     callbacks: LiveCallbacks(
       onMessage: (LiveServerMessage message) {
         // 함수 호출 처리
@@ -174,7 +190,7 @@ session.sendAudioStreamEnd();
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-live-2.5-flash-preview',
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
         disabled: true, // 자동 감지 비활성화
@@ -200,7 +216,7 @@ session.sendActivityEnd();
 // 첫 연결 시 세션 재개 설정
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-live-2.5-flash-preview',
     sessionResumption: SessionResumptionConfig(
       handle: previousSessionHandle, // 이전 세션 핸들
       transparent: true,
@@ -220,7 +236,7 @@ if (message.sessionResumptionUpdate != null) {
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.0-flash-live-001',
+    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
     // 실시간 입력 설정
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
@@ -244,6 +260,17 @@ final session = await genAI.live.connect(
     // 능동성 설정
     proactivity: ProactivityConfig(proactiveAudio: true),
   ),
+);
+```
+
+#### 에페메럴 토큰 (Client-to-Server)
+
+발급된 에페메럴 토큰(`auth_tokens/...`)을 `apiKey`로 사용하고 `apiVersion`을 `v1alpha`로 설정하세요:
+
+```dart
+final genAI = GoogleGenAI(
+  apiKey: 'auth_tokens/your_ephemeral_token',
+  apiVersion: 'v1alpha',
 );
 ```
 
