@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
@@ -6,6 +8,7 @@ part 'models.g.dart';
 // Enums
 // ============================================================================
 
+/// Harm categories reported by Gemini safety metadata.
 enum HarmCategory {
   HARM_CATEGORY_UNSPECIFIED,
   HARM_CATEGORY_HATE_SPEECH,
@@ -14,6 +17,7 @@ enum HarmCategory {
   HARM_CATEGORY_SEXUALLY_EXPLICIT,
 }
 
+/// Modalities that a request or response can contain.
 @JsonEnum(alwaysCreate: true)
 enum Modality {
   @JsonValue('TEXT')
@@ -24,6 +28,7 @@ enum Modality {
   AUDIO,
 }
 
+/// Media resolution presets for multimodal responses.
 @JsonEnum(alwaysCreate: true)
 enum MediaResolution {
   @JsonValue('MEDIA_RESOLUTION_UNSPECIFIED')
@@ -36,6 +41,7 @@ enum MediaResolution {
   MEDIA_RESOLUTION_HIGH,
 }
 
+/// How detected user activity affects model generation.
 @JsonEnum(alwaysCreate: true)
 enum ActivityHandling {
   @JsonValue('ACTIVITY_HANDLING_UNSPECIFIED')
@@ -48,6 +54,7 @@ enum ActivityHandling {
   START_OF_ACTIVITY_DOES_NOT_INTERRUPT,
 }
 
+/// How much of the user turn is forwarded to the model.
 @JsonEnum(alwaysCreate: true)
 enum TurnCoverage {
   @JsonValue('TURN_COVERAGE_UNSPECIFIED')
@@ -58,6 +65,7 @@ enum TurnCoverage {
   TURN_INCLUDES_ALL_INPUT,
 }
 
+/// Sensitivity levels for detecting the start of speech.
 @JsonEnum(alwaysCreate: true)
 enum StartSensitivity {
   @JsonValue('START_SENSITIVITY_UNSPECIFIED')
@@ -68,6 +76,7 @@ enum StartSensitivity {
   START_SENSITIVITY_HIGH,
 }
 
+/// Sensitivity levels for detecting the end of speech.
 @JsonEnum(alwaysCreate: true)
 enum EndSensitivity {
   @JsonValue('END_SENSITIVITY_UNSPECIFIED')
@@ -78,6 +87,7 @@ enum EndSensitivity {
   END_SENSITIVITY_HIGH,
 }
 
+/// Scheduling strategies for tool responses.
 @JsonEnum(alwaysCreate: true)
 enum FunctionResponseScheduling {
   @JsonValue('SCHEDULING_UNSPECIFIED')
@@ -90,6 +100,7 @@ enum FunctionResponseScheduling {
   INTERRUPT,
 }
 
+/// Execution modes for server-side behaviors such as function calling.
 @JsonEnum(alwaysCreate: true)
 enum Behavior {
   @JsonValue('UNSPECIFIED')
@@ -100,6 +111,7 @@ enum Behavior {
   NON_BLOCKING,
 }
 
+/// Reasons a model turn completed without a final response.
 @JsonEnum(alwaysCreate: true)
 enum TurnCompleteReason {
   @JsonValue('TURN_COMPLETE_REASON_UNSPECIFIED')
@@ -112,6 +124,7 @@ enum TurnCompleteReason {
   NEED_MORE_INPUT,
 }
 
+/// Voice activity detection signals emitted by the server.
 @JsonEnum(alwaysCreate: true)
 enum VadSignalType {
   @JsonValue('VAD_SIGNAL_TYPE_UNSPECIFIED')
@@ -122,6 +135,7 @@ enum VadSignalType {
   VAD_SIGNAL_TYPE_EOS,
 }
 
+/// Voice activity events detected for an audio stream.
 @JsonEnum(alwaysCreate: true)
 enum VoiceActivityType {
   @JsonValue('TYPE_UNSPECIFIED')
@@ -132,6 +146,7 @@ enum VoiceActivityType {
   ACTIVITY_END,
 }
 
+/// Traffic classes used for usage accounting.
 @JsonEnum(alwaysCreate: true)
 enum TrafficType {
   @JsonValue('TRAFFIC_TYPE_UNSPECIFIED')
@@ -142,6 +157,7 @@ enum TrafficType {
   PROVISIONED_THROUGHPUT,
 }
 
+/// Media kinds used in token accounting details.
 @JsonEnum(alwaysCreate: true)
 enum MediaModality {
   @JsonValue('MODALITY_UNSPECIFIED')
@@ -162,6 +178,7 @@ enum MediaModality {
 // Data Classes - Base
 // ============================================================================
 
+/// A single multimodal part within a content turn.
 @JsonSerializable(includeIfNull: false)
 class Part {
   final String? text;
@@ -187,6 +204,7 @@ class Part {
   Map<String, dynamic> toJson() => _$PartToJson(this);
 }
 
+/// Inline binary data encoded for API transport.
 @JsonSerializable(includeIfNull: false)
 class Blob {
   final String mimeType;
@@ -199,6 +217,7 @@ class Blob {
   Map<String, dynamic> toJson() => _$BlobToJson(this);
 }
 
+/// A conversational turn made of one or more [Part] values.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class Content {
   final List<Part>? parts;
@@ -212,6 +231,7 @@ class Content {
   Map<String, dynamic> toJson() => _$ContentToJson(this);
 }
 
+/// A prebuilt voice selection for synthesized audio output.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class PrebuiltVoiceConfig {
   final String? voiceName;
@@ -224,6 +244,7 @@ class PrebuiltVoiceConfig {
   Map<String, dynamic> toJson() => _$PrebuiltVoiceConfigToJson(this);
 }
 
+/// Voice settings applied to spoken responses.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class VoiceConfig {
   final PrebuiltVoiceConfig? prebuiltVoiceConfig;
@@ -236,6 +257,7 @@ class VoiceConfig {
   Map<String, dynamic> toJson() => _$VoiceConfigToJson(this);
 }
 
+/// Speech generation settings for audio responses.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class SpeechConfig {
   final VoiceConfig? voiceConfig;
@@ -249,6 +271,7 @@ class SpeechConfig {
   Map<String, dynamic> toJson() => _$SpeechConfigToJson(this);
 }
 
+/// Thinking controls for models that can emit thought content.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ThinkingConfig {
   final bool? includeThoughts;
@@ -262,6 +285,7 @@ class ThinkingConfig {
   Map<String, dynamic> toJson() => _$ThinkingConfigToJson(this);
 }
 
+/// Generation parameters used when starting a Live API session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class GenerationConfig {
   final double? temperature;
@@ -298,6 +322,7 @@ class GenerationConfig {
 // Function Calling Models
 // ============================================================================
 
+/// A tool invocation requested by the model.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionCall {
   final String? id;
@@ -312,6 +337,7 @@ class FunctionCall {
   Map<String, dynamic> toJson() => _$FunctionCallToJson(this);
 }
 
+/// Inline binary data returned from a function response.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionResponseBlob {
   final String? mimeType;
@@ -325,6 +351,7 @@ class FunctionResponseBlob {
   Map<String, dynamic> toJson() => _$FunctionResponseBlobToJson(this);
 }
 
+/// File metadata returned from a function response.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionResponseFileData {
   final String? fileUri;
@@ -338,6 +365,7 @@ class FunctionResponseFileData {
   Map<String, dynamic> toJson() => _$FunctionResponseFileDataToJson(this);
 }
 
+/// A single payload part inside a function response.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionResponsePart {
   final FunctionResponseBlob? inlineData;
@@ -351,6 +379,7 @@ class FunctionResponsePart {
   Map<String, dynamic> toJson() => _$FunctionResponsePartToJson(this);
 }
 
+/// A tool result sent back to the model.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionResponse {
   final String? id;
@@ -375,6 +404,7 @@ class FunctionResponse {
   Map<String, dynamic> toJson() => _$FunctionResponseToJson(this);
 }
 
+/// A function schema exposed to the model as a callable tool.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionDeclaration {
   final String? description;
@@ -401,6 +431,7 @@ class FunctionDeclaration {
   Map<String, dynamic> toJson() => _$FunctionDeclarationToJson(this);
 }
 
+/// A time interval used by search filters.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class Interval {
   final DateTime? startTime;
@@ -414,6 +445,7 @@ class Interval {
   Map<String, dynamic> toJson() => _$IntervalToJson(this);
 }
 
+/// Google Search tool configuration.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class GoogleSearch {
   final List<String>? excludeDomains;
@@ -432,6 +464,7 @@ class GoogleSearch {
   Map<String, dynamic> toJson() => _$GoogleSearchToJson(this);
 }
 
+/// Dynamic retrieval thresholds for grounded search.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class DynamicRetrievalConfig {
   final double? dynamicThreshold;
@@ -445,6 +478,7 @@ class DynamicRetrievalConfig {
   Map<String, dynamic> toJson() => _$DynamicRetrievalConfigToJson(this);
 }
 
+/// Retrieval settings for the Google Search tool.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class GoogleSearchRetrieval {
   final DynamicRetrievalConfig? dynamicRetrievalConfig;
@@ -457,6 +491,7 @@ class GoogleSearchRetrieval {
   Map<String, dynamic> toJson() => _$GoogleSearchRetrievalToJson(this);
 }
 
+/// A tool bundle that can be attached to a model session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class Tool {
   final List<FunctionDeclaration>? functionDeclarations;
@@ -494,6 +529,7 @@ class Tool {
 // Live API Setup & Config Models
 // ============================================================================
 
+/// Automatic voice activity detection settings for realtime audio.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AutomaticActivityDetection {
   final bool? disabled;
@@ -516,6 +552,7 @@ class AutomaticActivityDetection {
   Map<String, dynamic> toJson() => _$AutomaticActivityDetectionToJson(this);
 }
 
+/// Realtime input settings sent during session setup.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class RealtimeInputConfig {
   final AutomaticActivityDetection? automaticActivityDetection;
@@ -534,6 +571,7 @@ class RealtimeInputConfig {
   Map<String, dynamic> toJson() => _$RealtimeInputConfigToJson(this);
 }
 
+/// Session resumption settings for reconnectable sessions.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class SessionResumptionConfig {
   final String? handle;
@@ -547,6 +585,7 @@ class SessionResumptionConfig {
   Map<String, dynamic> toJson() => _$SessionResumptionConfigToJson(this);
 }
 
+/// Sliding window targets used during context compression.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class SlidingWindow {
   final String? targetTokens;
@@ -559,6 +598,7 @@ class SlidingWindow {
   Map<String, dynamic> toJson() => _$SlidingWindowToJson(this);
 }
 
+/// Context compression settings for long-running sessions.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ContextWindowCompressionConfig {
   final String? triggerTokens;
@@ -572,6 +612,7 @@ class ContextWindowCompressionConfig {
   Map<String, dynamic> toJson() => _$ContextWindowCompressionConfigToJson(this);
 }
 
+/// Audio transcription settings for input or output streams.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
   AudioTranscriptionConfig();
@@ -582,6 +623,7 @@ class AudioTranscriptionConfig {
   Map<String, dynamic> toJson() => _$AudioTranscriptionConfigToJson(this);
 }
 
+/// Proactivity options for realtime audio sessions.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ProactivityConfig {
   final bool? proactiveAudio;
@@ -594,6 +636,7 @@ class ProactivityConfig {
   Map<String, dynamic> toJson() => _$ProactivityConfigToJson(this);
 }
 
+/// The initial setup message sent when opening a Live API session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class LiveClientSetup {
   final String model;
@@ -632,6 +675,7 @@ class LiveClientSetup {
 // Live API Client Content Models
 // ============================================================================
 
+/// Client-authored conversation turns sent to the model.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class LiveClientContent {
   final List<Content>? turns;
@@ -645,26 +689,35 @@ class LiveClientContent {
   Map<String, dynamic> toJson() => _$LiveClientContentToJson(this);
 }
 
+/// A signal that marks the start of explicit user activity.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ActivityStart {
+  /// Creates an activity-start marker.
   ActivityStart();
 
+  /// Creates an [ActivityStart] from a JSON payload.
   factory ActivityStart.fromJson(Map<String, dynamic> json) =>
       _$ActivityStartFromJson(json);
 
+  /// Converts this marker to a JSON payload.
   Map<String, dynamic> toJson() => _$ActivityStartToJson(this);
 }
 
+/// A signal that marks the end of explicit user activity.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ActivityEnd {
+  /// Creates an activity-end marker.
   ActivityEnd();
 
+  /// Creates an [ActivityEnd] from a JSON payload.
   factory ActivityEnd.fromJson(Map<String, dynamic> json) =>
       _$ActivityEndFromJson(json);
 
+  /// Converts this marker to a JSON payload.
   Map<String, dynamic> toJson() => _$ActivityEndToJson(this);
 }
 
+/// Realtime media or text input sent while a session is active.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class LiveClientRealtimeInput {
   final List<Blob>? mediaChunks;
@@ -691,6 +744,7 @@ class LiveClientRealtimeInput {
   Map<String, dynamic> toJson() => _$LiveClientRealtimeInputToJson(this);
 }
 
+/// A batch of tool results returned to the server.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class LiveClientToolResponse {
   final List<FunctionResponse>? functionResponses;
@@ -703,6 +757,7 @@ class LiveClientToolResponse {
   Map<String, dynamic> toJson() => _$LiveClientToolResponseToJson(this);
 }
 
+/// A top-level client message sent over the Live API socket.
 @JsonSerializable(includeIfNull: false)
 class LiveClientMessage {
   final LiveClientSetup? setup;
@@ -727,6 +782,7 @@ class LiveClientMessage {
 // Live API Server Response Models
 // ============================================================================
 
+/// Acknowledgement payload returned after session setup completes.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerSetupComplete {
   final String? sessionId;
@@ -737,6 +793,7 @@ class LiveServerSetupComplete {
       _$LiveServerSetupCompleteFromJson(json);
 }
 
+/// A transcription update for input or output audio.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class Transcription {
   final String? text;
@@ -748,6 +805,7 @@ class Transcription {
       _$TranscriptionFromJson(json);
 }
 
+/// Executable code emitted by the model.
 @JsonSerializable(includeIfNull: false)
 class ExecutableCode {
   final String? language;
@@ -757,8 +815,11 @@ class ExecutableCode {
 
   factory ExecutableCode.fromJson(Map<String, dynamic> json) =>
       _$ExecutableCodeFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ExecutableCodeToJson(this);
 }
 
+/// The result of model-executed code.
 @JsonSerializable(includeIfNull: false)
 class CodeExecutionResult {
   final String? outcome;
@@ -768,8 +829,11 @@ class CodeExecutionResult {
 
   factory CodeExecutionResult.fromJson(Map<String, dynamic> json) =>
       _$CodeExecutionResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CodeExecutionResultToJson(this);
 }
 
+/// Server-generated content and turn lifecycle updates.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerContent {
   final Content? modelTurn;
@@ -800,6 +864,7 @@ class LiveServerContent {
       _$LiveServerContentFromJson(json);
 }
 
+/// A tool call request emitted by the server.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerToolCall {
   final List<FunctionCall>? functionCalls;
@@ -810,6 +875,7 @@ class LiveServerToolCall {
       _$LiveServerToolCallFromJson(json);
 }
 
+/// A cancellation notice for previously issued tool calls.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerToolCallCancellation {
   final List<String>? ids;
@@ -820,6 +886,7 @@ class LiveServerToolCallCancellation {
       _$LiveServerToolCallCancellationFromJson(json);
 }
 
+/// A shutdown warning indicating when the session will expire.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerGoAway {
   final String? timeLeft;
@@ -830,6 +897,7 @@ class LiveServerGoAway {
   factory LiveServerGoAway.fromJson(Map<String, dynamic> json) =>
       _$LiveServerGoAwayFromJson(json);
 
+  /// The remaining session lifetime in seconds when available.
   int? get timeRemaining {
     if (timeLeft == null) return null;
     final match = RegExp(r'^(\d+)s$').firstMatch(timeLeft!);
@@ -838,6 +906,7 @@ class LiveServerGoAway {
   }
 }
 
+/// A session resumption token update from the server.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerSessionResumptionUpdate {
   final String? newHandle;
@@ -855,6 +924,7 @@ class LiveServerSessionResumptionUpdate {
   ) => _$LiveServerSessionResumptionUpdateFromJson(json);
 }
 
+/// A low-level VAD signal emitted by the server.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class VoiceActivityDetectionSignal {
   final VadSignalType? vadSignalType;
@@ -864,10 +934,14 @@ class VoiceActivityDetectionSignal {
   factory VoiceActivityDetectionSignal.fromJson(Map<String, dynamic> json) =>
       _$VoiceActivityDetectionSignalFromJson(json);
 
+  /// Whether this signal marks the start of speech.
   bool get start => vadSignalType == VadSignalType.VAD_SIGNAL_TYPE_SOS;
+
+  /// Whether this signal marks the end of speech.
   bool get end => vadSignalType == VadSignalType.VAD_SIGNAL_TYPE_EOS;
 }
 
+/// A higher-level voice activity event emitted by the server.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class VoiceActivity {
   final VoiceActivityType? voiceActivityType;
@@ -877,6 +951,7 @@ class VoiceActivity {
   factory VoiceActivity.fromJson(Map<String, dynamic> json) =>
       _$VoiceActivityFromJson(json);
 
+  /// Whether speech is currently considered active.
   bool? get speechActive {
     if (voiceActivityType == VoiceActivityType.ACTIVITY_START) return true;
     if (voiceActivityType == VoiceActivityType.ACTIVITY_END) return false;
@@ -884,6 +959,7 @@ class VoiceActivity {
   }
 }
 
+/// Token counts broken down by media modality.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class ModalityTokenCount {
   final MediaModality? modality;
@@ -895,6 +971,7 @@ class ModalityTokenCount {
       _$ModalityTokenCountFromJson(json);
 }
 
+/// Usage statistics attached to a server response.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class UsageMetadata {
   final int? promptTokenCount;
@@ -927,6 +1004,7 @@ class UsageMetadata {
       _$UsageMetadataFromJson(json);
 }
 
+/// A top-level server message received over the Live API socket.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerMessage {
   final LiveServerSetupComplete? setupComplete;
@@ -954,6 +1032,7 @@ class LiveServerMessage {
   factory LiveServerMessage.fromJson(Map<String, dynamic> json) =>
       _$LiveServerMessageFromJson(json);
 
+  /// The concatenated non-thought text emitted in the current server turn.
   String? get text {
     final parts = serverContent?.modelTurn?.parts;
     if (parts == null || parts.isEmpty) return null;
@@ -967,6 +1046,7 @@ class LiveServerMessage {
     return chunks.isEmpty ? null : chunks.join();
   }
 
+  /// The concatenated inline binary payload emitted in the current server turn.
   String? get data {
     final parts = serverContent?.modelTurn?.parts;
     if (parts == null || parts.isEmpty) return null;
@@ -984,6 +1064,7 @@ class LiveServerMessage {
 // Send Parameters
 // ============================================================================
 
+/// Parameters for sending conversational turns to the session.
 class LiveSendClientContentParameters {
   final List<Content>? turns;
   final bool turnComplete;
@@ -991,6 +1072,7 @@ class LiveSendClientContentParameters {
   LiveSendClientContentParameters({this.turns, this.turnComplete = true});
 }
 
+/// Parameters for sending realtime media or text input.
 class LiveSendRealtimeInputParameters {
   final List<Blob>? mediaChunks;
   final Blob? audio;
@@ -1011,6 +1093,7 @@ class LiveSendRealtimeInputParameters {
   });
 }
 
+/// Parameters for sending tool results back to the model.
 class LiveSendToolResponseParameters {
   final List<FunctionResponse> functionResponses;
 

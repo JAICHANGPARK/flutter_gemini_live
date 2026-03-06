@@ -5,6 +5,79 @@ import 'package:gemini_live/gemini_live.dart';
 
 void main() {
   group('Live Models', () {
+    test('buildSetupMessage normalizes model and defaults to AUDIO output', () {
+      final message = LiveService.buildSetupMessage(
+        LiveConnectParameters(
+          model: 'gemini-live-2.5-flash-preview',
+          callbacks: LiveCallbacks(),
+        ),
+      );
+
+      expect(message.setup?.model, 'models/gemini-live-2.5-flash-preview');
+      expect(message.setup?.generationConfig?.responseModalities, [
+        Modality.AUDIO,
+      ]);
+    });
+
+    test('buildSetupMessage keeps existing generation config values', () {
+      final message = LiveService.buildSetupMessage(
+        LiveConnectParameters(
+          model: 'models/gemini-live-2.5-flash-preview',
+          callbacks: LiveCallbacks(),
+          config: GenerationConfig(
+            temperature: 0.4,
+            responseModalities: [Modality.TEXT],
+          ),
+        ),
+      );
+
+      expect(message.setup?.generationConfig?.temperature, 0.4);
+      expect(message.setup?.generationConfig?.responseModalities, [
+        Modality.TEXT,
+      ]);
+    });
+
+    test('buildSetupMessage rejects transparent session resumption', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'models/gemini-live-2.5-flash-preview',
+            callbacks: LiveCallbacks(),
+            sessionResumption: SessionResumptionConfig(
+              handle: 'handle',
+              transparent: true,
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            'transparent parameter is not supported in Gemini API.',
+          ),
+        ),
+      );
+    });
+
+    test('buildSetupMessage rejects explicit VAD signal', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'models/gemini-live-2.5-flash-preview',
+            callbacks: LiveCallbacks(),
+            explicitVadSignal: true,
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            'explicitVadSignal parameter is not supported in Gemini API.',
+          ),
+        ),
+      );
+    });
+
     test('serializes setup with advanced live config', () {
       final message = LiveClientMessage(
         setup: LiveClientSetup(
@@ -211,6 +284,27 @@ void main() {
   });
 
   group('Enums', () {
+    test('validateFunctionResponses requires a Gemini tool call id', () {
+      expect(
+        () => LiveService.validateFunctionResponses([
+          FunctionResponse(name: 'get_weather', response: {'output': 'sunny'}),
+        ]),
+        throwsArgumentError,
+      );
+    });
+
+    test('validateFunctionResponses accepts well-formed responses', () {
+      final responses = LiveService.validateFunctionResponses([
+        FunctionResponse(
+          id: 'call-1',
+          name: 'get_weather',
+          response: {'output': 'sunny'},
+        ),
+      ]);
+
+      expect(responses.single.id, 'call-1');
+    });
+
     test('ActivityHandling NO_INTERRUPTION serializes to latest value', () {
       final config = RealtimeInputConfig(
         activityHandling: ActivityHandling.NO_INTERRUPTION,

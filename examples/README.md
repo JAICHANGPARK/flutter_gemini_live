@@ -253,7 +253,6 @@ realtimeInputConfig: RealtimeInputConfig(
 ```dart
 sessionResumption: SessionResumptionConfig(
   handle: 'previous-session-handle', // null for new session
-  transparent: true,
 )
 ```
 
