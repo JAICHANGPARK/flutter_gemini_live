@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
@@ -757,6 +759,8 @@ class ExecutableCode {
 
   factory ExecutableCode.fromJson(Map<String, dynamic> json) =>
       _$ExecutableCodeFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ExecutableCodeToJson(this);
 }
 
 @JsonSerializable(includeIfNull: false)
@@ -768,6 +772,8 @@ class CodeExecutionResult {
 
   factory CodeExecutionResult.fromJson(Map<String, dynamic> json) =>
       _$CodeExecutionResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CodeExecutionResultToJson(this);
 }
 
 @JsonSerializable(includeIfNull: false, createToJson: false)

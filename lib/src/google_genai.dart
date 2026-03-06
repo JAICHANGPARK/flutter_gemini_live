@@ -1,9 +1,3 @@
-/// The main entry point for the Google Generative AI Dart SDK.
-///
-/// This library provides a high-level interface to the Google Generative AI
-/// API, making it easy to integrate generative AI models into your Dart
-/// and Flutter applications.
-
 import 'package:http/http.dart' as http;
 
 import 'client/api_client.dart';
