@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 0.2.2
+
 ### Added
 - Example app now supports in-app Gemini API key configuration via Settings UI.
   - Users can save/update/clear API keys directly from the app screen.
@@ -7,8 +9,15 @@
 - Added `examples/ephemeral_token.dart`:
   - demonstrates Live API connection using ephemeral tokens (`auth_tokens/...`)
   - uses `GoogleGenAI(apiVersion: 'v1alpha')`
+- Added platform-specific runtime info adapters so Dart version reporting works consistently across IO and web builds.
+- Added comprehensive automated coverage for Live service flows, transport connectors, and model serialization.
 
 ### Changed
+- Improved Gemini Live setup handling:
+  - added `LiveService.buildSetupMessage(...)` to centralize setup message construction
+  - added `LiveService.validateFunctionResponses(...)` to validate tool responses before sending
+  - default setup now falls back to `responseModalities: [Modality.AUDIO]` when omitted
+  - unsupported Gemini API options now fail fast during setup construction
 - Expanded Function Calling demo in the example app:
   - added richer tool declarations:
     - `get_exchange_rate`
@@ -18,6 +27,11 @@
   - improved simulated tool responses with structured payloads
   - added quick prompt chips for multi-tool scenarios
 - Updated example/docs descriptions to reflect richer function calling capabilities.
+- Documented the public model API more clearly in the package docs.
+
+### Fixed
+- Enforced Gemini Live function response IDs so tool replies match `ToolCall.functionCalls` contract.
+- Removed Gemini example usage that relied on unsupported setup parameters.
 
 ## 0.2.1
 
