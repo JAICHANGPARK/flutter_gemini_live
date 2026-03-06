@@ -108,7 +108,6 @@ void main() async {
       // Session resumption
       sessionResumption: SessionResumptionConfig(
         handle: null, // New session
-        transparent: true,
       ),
       // Context window compression for long conversations
       contextWindowCompression: ContextWindowCompressionConfig(

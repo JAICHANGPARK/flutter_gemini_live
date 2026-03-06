@@ -106,10 +106,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
           outputAudioTranscription: null,
           // Session resumption
           sessionResumption: _enableSessionResumption && _sessionHandle != null
-              ? SessionResumptionConfig(
-                  handle: _sessionHandle,
-                  transparent: true,
-                )
+              ? SessionResumptionConfig(handle: _sessionHandle)
               : null,
           // Context window compression
           contextWindowCompression: _enableContextCompression

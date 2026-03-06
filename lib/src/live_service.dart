@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -10,6 +9,10 @@ import './platform/web_socket_service_stub.dart'
     if (dart.library.io) './platform/web_socket_service_io.dart'
     if (dart.library.html) './platform/web_socket_service_web.dart'
     as ws_connector;
+import './platform/runtime_info_stub.dart'
+    if (dart.library.io) './platform/runtime_info_io.dart'
+    if (dart.library.html) './platform/runtime_info_web.dart'
+    as runtime_info;
 
 import 'model/models.dart';
 
@@ -72,15 +75,89 @@ class LiveConnectParameters {
 class LiveService {
   final String apiKey;
   final String apiVersion;
+  static const _functionResponseRequiresId =
+      'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
 
   LiveService({required this.apiKey, this.apiVersion = 'v1beta'});
 
   /// Returns the current Dart version
   static String dartVersion() {
-    final version = Platform.version;
-    // Extract major.minor version
-    final match = RegExp(r'(\d+)\.(\d+)').firstMatch(version);
-    return match != null ? '${match.group(1)}.${match.group(2)}' : '3.0';
+    return runtime_info.dartVersion();
+  }
+
+  static GenerationConfig _normalizeGenerationConfig(GenerationConfig? config) {
+    final responseModalities = config?.responseModalities;
+    if (responseModalities != null && responseModalities.isNotEmpty) {
+      return config!;
+    }
+
+    return GenerationConfig(
+      temperature: config?.temperature,
+      topK: config?.topK,
+      topP: config?.topP,
+      maxOutputTokens: config?.maxOutputTokens,
+      responseModalities: const [Modality.AUDIO],
+      mediaResolution: config?.mediaResolution,
+      seed: config?.seed,
+      speechConfig: config?.speechConfig,
+      thinkingConfig: config?.thinkingConfig,
+      enableAffectiveDialog: config?.enableAffectiveDialog,
+    );
+  }
+
+  static LiveClientMessage buildSetupMessage(LiveConnectParameters params) {
+    if (params.sessionResumption?.transparent == true) {
+      throw UnsupportedError(
+        'transparent parameter is not supported in Gemini API.',
+      );
+    }
+
+    if (params.explicitVadSignal != null) {
+      throw UnsupportedError(
+        'explicitVadSignal parameter is not supported in Gemini API.',
+      );
+    }
+
+    final modelName = params.model.startsWith('models/')
+        ? params.model
+        : 'models/${params.model}';
+
+    return LiveClientMessage(
+      setup: LiveClientSetup(
+        model: modelName,
+        generationConfig: _normalizeGenerationConfig(params.config),
+        systemInstruction: params.systemInstruction,
+        tools: params.tools,
+        realtimeInputConfig: params.realtimeInputConfig,
+        sessionResumption: params.sessionResumption,
+        contextWindowCompression: params.contextWindowCompression,
+        inputAudioTranscription: params.inputAudioTranscription,
+        outputAudioTranscription: params.outputAudioTranscription,
+        proactivity: params.proactivity,
+      ),
+    );
+  }
+
+  static List<FunctionResponse> validateFunctionResponses(
+    List<FunctionResponse> functionResponses,
+  ) {
+    if (functionResponses.isEmpty) {
+      throw ArgumentError('functionResponses is required.');
+    }
+
+    for (final functionResponse in functionResponses) {
+      if (functionResponse.name == null || functionResponse.name!.isEmpty) {
+        throw ArgumentError('Each function response must include a name.');
+      }
+      if (functionResponse.response == null) {
+        throw ArgumentError('Each function response must include a response.');
+      }
+      if (functionResponse.id == null || functionResponse.id!.isEmpty) {
+        throw ArgumentError(_functionResponseRequiresId);
+      }
+    }
+
+    return functionResponses;
   }
 
   /// Handles incoming WebSocket data and converts it to LiveServerMessage
@@ -181,27 +258,7 @@ class LiveService {
       );
 
       params.callbacks.onOpen?.call();
-
-      final modelName = params.model.startsWith('models/')
-          ? params.model
-          : 'models/${params.model}';
-
-      // Create setup message with all configuration options
-      final setupMessage = LiveClientMessage(
-        setup: LiveClientSetup(
-          model: modelName,
-          generationConfig: params.config,
-          systemInstruction: params.systemInstruction,
-          tools: params.tools,
-          realtimeInputConfig: params.realtimeInputConfig,
-          sessionResumption: params.sessionResumption,
-          contextWindowCompression: params.contextWindowCompression,
-          inputAudioTranscription: params.inputAudioTranscription,
-          outputAudioTranscription: params.outputAudioTranscription,
-          proactivity: params.proactivity,
-          explicitVadSignal: params.explicitVadSignal,
-        ),
-      );
+      final setupMessage = LiveService.buildSetupMessage(params);
       session.sendMessage(setupMessage);
 
       await setupCompleter.future.timeout(
@@ -374,9 +431,12 @@ class LiveSession {
 
   /// Sends a tool response to the server
   void sendToolResponse({required List<FunctionResponse> functionResponses}) {
+    final validatedResponses = LiveService.validateFunctionResponses(
+      functionResponses,
+    );
     final message = LiveClientMessage(
       toolResponse: LiveClientToolResponse(
-        functionResponses: functionResponses,
+        functionResponses: validatedResponses,
       ),
     );
     sendMessage(message);

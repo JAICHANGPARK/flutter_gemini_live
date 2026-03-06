@@ -84,6 +84,7 @@ Future<void> connect() async {
     session = await genAI.live.connect(
       LiveConnectParameters(
         model: 'gemini-live-2.5-flash-preview',
+        config: GenerationConfig(responseModalities: [Modality.TEXT]),
         callbacks: LiveCallbacks(
           onOpen: () => print('✅ 연결 성공'),
           onMessage: (LiveServerMessage message) {
@@ -219,7 +220,6 @@ final session = await genAI.live.connect(
     model: 'gemini-live-2.5-flash-preview',
     sessionResumption: SessionResumptionConfig(
       handle: previousSessionHandle, // 이전 세션 핸들
-      transparent: true,
     ),
   ),
 );

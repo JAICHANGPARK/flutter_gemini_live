@@ -28,7 +28,7 @@ void main() async {
           print('✅ Connected to Live API');
         },
         onMessage: (message) {
-          _handleMessage(message, currentSessionHandle);
+          currentSessionHandle = _handleMessage(message, currentSessionHandle);
         },
         onError: (error, stackTrace) {
           print('❌ Error: $error');
@@ -50,7 +50,6 @@ void main() async {
       // Configure session resumption
       sessionResumption: SessionResumptionConfig(
         handle: previousSessionHandle, // null for new session
-        transparent: true, // Enable transparent reconnection
       ),
       // Configure context window compression to manage long sessions
       contextWindowCompression: ContextWindowCompressionConfig(
@@ -83,7 +82,7 @@ void main() async {
   print('   The session handle will be automatically saved and restored.');
 }
 
-void _handleMessage(LiveServerMessage message, String? sessionHandle) {
+String? _handleMessage(LiveServerMessage message, String? sessionHandle) {
   // Handle text response
   if (message.text != null) {
     print('🤖 Model: ${message.text}');
@@ -101,11 +100,10 @@ void _handleMessage(LiveServerMessage message, String? sessionHandle) {
 
     // Update the session handle for saving
     if (update.newHandle != null) {
-      // In a real app, you would update a mutable reference
-      // Here we just print it
       print(
         '   💾 Save this handle for future resumption: ${update.newHandle}',
       );
+      sessionHandle = update.newHandle;
     }
   }
 
@@ -126,6 +124,8 @@ void _handleMessage(LiveServerMessage message, String? sessionHandle) {
           '(prompt: ${usage.promptTokenCount}, response: ${usage.responseTokenCount})',
     );
   }
+
+  return sessionHandle;
 }
 
 String? _loadPreviousSessionHandle() {
