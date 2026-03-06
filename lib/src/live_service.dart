@@ -16,6 +16,12 @@ import './platform/runtime_info_stub.dart'
 
 import 'model/models.dart';
 
+typedef WebSocketConnector =
+    Future<WebSocketChannel> Function(
+      Uri uri,
+      Map<String, dynamic> headers,
+    );
+
 // ============================================================================
 // Live API Callbacks
 // ============================================================================
@@ -77,8 +83,19 @@ class LiveService {
   final String apiVersion;
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
+  final WebSocketConnector _connector;
+  final Duration _setupTimeout;
+  final String Function() _dartVersionProvider;
 
-  LiveService({required this.apiKey, this.apiVersion = 'v1beta'});
+  LiveService({
+    required this.apiKey,
+    this.apiVersion = 'v1beta',
+    WebSocketConnector? connector,
+    Duration setupTimeout = const Duration(seconds: 10),
+    String Function()? dartVersionProvider,
+  }) : _connector = connector ?? ws_connector.connect,
+       _setupTimeout = setupTimeout,
+       _dartVersionProvider = dartVersionProvider ?? dartVersion;
 
   /// Returns the current Dart version
   static String dartVersion() {
@@ -187,6 +204,10 @@ class LiveService {
     }
   }
 
+  void handleWebSocketDataForTesting(dynamic data, LiveCallbacks callbacks) {
+    _handleWebSocketData(data, callbacks);
+  }
+
   /// Establishes a WebSocket connection to the Live API
   Future<LiveSession> connect(LiveConnectParameters params) async {
     final usesEphemeralToken = apiKey.startsWith('auth_tokens/');
@@ -209,7 +230,7 @@ class LiveService {
       queryParameters: {keyName: apiKey},
     );
 
-    final userAgent = 'google-genai-sdk/1.42.0 dart/${dartVersion()}';
+    final userAgent = 'google-genai-sdk/1.42.0 dart/${_dartVersionProvider()}';
 
     print('🔌 Connecting to WebSocket at $websocketUri');
 
@@ -220,7 +241,7 @@ class LiveService {
         'x-goog-api-client': userAgent,
         'user-agent': userAgent,
       };
-      final channel = await ws_connector.connect(websocketUri, headers);
+      final channel = await _connector(websocketUri, headers);
       final session = LiveSession._(channel);
       final setupCompleter = Completer<void>();
 
@@ -262,9 +283,11 @@ class LiveService {
       session.sendMessage(setupMessage);
 
       await setupCompleter.future.timeout(
-        const Duration(seconds: 10),
+        _setupTimeout,
         onTimeout: () {
-          throw TimeoutException("WebSocket setup timed out after 10 seconds.");
+          throw TimeoutException(
+            'WebSocket setup timed out after $_setupTimeout.',
+          );
         },
       );
 
@@ -293,6 +316,9 @@ class LiveSession {
   final WebSocketChannel _channel;
 
   LiveSession._(this._channel);
+
+  factory LiveSession.forTesting(WebSocketChannel channel) =>
+      LiveSession._(channel);
 
   /// Sends a message to the server
   void sendMessage(LiveClientMessage message) {
