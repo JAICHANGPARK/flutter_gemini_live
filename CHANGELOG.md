@@ -1,6 +1,6 @@
 ## Unreleased
 
-## 0.2.3
+## 2026.3.21
 
 ### Added
 - Added the latest Gemini Live part-schema fields from the current `js-genai` reference:
