@@ -1,5 +1,7 @@
 // ignore_for_file: constant_identifier_names
 
+import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
@@ -174,6 +176,38 @@ enum MediaModality {
   DOCUMENT,
 }
 
+/// Media tokenization quality used for a specific part.
+@JsonEnum(alwaysCreate: true)
+enum PartMediaResolutionLevel {
+  @JsonValue('MEDIA_RESOLUTION_UNSPECIFIED')
+  MEDIA_RESOLUTION_UNSPECIFIED,
+  @JsonValue('MEDIA_RESOLUTION_LOW')
+  MEDIA_RESOLUTION_LOW,
+  @JsonValue('MEDIA_RESOLUTION_MEDIUM')
+  MEDIA_RESOLUTION_MEDIUM,
+  @JsonValue('MEDIA_RESOLUTION_HIGH')
+  MEDIA_RESOLUTION_HIGH,
+  @JsonValue('MEDIA_RESOLUTION_ULTRA_HIGH')
+  MEDIA_RESOLUTION_ULTRA_HIGH,
+}
+
+/// Tool categories reported in server-side tool call parts.
+@JsonEnum(alwaysCreate: true)
+enum ToolType {
+  @JsonValue('TOOL_TYPE_UNSPECIFIED')
+  TOOL_TYPE_UNSPECIFIED,
+  @JsonValue('GOOGLE_SEARCH_WEB')
+  GOOGLE_SEARCH_WEB,
+  @JsonValue('GOOGLE_SEARCH_IMAGE')
+  GOOGLE_SEARCH_IMAGE,
+  @JsonValue('URL_CONTEXT')
+  URL_CONTEXT,
+  @JsonValue('GOOGLE_MAPS')
+  GOOGLE_MAPS,
+  @JsonValue('FILE_SEARCH')
+  FILE_SEARCH,
+}
+
 // ============================================================================
 // Data Classes - Base
 // ============================================================================
@@ -181,20 +215,34 @@ enum MediaModality {
 /// A single multimodal part within a content turn.
 @JsonSerializable(includeIfNull: false)
 class Part {
+  final PartMediaResolution? mediaResolution;
   final String? text;
   final bool? thought;
+  final String? thoughtSignature;
   final Blob? inlineData;
+  final FileData? fileData;
+  final VideoMetadata? videoMetadata;
   final FunctionCall? functionCall;
   final FunctionResponse? functionResponse;
+  final ToolCall? toolCall;
+  final ToolResponse? toolResponse;
+  final Map<String, dynamic>? partMetadata;
   final ExecutableCode? executableCode;
   final CodeExecutionResult? codeExecutionResult;
 
   Part({
+    this.mediaResolution,
     this.text,
     this.thought,
+    this.thoughtSignature,
     this.inlineData,
+    this.fileData,
+    this.videoMetadata,
     this.functionCall,
     this.functionResponse,
+    this.toolCall,
+    this.toolResponse,
+    this.partMetadata,
     this.executableCode,
     this.codeExecutionResult,
   });
@@ -215,6 +263,50 @@ class Blob {
   factory Blob.fromJson(Map<String, dynamic> json) => _$BlobFromJson(json);
 
   Map<String, dynamic> toJson() => _$BlobToJson(this);
+}
+
+/// URI-based media content referenced by a part.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class FileData {
+  final String? displayName;
+  final String? fileUri;
+  final String? mimeType;
+
+  FileData({this.displayName, this.fileUri, this.mimeType});
+
+  factory FileData.fromJson(Map<String, dynamic> json) =>
+      _$FileDataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FileDataToJson(this);
+}
+
+/// Additional video metadata attached to inline or URI-based media.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class VideoMetadata {
+  final String? startOffset;
+  final String? endOffset;
+  final double? fps;
+
+  VideoMetadata({this.startOffset, this.endOffset, this.fps});
+
+  factory VideoMetadata.fromJson(Map<String, dynamic> json) =>
+      _$VideoMetadataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VideoMetadataToJson(this);
+}
+
+/// Input media tokenization hints attached to a part.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class PartMediaResolution {
+  final PartMediaResolutionLevel? level;
+  final int? numTokens;
+
+  PartMediaResolution({this.level, this.numTokens});
+
+  factory PartMediaResolution.fromJson(Map<String, dynamic> json) =>
+      _$PartMediaResolutionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PartMediaResolutionToJson(this);
 }
 
 /// A conversational turn made of one or more [Part] values.
@@ -335,6 +427,36 @@ class FunctionCall {
       _$FunctionCallFromJson(json);
 
   Map<String, dynamic> toJson() => _$FunctionCallToJson(this);
+}
+
+/// A server-side tool call embedded in a model part.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ToolCall {
+  final String? id;
+  final ToolType? toolType;
+  final Map<String, dynamic>? args;
+
+  ToolCall({this.id, this.toolType, this.args});
+
+  factory ToolCall.fromJson(Map<String, dynamic> json) =>
+      _$ToolCallFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolCallToJson(this);
+}
+
+/// The client-side result of a server-side tool call.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ToolResponse {
+  final String? id;
+  final ToolType? toolType;
+  final Map<String, dynamic>? response;
+
+  ToolResponse({this.id, this.toolType, this.response});
+
+  factory ToolResponse.fromJson(Map<String, dynamic> json) =>
+      _$ToolResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolResponseToJson(this);
 }
 
 /// Inline binary data returned from a function response.
@@ -615,7 +737,9 @@ class ContextWindowCompressionConfig {
 /// Audio transcription settings for input or output streams.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
-  AudioTranscriptionConfig();
+  final List<String>? languageCodes;
+
+  AudioTranscriptionConfig({this.languageCodes});
 
   factory AudioTranscriptionConfig.fromJson(Map<String, dynamic> json) =>
       _$AudioTranscriptionConfigFromJson(json);
@@ -810,8 +934,9 @@ class Transcription {
 class ExecutableCode {
   final String? language;
   final String? code;
+  final String? id;
 
-  ExecutableCode({this.language, this.code});
+  ExecutableCode({this.language, this.code, this.id});
 
   factory ExecutableCode.fromJson(Map<String, dynamic> json) =>
       _$ExecutableCodeFromJson(json);
@@ -824,8 +949,9 @@ class ExecutableCode {
 class CodeExecutionResult {
   final String? outcome;
   final String? output;
+  final String? id;
 
-  CodeExecutionResult({this.outcome, this.output});
+  CodeExecutionResult({this.outcome, this.output, this.id});
 
   factory CodeExecutionResult.fromJson(Map<String, dynamic> json) =>
       _$CodeExecutionResultFromJson(json);
@@ -911,7 +1037,7 @@ class LiveServerGoAway {
 class LiveServerSessionResumptionUpdate {
   final String? newHandle;
   final bool? resumable;
-  final int? lastConsumedClientMessageIndex;
+  final String? lastConsumedClientMessageIndex;
 
   LiveServerSessionResumptionUpdate({
     this.newHandle,
@@ -1050,13 +1176,13 @@ class LiveServerMessage {
   String? get data {
     final parts = serverContent?.modelTurn?.parts;
     if (parts == null || parts.isEmpty) return null;
-    final buffer = StringBuffer();
+    final bytes = <int>[];
     for (final part in parts) {
       final inline = part.inlineData;
       if (inline?.data == null) continue;
-      buffer.write(inline!.data);
+      bytes.addAll(base64.decode(inline!.data));
     }
-    return buffer.isNotEmpty ? buffer.toString() : null;
+    return bytes.isNotEmpty ? base64Encode(bytes) : null;
   }
 }
 

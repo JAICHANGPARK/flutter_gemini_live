@@ -11,18 +11,18 @@ void main() {
         name: 'lookup',
         args: {'city': 'Seoul'},
       );
-      expect(
-        FunctionCall.fromJson(normalizeJson(functionCall.toJson())).args,
-        {'city': 'Seoul'},
-      );
+      expect(FunctionCall.fromJson(normalizeJson(functionCall.toJson())).args, {
+        'city': 'Seoul',
+      });
 
       final responseBlob = FunctionResponseBlob(
         mimeType: 'image/png',
         data: 'base64',
       );
       expect(
-        FunctionResponseBlob.fromJson(normalizeJson(responseBlob.toJson()))
-            .mimeType,
+        FunctionResponseBlob.fromJson(
+          normalizeJson(responseBlob.toJson()),
+        ).mimeType,
         'image/png',
       );
 
@@ -31,8 +31,9 @@ void main() {
         mimeType: 'application/pdf',
       );
       expect(
-        FunctionResponseFileData.fromJson(normalizeJson(fileData.toJson()))
-            .fileUri,
+        FunctionResponseFileData.fromJson(
+          normalizeJson(fileData.toJson()),
+        ).fileUri,
         'gs://bucket/file',
       );
 
@@ -41,9 +42,9 @@ void main() {
         fileData: fileData,
       );
       expect(
-        FunctionResponsePart.fromJson(normalizeJson(responsePart.toJson()))
-            .fileData
-            ?.mimeType,
+        FunctionResponsePart.fromJson(
+          normalizeJson(responsePart.toJson()),
+        ).fileData?.mimeType,
         'application/pdf',
       );
 
@@ -58,8 +59,14 @@ void main() {
       final functionResponseRoundTrip = FunctionResponse.fromJson(
         normalizeJson(functionResponse.toJson()),
       );
-      expect(functionResponseRoundTrip.scheduling, FunctionResponseScheduling.WHEN_IDLE);
-      expect(functionResponseRoundTrip.parts?.single.inlineData?.data, 'base64');
+      expect(
+        functionResponseRoundTrip.scheduling,
+        FunctionResponseScheduling.WHEN_IDLE,
+      );
+      expect(
+        functionResponseRoundTrip.parts?.single.inlineData?.data,
+        'base64',
+      );
 
       final declaration = FunctionDeclaration(
         description: 'Find a city',
@@ -90,10 +97,10 @@ void main() {
         normalizeJson(declaration.toJson()),
       );
       expect(declarationRoundTrip.behavior, Behavior.BLOCKING);
-      expect(
-        declarationRoundTrip.parametersJsonSchema,
-        {'type': 'object', 'required': ['city']},
-      );
+      expect(declarationRoundTrip.parametersJsonSchema, {
+        'type': 'object',
+        'required': ['city'],
+      });
 
       final interval = Interval(
         startTime: DateTime.parse('2026-03-01T00:00:00Z'),
@@ -110,8 +117,9 @@ void main() {
         blockingConfidence: 'HIGH',
       );
       expect(
-        GoogleSearch.fromJson(normalizeJson(googleSearch.toJson()))
-            .excludeDomains,
+        GoogleSearch.fromJson(
+          normalizeJson(googleSearch.toJson()),
+        ).excludeDomains,
         ['example.com'],
       );
 
@@ -120,8 +128,9 @@ void main() {
         mode: 'MODE_DYNAMIC',
       );
       expect(
-        DynamicRetrievalConfig.fromJson(normalizeJson(retrievalConfig.toJson()))
-            .mode,
+        DynamicRetrievalConfig.fromJson(
+          normalizeJson(retrievalConfig.toJson()),
+        ).mode,
         'MODE_DYNAMIC',
       );
 
@@ -129,9 +138,9 @@ void main() {
         dynamicRetrievalConfig: retrievalConfig,
       );
       expect(
-        GoogleSearchRetrieval.fromJson(normalizeJson(searchRetrieval.toJson()))
-            .dynamicRetrievalConfig
-            ?.dynamicThreshold,
+        GoogleSearchRetrieval.fromJson(
+          normalizeJson(searchRetrieval.toJson()),
+        ).dynamicRetrievalConfig?.dynamicThreshold,
         0.6,
       );
 
@@ -191,15 +200,17 @@ void main() {
         transparent: true,
       );
       expect(
-        SessionResumptionConfig.fromJson(normalizeJson(sessionResumption.toJson()))
-            .transparent,
+        SessionResumptionConfig.fromJson(
+          normalizeJson(sessionResumption.toJson()),
+        ).transparent,
         true,
       );
 
       final slidingWindow = SlidingWindow(targetTokens: '2048');
       expect(
-        SlidingWindow.fromJson(normalizeJson(slidingWindow.toJson()))
-            .targetTokens,
+        SlidingWindow.fromJson(
+          normalizeJson(slidingWindow.toJson()),
+        ).targetTokens,
         '2048',
       );
 
@@ -210,9 +221,7 @@ void main() {
       expect(
         ContextWindowCompressionConfig.fromJson(
           normalizeJson(compressionConfig.toJson()),
-        )
-            .slidingWindow
-            ?.targetTokens,
+        ).slidingWindow?.targetTokens,
         '2048',
       );
 
@@ -226,8 +235,9 @@ void main() {
 
       final proactivity = ProactivityConfig(proactiveAudio: true);
       expect(
-        ProactivityConfig.fromJson(normalizeJson(proactivity.toJson()))
-            .proactiveAudio,
+        ProactivityConfig.fromJson(
+          normalizeJson(proactivity.toJson()),
+        ).proactiveAudio,
         true,
       );
 
@@ -274,7 +284,9 @@ void main() {
         proactivity: proactivity,
         explicitVadSignal: true,
       );
-      final setupRoundTrip = LiveClientSetup.fromJson(normalizeJson(setup.toJson()));
+      final setupRoundTrip = LiveClientSetup.fromJson(
+        normalizeJson(setup.toJson()),
+      );
       expect(setupRoundTrip.model, 'models/gemini-live');
       expect(setupRoundTrip.proactivity?.proactiveAudio, true);
 
@@ -288,8 +300,9 @@ void main() {
         turnComplete: false,
       );
       expect(
-        LiveClientContent.fromJson(normalizeJson(clientContent.toJson()))
-            .turnComplete,
+        LiveClientContent.fromJson(
+          normalizeJson(clientContent.toJson()),
+        ).turnComplete,
         false,
       );
 
@@ -330,10 +343,9 @@ void main() {
         ],
       );
       expect(
-        LiveClientToolResponse.fromJson(normalizeJson(toolResponse.toJson()))
-            .functionResponses
-            ?.single
-            .response,
+        LiveClientToolResponse.fromJson(
+          normalizeJson(toolResponse.toJson()),
+        ).functionResponses?.single.response,
         {'status': 'ok'},
       );
 
@@ -365,23 +377,43 @@ void main() {
         true,
       );
 
-      final executableCode = ExecutableCode(language: 'python', code: 'print(1)');
+      final executableCode = ExecutableCode(
+        language: 'python',
+        code: 'print(1)',
+        id: 'exec-1',
+      );
       expect(
-        ExecutableCode.fromJson(normalizeJson(executableCode.toJson())).language,
+        ExecutableCode.fromJson(normalizeJson(executableCode.toJson())).id,
+        'exec-1',
+      );
+      expect(
+        ExecutableCode.fromJson(
+          normalizeJson(executableCode.toJson()),
+        ).language,
         'python',
       );
 
       final codeExecutionResult = CodeExecutionResult(
         outcome: 'OUTCOME_OK',
         output: '1',
+        id: 'exec-1',
       );
       expect(
-        CodeExecutionResult.fromJson(normalizeJson(codeExecutionResult.toJson()))
-            .output,
+        CodeExecutionResult.fromJson(
+          normalizeJson(codeExecutionResult.toJson()),
+        ).id,
+        'exec-1',
+      );
+      expect(
+        CodeExecutionResult.fromJson(
+          normalizeJson(codeExecutionResult.toJson()),
+        ).output,
         '1',
       );
 
-      final setupComplete = LiveServerSetupComplete(sessionId: 'server-session');
+      final setupComplete = LiveServerSetupComplete(
+        sessionId: 'server-session',
+      );
       expect(setupComplete.sessionId, 'server-session');
 
       final toolCancellation = LiveServerToolCallCancellation(ids: ['call-1']);
@@ -396,14 +428,17 @@ void main() {
       final goAway = LiveServerGoAway(timeLeft: '45s', reason: 'rotate');
       expect(goAway.reason, 'rotate');
       expect(
-        LiveServerGoAway.fromJson({'timeLeft': '45s', 'reason': 'rotate'}).timeLeft,
+        LiveServerGoAway.fromJson({
+          'timeLeft': '45s',
+          'reason': 'rotate',
+        }).timeLeft,
         '45s',
       );
 
       final sessionUpdate = LiveServerSessionResumptionUpdate(
         newHandle: 'new-handle',
         resumable: true,
-        lastConsumedClientMessageIndex: 5,
+        lastConsumedClientMessageIndex: '5',
       );
       expect(sessionUpdate.newHandle, 'new-handle');
 
@@ -456,7 +491,10 @@ void main() {
         ],
         'trafficType': 'PROVISIONED_THROUGHPUT',
       });
-      expect(usageMetadata.cacheTokensDetails?.single.modality, MediaModality.IMAGE);
+      expect(
+        usageMetadata.cacheTokensDetails?.single.modality,
+        MediaModality.IMAGE,
+      );
       expect(
         usageMetadata.toolUsePromptTokensDetails?.single.modality,
         MediaModality.DOCUMENT,
@@ -471,7 +509,7 @@ void main() {
               {
                 'text': 'visible',
                 'thought': false,
-                'inlineData': {'mimeType': 'audio/pcm', 'data': 'bytes1'},
+                'inlineData': {'mimeType': 'audio/pcm', 'data': 'Ynl0ZXMx'},
                 'functionCall': {
                   'id': 'call-1',
                   'name': 'lookup',
@@ -485,10 +523,7 @@ void main() {
                   'scheduling': 'INTERRUPT',
                   'parts': [
                     {
-                      'inline_data': {
-                        'mime_type': 'image/png',
-                        'data': 'raw',
-                      },
+                      'inline_data': {'mime_type': 'image/png', 'data': 'raw'},
                       'file_data': {
                         'file_uri': 'gs://bucket/report.pdf',
                         'mime_type': 'application/pdf',
@@ -499,18 +534,17 @@ void main() {
                 'executableCode': {
                   'language': 'python',
                   'code': 'print(1)',
+                  'id': 'exec-1',
                 },
                 'codeExecutionResult': {
                   'outcome': 'OUTCOME_OK',
                   'output': '1',
+                  'id': 'exec-1',
                 },
               },
+              {'text': 'hidden', 'thought': true},
               {
-                'text': 'hidden',
-                'thought': true,
-              },
-              {
-                'inlineData': {'mimeType': 'audio/pcm', 'data': 'bytes2'},
+                'inlineData': {'mimeType': 'audio/pcm', 'data': 'Ynl0ZXMy'},
               },
             ],
             'role': 'model',
@@ -562,33 +596,46 @@ void main() {
         'sessionResumptionUpdate': {
           'newHandle': 'new-handle',
           'resumable': true,
-          'lastConsumedClientMessageIndex': 5,
+          'lastConsumedClientMessageIndex': '5',
         },
         'voiceActivityDetectionSignal': {
           'vadSignalType': 'VAD_SIGNAL_TYPE_EOS',
         },
-        'voiceActivity': {
-          'voiceActivityType': 'ACTIVITY_END',
-        },
+        'voiceActivity': {'voiceActivityType': 'ACTIVITY_END'},
       });
 
       expect(message.setupComplete?.sessionId, 'server-session');
-      expect(message.serverContent?.turnCompleteReason, TurnCompleteReason.NEED_MORE_INPUT);
       expect(
-        message.serverContent?.inputTranscription?.finished,
-        true,
+        message.serverContent?.turnCompleteReason,
+        TurnCompleteReason.NEED_MORE_INPUT,
       );
+      expect(message.serverContent?.inputTranscription?.finished, true);
       expect(message.toolCall?.functionCalls?.single.args, {'city': 'Seoul'});
       expect(message.toolCallCancellation?.ids, ['call-1']);
       expect(message.goAway?.timeRemaining, 45);
-      expect(message.sessionResumptionUpdate?.lastConsumedClientMessageIndex, 5);
+      expect(
+        message.sessionResumptionUpdate?.lastConsumedClientMessageIndex,
+        '5',
+      );
       expect(message.voiceActivityDetectionSignal?.end, true);
       expect(message.voiceActivity?.speechActive, false);
-      expect(message.usageMetadata?.trafficType, TrafficType.PROVISIONED_THROUGHPUT);
-      expect(message.text, 'visible');
-      expect(message.data, 'bytes1bytes2');
       expect(
-        message.serverContent?.modelTurn?.parts?.first.functionResponse?.parts?.single.fileData?.fileUri,
+        message.usageMetadata?.trafficType,
+        TrafficType.PROVISIONED_THROUGHPUT,
+      );
+      expect(message.text, 'visible');
+      expect(message.data, 'Ynl0ZXMxYnl0ZXMy');
+      expect(
+        message
+            .serverContent
+            ?.modelTurn
+            ?.parts
+            ?.first
+            .functionResponse
+            ?.parts
+            ?.single
+            .fileData
+            ?.fileUri,
         'gs://bucket/report.pdf',
       );
     });
@@ -602,22 +649,14 @@ void main() {
 
       final thoughtOnly = LiveServerMessage(
         serverContent: LiveServerContent(
-          modelTurn: Content(
-            parts: [
-              Part(thought: true, text: 'hidden'),
-            ],
-          ),
+          modelTurn: Content(parts: [Part(thought: true, text: 'hidden')]),
         ),
       );
       expect(thoughtOnly.text, isNull);
 
       final textOnly = LiveServerMessage(
         serverContent: LiveServerContent(
-          modelTurn: Content(
-            parts: [
-              Part(text: 'visible'),
-            ],
-          ),
+          modelTurn: Content(parts: [Part(text: 'visible')]),
         ),
       );
       expect(textOnly.data, isNull);
@@ -629,7 +668,9 @@ void main() {
 
   test('send parameter containers retain constructor arguments', () {
     final sendClientContent = LiveSendClientContentParameters(
-      turns: [Content(parts: [Part(text: 'hello')])],
+      turns: [
+        Content(parts: [Part(text: 'hello')]),
+      ],
     );
     final sendRealtimeInput = LiveSendRealtimeInputParameters(
       mediaChunks: [Blob(mimeType: 'image/png', data: 'raw')],

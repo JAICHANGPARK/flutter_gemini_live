@@ -7,11 +7,23 @@ part of 'models.dart';
 // **************************************************************************
 
 Part _$PartFromJson(Map<String, dynamic> json) => Part(
+  mediaResolution: json['mediaResolution'] == null
+      ? null
+      : PartMediaResolution.fromJson(
+          json['mediaResolution'] as Map<String, dynamic>,
+        ),
   text: json['text'] as String?,
   thought: json['thought'] as bool?,
+  thoughtSignature: json['thoughtSignature'] as String?,
   inlineData: json['inlineData'] == null
       ? null
       : Blob.fromJson(json['inlineData'] as Map<String, dynamic>),
+  fileData: json['fileData'] == null
+      ? null
+      : FileData.fromJson(json['fileData'] as Map<String, dynamic>),
+  videoMetadata: json['videoMetadata'] == null
+      ? null
+      : VideoMetadata.fromJson(json['videoMetadata'] as Map<String, dynamic>),
   functionCall: json['functionCall'] == null
       ? null
       : FunctionCall.fromJson(json['functionCall'] as Map<String, dynamic>),
@@ -20,6 +32,13 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
       : FunctionResponse.fromJson(
           json['functionResponse'] as Map<String, dynamic>,
         ),
+  toolCall: json['toolCall'] == null
+      ? null
+      : ToolCall.fromJson(json['toolCall'] as Map<String, dynamic>),
+  toolResponse: json['toolResponse'] == null
+      ? null
+      : ToolResponse.fromJson(json['toolResponse'] as Map<String, dynamic>),
+  partMetadata: json['partMetadata'] as Map<String, dynamic>?,
   executableCode: json['executableCode'] == null
       ? null
       : ExecutableCode.fromJson(json['executableCode'] as Map<String, dynamic>),
@@ -31,11 +50,18 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
+  'mediaResolution': ?instance.mediaResolution,
   'text': ?instance.text,
   'thought': ?instance.thought,
+  'thoughtSignature': ?instance.thoughtSignature,
   'inlineData': ?instance.inlineData,
+  'fileData': ?instance.fileData,
+  'videoMetadata': ?instance.videoMetadata,
   'functionCall': ?instance.functionCall,
   'functionResponse': ?instance.functionResponse,
+  'toolCall': ?instance.toolCall,
+  'toolResponse': ?instance.toolResponse,
+  'partMetadata': ?instance.partMetadata,
   'executableCode': ?instance.executableCode,
   'codeExecutionResult': ?instance.codeExecutionResult,
 };
@@ -46,6 +72,58 @@ Blob _$BlobFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$BlobToJson(Blob instance) => <String, dynamic>{
   'mimeType': instance.mimeType,
   'data': instance.data,
+};
+
+FileData _$FileDataFromJson(Map<String, dynamic> json) => FileData(
+  displayName: json['display_name'] as String?,
+  fileUri: json['file_uri'] as String?,
+  mimeType: json['mime_type'] as String?,
+);
+
+Map<String, dynamic> _$FileDataToJson(FileData instance) => <String, dynamic>{
+  'display_name': ?instance.displayName,
+  'file_uri': ?instance.fileUri,
+  'mime_type': ?instance.mimeType,
+};
+
+VideoMetadata _$VideoMetadataFromJson(Map<String, dynamic> json) =>
+    VideoMetadata(
+      startOffset: json['start_offset'] as String?,
+      endOffset: json['end_offset'] as String?,
+      fps: (json['fps'] as num?)?.toDouble(),
+    );
+
+Map<String, dynamic> _$VideoMetadataToJson(VideoMetadata instance) =>
+    <String, dynamic>{
+      'start_offset': ?instance.startOffset,
+      'end_offset': ?instance.endOffset,
+      'fps': ?instance.fps,
+    };
+
+PartMediaResolution _$PartMediaResolutionFromJson(Map<String, dynamic> json) =>
+    PartMediaResolution(
+      level: $enumDecodeNullable(
+        _$PartMediaResolutionLevelEnumMap,
+        json['level'],
+      ),
+      numTokens: (json['num_tokens'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$PartMediaResolutionToJson(
+  PartMediaResolution instance,
+) => <String, dynamic>{
+  'level': ?_$PartMediaResolutionLevelEnumMap[instance.level],
+  'num_tokens': ?instance.numTokens,
+};
+
+const _$PartMediaResolutionLevelEnumMap = {
+  PartMediaResolutionLevel.MEDIA_RESOLUTION_UNSPECIFIED:
+      'MEDIA_RESOLUTION_UNSPECIFIED',
+  PartMediaResolutionLevel.MEDIA_RESOLUTION_LOW: 'MEDIA_RESOLUTION_LOW',
+  PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM: 'MEDIA_RESOLUTION_MEDIUM',
+  PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH: 'MEDIA_RESOLUTION_HIGH',
+  PartMediaResolutionLevel.MEDIA_RESOLUTION_ULTRA_HIGH:
+      'MEDIA_RESOLUTION_ULTRA_HIGH',
 };
 
 Content _$ContentFromJson(Map<String, dynamic> json) => Content(
@@ -170,6 +248,40 @@ Map<String, dynamic> _$FunctionCallToJson(FunctionCall instance) =>
       'id': ?instance.id,
       'name': ?instance.name,
       'args': ?instance.args,
+    };
+
+ToolCall _$ToolCallFromJson(Map<String, dynamic> json) => ToolCall(
+  id: json['id'] as String?,
+  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
+  args: json['args'] as Map<String, dynamic>?,
+);
+
+Map<String, dynamic> _$ToolCallToJson(ToolCall instance) => <String, dynamic>{
+  'id': ?instance.id,
+  'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
+  'args': ?instance.args,
+};
+
+const _$ToolTypeEnumMap = {
+  ToolType.TOOL_TYPE_UNSPECIFIED: 'TOOL_TYPE_UNSPECIFIED',
+  ToolType.GOOGLE_SEARCH_WEB: 'GOOGLE_SEARCH_WEB',
+  ToolType.GOOGLE_SEARCH_IMAGE: 'GOOGLE_SEARCH_IMAGE',
+  ToolType.URL_CONTEXT: 'URL_CONTEXT',
+  ToolType.GOOGLE_MAPS: 'GOOGLE_MAPS',
+  ToolType.FILE_SEARCH: 'FILE_SEARCH',
+};
+
+ToolResponse _$ToolResponseFromJson(Map<String, dynamic> json) => ToolResponse(
+  id: json['id'] as String?,
+  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
+  response: json['response'] as Map<String, dynamic>?,
+);
+
+Map<String, dynamic> _$ToolResponseToJson(ToolResponse instance) =>
+    <String, dynamic>{
+      'id': ?instance.id,
+      'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
+      'response': ?instance.response,
     };
 
 FunctionResponseBlob _$FunctionResponseBlobFromJson(
@@ -497,11 +609,15 @@ Map<String, dynamic> _$ContextWindowCompressionConfigToJson(
 
 AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
   Map<String, dynamic> json,
-) => AudioTranscriptionConfig();
+) => AudioTranscriptionConfig(
+  languageCodes: (json['language_codes'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
+);
 
 Map<String, dynamic> _$AudioTranscriptionConfigToJson(
   AudioTranscriptionConfig instance,
-) => <String, dynamic>{};
+) => <String, dynamic>{'language_codes': ?instance.languageCodes};
 
 ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
     ProactivityConfig(proactiveAudio: json['proactive_audio'] as bool?);
@@ -685,15 +801,21 @@ ExecutableCode _$ExecutableCodeFromJson(Map<String, dynamic> json) =>
     ExecutableCode(
       language: json['language'] as String?,
       code: json['code'] as String?,
+      id: json['id'] as String?,
     );
 
 Map<String, dynamic> _$ExecutableCodeToJson(ExecutableCode instance) =>
-    <String, dynamic>{'language': ?instance.language, 'code': ?instance.code};
+    <String, dynamic>{
+      'language': ?instance.language,
+      'code': ?instance.code,
+      'id': ?instance.id,
+    };
 
 CodeExecutionResult _$CodeExecutionResultFromJson(Map<String, dynamic> json) =>
     CodeExecutionResult(
       outcome: json['outcome'] as String?,
       output: json['output'] as String?,
+      id: json['id'] as String?,
     );
 
 Map<String, dynamic> _$CodeExecutionResultToJson(
@@ -701,6 +823,7 @@ Map<String, dynamic> _$CodeExecutionResultToJson(
 ) => <String, dynamic>{
   'outcome': ?instance.outcome,
   'output': ?instance.output,
+  'id': ?instance.id,
 };
 
 LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
@@ -763,7 +886,7 @@ LiveServerSessionResumptionUpdate _$LiveServerSessionResumptionUpdateFromJson(
   newHandle: json['newHandle'] as String?,
   resumable: json['resumable'] as bool?,
   lastConsumedClientMessageIndex:
-      (json['lastConsumedClientMessageIndex'] as num?)?.toInt(),
+      json['lastConsumedClientMessageIndex'] as String?,
 );
 
 VoiceActivityDetectionSignal _$VoiceActivityDetectionSignalFromJson(

@@ -17,10 +17,7 @@ import './platform/runtime_info_stub.dart'
 import 'model/models.dart';
 
 typedef WebSocketConnector =
-    Future<WebSocketChannel> Function(
-      Uri uri,
-      Map<String, dynamic> headers,
-    );
+    Future<WebSocketChannel> Function(Uri uri, Map<String, dynamic> headers);
 
 // ============================================================================
 // Live API Callbacks
@@ -83,6 +80,13 @@ class LiveService {
   final String apiVersion;
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
+
+  static UnsupportedError _unsupportedAudioTranscriptionLanguageCodesError() {
+    return UnsupportedError(
+      'languageCodes parameter is not supported in Gemini API.',
+    );
+  }
+
   final WebSocketConnector _connector;
   final Duration _setupTimeout;
   final String Function() _dartVersionProvider;
@@ -135,6 +139,14 @@ class LiveService {
       );
     }
 
+    if (params.inputAudioTranscription?.languageCodes != null) {
+      throw _unsupportedAudioTranscriptionLanguageCodesError();
+    }
+
+    if (params.outputAudioTranscription?.languageCodes != null) {
+      throw _unsupportedAudioTranscriptionLanguageCodesError();
+    }
+
     final modelName = params.model.startsWith('models/')
         ? params.model
         : 'models/${params.model}';
@@ -175,6 +187,15 @@ class LiveService {
     }
 
     return functionResponses;
+  }
+
+  static void validateRealtimeBlob(
+    Blob blob, {
+    required String expectedPrefix,
+  }) {
+    if (!blob.mimeType.startsWith(expectedPrefix)) {
+      throw ArgumentError('Unsupported mime type: ${blob.mimeType}');
+    }
   }
 
   /// Handles incoming WebSocket data and converts it to LiveServerMessage
@@ -360,6 +381,10 @@ class LiveSession {
   /// Sends video data to the server
   void sendVideo(List<int> videoBytes, {String mimeType = 'image/jpeg'}) {
     final base64Video = base64Encode(videoBytes);
+    LiveService.validateRealtimeBlob(
+      Blob(mimeType: mimeType, data: base64Video),
+      expectedPrefix: 'image/',
+    );
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(
         video: Blob(mimeType: mimeType, data: base64Video),
@@ -389,6 +414,13 @@ class LiveSession {
     bool? activityStart,
     bool? activityEnd,
   }) {
+    if (audio != null) {
+      LiveService.validateRealtimeBlob(audio, expectedPrefix: 'audio/');
+    }
+    if (video != null) {
+      LiveService.validateRealtimeBlob(video, expectedPrefix: 'image/');
+    }
+
     LiveClientRealtimeInput? realtimeInput;
 
     if (mediaChunks != null ||

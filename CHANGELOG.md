@@ -1,5 +1,22 @@
 ## Unreleased
 
+## 0.2.3
+
+### Added
+- Added the latest Gemini Live part-schema fields from the current `js-genai` reference:
+  - `Part.mediaResolution`, `Part.fileData`, `Part.videoMetadata`
+  - `Part.thoughtSignature`, `Part.toolCall`, `Part.toolResponse`, `Part.partMetadata`
+  - `PartMediaResolution`, `PartMediaResolutionLevel`, `ToolCall`, `ToolResponse`, `ToolType`
+- Added `AudioTranscriptionConfig.languageCodes` and code execution IDs on `ExecutableCode` / `CodeExecutionResult`.
+
+### Changed
+- Tightened Gemini Live setup validation to reject unsupported `input/outputAudioTranscription.languageCodes` before sending setup.
+- Added client-side MIME validation for realtime audio/video payloads so malformed blobs fail fast.
+
+### Fixed
+- Fixed `LiveServerMessage.data` so multiple inline binary chunks are concatenated as bytes before base64 encoding.
+- Fixed session resumption parsing parity by treating `lastConsumedClientMessageIndex` as a string.
+
 ## 0.2.2
 
 ### Added

@@ -78,6 +78,27 @@ void main() {
       );
     });
 
+    test('buildSetupMessage rejects transcription language codes', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'models/gemini-live-2.5-flash-preview',
+            callbacks: LiveCallbacks(),
+            inputAudioTranscription: AudioTranscriptionConfig(
+              languageCodes: ['ko-KR'],
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            'languageCodes parameter is not supported in Gemini API.',
+          ),
+        ),
+      );
+    });
+
     test('serializes setup with advanced live config', () {
       final message = LiveClientMessage(
         setup: LiveClientSetup(
@@ -152,6 +173,53 @@ void main() {
       expect(restored.setup?.sessionResumption?.transparent, true);
     });
 
+    test('serializes latest part fields from ref live schema', () {
+      final part = Part(
+        mediaResolution: PartMediaResolution(
+          level: PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH,
+          numTokens: 128,
+        ),
+        fileData: FileData(
+          displayName: 'demo.mp4',
+          fileUri: 'gs://bucket/demo.mp4',
+          mimeType: 'video/mp4',
+        ),
+        videoMetadata: VideoMetadata(
+          startOffset: '0s',
+          endOffset: '2s',
+          fps: 24,
+        ),
+        thought: true,
+        thoughtSignature: 'c2lnbmF0dXJl',
+        toolCall: ToolCall(
+          id: 'tool-call-1',
+          toolType: ToolType.URL_CONTEXT,
+          args: {'url': 'https://example.com'},
+        ),
+        toolResponse: ToolResponse(
+          id: 'tool-call-1',
+          toolType: ToolType.URL_CONTEXT,
+          response: {'status': 'ok'},
+        ),
+        partMetadata: {'source': 'ref-sync'},
+      );
+
+      final restored = Part.fromJson(
+        jsonDecode(jsonEncode(part.toJson())) as Map<String, dynamic>,
+      );
+
+      expect(
+        restored.mediaResolution?.level,
+        PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH,
+      );
+      expect(restored.fileData?.fileUri, 'gs://bucket/demo.mp4');
+      expect(restored.videoMetadata?.fps, 24);
+      expect(restored.thoughtSignature, 'c2lnbmF0dXJl');
+      expect(restored.toolCall?.toolType, ToolType.URL_CONTEXT);
+      expect(restored.toolResponse?.response?['status'], 'ok');
+      expect(restored.partMetadata?['source'], 'ref-sync');
+    });
+
     test('serializes realtime input and tool response', () {
       final realtime = LiveClientRealtimeInput(
         audio: Blob(mimeType: 'audio/pcm', data: 'base64Audio'),
@@ -221,7 +289,7 @@ void main() {
         'sessionResumptionUpdate': {
           'newHandle': 'new-handle',
           'resumable': true,
-          'lastConsumedClientMessageIndex': 42,
+          'lastConsumedClientMessageIndex': '42',
         },
         'voiceActivityDetectionSignal': {
           'vadSignalType': 'VAD_SIGNAL_TYPE_SOS',
@@ -244,7 +312,7 @@ void main() {
       expect(message.sessionResumptionUpdate?.resumable, true);
       expect(
         message.sessionResumptionUpdate?.lastConsumedClientMessageIndex,
-        42,
+        '42',
       );
       expect(message.voiceActivityDetectionSignal?.start, true);
       expect(message.voiceActivityDetectionSignal?.end, false);
@@ -267,10 +335,10 @@ void main() {
                 Part(text: 'B', thought: true),
                 Part(text: 'C'),
                 Part(
-                  inlineData: Blob(mimeType: 'audio/pcm', data: 'x'),
+                  inlineData: Blob(mimeType: 'audio/pcm', data: 'eA=='),
                 ),
                 Part(
-                  inlineData: Blob(mimeType: 'audio/pcm', data: 'y'),
+                  inlineData: Blob(mimeType: 'audio/pcm', data: 'eQ=='),
                 ),
               ],
             ),
@@ -278,7 +346,7 @@ void main() {
         );
 
         expect(message.text, 'AC');
-        expect(message.data, 'xy');
+        expect(message.data, 'eHk=');
       },
     );
   });
