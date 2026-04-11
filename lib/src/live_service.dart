@@ -91,9 +91,14 @@ class LiveService {
   final Duration _setupTimeout;
   final String Function() _dartVersionProvider;
 
+  /// Optional logger for WebSocket traffic. When null (default), logging is
+  /// disabled. Set to `print` to restore the previous verbose behavior.
+  final void Function(String message)? logger;
+
   LiveService({
     required this.apiKey,
     this.apiVersion = 'v1beta',
+    this.logger,
     WebSocketConnector? connector,
     Duration setupTimeout = const Duration(seconds: 10),
     String Function()? dartVersionProvider,
@@ -217,7 +222,7 @@ class LiveService {
 
     try {
       final json = jsonDecode(jsonData);
-      print('📥 Received JSON: $jsonData');
+      logger?.call('📥 Received JSON: $jsonData');
       final message = LiveServerMessage.fromJson(json);
       callbacks.onMessage?.call(message);
     } catch (e, st) {
@@ -233,7 +238,7 @@ class LiveService {
   Future<LiveSession> connect(LiveConnectParameters params) async {
     final usesEphemeralToken = apiKey.startsWith('auth_tokens/');
     if (usesEphemeralToken && apiVersion != 'v1alpha') {
-      print(
+      logger?.call(
         '⚠️ Warning: Ephemeral token support is only available on v1alpha. Current apiVersion: $apiVersion',
       );
     }
@@ -253,7 +258,7 @@ class LiveService {
 
     final userAgent = 'google-genai-sdk/1.42.0 dart/${_dartVersionProvider()}';
 
-    print('🔌 Connecting to WebSocket at $websocketUri');
+    logger?.call('🔌 Connecting to WebSocket at $websocketUri');
 
     try {
       final headers = {
@@ -263,7 +268,7 @@ class LiveService {
         'user-agent': userAgent,
       };
       final channel = await _connector(websocketUri, headers);
-      final session = LiveSession._(channel);
+      final session = LiveSession._(channel, logger: logger);
       final setupCompleter = Completer<void>();
 
       StreamSubscription? streamSubscription;
@@ -272,7 +277,7 @@ class LiveService {
           final jsonData = data is String
               ? data
               : utf8.decode(data as List<int>);
-          print('📥 Received: $jsonData');
+          logger?.call('📥 Received: $jsonData');
 
           if (!setupCompleter.isCompleted) {
             try {
@@ -314,7 +319,7 @@ class LiveService {
 
       return session;
     } catch (e) {
-      print("Failed to connect or setup WebSocket: $e");
+      logger?.call("Failed to connect or setup WebSocket: $e");
       rethrow;
     }
   }
@@ -335,8 +340,9 @@ class TimeoutException implements Exception {
 /// Represents an active Live API session
 class LiveSession {
   final WebSocketChannel _channel;
+  final void Function(String)? _logger;
 
-  LiveSession._(this._channel);
+  LiveSession._(this._channel, {void Function(String)? logger}) : _logger = logger;
 
   factory LiveSession.forTesting(WebSocketChannel channel) =>
       LiveSession._(channel);
@@ -344,13 +350,13 @@ class LiveSession {
   /// Sends a message to the server
   void sendMessage(LiveClientMessage message) {
     if (_channel.closeCode != null) {
-      print(
+      _logger?.call(
         '⚠️ Warning: Attempted to send a message on a closed WebSocket channel.',
       );
       return;
     }
     final jsonString = jsonEncode(message.toJson());
-    print('📤 Sending: $jsonString');
+    _logger?.call('📤 Sending: $jsonString');
     _channel.sink.add(jsonString);
   }
 
