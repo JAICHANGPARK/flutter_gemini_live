@@ -1,5 +1,15 @@
 ## Unreleased
 
+## 2026.4.19
+
+### Added
+- Added configurable logging for Live API sessions through `LiveService(logger: ...)`.
+
+### Changed
+- Live WebSocket traffic logging is now disabled by default.
+- Passing `print` as the logger restores the previous verbose logging behavior.
+- Updated publish metadata and README installation snippets to the current date-based version.
+
 ## 2026.4.17
 
 ### Added
