@@ -1,5 +1,19 @@
 ## Unreleased
 
+### Added
+- Example app now plays Gemini Live audio responses in-app by buffering PCM chunks, wrapping them as WAV, and playing them when a response turn completes.
+
+### Changed
+- Split example app Live model defaults by demo:
+  - `Realtime Media` now targets `gemini-3.1-flash-live-preview`.
+  - chat, function-calling, and feature demos stay on the 2.5 compatibility path until the SDK exposes the additional 3.1 history/session controls.
+- Restored chat demo `Text Mode` / `Voice Mode` switching while keeping audio-response sessions compatible with current Live API behavior.
+
+### Fixed
+- Fixed the example app disconnection issue reported in GitHub issue `#8` by removing non-audio request flows from Live setup in the app demos.
+- Fixed example audio playback cleanup so buffered audio is cleared on interruption, connection close, and error paths.
+- Fixed example playback triggering to handle turns that finish with `generationComplete` as well as `turnComplete`.
+
 ## 2026.4.19
 
 ### Added

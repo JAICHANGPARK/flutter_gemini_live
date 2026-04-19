@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
+import 'live_audio_player.dart';
+import 'live_api_defaults.dart';
 
 /// A comprehensive demo page showcasing all new Gemini Live API features
 class LiveAPIDemoPage extends StatefulWidget {
@@ -14,6 +16,7 @@ class LiveAPIDemoPage extends StatefulWidget {
 class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   late final GoogleGenAI _genAI;
   LiveSession? _session;
+  final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
 
   // Connection state
   bool _isConnected = false;
@@ -40,6 +43,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   @override
   void dispose() {
     _session?.close();
+    unawaited(_responseAudioPlayer.dispose());
     super.dispose();
   }
 
@@ -65,16 +69,17 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
     }
 
     setState(() => _isConnecting = true);
-    _addLog('SYSTEM', 'Connecting to Gemini Live API...');
+    _addLog(
+      'SYSTEM',
+      'Connecting to Gemini Live API with Gemini 2.5 Flash Live compatibility...',
+    );
+    await _responseAudioPlayer.stop();
 
     try {
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-live-2.5-flash-preview',
-          config: GenerationConfig(
-            temperature: 0.7,
-            responseModalities: [Modality.TEXT],
-          ),
+          model: kCompatibilityLiveModel,
+          config: buildExampleAudioGenerationConfig(temperature: 0.7),
           systemInstruction: Content(
             parts: [
               Part(
@@ -103,7 +108,9 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
           inputAudioTranscription: _enableTranscription
               ? AudioTranscriptionConfig()
               : null,
-          outputAudioTranscription: null,
+          outputAudioTranscription: _enableTranscription
+              ? AudioTranscriptionConfig()
+              : null,
           // Session resumption
           sessionResumption: _enableSessionResumption && _sessionHandle != null
               ? SessionResumptionConfig(handle: _sessionHandle)
@@ -125,10 +132,12 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
             },
             onMessage: _handleMessage,
             onError: (error, stack) {
+              unawaited(_responseAudioPlayer.stop());
               _addLog('ERROR', '❌ Error: $error');
               setState(() => _isConnecting = false);
             },
             onClose: (code, reason) {
+              unawaited(_responseAudioPlayer.stop());
               _addLog(
                 'CONNECTION',
                 '🔒 Connection closed: code=$code, reason=$reason',
@@ -150,13 +159,24 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    final serverContent = message.serverContent;
+    final turnFinished =
+        (serverContent?.turnComplete ?? false) ||
+        (serverContent?.generationComplete ?? false);
+
+    if (serverContent?.interrupted ?? false) {
+      _responseAudioPlayer.clear();
+    }
+
     // Handle text
-    if (message.text != null) {
-      _addLog('TEXT', '🤖 ${message.text}');
+    final textChunk = visibleModelText(message);
+    if (textChunk != null) {
+      _addLog('TEXT', '🤖 $textChunk');
     }
 
     // Handle audio data
     if (message.data != null) {
+      _responseAudioPlayer.appendBase64Chunk(message.data!);
       _addLog('AUDIO', '🔊 Received audio: ${message.data!.length} chars');
     }
 
@@ -215,6 +235,11 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
         'USAGE',
         '📊 Tokens: ${u.totalTokenCount} (prompt: ${u.promptTokenCount}, response: ${u.responseTokenCount})',
       );
+    }
+
+    if (turnFinished && _responseAudioPlayer.hasBufferedAudio) {
+      _addLog('AUDIO', '▶️ Playing received audio');
+      unawaited(_responseAudioPlayer.playBufferedAudio());
     }
   }
 

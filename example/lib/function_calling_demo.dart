@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
+import 'live_audio_player.dart';
+import 'live_api_defaults.dart';
 
 /// Demo page for function calling (tool calling) feature
 class FunctionCallingDemoPage extends StatefulWidget {
@@ -15,6 +17,7 @@ class FunctionCallingDemoPage extends StatefulWidget {
 class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
   late final GoogleGenAI _genAI;
   LiveSession? _session;
+  final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
   final TextEditingController _inputController = TextEditingController();
 
   bool _isConnected = false;
@@ -33,6 +36,7 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
   void dispose() {
     _inputController.dispose();
     _session?.close();
+    unawaited(_responseAudioPlayer.dispose());
     super.dispose();
   }
 
@@ -44,16 +48,17 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
     }
 
     setState(() => _isConnecting = true);
-    _addSystemMessage('Connecting with function calling enabled...');
+    _addSystemMessage(
+      'Connecting with function calling enabled on Gemini 2.5 Flash Live compatibility...',
+    );
+    await _responseAudioPlayer.stop();
 
     try {
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-live-2.5-flash-preview',
-          config: GenerationConfig(
-            temperature: 0.7,
-            responseModalities: [Modality.TEXT],
-          ),
+          model: kCompatibilityLiveModel,
+          config: buildExampleAudioGenerationConfig(temperature: 0.7),
+          outputAudioTranscription: AudioTranscriptionConfig(),
           systemInstruction: Content(
             parts: [
               Part(
@@ -160,10 +165,12 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
             },
             onMessage: _handleMessage,
             onError: (error, stack) {
+              unawaited(_responseAudioPlayer.stop());
               _addSystemMessage('❌ Error: $error');
               setState(() => _isConnecting = false);
             },
             onClose: (code, reason) {
+              unawaited(_responseAudioPlayer.stop());
               _addSystemMessage('🔒 Connection closed');
               setState(() {
                 _isConnected = false;
@@ -182,9 +189,24 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    final serverContent = message.serverContent;
+    final turnFinished =
+        (serverContent?.turnComplete ?? false) ||
+        (serverContent?.generationComplete ?? false);
+
+    if (serverContent?.interrupted ?? false) {
+      _responseAudioPlayer.clear();
+    }
+
     // Handle text response
-    if (message.text != null) {
-      _addMessage('model', message.text!);
+    final textChunk = visibleModelText(message);
+    if (textChunk != null) {
+      _addMessage('model', textChunk);
+    }
+
+    if (message.data != null) {
+      _responseAudioPlayer.appendBase64Chunk(message.data!);
+      _addSystemMessage('🔊 Received audio response');
     }
 
     // Handle tool calls
@@ -202,6 +224,11 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
       setState(() {
         _pendingFunctionCalls.removeWhere((call) => ids.contains(call.id));
       });
+    }
+
+    if (turnFinished && _responseAudioPlayer.hasBufferedAudio) {
+      _addSystemMessage('▶️ Playing received audio');
+      unawaited(_responseAudioPlayer.playBufferedAudio());
     }
   }
 

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
+import 'live_audio_player.dart';
+import 'live_api_defaults.dart';
 
 /// Demo page for realtime audio/video input features
 class RealtimeMediaDemoPage extends StatefulWidget {
@@ -17,6 +19,7 @@ class RealtimeMediaDemoPage extends StatefulWidget {
 class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
   late final GoogleGenAI _genAI;
   LiveSession? _session;
+  final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
 
   bool _isConnected = false;
   bool _isConnecting = false;
@@ -38,6 +41,7 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
   @override
   void dispose() {
     _session?.close();
+    unawaited(_responseAudioPlayer.dispose());
     super.dispose();
   }
 
@@ -58,16 +62,14 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
     }
 
     setState(() => _isConnecting = true);
-    _addLog('SYSTEM', 'Connecting to Live API...');
+    _addLog('SYSTEM', 'Connecting to Live API with Gemini 3.1 Flash Live...');
+    await _responseAudioPlayer.stop();
 
     try {
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: 'gemini-live-2.5-flash-preview',
-          config: GenerationConfig(
-            temperature: 0.7,
-            responseModalities: [Modality.TEXT],
-          ),
+          model: kLatestRealtimeLiveModel,
+          config: buildExampleAudioGenerationConfig(temperature: 0.7),
           // Configure based on manual activity mode
           realtimeInputConfig: _manualActivityMode
               ? RealtimeInputConfig(
@@ -86,6 +88,7 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
                   ),
                 ),
           inputAudioTranscription: AudioTranscriptionConfig(),
+          outputAudioTranscription: AudioTranscriptionConfig(),
           callbacks: LiveCallbacks(
             onOpen: () {
               _addLog('CONNECTION', '✅ Connected');
@@ -96,10 +99,12 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
             },
             onMessage: _handleMessage,
             onError: (error, stack) {
+              unawaited(_responseAudioPlayer.stop());
               _addLog('ERROR', '❌ $error');
               setState(() => _isConnecting = false);
             },
             onClose: (code, reason) {
+              unawaited(_responseAudioPlayer.stop());
               _addLog('CONNECTION', '🔒 Disconnected');
               setState(() {
                 _isConnected = false;
@@ -118,9 +123,24 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    final serverContent = message.serverContent;
+    final turnFinished =
+        (serverContent?.turnComplete ?? false) ||
+        (serverContent?.generationComplete ?? false);
+
+    if (serverContent?.interrupted ?? false) {
+      _responseAudioPlayer.clear();
+    }
+
     // Text response
-    if (message.text != null) {
-      _addLog('TEXT', '🤖 ${message.text}');
+    final textChunk = visibleModelText(message);
+    if (textChunk != null) {
+      _addLog('TEXT', '🤖 $textChunk');
+    }
+
+    if (message.data != null) {
+      _responseAudioPlayer.appendBase64Chunk(message.data!);
+      _addLog('AUDIO', '🔊 Received audio: ${message.data!.length} chars');
     }
 
     // Transcriptions
@@ -144,6 +164,11 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage> {
       final signal = message.voiceActivityDetectionSignal!;
       if (signal.start == true) _addLog('VAD', '🎙️ Speech started');
       if (signal.end == true) _addLog('VAD', '🎙️ Speech ended');
+    }
+
+    if (turnFinished && _responseAudioPlayer.hasBufferedAudio) {
+      _addLog('AUDIO', '▶️ Playing received audio');
+      unawaited(_responseAudioPlayer.playBufferedAudio());
     }
   }
 

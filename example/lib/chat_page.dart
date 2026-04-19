@@ -10,13 +10,15 @@ import 'package:permission_handler/permission_handler.dart';
 // Importing custom widgets and data models from the project.
 import 'bubble.dart'; // A widget to display a single chat message bubble.
 import 'api_key_store.dart'; // Stores API key from settings.
+import 'live_audio_player.dart';
+import 'live_api_defaults.dart';
 import 'message.dart'; // The data class for a chat message (ChatMessage).
 import 'package:record/record.dart'; // Package for recording audio.
 
 /// Enum to manage the state of the WebSocket connection to the Gemini API.
 enum ConnectionStatus { connecting, connected, disconnected }
 
-/// Enum to define the desired response modality from the model.
+/// UI mode for the chat demo.
 enum ResponseMode { text, audio }
 
 /// The main chat page widget.
@@ -29,28 +31,41 @@ class ChatPage extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatPage> {
   // --- Gemini Live API and Session Management ---
-  late final GoogleGenAI _genAI; // The main instance for interacting with the Gemini API.
-  LiveSession? _session; // The active WebSocket session for real-time communication.
-  final TextEditingController _textController = TextEditingController(); // Controller for the text input field.
+  late final GoogleGenAI
+  _genAI; // The main instance for interacting with the Gemini API.
+  LiveSession?
+  _session; // The active WebSocket session for real-time communication.
+  final TextEditingController _textController =
+      TextEditingController(); // Controller for the text input field.
 
   // --- State Management Variables ---
-  ConnectionStatus _connectionStatus = ConnectionStatus.disconnected; // Tracks the current connection status.
-  bool _isReplying = false; // A flag to indicate if the model is currently generating a response.
-  final List<ChatMessage> _messages = []; // A list to store the history of chat messages.
-  ChatMessage? _streamingMessage; // A separate message object to hold the response as it streams in.
-  String _statusText = "Initializing connection..."; // A user-facing string to show the current status.
+  ConnectionStatus _connectionStatus =
+      ConnectionStatus.disconnected; // Tracks the current connection status.
+  bool _isReplying =
+      false; // A flag to indicate if the model is currently generating a response.
+  final List<ChatMessage> _messages =
+      []; // A list to store the history of chat messages.
+  ChatMessage?
+  _streamingMessage; // A separate message object to hold the response as it streams in.
 
   // --- Image and Audio Handling Variables ---
   XFile? _pickedImage; // Holds the image file selected by the user.
-  final ImagePicker _picker = ImagePicker(); // An instance of the image picker utility.
-  StreamSubscription<RecordState>? _recordSub; // Subscription to listen to the audio recorder's state changes.
-  bool _isRecording = false; // A flag to track if audio is currently being recorded.
+  final ImagePicker _picker =
+      ImagePicker(); // An instance of the image picker utility.
+  StreamSubscription<RecordState>?
+  _recordSub; // Subscription to listen to the audio recorder's state changes.
+  bool _isRecording =
+      false; // A flag to track if audio is currently being recorded.
 
   // --- Audio and Mode Management ---
-  final AudioRecorder _audioRecorder = AudioRecorder(); // The main object for handling audio recording.
-  StreamSubscription<List<int>>? _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
-  ResponseMode _responseMode = ResponseMode.text; // The default response mode is text.
-  final StringBuffer _audioBuffer = StringBuffer(); // A buffer for audio data (not used in this implementation).
+  final AudioRecorder _audioRecorder =
+      AudioRecorder(); // The main object for handling audio recording.
+  StreamSubscription<List<int>>?
+  _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
+  final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
+  ResponseMode _responseMode = ResponseMode.text;
+
+  bool get _voiceModeEnabled => _responseMode == ResponseMode.audio;
 
   /// Initializes the connection to the Gemini Live API when the widget is first created.
   Future<void> _initialize() async {
@@ -76,15 +91,13 @@ class _ChatScreenState extends State<ChatPage> {
   void dispose() {
     // It's crucial to clean up resources to prevent memory leaks.
     _session?.close(); // Close the WebSocket connection.
-    _audioStreamSubscription?.cancel(); // Cancel any active stream subscriptions.
+    _recordSub?.cancel();
+    _audioStreamSubscription
+        ?.cancel(); // Cancel any active stream subscriptions.
     _audioRecorder.dispose(); // Dispose of the audio recorder.
+    unawaited(_responseAudioPlayer.dispose());
     _textController.dispose(); // Dispose of the text controller.
     super.dispose();
-  }
-
-  /// A helper function to safely update the status text on the UI.
-  void _updateStatus(String text) {
-    if (mounted) setState(() => _statusText = text);
   }
 
   // --- Connection Management ---
@@ -105,12 +118,12 @@ class _ChatScreenState extends State<ChatPage> {
           author: Role.model,
         ),
       );
-      _updateStatus("API key is missing.");
       return;
     }
 
     // Safely close any pre-existing session before creating a new one.
     await _session?.close();
+    await _responseAudioPlayer.stop();
     setState(() {
       _session = null;
       _connectionStatus = ConnectionStatus.connecting;
@@ -118,33 +131,27 @@ class _ChatScreenState extends State<ChatPage> {
       // Add a temporary message to inform the user about the connection attempt.
       _addMessage(
         ChatMessage(
-          text: "Connecting to Gemini Live API (${_responseMode.name} mode)...",
+          text: _voiceModeEnabled
+              ? "Connecting to Gemini Live API (voice mode)..."
+              : "Connecting to Gemini Live API (text mode)...",
           author: Role.model,
         ),
       );
-      _updateStatus("Connecting to Gemini Live API...");
     });
 
     try {
-      final modelName = 'gemini-live-2.5-flash-preview';
       // Initiate the connection with specified parameters.
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          // Specify the model to use. 'flash' is optimized for speed.
-          model: modelName,
-          // Configure the generation output.
-          config: GenerationConfig(
-            // Define the expected response format (modality).
-            // This is dynamically set based on the _responseMode state.
-            responseModalities: _responseMode == ResponseMode.audio
-                ? [Modality.AUDIO]
-                : [Modality.TEXT],
-          ),
+          model: kCompatibilityLiveModel,
+          config: buildExampleAudioGenerationConfig(),
+          outputAudioTranscription: AudioTranscriptionConfig(),
           // Provide system instructions to guide the model's behavior.
           systemInstruction: Content(
             parts: [
               Part(
-                text: "You are a helpful AI assistant. "
+                text:
+                    "You are a helpful AI assistant. "
                     "Your goal is to provide comprehensive, detailed, and well-structured answers. Always explain the background, key concepts, and provide illustrative examples. Do not give short or brief answers."
                     "**You must respond in the same language that the user uses for their question.** For example, if the user asks a question in Korean, you must reply in Korean. "
                     "If they ask in Japanese, reply in Japanese.",
@@ -153,18 +160,25 @@ class _ChatScreenState extends State<ChatPage> {
           ),
           // Define callbacks to handle WebSocket events.
           callbacks: LiveCallbacks(
-            onOpen: () => _updateStatus("Connection successful! Try turning on the mic."),
-            onMessage: _handleLiveAPIResponse, // Called when a message is received.
+            onOpen: () {},
+            onMessage:
+                _handleLiveAPIResponse, // Called when a message is received.
             onError: (error, stack) {
-              print('🚨 Error occurred: $error');
+              unawaited(_responseAudioPlayer.stop());
+              debugPrint('🚨 Error occurred: $error');
               if (mounted) {
-                setState(() => _connectionStatus = ConnectionStatus.disconnected);
+                setState(
+                  () => _connectionStatus = ConnectionStatus.disconnected,
+                );
               }
             },
             onClose: (code, reason) {
-              print('🚪 Connection closed: $code, $reason');
+              unawaited(_responseAudioPlayer.stop());
+              debugPrint('🚪 Connection closed: $code, $reason');
               if (mounted) {
-                setState(() => _connectionStatus = ConnectionStatus.disconnected);
+                setState(
+                  () => _connectionStatus = ConnectionStatus.disconnected,
+                );
               }
             },
           ),
@@ -179,12 +193,17 @@ class _ChatScreenState extends State<ChatPage> {
           _messages.removeLast(); // Remove the "Connecting..." message.
           // Add a welcome message.
           _addMessage(
-            ChatMessage(text: "Hello! Press the mic button to speak.", author: Role.model),
+            ChatMessage(
+              text: _voiceModeEnabled
+                  ? "Hello! Voice mode is on. Press the mic button to speak. Responses appear as live transcripts."
+                  : "Hello! Text mode is on. Type a message or attach an image. Responses appear as live transcripts.",
+              author: Role.model,
+            ),
           );
         });
       }
     } catch (e) {
-      print("Connection failed: $e");
+      debugPrint("Connection failed: $e");
       if (mounted) {
         setState(() => _connectionStatus = ConnectionStatus.disconnected);
       }
@@ -196,8 +215,20 @@ class _ChatScreenState extends State<ChatPage> {
   void _handleLiveAPIResponse(LiveServerMessage message) {
     if (!mounted) return;
 
-    final textChunk = message.text;
-    print('📥 Received message textchunk: $textChunk');
+    final serverContent = message.serverContent;
+    final turnFinished =
+        (serverContent?.turnComplete ?? false) ||
+        (serverContent?.generationComplete ?? false);
+
+    if (serverContent?.interrupted ?? false) {
+      _responseAudioPlayer.clear();
+    }
+
+    final textChunk = visibleModelText(message);
+    debugPrint('📥 Received message textchunk: $textChunk');
+    if (message.data != null) {
+      _responseAudioPlayer.appendBase64Chunk(message.data!);
+    }
     // If a text chunk is received, update the streaming message.
     if (textChunk != null) {
       setState(() {
@@ -215,7 +246,10 @@ class _ChatScreenState extends State<ChatPage> {
     }
 
     // When the model signals that its turn is complete, finalize the message.
-    if (message.serverContent?.turnComplete ?? false) {
+    if (turnFinished) {
+      if (_responseAudioPlayer.hasBufferedAudio) {
+        unawaited(_responseAudioPlayer.playBufferedAudio());
+      }
       setState(() {
         if (_streamingMessage != null) {
           // Move the completed streaming message into the main message list.
@@ -255,7 +289,7 @@ class _ChatScreenState extends State<ChatPage> {
       setState(() => _isRecording = false); // Update UI immediately.
 
       if (path != null) {
-        print("Recording stopped. File path: $path");
+        debugPrint("Recording stopped. File path: $path");
 
         // 1. Read the recorded audio file as bytes.
         final file = File(path);
@@ -311,10 +345,11 @@ class _ChatScreenState extends State<ChatPage> {
           path: filePath,
         );
       } else {
-        print("Microphone permission was denied.");
+        debugPrint("Microphone permission was denied.");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Microphone permission is required.")));
+            const SnackBar(content: Text("Microphone permission is required.")),
+          );
         }
       }
     }
@@ -324,7 +359,9 @@ class _ChatScreenState extends State<ChatPage> {
   Future<void> _sendMessage() async {
     final text = _textController.text;
     // Do not send if the input is empty, the model is replying, or the session is not active.
-    if ((text.isEmpty && _pickedImage == null) || _isReplying || _session == null) {
+    if ((text.isEmpty && _pickedImage == null) ||
+        _isReplying ||
+        _session == null) {
       return;
     }
 
@@ -418,20 +455,27 @@ class _ChatScreenState extends State<ChatPage> {
                 onPressed: _pickImage,
               ),
               // Button to toggle audio recording.
-              IconButton(
-                icon: Icon(
-                  _isRecording ? Icons.stop_circle_outlined : Icons.mic_none_outlined,
+              if (_voiceModeEnabled)
+                IconButton(
+                  icon: Icon(
+                    _isRecording
+                        ? Icons.stop_circle_outlined
+                        : Icons.mic_none_outlined,
+                  ),
+                  color: _isRecording
+                      ? Colors.red
+                      : Theme.of(context).iconTheme.color,
+                  onPressed: _toggleRecording,
                 ),
-                color: _isRecording ? Colors.red : Theme.of(context).iconTheme.color,
-                onPressed: _toggleRecording,
-              ),
               // The main text input field.
               Expanded(
                 child: TextField(
                   controller: _textController,
                   onSubmitted: (_) => _sendMessage(),
-                  decoration: const InputDecoration.collapsed(
-                    hintText: 'Enter a message or image description',
+                  decoration: InputDecoration.collapsed(
+                    hintText: _voiceModeEnabled
+                        ? 'Type a message or use the mic'
+                        : 'Enter a message or image description',
                   ),
                 ),
               ),
@@ -448,29 +492,6 @@ class _ChatScreenState extends State<ChatPage> {
     );
   }
 
-  /// Builds an alternative input area, primarily for voice input.
-  /// Note: This widget is not used in the current `build` method logic but is available.
-  Widget _buildInputArea() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-      color: Theme.of(context).cardColor,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FloatingActionButton(
-            onPressed: _toggleRecording,
-            backgroundColor: _isRecording ? Colors.red.shade400 : Theme.of(context).colorScheme.secondaryContainer,
-            child: Icon(
-              _isRecording ? Icons.stop : Icons.mic,
-              color: _isRecording ? Colors.white : Theme.of(context).colorScheme.onSecondaryContainer,
-              size: 32,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // --- UI Widget Builder ---
   @override
   Widget build(BuildContext context) {
@@ -478,28 +499,28 @@ class _ChatScreenState extends State<ChatPage> {
       appBar: AppBar(
         title: const Text('Gemini Live API'),
         actions: [
-          // A menu to select the desired response mode (Text or Audio).
           PopupMenuButton<ResponseMode>(
-            onSelected: (ResponseMode mode) {
-              if (mode != _responseMode) {
-                setState(() => _responseMode = mode);
-                // Reconnect to the API with the new mode setting.
-                _connectToLiveAPI();
+            tooltip: 'Chat mode',
+            onSelected: (mode) {
+              if (mode == _responseMode) return;
+              if (_isRecording) {
+                _audioRecorder.stop();
               }
+              setState(() {
+                _responseMode = mode;
+                _isRecording = false;
+              });
+              _connectToLiveAPI();
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<ResponseMode>>[
-              const PopupMenuItem<ResponseMode>(
-                value: ResponseMode.text,
-                child: Text('Text Response'),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: ResponseMode.text, child: Text('Text Mode')),
+              PopupMenuItem(
+                value: ResponseMode.audio,
+                child: Text('Voice Mode'),
               ),
-              // Add this back if you implement audio response playback.
-              // const PopupMenuItem<ResponseMode>(
-              //   value: ResponseMode.audio,
-              //   child: Text('Audio Response'),
-              // ),
             ],
             icon: Icon(
-              _responseMode == ResponseMode.text ? Icons.text_fields : Icons.graphic_eq,
+              _voiceModeEnabled ? Icons.graphic_eq : Icons.text_fields,
             ),
           ),
           // A visual indicator for the connection status.
@@ -527,14 +548,16 @@ class _ChatScreenState extends State<ChatPage> {
                 padding: const EdgeInsets.all(8.0),
                 reverse: true, // Shows the latest messages at the bottom.
                 // The item count includes the streaming message if it exists.
-                itemCount: _messages.length + (_streamingMessage == null ? 0 : 1),
+                itemCount:
+                    _messages.length + (_streamingMessage == null ? 0 : 1),
                 itemBuilder: (context, index) {
                   // If there's a streaming message, render it at the top (index 0).
                   if (_streamingMessage != null && index == 0) {
                     return Bubble(message: _streamingMessage!);
                   }
                   // Adjust the index to access the main messages list.
-                  final messageIndex = index - (_streamingMessage == null ? 0 : 1);
+                  final messageIndex =
+                      index - (_streamingMessage == null ? 0 : 1);
                   final message = _messages.reversed.toList()[messageIndex];
                   return Bubble(message: message);
                 },
