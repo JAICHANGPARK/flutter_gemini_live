@@ -53,6 +53,8 @@ class LiveConnectParameters {
   final AudioTranscriptionConfig? outputAudioTranscription;
   final ProactivityConfig? proactivity;
   final bool? explicitVadSignal;
+  final AvatarConfig? avatarConfig;
+  final List<SafetySetting>? safetySettings;
 
   LiveConnectParameters({
     required this.model,
@@ -67,6 +69,8 @@ class LiveConnectParameters {
     this.outputAudioTranscription,
     this.proactivity,
     this.explicitVadSignal,
+    this.avatarConfig,
+    this.safetySettings,
   });
 }
 
@@ -76,6 +80,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
+  static const _sdkVersion = '1.50.1';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -84,6 +89,12 @@ class LiveService {
   static UnsupportedError _unsupportedAudioTranscriptionLanguageCodesError() {
     return UnsupportedError(
       'languageCodes parameter is not supported in Gemini API.',
+    );
+  }
+
+  static UnsupportedError _unsupportedSafetyMethodError() {
+    return UnsupportedError(
+      'SafetySetting.method parameter is not supported in Gemini API.',
     );
   }
 
@@ -147,6 +158,12 @@ class LiveService {
       throw _unsupportedAudioTranscriptionLanguageCodesError();
     }
 
+    if ((params.safetySettings ?? const <SafetySetting>[]).any(
+      (setting) => setting.method != null,
+    )) {
+      throw _unsupportedSafetyMethodError();
+    }
+
     final modelName = params.model.startsWith('models/')
         ? params.model
         : 'models/${params.model}';
@@ -163,6 +180,8 @@ class LiveService {
         inputAudioTranscription: params.inputAudioTranscription,
         outputAudioTranscription: params.outputAudioTranscription,
         proactivity: params.proactivity,
+        avatarConfig: params.avatarConfig,
+        safetySettings: params.safetySettings,
       ),
     );
   }
@@ -251,7 +270,8 @@ class LiveService {
       queryParameters: {keyName: apiKey},
     );
 
-    final userAgent = 'google-genai-sdk/1.42.0 dart/${_dartVersionProvider()}';
+    final userAgent =
+        'google-genai-sdk/$_sdkVersion dart/${_dartVersionProvider()}';
 
     print('🔌 Connecting to WebSocket at $websocketUri');
 

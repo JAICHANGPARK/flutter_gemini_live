@@ -11,23 +11,73 @@ part 'models.g.dart';
 // ============================================================================
 
 /// Harm categories reported by Gemini safety metadata.
+@JsonEnum(alwaysCreate: true)
 enum HarmCategory {
+  @JsonValue('HARM_CATEGORY_UNSPECIFIED')
   HARM_CATEGORY_UNSPECIFIED,
+  @JsonValue('HARM_CATEGORY_HATE_SPEECH')
   HARM_CATEGORY_HATE_SPEECH,
+  @JsonValue('HARM_CATEGORY_DANGEROUS_CONTENT')
   HARM_CATEGORY_DANGEROUS_CONTENT,
+  @JsonValue('HARM_CATEGORY_HARASSMENT')
   HARM_CATEGORY_HARASSMENT,
+  @JsonValue('HARM_CATEGORY_SEXUALLY_EXPLICIT')
   HARM_CATEGORY_SEXUALLY_EXPLICIT,
+  @JsonValue('HARM_CATEGORY_CIVIC_INTEGRITY')
+  HARM_CATEGORY_CIVIC_INTEGRITY,
+  @JsonValue('HARM_CATEGORY_IMAGE_HATE')
+  HARM_CATEGORY_IMAGE_HATE,
+  @JsonValue('HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT')
+  HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT,
+  @JsonValue('HARM_CATEGORY_IMAGE_HARASSMENT')
+  HARM_CATEGORY_IMAGE_HARASSMENT,
+  @JsonValue('HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT')
+  HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT,
+  @JsonValue('HARM_CATEGORY_JAILBREAK')
+  HARM_CATEGORY_JAILBREAK,
+}
+
+/// Safety blocking methods.
+@JsonEnum(alwaysCreate: true)
+enum HarmBlockMethod {
+  @JsonValue('HARM_BLOCK_METHOD_UNSPECIFIED')
+  HARM_BLOCK_METHOD_UNSPECIFIED,
+  @JsonValue('SEVERITY')
+  SEVERITY,
+  @JsonValue('PROBABILITY')
+  PROBABILITY,
+}
+
+/// Safety thresholds used to block unsafe content.
+@JsonEnum(alwaysCreate: true)
+enum HarmBlockThreshold {
+  @JsonValue('HARM_BLOCK_THRESHOLD_UNSPECIFIED')
+  HARM_BLOCK_THRESHOLD_UNSPECIFIED,
+  @JsonValue('BLOCK_LOW_AND_ABOVE')
+  BLOCK_LOW_AND_ABOVE,
+  @JsonValue('BLOCK_MEDIUM_AND_ABOVE')
+  BLOCK_MEDIUM_AND_ABOVE,
+  @JsonValue('BLOCK_ONLY_HIGH')
+  BLOCK_ONLY_HIGH,
+  @JsonValue('BLOCK_NONE')
+  BLOCK_NONE,
+  @JsonValue('OFF')
+  OFF,
 }
 
 /// Modalities that a request or response can contain.
 @JsonEnum(alwaysCreate: true)
 enum Modality {
+  @JsonValue('MODALITY_UNSPECIFIED')
+  MODALITY_UNSPECIFIED,
   @JsonValue('TEXT')
   TEXT,
   @JsonValue('IMAGE')
   IMAGE,
   @JsonValue('AUDIO')
   AUDIO,
+  @JsonValue('VIDEO')
+  VIDEO,
 }
 
 /// Media resolution presets for multimodal responses.
@@ -65,6 +115,8 @@ enum TurnCoverage {
   TURN_INCLUDES_ONLY_ACTIVITY,
   @JsonValue('TURN_INCLUDES_ALL_INPUT')
   TURN_INCLUDES_ALL_INPUT,
+  @JsonValue('TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO')
+  TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO,
 }
 
 /// Sensitivity levels for detecting the start of speech.
@@ -124,6 +176,54 @@ enum TurnCompleteReason {
   RESPONSE_REJECTED,
   @JsonValue('NEED_MORE_INPUT')
   NEED_MORE_INPUT,
+  @JsonValue('PROHIBITED_INPUT_CONTENT')
+  PROHIBITED_INPUT_CONTENT,
+  @JsonValue('IMAGE_PROHIBITED_INPUT_CONTENT')
+  IMAGE_PROHIBITED_INPUT_CONTENT,
+  @JsonValue('INPUT_TEXT_CONTAIN_PROMINENT_PERSON_PROHIBITED')
+  INPUT_TEXT_CONTAIN_PROMINENT_PERSON_PROHIBITED,
+  @JsonValue('INPUT_IMAGE_CELEBRITY')
+  INPUT_IMAGE_CELEBRITY,
+  @JsonValue('INPUT_IMAGE_PHOTO_REALISTIC_CHILD_PROHIBITED')
+  INPUT_IMAGE_PHOTO_REALISTIC_CHILD_PROHIBITED,
+  @JsonValue('INPUT_TEXT_NCII_PROHIBITED')
+  INPUT_TEXT_NCII_PROHIBITED,
+  @JsonValue('INPUT_OTHER')
+  INPUT_OTHER,
+  @JsonValue('INPUT_IP_PROHIBITED')
+  INPUT_IP_PROHIBITED,
+  @JsonValue('BLOCKLIST')
+  BLOCKLIST,
+  @JsonValue('UNSAFE_PROMPT_FOR_IMAGE_GENERATION')
+  UNSAFE_PROMPT_FOR_IMAGE_GENERATION,
+  @JsonValue('GENERATED_IMAGE_SAFETY')
+  GENERATED_IMAGE_SAFETY,
+  @JsonValue('GENERATED_CONTENT_SAFETY')
+  GENERATED_CONTENT_SAFETY,
+  @JsonValue('GENERATED_AUDIO_SAFETY')
+  GENERATED_AUDIO_SAFETY,
+  @JsonValue('GENERATED_VIDEO_SAFETY')
+  GENERATED_VIDEO_SAFETY,
+  @JsonValue('GENERATED_CONTENT_PROHIBITED')
+  GENERATED_CONTENT_PROHIBITED,
+  @JsonValue('GENERATED_CONTENT_BLOCKLIST')
+  GENERATED_CONTENT_BLOCKLIST,
+  @JsonValue('GENERATED_IMAGE_PROHIBITED')
+  GENERATED_IMAGE_PROHIBITED,
+  @JsonValue('GENERATED_IMAGE_CELEBRITY')
+  GENERATED_IMAGE_CELEBRITY,
+  @JsonValue('GENERATED_IMAGE_PROMINENT_PEOPLE_DETECTED_BY_REWRITER')
+  GENERATED_IMAGE_PROMINENT_PEOPLE_DETECTED_BY_REWRITER,
+  @JsonValue('GENERATED_IMAGE_IDENTIFIABLE_PEOPLE')
+  GENERATED_IMAGE_IDENTIFIABLE_PEOPLE,
+  @JsonValue('GENERATED_IMAGE_MINORS')
+  GENERATED_IMAGE_MINORS,
+  @JsonValue('OUTPUT_IMAGE_IP_PROHIBITED')
+  OUTPUT_IMAGE_IP_PROHIBITED,
+  @JsonValue('GENERATED_OTHER')
+  GENERATED_OTHER,
+  @JsonValue('MAX_REGENERATION_REACHED')
+  MAX_REGENERATION_REACHED,
 }
 
 /// Voice activity detection signals emitted by the server.
@@ -155,6 +255,10 @@ enum TrafficType {
   TRAFFIC_TYPE_UNSPECIFIED,
   @JsonValue('ON_DEMAND')
   ON_DEMAND,
+  @JsonValue('ON_DEMAND_PRIORITY')
+  ON_DEMAND_PRIORITY,
+  @JsonValue('ON_DEMAND_FLEX')
+  ON_DEMAND_FLEX,
   @JsonValue('PROVISIONED_THROUGHPUT')
   PROVISIONED_THROUGHPUT,
 }
@@ -760,6 +864,56 @@ class ProactivityConfig {
   Map<String, dynamic> toJson() => _$ProactivityConfigToJson(this);
 }
 
+/// Safety settings to block unsafe content in Gemini responses.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SafetySetting {
+  final HarmCategory? category;
+  final HarmBlockMethod? method;
+  final HarmBlockThreshold? threshold;
+
+  SafetySetting({this.category, this.method, this.threshold});
+
+  factory SafetySetting.fromJson(Map<String, dynamic> json) =>
+      _$SafetySettingFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SafetySettingToJson(this);
+}
+
+/// A customized avatar reference image.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class CustomizedAvatar {
+  final String? imageMimeType;
+  final String? imageData;
+
+  CustomizedAvatar({this.imageMimeType, this.imageData});
+
+  factory CustomizedAvatar.fromJson(Map<String, dynamic> json) =>
+      _$CustomizedAvatarFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CustomizedAvatarToJson(this);
+}
+
+/// Avatar options for live video-capable sessions.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class AvatarConfig {
+  final String? avatarName;
+  final CustomizedAvatar? customizedAvatar;
+  final int? audioBitrateBps;
+  final int? videoBitrateBps;
+
+  AvatarConfig({
+    this.avatarName,
+    this.customizedAvatar,
+    this.audioBitrateBps,
+    this.videoBitrateBps,
+  });
+
+  factory AvatarConfig.fromJson(Map<String, dynamic> json) =>
+      _$AvatarConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AvatarConfigToJson(this);
+}
+
 /// The initial setup message sent when opening a Live API session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class LiveClientSetup {
@@ -774,6 +928,8 @@ class LiveClientSetup {
   final AudioTranscriptionConfig? outputAudioTranscription;
   final ProactivityConfig? proactivity;
   final bool? explicitVadSignal;
+  final AvatarConfig? avatarConfig;
+  final List<SafetySetting>? safetySettings;
 
   LiveClientSetup({
     required this.model,
@@ -787,6 +943,8 @@ class LiveClientSetup {
     this.outputAudioTranscription,
     this.proactivity,
     this.explicitVadSignal,
+    this.avatarConfig,
+    this.safetySettings,
   });
 
   factory LiveClientSetup.fromJson(Map<String, dynamic> json) =>

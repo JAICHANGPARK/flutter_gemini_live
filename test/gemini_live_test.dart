@@ -99,6 +99,31 @@ void main() {
       );
     });
 
+    test('buildSetupMessage rejects safety methods', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'models/gemini-live-2.5-flash-preview',
+            callbacks: LiveCallbacks(),
+            safetySettings: [
+              SafetySetting(
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                method: HarmBlockMethod.PROBABILITY,
+                threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            'SafetySetting.method parameter is not supported in Gemini API.',
+          ),
+        ),
+      );
+    });
+
     test('serializes setup with advanced live config', () {
       final message = LiveClientMessage(
         setup: LiveClientSetup(
@@ -106,7 +131,7 @@ void main() {
           generationConfig: GenerationConfig(
             temperature: 0.7,
             maxOutputTokens: 512,
-            responseModalities: [Modality.AUDIO],
+            responseModalities: [Modality.VIDEO],
             mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
             seed: 42,
             speechConfig: SpeechConfig(
@@ -144,6 +169,21 @@ void main() {
           ),
           inputAudioTranscription: AudioTranscriptionConfig(),
           outputAudioTranscription: AudioTranscriptionConfig(),
+          avatarConfig: AvatarConfig(
+            avatarName: 'hero',
+            customizedAvatar: CustomizedAvatar(
+              imageMimeType: 'image/jpeg',
+              imageData: 'aW1hZ2U=',
+            ),
+            audioBitrateBps: 64000,
+            videoBitrateBps: 1500000,
+          ),
+          safetySettings: [
+            SafetySetting(
+              category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+              threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+            ),
+          ],
         ),
       );
 
@@ -171,6 +211,18 @@ void main() {
         Behavior.NON_BLOCKING,
       );
       expect(restored.setup?.sessionResumption?.transparent, true);
+      expect(restored.setup?.generationConfig?.responseModalities, [
+        Modality.VIDEO,
+      ]);
+      expect(restored.setup?.avatarConfig?.avatarName, 'hero');
+      expect(
+        restored.setup?.avatarConfig?.customizedAvatar?.imageMimeType,
+        'image/jpeg',
+      );
+      expect(
+        restored.setup?.safetySettings?.single.threshold,
+        HarmBlockThreshold.BLOCK_ONLY_HIGH,
+      );
     });
 
     test('serializes latest part fields from ref live schema', () {

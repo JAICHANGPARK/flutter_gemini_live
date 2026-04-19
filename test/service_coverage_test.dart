@@ -226,6 +226,23 @@ void main() {
           ),
           throwsA(isA<UnsupportedError>()),
         );
+
+        expect(
+          () => LiveService.buildSetupMessage(
+            LiveConnectParameters(
+              model: 'gemini-live-test',
+              callbacks: LiveCallbacks(),
+              safetySettings: [
+                SafetySetting(
+                  category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                  method: HarmBlockMethod.PROBABILITY,
+                  threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                ),
+              ],
+            ),
+          ),
+          throwsA(isA<UnsupportedError>()),
+        );
       },
     );
 
@@ -314,6 +331,17 @@ void main() {
             inputAudioTranscription: AudioTranscriptionConfig(),
             outputAudioTranscription: AudioTranscriptionConfig(),
             proactivity: ProactivityConfig(proactiveAudio: true),
+            avatarConfig: AvatarConfig(
+              avatarName: 'hero',
+              audioBitrateBps: 64000,
+              videoBitrateBps: 1500000,
+            ),
+            safetySettings: [
+              SafetySetting(
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+              ),
+            ],
           ),
         );
 
@@ -327,9 +355,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/1.42.0 dart/9.9',
+          'google-genai-sdk/1.50.1 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/1.42.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/1.50.1 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -342,6 +370,15 @@ void main() {
         expect(
           sentSetup['setup']['context_window_compression']['sliding_window']['target_tokens'],
           '64',
+        );
+        expect(sentSetup['setup']['avatar_config']['avatar_name'], 'hero');
+        expect(
+          sentSetup['setup']['avatar_config']['video_bitrate_bps'],
+          1500000,
+        );
+        expect(
+          sentSetup['setup']['safety_settings'][0]['threshold'],
+          'BLOCK_ONLY_HIGH',
         );
         expect(session.isClosed, false);
 

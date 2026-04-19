@@ -1,5 +1,23 @@
 ## Unreleased
 
+## 2026.4.17
+
+### Added
+- Synced additional Gemini Live setup fields from the current `js-genai` reference:
+  - `LiveClientSetup.avatarConfig`
+  - `LiveClientSetup.safetySettings`
+  - `SafetySetting`, `AvatarConfig`, `CustomizedAvatar`
+- Expanded Live enum coverage for newer server responses:
+  - `Modality.VIDEO`
+  - `TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO`
+  - additional `TurnCompleteReason` values
+  - additional `TrafficType` values
+  - latest safety enums for Gemini blocking config
+
+### Changed
+- Updated Live SDK request headers to `google-genai-sdk/1.50.1`.
+- Updated README and README_KR to match the current API surface and date-based package versioning.
+
 ## 2026.3.21
 
 ### Added

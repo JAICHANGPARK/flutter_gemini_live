@@ -225,9 +225,11 @@ Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
     };
 
 const _$ModalityEnumMap = {
+  Modality.MODALITY_UNSPECIFIED: 'MODALITY_UNSPECIFIED',
   Modality.TEXT: 'TEXT',
   Modality.IMAGE: 'IMAGE',
   Modality.AUDIO: 'AUDIO',
+  Modality.VIDEO: 'VIDEO',
 };
 
 const _$MediaResolutionEnumMap = {
@@ -569,6 +571,8 @@ const _$TurnCoverageEnumMap = {
   TurnCoverage.TURN_COVERAGE_UNSPECIFIED: 'TURN_COVERAGE_UNSPECIFIED',
   TurnCoverage.TURN_INCLUDES_ONLY_ACTIVITY: 'TURN_INCLUDES_ONLY_ACTIVITY',
   TurnCoverage.TURN_INCLUDES_ALL_INPUT: 'TURN_INCLUDES_ALL_INPUT',
+  TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO:
+      'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
 };
 
 SessionResumptionConfig _$SessionResumptionConfigFromJson(
@@ -625,6 +629,89 @@ ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ProactivityConfigToJson(ProactivityConfig instance) =>
     <String, dynamic>{'proactive_audio': ?instance.proactiveAudio};
 
+SafetySetting _$SafetySettingFromJson(Map<String, dynamic> json) =>
+    SafetySetting(
+      category: $enumDecodeNullable(_$HarmCategoryEnumMap, json['category']),
+      method: $enumDecodeNullable(_$HarmBlockMethodEnumMap, json['method']),
+      threshold: $enumDecodeNullable(
+        _$HarmBlockThresholdEnumMap,
+        json['threshold'],
+      ),
+    );
+
+Map<String, dynamic> _$SafetySettingToJson(SafetySetting instance) =>
+    <String, dynamic>{
+      'category': ?_$HarmCategoryEnumMap[instance.category],
+      'method': ?_$HarmBlockMethodEnumMap[instance.method],
+      'threshold': ?_$HarmBlockThresholdEnumMap[instance.threshold],
+    };
+
+const _$HarmCategoryEnumMap = {
+  HarmCategory.HARM_CATEGORY_UNSPECIFIED: 'HARM_CATEGORY_UNSPECIFIED',
+  HarmCategory.HARM_CATEGORY_HATE_SPEECH: 'HARM_CATEGORY_HATE_SPEECH',
+  HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT:
+      'HARM_CATEGORY_DANGEROUS_CONTENT',
+  HarmCategory.HARM_CATEGORY_HARASSMENT: 'HARM_CATEGORY_HARASSMENT',
+  HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT:
+      'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+  HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY: 'HARM_CATEGORY_CIVIC_INTEGRITY',
+  HarmCategory.HARM_CATEGORY_IMAGE_HATE: 'HARM_CATEGORY_IMAGE_HATE',
+  HarmCategory.HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT:
+      'HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT',
+  HarmCategory.HARM_CATEGORY_IMAGE_HARASSMENT: 'HARM_CATEGORY_IMAGE_HARASSMENT',
+  HarmCategory.HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT:
+      'HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT',
+  HarmCategory.HARM_CATEGORY_JAILBREAK: 'HARM_CATEGORY_JAILBREAK',
+};
+
+const _$HarmBlockMethodEnumMap = {
+  HarmBlockMethod.HARM_BLOCK_METHOD_UNSPECIFIED:
+      'HARM_BLOCK_METHOD_UNSPECIFIED',
+  HarmBlockMethod.SEVERITY: 'SEVERITY',
+  HarmBlockMethod.PROBABILITY: 'PROBABILITY',
+};
+
+const _$HarmBlockThresholdEnumMap = {
+  HarmBlockThreshold.HARM_BLOCK_THRESHOLD_UNSPECIFIED:
+      'HARM_BLOCK_THRESHOLD_UNSPECIFIED',
+  HarmBlockThreshold.BLOCK_LOW_AND_ABOVE: 'BLOCK_LOW_AND_ABOVE',
+  HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE: 'BLOCK_MEDIUM_AND_ABOVE',
+  HarmBlockThreshold.BLOCK_ONLY_HIGH: 'BLOCK_ONLY_HIGH',
+  HarmBlockThreshold.BLOCK_NONE: 'BLOCK_NONE',
+  HarmBlockThreshold.OFF: 'OFF',
+};
+
+CustomizedAvatar _$CustomizedAvatarFromJson(Map<String, dynamic> json) =>
+    CustomizedAvatar(
+      imageMimeType: json['image_mime_type'] as String?,
+      imageData: json['image_data'] as String?,
+    );
+
+Map<String, dynamic> _$CustomizedAvatarToJson(CustomizedAvatar instance) =>
+    <String, dynamic>{
+      'image_mime_type': ?instance.imageMimeType,
+      'image_data': ?instance.imageData,
+    };
+
+AvatarConfig _$AvatarConfigFromJson(Map<String, dynamic> json) => AvatarConfig(
+  avatarName: json['avatar_name'] as String?,
+  customizedAvatar: json['customized_avatar'] == null
+      ? null
+      : CustomizedAvatar.fromJson(
+          json['customized_avatar'] as Map<String, dynamic>,
+        ),
+  audioBitrateBps: (json['audio_bitrate_bps'] as num?)?.toInt(),
+  videoBitrateBps: (json['video_bitrate_bps'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$AvatarConfigToJson(AvatarConfig instance) =>
+    <String, dynamic>{
+      'avatar_name': ?instance.avatarName,
+      'customized_avatar': ?instance.customizedAvatar,
+      'audio_bitrate_bps': ?instance.audioBitrateBps,
+      'video_bitrate_bps': ?instance.videoBitrateBps,
+    };
+
 LiveClientSetup _$LiveClientSetupFromJson(
   Map<String, dynamic> json,
 ) => LiveClientSetup(
@@ -669,6 +756,12 @@ LiveClientSetup _$LiveClientSetupFromJson(
       ? null
       : ProactivityConfig.fromJson(json['proactivity'] as Map<String, dynamic>),
   explicitVadSignal: json['explicit_vad_signal'] as bool?,
+  avatarConfig: json['avatar_config'] == null
+      ? null
+      : AvatarConfig.fromJson(json['avatar_config'] as Map<String, dynamic>),
+  safetySettings: (json['safety_settings'] as List<dynamic>?)
+      ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
@@ -684,6 +777,8 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'output_audio_transcription': ?instance.outputAudioTranscription,
       'proactivity': ?instance.proactivity,
       'explicit_vad_signal': ?instance.explicitVadSignal,
+      'avatar_config': ?instance.avatarConfig,
+      'safety_settings': ?instance.safetySettings,
     };
 
 LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
@@ -859,6 +954,37 @@ const _$TurnCompleteReasonEnumMap = {
   TurnCompleteReason.MALFORMED_FUNCTION_CALL: 'MALFORMED_FUNCTION_CALL',
   TurnCompleteReason.RESPONSE_REJECTED: 'RESPONSE_REJECTED',
   TurnCompleteReason.NEED_MORE_INPUT: 'NEED_MORE_INPUT',
+  TurnCompleteReason.PROHIBITED_INPUT_CONTENT: 'PROHIBITED_INPUT_CONTENT',
+  TurnCompleteReason.IMAGE_PROHIBITED_INPUT_CONTENT:
+      'IMAGE_PROHIBITED_INPUT_CONTENT',
+  TurnCompleteReason.INPUT_TEXT_CONTAIN_PROMINENT_PERSON_PROHIBITED:
+      'INPUT_TEXT_CONTAIN_PROMINENT_PERSON_PROHIBITED',
+  TurnCompleteReason.INPUT_IMAGE_CELEBRITY: 'INPUT_IMAGE_CELEBRITY',
+  TurnCompleteReason.INPUT_IMAGE_PHOTO_REALISTIC_CHILD_PROHIBITED:
+      'INPUT_IMAGE_PHOTO_REALISTIC_CHILD_PROHIBITED',
+  TurnCompleteReason.INPUT_TEXT_NCII_PROHIBITED: 'INPUT_TEXT_NCII_PROHIBITED',
+  TurnCompleteReason.INPUT_OTHER: 'INPUT_OTHER',
+  TurnCompleteReason.INPUT_IP_PROHIBITED: 'INPUT_IP_PROHIBITED',
+  TurnCompleteReason.BLOCKLIST: 'BLOCKLIST',
+  TurnCompleteReason.UNSAFE_PROMPT_FOR_IMAGE_GENERATION:
+      'UNSAFE_PROMPT_FOR_IMAGE_GENERATION',
+  TurnCompleteReason.GENERATED_IMAGE_SAFETY: 'GENERATED_IMAGE_SAFETY',
+  TurnCompleteReason.GENERATED_CONTENT_SAFETY: 'GENERATED_CONTENT_SAFETY',
+  TurnCompleteReason.GENERATED_AUDIO_SAFETY: 'GENERATED_AUDIO_SAFETY',
+  TurnCompleteReason.GENERATED_VIDEO_SAFETY: 'GENERATED_VIDEO_SAFETY',
+  TurnCompleteReason.GENERATED_CONTENT_PROHIBITED:
+      'GENERATED_CONTENT_PROHIBITED',
+  TurnCompleteReason.GENERATED_CONTENT_BLOCKLIST: 'GENERATED_CONTENT_BLOCKLIST',
+  TurnCompleteReason.GENERATED_IMAGE_PROHIBITED: 'GENERATED_IMAGE_PROHIBITED',
+  TurnCompleteReason.GENERATED_IMAGE_CELEBRITY: 'GENERATED_IMAGE_CELEBRITY',
+  TurnCompleteReason.GENERATED_IMAGE_PROMINENT_PEOPLE_DETECTED_BY_REWRITER:
+      'GENERATED_IMAGE_PROMINENT_PEOPLE_DETECTED_BY_REWRITER',
+  TurnCompleteReason.GENERATED_IMAGE_IDENTIFIABLE_PEOPLE:
+      'GENERATED_IMAGE_IDENTIFIABLE_PEOPLE',
+  TurnCompleteReason.GENERATED_IMAGE_MINORS: 'GENERATED_IMAGE_MINORS',
+  TurnCompleteReason.OUTPUT_IMAGE_IP_PROHIBITED: 'OUTPUT_IMAGE_IP_PROHIBITED',
+  TurnCompleteReason.GENERATED_OTHER: 'GENERATED_OTHER',
+  TurnCompleteReason.MAX_REGENERATION_REACHED: 'MAX_REGENERATION_REACHED',
 };
 
 LiveServerToolCall _$LiveServerToolCallFromJson(Map<String, dynamic> json) =>
@@ -961,6 +1087,8 @@ UsageMetadata _$UsageMetadataFromJson(
 const _$TrafficTypeEnumMap = {
   TrafficType.TRAFFIC_TYPE_UNSPECIFIED: 'TRAFFIC_TYPE_UNSPECIFIED',
   TrafficType.ON_DEMAND: 'ON_DEMAND',
+  TrafficType.ON_DEMAND_PRIORITY: 'ON_DEMAND_PRIORITY',
+  TrafficType.ON_DEMAND_FLEX: 'ON_DEMAND_FLEX',
   TrafficType.PROVISIONED_THROUGHPUT: 'PROVISIONED_THROUGHPUT',
 };
 

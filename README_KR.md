@@ -9,7 +9,7 @@
 - Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [실험적인 Gemini Live API](https://ai.google.dev/gemini-api/docs/live)를 사용하기 위한 Flutter 패키지입니다.
 - 이 패키지는 Firebase / Firebase AI Logic 사용 없이 활용가능 합니다.
 - `gemini-live-2.5-flash-preview`, `gemini-2.5-flash-native-audio-preview-12-2025` 등 최신 Gemini Live 모델 계열을 사용할 수 있습니다.
-- response_modalities : `TEXT`, `AUDIO` 모두 지원 (세션당 하나 선택)
+- response_modalities : 모델 지원 범위에 따라 `TEXT`, `AUDIO`, `VIDEO` 사용 가능
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 *   **함수 호출(Function Calling)**: 모델이 외부 함수를 호출하고 결과를 받을 수 있습니다.
 *   **세션 재개(Session Resumption)**: 연결이 끊어진 후 세션을 재개할 수 있습니다.
 *   **음성 활동 감지(VAD)**: 자동 또는 수동으로 음성 활동을 감지합니다.
-*   **실시간 미디어 청크**: 오디오/비디오 청크를 실시간으로 전송합니다.
+*   **실시간 미디어 청크**: 오디오/이미지 청크를 실시간으로 전송합니다.
 *   **오디오 전사(Transcription)**: 음성 입력과 출력을 텍스트로 전사합니다.
 
 | 데모 1: 치와와 vs 머핀 | 데모 2: 래브라두들 vs 프라이드 치킨 |
@@ -42,7 +42,7 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 ```yaml
 dependencies:
-  gemini_live: ^0.2.1 # 최신 버전을 사용하세요
+  gemini_live: ^2026.3.21 # 최신 배포 버전을 사용하세요
 ```
 
 또는 아래 명령어를 실행하세요(추천):
@@ -112,14 +112,16 @@ void sendMessage(String text) {
 }
 ```
 
-### 🆕 새로운 기능 (v0.2.1)
+### 🆕 주요 Live 기능
 
 #### 함수 호출 (Function Calling)
 
 모델이 외부 함수를 호출하고 결과를 받을 수 있습니다:
 
 ```dart
-final session = await genAI.live.connect(
+late final LiveSession session;
+
+session = await genAI.live.connect(
   LiveConnectParameters(
     model: 'gemini-live-2.5-flash-preview',
     tools: [
@@ -142,17 +144,16 @@ final session = await genAI.live.connect(
     callbacks: LiveCallbacks(
       onMessage: (LiveServerMessage message) {
         // 함수 호출 처리
-        if (message.toolCall != null) {
-          for (final call in message.toolCall!.functionCalls!) {
-            print('함수 호출: ${call.name}');
-            
-            // 함수 실행 후 응답 전송
-            session.sendFunctionResponse(
-              id: call.id!,
-              name: call.name!,
-              response: {'result': 'success'},
-            );
-          }
+        for (final call in message.toolCall?.functionCalls ?? const <FunctionCall>[]) {
+          if (call.id == null || call.name == null) continue;
+          print('함수 호출: ${call.name}');
+
+          // 함수 실행 후 응답 전송
+          session.sendFunctionResponse(
+            id: call.id!,
+            name: call.name!,
+            response: {'result': 'success'},
+          );
         }
       },
     ),
@@ -162,7 +163,8 @@ final session = await genAI.live.connect(
 
 #### 실시간 입력 (Realtime Input)
 
-오디오, 비디오, 텍스트를 실시간으로 전송:
+오디오, 이미지 프레임, 텍스트를 실시간으로 전송합니다.
+현재 `video` 필드는 `image/jpeg`, `image/png` 같은 `image/*` MIME 타입을 받습니다:
 
 ```dart
 // 실시간 텍스트 전송
@@ -231,6 +233,8 @@ if (message.sessionResumptionUpdate != null) {
 }
 ```
 
+> Gemini API 참고: `SessionResumptionConfig.transparent` 는 현재 지원되지 않으며 setup 검증 단계에서 예외가 발생합니다.
+
 #### 고급 설정
 
 ```dart
@@ -262,6 +266,8 @@ final session = await genAI.live.connect(
   ),
 );
 ```
+
+> Gemini API 참고: `AudioTranscriptionConfig.languageCodes` 는 현재 Gemini Live에서 지원되지 않습니다. 설정하지 않은 상태로 사용하세요.
 
 #### 에페메럴 토큰 (Client-to-Server)
 
@@ -303,7 +309,7 @@ final genAI = GoogleGenAI(
 2. **Live API Features** - 모든 새로운 기능 통합 데모
    - VAD, 전사, 세션 재개, 컨텍스트 압축 등
 3. **Function Calling** - 함수 호출 데모 (날씨/시간/환율/장소/리마인더)
-4. **Realtime Media** - 실시간 오디오/비디오 입력 데모
+4. **Realtime Media** - 실시간 오디오/이미지 프레임 입력 데모
 
 ### CLI 스크립트 예제
 
@@ -344,14 +350,14 @@ final genAI = GoogleGenAI(
 
 - `sendText(String text)` - 텍스트 메시지 전송
 - `sendClientContent({List<Content>? turns, bool turnComplete})` - 멀티턴 콘텐츠 전송
-- `sendRealtimeInput({...})` - 실시간 입력 전송 (오디오, 비디오, 텍스트)
+- `sendRealtimeInput({...})` - 실시간 입력 전송 (오디오, 이미지 프레임, 텍스트)
 - `sendMediaChunks(List<Blob> mediaChunks)` - 미디어 청크 전송
 - `sendAudioStreamEnd()` - 오디오 스트림 종료 신호
 - `sendRealtimeText(String text)` - 실시간 텍스트 전송
 - `sendActivityStart()` / `sendActivityEnd()` - 활동 시작/종료 신호
 - `sendToolResponse({required List<FunctionResponse> functionResponses})` - 툴 응답 전송
 - `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - 단일 함수 응답 전송
-- `sendVideo(List<int> videoBytes, {String mimeType})` - 비디오 전송
+- `sendVideo(List<int> videoBytes, {String mimeType})` - Live API `video` 필드를 통해 이미지 바이트 전송 (`image/*` MIME 타입)
 - `sendAudio(List<int> audioBytes)` - 오디오 전송
 - `close()` - 연결 종료
 - `isClosed` - 연결 상태 확인

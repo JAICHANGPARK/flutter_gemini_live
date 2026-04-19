@@ -185,14 +185,14 @@ void main() {
       final realtimeInputConfig = RealtimeInputConfig(
         automaticActivityDetection: automaticActivityDetection,
         activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
-        turnCoverage: TurnCoverage.TURN_INCLUDES_ALL_INPUT,
+        turnCoverage: TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO,
       );
       final realtimeInputConfigRoundTrip = RealtimeInputConfig.fromJson(
         normalizeJson(realtimeInputConfig.toJson()),
       );
       expect(
         realtimeInputConfigRoundTrip.turnCoverage,
-        TurnCoverage.TURN_INCLUDES_ALL_INPUT,
+        TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO,
       );
 
       final sessionResumption = SessionResumptionConfig(
@@ -246,7 +246,7 @@ void main() {
         topK: 16,
         topP: 0.9,
         maxOutputTokens: 1024,
-        responseModalities: [Modality.TEXT, Modality.AUDIO],
+        responseModalities: [Modality.TEXT, Modality.AUDIO, Modality.VIDEO],
         mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH,
         seed: 7,
         speechConfig: SpeechConfig(
@@ -267,6 +267,21 @@ void main() {
           FunctionDeclaration(name: 'lookup', behavior: Behavior.NON_BLOCKING),
         ],
       );
+      final avatarConfig = AvatarConfig(
+        avatarName: 'hero',
+        customizedAvatar: CustomizedAvatar(
+          imageMimeType: 'image/jpeg',
+          imageData: 'aW1hZ2U=',
+        ),
+        audioBitrateBps: 64000,
+        videoBitrateBps: 1500000,
+      );
+      final safetySettings = [
+        SafetySetting(
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+        ),
+      ];
 
       final setup = LiveClientSetup(
         model: 'models/gemini-live',
@@ -283,12 +298,28 @@ void main() {
         outputAudioTranscription: AudioTranscriptionConfig(),
         proactivity: proactivity,
         explicitVadSignal: true,
+        avatarConfig: avatarConfig,
+        safetySettings: safetySettings,
       );
       final setupRoundTrip = LiveClientSetup.fromJson(
         normalizeJson(setup.toJson()),
       );
       expect(setupRoundTrip.model, 'models/gemini-live');
       expect(setupRoundTrip.proactivity?.proactiveAudio, true);
+      expect(setupRoundTrip.generationConfig?.responseModalities, [
+        Modality.TEXT,
+        Modality.AUDIO,
+        Modality.VIDEO,
+      ]);
+      expect(setupRoundTrip.avatarConfig?.avatarName, 'hero');
+      expect(
+        setupRoundTrip.avatarConfig?.customizedAvatar?.imageMimeType,
+        'image/jpeg',
+      );
+      expect(
+        setupRoundTrip.safetySettings?.single.threshold,
+        HarmBlockThreshold.BLOCK_ONLY_HIGH,
+      );
 
       final clientContent = LiveClientContent(
         turns: [
@@ -556,7 +587,7 @@ void main() {
           'outputTranscription': {'text': 'output', 'finished': true},
           'generationComplete': true,
           'urlContextMetadata': {'url': 'https://example.com'},
-          'turnCompleteReason': 'NEED_MORE_INPUT',
+          'turnCompleteReason': 'GENERATED_VIDEO_SAFETY',
           'waitingForInput': true,
         },
         'usageMetadata': {
@@ -607,7 +638,7 @@ void main() {
       expect(message.setupComplete?.sessionId, 'server-session');
       expect(
         message.serverContent?.turnCompleteReason,
-        TurnCompleteReason.NEED_MORE_INPUT,
+        TurnCompleteReason.GENERATED_VIDEO_SAFETY,
       );
       expect(message.serverContent?.inputTranscription?.finished, true);
       expect(message.toolCall?.functionCalls?.single.args, {'city': 'Seoul'});

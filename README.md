@@ -11,7 +11,7 @@
 - A Flutter package for using [the experimental Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - No Firebase / Firebase AI Logic dependency
 - Supports current Gemini Live model families (for example `gemini-live-2.5-flash-preview` and `gemini-2.5-flash-native-audio-preview-12-2025`).
-- Supports both `TEXT` and `AUDIO` response modalities (one modality per session).
+- Supports `TEXT`, `AUDIO`, and `VIDEO` response modalities, depending on model capability.
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
@@ -25,7 +25,7 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 *   **Function Calling**: Model can call external functions and receive results.
 *   **Session Resumption**: Resume sessions after connection drops.
 *   **Voice Activity Detection (VAD)**: Automatic or manual voice activity detection.
-*   **Realtime Media Chunks**: Send audio/video chunks in real-time.
+*   **Realtime Media Chunks**: Send audio/image chunks in real-time.
 *   **Audio Transcription**: Transcribe voice input and output to text.
 
 | Demo 1: Chihuahua vs muffin | Demo 2: Labradoodle vs fried chicken |
@@ -45,7 +45,7 @@ Add the package to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  gemini_live: ^0.2.1 # Use the latest version
+  gemini_live: ^2026.3.21 # Use the latest published version
 ```
 
 or run this command (Recommend):
@@ -115,14 +115,16 @@ void sendMessage(String text) {
 }
 ```
 
-### 🆕 New Features (v0.2.1)
+### 🆕 Key Live Features
 
 #### Function Calling
 
 The model can call external functions and receive results:
 
 ```dart
-final session = await genAI.live.connect(
+late final LiveSession session;
+
+session = await genAI.live.connect(
   LiveConnectParameters(
     model: 'gemini-live-2.5-flash-preview',
     tools: [
@@ -145,17 +147,16 @@ final session = await genAI.live.connect(
     callbacks: LiveCallbacks(
       onMessage: (LiveServerMessage message) {
         // Handle function calls
-        if (message.toolCall != null) {
-          for (final call in message.toolCall!.functionCalls!) {
-            print('Function call: ${call.name}');
-            
-            // Execute function and send response
-            session.sendFunctionResponse(
-              id: call.id!,
-              name: call.name!,
-              response: {'result': 'success'},
-            );
-          }
+        for (final call in message.toolCall?.functionCalls ?? const <FunctionCall>[]) {
+          if (call.id == null || call.name == null) continue;
+          print('Function call: ${call.name}');
+
+          // Execute function and send response
+          session.sendFunctionResponse(
+            id: call.id!,
+            name: call.name!,
+            response: {'result': 'success'},
+          );
         }
       },
     ),
@@ -165,7 +166,8 @@ final session = await genAI.live.connect(
 
 #### Realtime Input
 
-Send audio, video, and text in real-time:
+Send audio, image frames, and text in real-time.
+The `video` field currently accepts `image/*` MIME types such as `image/jpeg` or `image/png`:
 
 ```dart
 // Send real-time text
@@ -234,6 +236,8 @@ if (message.sessionResumptionUpdate != null) {
 }
 ```
 
+> Gemini API note: `SessionResumptionConfig.transparent` is not supported and will throw during setup validation.
+
 #### Advanced Configuration
 
 ```dart
@@ -265,6 +269,8 @@ final session = await genAI.live.connect(
   ),
 );
 ```
+
+> Gemini API note: `AudioTranscriptionConfig.languageCodes` is not currently supported in Gemini Live. Leave it unset.
 
 #### Ephemeral Token (Client-to-Server)
 
@@ -306,7 +312,7 @@ The example app includes the following demo pages:
 2. **Live API Features** - Comprehensive demo of all new features
    - VAD, transcription, session resumption, context compression, etc.
 3. **Function Calling** - Function calling demo (weather/time/fx/place/reminder)
-4. **Realtime Media** - Real-time audio/video input demo
+4. **Realtime Media** - Real-time audio/image-frame input demo
 
 ### CLI Script Examples
 
@@ -347,14 +353,14 @@ See [examples/README.md](/Users/jaichang/Documents/GitHub/flutter_gemini_live/ex
 
 - `sendText(String text)` - Send text message
 - `sendClientContent({List<Content>? turns, bool turnComplete})` - Send multi-turn content
-- `sendRealtimeInput({...})` - Send real-time input (audio, video, text)
+- `sendRealtimeInput({...})` - Send real-time input (audio, image frames, text)
 - `sendMediaChunks(List<Blob> mediaChunks)` - Send media chunks
 - `sendAudioStreamEnd()` - Signal audio stream end
 - `sendRealtimeText(String text)` - Send real-time text
 - `sendActivityStart()` / `sendActivityEnd()` - Signal activity start/end
 - `sendToolResponse({required List<FunctionResponse> functionResponses})` - Send tool response
 - `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - Send single function response
-- `sendVideo(List<int> videoBytes, {String mimeType})` - Send video
+- `sendVideo(List<int> videoBytes, {String mimeType})` - Send image bytes through the Live API `video` field (`image/*` MIME types)
 - `sendAudio(List<int> audioBytes)` - Send audio
 - `close()` - Close connection
 - `isClosed` - Check connection status
