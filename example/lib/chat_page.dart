@@ -9,6 +9,7 @@ import 'package:gemini_live/gemini_live.dart';
 // Importing custom widgets and data models from the project.
 import 'bubble.dart'; // A widget to display a single chat message bubble.
 import 'api_key_store.dart'; // Stores API key from settings.
+import 'example_debug_log.dart';
 import 'live_audio_player.dart';
 import 'live_api_defaults.dart';
 import 'message.dart'; // The data class for a chat message (ChatMessage).
@@ -63,8 +64,62 @@ class _ChatScreenState extends State<ChatPage> {
   _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
   final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
   ResponseMode _responseMode = ResponseMode.text;
+  int _audioPlaybackCommand = 0;
+  String? _activeAudioMessageId;
+  String? _autoplayAudioMessageId;
+  int _currentResponseAudioChunkCount = 0;
+  int _sessionLifecycleVersion = 0;
+  bool _isDisposed = false;
 
   bool get _voiceModeEnabled => _responseMode == ResponseMode.audio;
+
+  bool _canApplySessionUpdate(int version) =>
+      !_isDisposed && mounted && version == _sessionLifecycleVersion;
+
+  void _invalidateSessionCallbacks() {
+    _sessionLifecycleVersion += 1;
+  }
+
+  String _summarizeTextForLog(String text) {
+    final singleLine = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (singleLine.isEmpty) return '(empty)';
+    if (singleLine.length <= 80) return singleLine;
+    return '${singleLine.substring(0, 77)}...';
+  }
+
+  void _updateAudioPlaybackTarget({String? messageId, bool autoplay = false}) {
+    _activeAudioMessageId = messageId;
+    _autoplayAudioMessageId = autoplay ? messageId : null;
+    _audioPlaybackCommand += 1;
+  }
+
+  void _clearAutoPlayRequest(String messageId) {
+    if (!mounted || _autoplayAudioMessageId != messageId) return;
+    setState(() {
+      _autoplayAudioMessageId = null;
+    });
+  }
+
+  void _stopAllBubblePlayback() {
+    final hadActivePlayback = _activeAudioMessageId != null;
+    if (!mounted) return;
+    setState(() => _updateAudioPlaybackTarget());
+    if (hadActivePlayback) {
+      logExampleEvent(
+        'CHAT',
+        'Stopped active voice playback before a new interaction.',
+      );
+    }
+  }
+
+  void _requestBubblePlayback(String messageId) {
+    if (!mounted) return;
+    setState(() => _updateAudioPlaybackTarget(messageId: messageId));
+    logExampleEvent(
+      'CHAT',
+      'Voice playback target changed to message $messageId.',
+    );
+  }
 
   /// Initializes the connection to the Gemini Live API when the widget is first created.
   Future<void> _initialize() async {
@@ -89,7 +144,11 @@ class _ChatScreenState extends State<ChatPage> {
   @override
   void dispose() {
     // It's crucial to clean up resources to prevent memory leaks.
-    _session?.close(); // Close the WebSocket connection.
+    _isDisposed = true;
+    _invalidateSessionCallbacks();
+    final session = _session;
+    _session = null;
+    unawaited(session?.close() ?? Future<void>.value());
     _recordSub?.cancel();
     _audioStreamSubscription
         ?.cancel(); // Cancel any active stream subscriptions.
@@ -121,11 +180,24 @@ class _ChatScreenState extends State<ChatPage> {
     }
 
     // Safely close any pre-existing session before creating a new one.
-    await _session?.close();
+    final previousSession = _session;
+    _session = null;
+    _invalidateSessionCallbacks();
+    final connectVersion = _sessionLifecycleVersion;
+    await previousSession?.close();
+    if (!_canApplySessionUpdate(connectVersion)) return;
     await _responseAudioPlayer.stop();
+    logExampleEvent(
+      'CHAT',
+      'Connecting to Gemini Live API in ${_voiceModeEnabled ? "voice" : "text"} mode.',
+    );
     setState(() {
       _session = null;
       _connectionStatus = ConnectionStatus.connecting;
+      _streamingMessage = null;
+      _isReplying = false;
+      _pickedImage = null;
+      _updateAudioPlaybackTarget();
       _messages.clear(); // Clear previous chat history.
       // Add a temporary message to inform the user about the connection attempt.
       _addMessage(
@@ -160,24 +232,33 @@ class _ChatScreenState extends State<ChatPage> {
           // Define callbacks to handle WebSocket events.
           callbacks: LiveCallbacks(
             onOpen: () {},
-            onMessage:
-                _handleLiveAPIResponse, // Called when a message is received.
+            onMessage: (message) {
+              if (!_canApplySessionUpdate(connectVersion)) return;
+              _handleLiveAPIResponse(message);
+            },
             onError: (error, stack) {
+              if (!_canApplySessionUpdate(connectVersion)) return;
               unawaited(_responseAudioPlayer.stop());
-              debugPrint('🚨 Error occurred: $error');
-              if (mounted) {
-                setState(
-                  () => _connectionStatus = ConnectionStatus.disconnected,
-                );
+              logExampleEvent('CHAT', 'Live session error: $error');
+              if (_canApplySessionUpdate(connectVersion)) {
+                setState(() {
+                  _connectionStatus = ConnectionStatus.disconnected;
+                  _updateAudioPlaybackTarget();
+                });
               }
             },
             onClose: (code, reason) {
+              if (!_canApplySessionUpdate(connectVersion)) return;
               unawaited(_responseAudioPlayer.stop());
-              debugPrint('🚪 Connection closed: $code, $reason');
-              if (mounted) {
-                setState(
-                  () => _connectionStatus = ConnectionStatus.disconnected,
-                );
+              logExampleEvent(
+                'CHAT',
+                'Live session closed: code=$code, reason=$reason',
+              );
+              if (_canApplySessionUpdate(connectVersion)) {
+                setState(() {
+                  _connectionStatus = ConnectionStatus.disconnected;
+                  _updateAudioPlaybackTarget();
+                });
               }
             },
           ),
@@ -185,7 +266,7 @@ class _ChatScreenState extends State<ChatPage> {
       );
 
       // If the connection is successful, update the state.
-      if (mounted) {
+      if (_canApplySessionUpdate(connectVersion)) {
         setState(() {
           _session = session;
           _connectionStatus = ConnectionStatus.connected;
@@ -200,10 +281,11 @@ class _ChatScreenState extends State<ChatPage> {
             ),
           );
         });
+        logExampleEvent('CHAT', 'Live session connected.');
       }
     } catch (e) {
-      debugPrint("Connection failed: $e");
-      if (mounted) {
+      logExampleEvent('CHAT', 'Connection failed: $e');
+      if (_canApplySessionUpdate(connectVersion)) {
         setState(() => _connectionStatus = ConnectionStatus.disconnected);
       }
     }
@@ -218,15 +300,27 @@ class _ChatScreenState extends State<ChatPage> {
     final turnFinished =
         (serverContent?.turnComplete ?? false) ||
         (serverContent?.generationComplete ?? false);
+    final hadPendingResponse =
+        _isReplying ||
+        _streamingMessage != null ||
+        _currentResponseAudioChunkCount > 0;
 
     if (serverContent?.interrupted ?? false) {
       _responseAudioPlayer.clear();
+      _currentResponseAudioChunkCount = 0;
+      logExampleEvent('CHAT', 'Server interrupted the current audio response.');
     }
 
     final textChunk = visibleModelText(message);
-    debugPrint('📥 Received message textchunk: $textChunk');
+    if (textChunk != null) {
+      logExampleEvent('CHAT', 'Received message text chunk: $textChunk');
+    }
     if (message.data != null) {
       _responseAudioPlayer.appendBase64Chunk(message.data!);
+      _currentResponseAudioChunkCount += 1;
+      if (_currentResponseAudioChunkCount == 1) {
+        logExampleEvent('CHAT', 'Started receiving audio response chunks.');
+      }
     }
     // If a text chunk is received, update the streaming message.
     if (textChunk != null) {
@@ -246,21 +340,49 @@ class _ChatScreenState extends State<ChatPage> {
 
     // When the model signals that its turn is complete, finalize the message.
     if (turnFinished) {
+      if (_currentResponseAudioChunkCount > 0) {
+        logExampleEvent(
+          'CHAT',
+          'Completed response with $_currentResponseAudioChunkCount audio chunks buffered.',
+        );
+      } else if (_voiceModeEnabled && hadPendingResponse) {
+        logExampleEvent(
+          'CHAT',
+          'Turn finished without any buffered audio data.',
+        );
+      }
       final responseAudio = _responseAudioPlayer.takeBufferedClip(
-        autoPlay: true,
+        autoPlay: _voiceModeEnabled,
       );
+      ChatMessage? completedMessage;
+      if (_streamingMessage != null) {
+        completedMessage = _streamingMessage!.copyWith(audio: responseAudio);
+      } else if (responseAudio != null) {
+        completedMessage = ChatMessage(
+          text: '',
+          author: Role.model,
+          audio: responseAudio,
+        );
+      }
       setState(() {
-        if (_streamingMessage != null) {
-          // Move the completed streaming message into the main message list.
-          _messages.add(_streamingMessage!.copyWith(audio: responseAudio));
-          _streamingMessage = null; // Clear the streaming message.
-        } else if (responseAudio != null) {
-          _messages.add(
-            ChatMessage(text: '', author: Role.model, audio: responseAudio),
-          );
+        if (completedMessage != null) {
+          final finalizedMessage = completedMessage;
+          _messages.add(finalizedMessage);
+          if (responseAudio != null && _voiceModeEnabled) {
+            _updateAudioPlaybackTarget(
+              messageId: finalizedMessage.id,
+              autoplay: true,
+            );
+            logExampleEvent(
+              'CHAT',
+              'Voice response is ready for auto-play on message ${finalizedMessage.id}.',
+            );
+          }
         }
+        _streamingMessage = null; // Clear the streaming message.
         _isReplying = false; // Allow the user to send another message.
       });
+      _currentResponseAudioChunkCount = 0;
     }
   }
 
@@ -275,12 +397,24 @@ class _ChatScreenState extends State<ChatPage> {
   // --- Multimodal Input and Sending ---
   /// Opens the image gallery for the user to pick an image.
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70, // Compress image to reduce size.
-    );
-    if (image != null) {
-      setState(() => _pickedImage = image);
+    logExampleEvent('CHAT', 'Opening image picker.');
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70, // Compress image to reduce size.
+      );
+      if (image != null && mounted) {
+        setState(() => _pickedImage = image);
+        logExampleEvent('CHAT', 'Selected image: ${image.path}');
+      }
+    } catch (error) {
+      logExampleEvent('CHAT', 'Image picker failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image selection failed. Check platform permissions.'),
+        ),
+      );
     }
   }
 
@@ -290,13 +424,17 @@ class _ChatScreenState extends State<ChatPage> {
       // --- Stop Recording Logic ---
       final path = await _audioRecorder.stop();
       setState(() => _isRecording = false); // Update UI immediately.
+      logExampleEvent('CHAT', 'Stopped voice recording.');
 
       if (path != null) {
-        debugPrint("Recording stopped. File path: $path");
+        logExampleEvent('CHAT', 'Recorded voice input saved at: $path');
 
         // 1. Read the recorded audio file as bytes.
         final file = File(path);
         final audioBytes = await file.readAsBytes();
+
+        _stopAllBubblePlayback();
+        _currentResponseAudioChunkCount = 0;
 
         // 2. Display a message in the UI to confirm audio was sent.
         _addMessage(
@@ -313,6 +451,10 @@ class _ChatScreenState extends State<ChatPage> {
         // 3. Send the audio data to the server.
         if (_session != null) {
           setState(() => _isReplying = true);
+          logExampleEvent(
+            'CHAT',
+            'Sending recorded voice input (${audioBytes.length} bytes).',
+          );
 
           _session!.sendMessage(
             LiveClientMessage(
@@ -359,8 +501,9 @@ class _ChatScreenState extends State<ChatPage> {
           const RecordConfig(encoder: AudioEncoder.aacLc),
           path: filePath,
         );
+        logExampleEvent('CHAT', 'Started voice recording.');
       } else {
-        debugPrint("Microphone permission was denied.");
+        logExampleEvent('CHAT', 'Microphone permission was denied.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Microphone permission is required.")),
@@ -379,6 +522,13 @@ class _ChatScreenState extends State<ChatPage> {
         _session == null) {
       return;
     }
+
+    _stopAllBubblePlayback();
+    _currentResponseAudioChunkCount = 0;
+    logExampleEvent(
+      'CHAT',
+      'Sending user message: text="${_summarizeTextForLog(text)}", imageAttached=${_pickedImage != null}',
+    );
 
     // Add the user's message to the UI immediately for a responsive feel.
     _addMessage(
@@ -548,6 +698,10 @@ class _ChatScreenState extends State<ChatPage> {
               if (_isRecording) {
                 _audioRecorder.stop();
               }
+              logExampleEvent(
+                'CHAT',
+                'Switching chat mode to ${mode == ResponseMode.audio ? "voice" : "text"}.',
+              );
               setState(() {
                 _responseMode = mode;
                 _isRecording = false;
@@ -598,13 +752,27 @@ class _ChatScreenState extends State<ChatPage> {
                     return Bubble(
                       key: ValueKey(_streamingMessage!.id),
                       message: _streamingMessage!,
+                      playbackCommand: _audioPlaybackCommand,
+                      activeAudioMessageId: _activeAudioMessageId,
+                      shouldAutoPlay:
+                          _autoplayAudioMessageId == _streamingMessage!.id,
+                      onPlaybackRequested: _requestBubblePlayback,
+                      onAutoPlayHandled: _clearAutoPlayRequest,
                     );
                   }
                   // Adjust the index to access the main messages list.
                   final messageIndex =
                       index - (_streamingMessage == null ? 0 : 1);
                   final message = _messages.reversed.toList()[messageIndex];
-                  return Bubble(key: ValueKey(message.id), message: message);
+                  return Bubble(
+                    key: ValueKey(message.id),
+                    message: message,
+                    playbackCommand: _audioPlaybackCommand,
+                    activeAudioMessageId: _activeAudioMessageId,
+                    shouldAutoPlay: _autoplayAudioMessageId == message.id,
+                    onPlaybackRequested: _requestBubblePlayback,
+                    onAutoPlayHandled: _clearAutoPlayRequest,
+                  );
                 },
               ),
             ),

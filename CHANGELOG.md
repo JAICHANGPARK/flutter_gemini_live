@@ -2,17 +2,23 @@
 
 ### Added
 - Example app now plays Gemini Live audio responses in-app by buffering PCM chunks, wrapping them as WAV, and playing them when a response turn completes.
+- Added timestamped chat demo debug logging for connection state, user sends, recorder events, and voice playback transitions.
 
 ### Changed
 - Split example app Live model defaults by demo:
   - `Realtime Media` now targets `gemini-3.1-flash-live-preview`.
   - chat, function-calling, and feature demos stay on the 2.5 compatibility path until the SDK exposes the additional 3.1 history/session controls.
 - Restored chat demo `Text Mode` / `Voice Mode` switching while keeping audio-response sessions compatible with current Live API behavior.
+- Refined chat voice playback control so autoplay is consumed once per response and old audio bubbles do not restart when the list rebuilds.
+- Reduced noisy chat logging by suppressing empty text chunk logs and summarizing audio chunk progress per response.
 
 ### Fixed
 - Fixed the example app disconnection issue reported in GitHub issue `#8` by removing non-audio request flows from Live setup in the app demos.
 - Fixed example audio playback cleanup so buffered audio is cleared on interruption, connection close, and error paths.
 - Fixed example playback triggering to handle turns that finish with `generationComplete` as well as `turnComplete`.
+- Fixed chat voice playback so new user input or a newer response stops the currently playing voice response instead of overlapping playback.
+- Fixed macOS image picking in the example app by adding the required `user-selected read-only` sandbox entitlement.
+- Fixed chat screen teardown races so closing or leaving the page no longer triggers `setState()` on a defunct widget after the session closes.
 
 ## 2026.4.19
 

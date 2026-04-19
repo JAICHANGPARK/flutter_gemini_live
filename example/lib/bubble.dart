@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -5,14 +6,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:waveform_flutter/waveform_flutter.dart';
 
+import 'example_debug_log.dart';
 import 'live_audio_source_io.dart'
     if (dart.library.js_interop) 'live_audio_source_web.dart';
 import 'message.dart';
 
 class Bubble extends StatelessWidget {
-  const Bubble({super.key, required this.message});
+  const Bubble({
+    super.key,
+    required this.message,
+    required this.playbackCommand,
+    required this.activeAudioMessageId,
+    required this.shouldAutoPlay,
+    required this.onPlaybackRequested,
+    required this.onAutoPlayHandled,
+  });
 
   final ChatMessage message;
+  final int playbackCommand;
+  final String? activeAudioMessageId;
+  final bool shouldAutoPlay;
+  final ValueChanged<String> onPlaybackRequested;
+  final ValueChanged<String> onAutoPlayHandled;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +70,12 @@ class Bubble extends StatelessWidget {
                       child: _AudioMessageCard(
                         audio: message.audio!,
                         isUser: message.author == Role.user,
+                        messageId: message.id,
+                        playbackCommand: playbackCommand,
+                        activeAudioMessageId: activeAudioMessageId,
+                        shouldAutoPlay: shouldAutoPlay,
+                        onPlaybackRequested: onPlaybackRequested,
+                        onAutoPlayHandled: onAutoPlayHandled,
                       ),
                     ),
                   if (message.text.isNotEmpty)
@@ -142,10 +163,25 @@ MarkdownStyleSheet _buildMarkdownStyleSheet(
 }
 
 class _AudioMessageCard extends StatefulWidget {
-  const _AudioMessageCard({required this.audio, required this.isUser});
+  const _AudioMessageCard({
+    required this.audio,
+    required this.isUser,
+    required this.messageId,
+    required this.playbackCommand,
+    required this.activeAudioMessageId,
+    required this.shouldAutoPlay,
+    required this.onPlaybackRequested,
+    required this.onAutoPlayHandled,
+  });
 
   final ChatAudioClip audio;
   final bool isUser;
+  final String messageId;
+  final int playbackCommand;
+  final String? activeAudioMessageId;
+  final bool shouldAutoPlay;
+  final ValueChanged<String> onPlaybackRequested;
+  final ValueChanged<String> onAutoPlayHandled;
 
   @override
   State<_AudioMessageCard> createState() => _AudioMessageCardState();
@@ -156,7 +192,6 @@ class _AudioMessageCardState extends State<_AudioMessageCard> {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   PlayerState _state = PlayerState.stopped;
-  bool _hasAutoplayed = false;
   bool _isPreparing = false;
 
   @override
@@ -180,14 +215,33 @@ class _AudioMessageCardState extends State<_AudioMessageCard> {
         _position = _duration;
         _state = PlayerState.completed;
       });
+      logExampleEvent(
+        'CHAT-AUDIO',
+        'Playback completed for "${widget.audio.label}" (${widget.messageId}).',
+      );
     });
 
-    if (widget.audio.autoPlay) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _hasAutoplayed) return;
-        _hasAutoplayed = true;
-        _togglePlayback();
-      });
+    _queueAutoPlayIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AudioMessageCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final playbackCommandChanged =
+        oldWidget.playbackCommand != widget.playbackCommand;
+    final shouldStopForAnotherMessage =
+        playbackCommandChanged &&
+        widget.activeAudioMessageId != widget.messageId &&
+        (_state == PlayerState.playing ||
+            _state == PlayerState.paused ||
+            _isPreparing);
+
+    if (shouldStopForAnotherMessage) {
+      unawaited(_stopPlayback(reason: 'another audio response became active'));
+    }
+
+    if (!oldWidget.shouldAutoPlay && widget.shouldAutoPlay) {
+      _queueAutoPlayIfNeeded();
     }
   }
 
@@ -197,41 +251,101 @@ class _AudioMessageCardState extends State<_AudioMessageCard> {
     super.dispose();
   }
 
-  Future<void> _togglePlayback() async {
+  void _queueAutoPlayIfNeeded() {
+    if (!widget.shouldAutoPlay || !widget.audio.autoPlay) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.shouldAutoPlay || _isPreparing) return;
+      widget.onAutoPlayHandled(widget.messageId);
+      unawaited(
+        _startPlayback(
+          fromStart: true,
+          trigger: 'auto-play',
+          claimPlayback: false,
+        ),
+      );
+    });
+  }
+
+  Future<void> _togglePlayback({String trigger = 'manual tap'}) async {
     if (_isPreparing) return;
 
     if (_state == PlayerState.playing) {
       await _player.pause();
+      logExampleEvent(
+        'CHAT-AUDIO',
+        'Playback paused for "${widget.audio.label}" (${widget.messageId}) via $trigger.',
+      );
       return;
     }
 
     if (_state == PlayerState.paused) {
+      widget.onPlaybackRequested(widget.messageId);
       await _player.resume();
+      logExampleEvent(
+        'CHAT-AUDIO',
+        'Playback resumed for "${widget.audio.label}" (${widget.messageId}) via $trigger.',
+      );
       return;
     }
 
     if (_state == PlayerState.completed) {
-      await _startPlayback(fromStart: true);
+      await _startPlayback(
+        fromStart: true,
+        trigger: 'replay',
+        claimPlayback: true,
+      );
       return;
     }
 
-    await _startPlayback(fromStart: _duration > Duration.zero);
+    await _startPlayback(
+      fromStart: _duration > Duration.zero,
+      trigger: trigger,
+      claimPlayback: true,
+    );
   }
 
-  Future<void> _startPlayback({required bool fromStart}) async {
+  Future<void> _stopPlayback({required String reason}) async {
+    await _player.stop();
+    if (!mounted) return;
+    setState(() {
+      _isPreparing = false;
+      _position = Duration.zero;
+      _state = PlayerState.stopped;
+    });
+    logExampleEvent(
+      'CHAT-AUDIO',
+      'Playback stopped for "${widget.audio.label}" (${widget.messageId}): $reason.',
+    );
+  }
+
+  Future<void> _startPlayback({
+    required bool fromStart,
+    required String trigger,
+    required bool claimPlayback,
+  }) async {
     setState(() {
       _isPreparing = true;
       if (fromStart) {
         _position = Duration.zero;
       }
     });
+    if (claimPlayback) {
+      widget.onPlaybackRequested(widget.messageId);
+    }
+    logExampleEvent(
+      'CHAT-AUDIO',
+      'Starting playback for "${widget.audio.label}" (${widget.messageId}) via $trigger.',
+    );
 
     try {
       await _player.stop();
       final source = await createChatAudioSource(widget.audio);
       await _player.play(source);
     } catch (error) {
-      debugPrint('Audio bubble playback failed: $error');
+      logExampleEvent(
+        'CHAT-AUDIO',
+        'Playback failed for "${widget.audio.label}" (${widget.messageId}): $error',
+      );
     }
 
     if (!mounted) return;
