@@ -22,6 +22,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This example uses the camera to send live visual context to Gemini Live.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This example uses the microphone to stream your voice to Gemini Live.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>

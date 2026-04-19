@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gemini_live/gemini_live.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 // Importing custom widgets and data models from the project.
 import 'bubble.dart'; // A widget to display a single chat message bubble.
@@ -247,14 +246,18 @@ class _ChatScreenState extends State<ChatPage> {
 
     // When the model signals that its turn is complete, finalize the message.
     if (turnFinished) {
-      if (_responseAudioPlayer.hasBufferedAudio) {
-        unawaited(_responseAudioPlayer.playBufferedAudio());
-      }
+      final responseAudio = _responseAudioPlayer.takeBufferedClip(
+        autoPlay: true,
+      );
       setState(() {
         if (_streamingMessage != null) {
           // Move the completed streaming message into the main message list.
-          _messages.add(_streamingMessage!);
+          _messages.add(_streamingMessage!.copyWith(audio: responseAudio));
           _streamingMessage = null; // Clear the streaming message.
+        } else if (responseAudio != null) {
+          _messages.add(
+            ChatMessage(text: '', author: Role.model, audio: responseAudio),
+          );
         }
         _isReplying = false; // Allow the user to send another message.
       });
@@ -296,7 +299,16 @@ class _ChatScreenState extends State<ChatPage> {
         final audioBytes = await file.readAsBytes();
 
         // 2. Display a message in the UI to confirm audio was sent.
-        _addMessage(ChatMessage(text: "[User audio sent]", author: Role.user));
+        _addMessage(
+          ChatMessage(
+            text: "[Voice input sent]",
+            author: Role.user,
+            audio: ChatAudioClip.file(
+              filePath: path,
+              label: 'Your voice input',
+            ),
+          ),
+        );
 
         // 3. Send the audio data to the server.
         if (_session != null) {
@@ -329,15 +341,18 @@ class _ChatScreenState extends State<ChatPage> {
           );
         }
         // 4. Delete the temporary audio file to save space.
-        await file.delete();
       }
     } else {
       // --- Start Recording Logic ---
-      // Request microphone permission before starting.
-      if (await Permission.microphone.request().isGranted) {
+      if (await _audioRecorder.hasPermission()) {
         final tempDir = await getTemporaryDirectory();
         // Use a file extension that matches the encoder. .m4a is for AAC.
-        final filePath = '${tempDir.path}/temp_audio.m4a';
+        final recordingsDir = Directory(
+          '${tempDir.path}/gemini_live_recordings',
+        );
+        await recordingsDir.create(recursive: true);
+        final timestamp = DateTime.now().microsecondsSinceEpoch;
+        final filePath = '${recordingsDir.path}/input_$timestamp.m4a';
 
         // Start recording with a configuration that matches the MIME type.
         await _audioRecorder.start(
@@ -411,6 +426,33 @@ class _ChatScreenState extends State<ChatPage> {
       color: Theme.of(context).cardColor,
       child: Column(
         children: [
+          if (_voiceModeEnabled)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _isRecording ? Icons.mic : Icons.keyboard_voice,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _isRecording
+                          ? 'Recording voice input... tap the mic again to send it.'
+                          : 'Voice mode is ready. Tap the mic to record spoken input.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Show a preview of the picked image.
           if (_pickedImage != null)
             Container(
@@ -553,13 +595,16 @@ class _ChatScreenState extends State<ChatPage> {
                 itemBuilder: (context, index) {
                   // If there's a streaming message, render it at the top (index 0).
                   if (_streamingMessage != null && index == 0) {
-                    return Bubble(message: _streamingMessage!);
+                    return Bubble(
+                      key: ValueKey(_streamingMessage!.id),
+                      message: _streamingMessage!,
+                    );
                   }
                   // Adjust the index to access the main messages list.
                   final messageIndex =
                       index - (_streamingMessage == null ? 0 : 1);
                   final message = _messages.reversed.toList()[messageIndex];
-                  return Bubble(message: message);
+                  return Bubble(key: ValueKey(message.id), message: message);
                 },
               ),
             ),

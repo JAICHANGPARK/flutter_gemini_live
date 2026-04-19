@@ -1,0 +1,48 @@
+PODS:
+  - audioplayers_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - camera_desktop (1.1.2):
+    - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+  - record_macos (1.2.0):
+    - FlutterMacOS
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - audioplayers_darwin (from `Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin`)
+  - camera_desktop (from `Flutter/ephemeral/.symlinks/plugins/camera_desktop/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - record_macos (from `Flutter/ephemeral/.symlinks/plugins/record_macos/macos`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
+
+EXTERNAL SOURCES:
+  audioplayers_darwin:
+    :path: Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin
+  camera_desktop:
+    :path: Flutter/ephemeral/.symlinks/plugins/camera_desktop/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+  record_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/record_macos/macos
+  shared_preferences_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
+
+SPEC CHECKSUMS:
+  audioplayers_darwin: f15e209a3e856d1a7edcf98dc029f484fead2242
+  camera_desktop: 062d4ad028c72274a8d3950e64d1e6edd1128ceb
+  file_selector_macos: 3e56eaea051180007b900eacb006686fd54da150
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  record_macos: 4680f37daeebf52162e715efb7ff682f0a5ce4fd
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
+
+COCOAPODS: 1.16.2

@@ -23,12 +23,15 @@ dependencies:
   cupertino_icons: ^1.0.8
   gemini_live:
     path: ../
-  image_picker: ^1.2.0
+  image_picker: ^1.2.1
   path_provider: ^2.1.5
-  record: ^6.1.2
-  permission_handler: ^12.0.1
-  shared_preferences: ^2.5.3
-  audioplayers: ^6.1.0
+  record: ^6.2.0
+  shared_preferences: ^2.5.5
+  audioplayers: ^6.6.0  
+  camera: ^0.12.0+1
+  flutter_markdown_plus: ^1.0.7
+  waveform_flutter: ^1.2.0
+  camera_desktop: ^1.1.2
 
 
 dev_dependencies:

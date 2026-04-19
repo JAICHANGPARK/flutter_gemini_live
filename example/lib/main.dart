@@ -155,7 +155,8 @@ class _HomePageState extends State<HomePage> {
           _buildDemoCard(
             context: context,
             title: 'Realtime Media',
-            subtitle: 'Realtime audio/video input with activity detection',
+            subtitle:
+                'Realtime camera preview, microphone streaming, and activity detection',
             icon: Icons.videocam,
             color: Colors.orange,
             page: const RealtimeMediaDemoPage(),
