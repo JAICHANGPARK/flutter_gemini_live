@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 2026.6.6
+
+### Changed
+- Updated package metadata and README installation snippets to `2026.6.6`.
+- Updated the example lockfile to reference the current local package version.
+
 ## 2026.5.24
 
 ### Added
