@@ -37,9 +37,10 @@ void main() async {
           print('🔒 Connection closed: code=$code, reason=$reason');
 
           // Save session handle for resumption
-          if (currentSessionHandle != null) {
-            _saveSessionHandle(currentSessionHandle);
-            print('💾 Session handle saved: $currentSessionHandle');
+          final sessionHandle = currentSessionHandle;
+          if (sessionHandle != null) {
+            _saveSessionHandle(sessionHandle);
+            print('💾 Session handle saved: $sessionHandle');
           }
         },
       ),
