@@ -1,5 +1,20 @@
 ## Unreleased
 
+## 2026.5.24
+
+### Added
+- Synced Live-facing DTOs with `js-genai` 2.6.0:
+  - `GenerationConfig.streamTranslationConfig`
+  - `ThinkingConfig.thinkingLevel`
+  - multi-speaker and replicated voice speech config types
+  - `FunctionCall.partialArgs` / `FunctionCall.willContinue`
+  - `FunctionResponseBlob.displayName` and `FunctionResponseFileData.displayName`
+  - typed `ComputerUse` config including `enablePromptInjectionDetection`
+
+### Changed
+- Updated Live SDK request headers to `google-genai-sdk/2.6.0`.
+- Updated package metadata and README installation snippets to `2026.5.24`.
+
 ## 2026.4.19
 
 ### Added
