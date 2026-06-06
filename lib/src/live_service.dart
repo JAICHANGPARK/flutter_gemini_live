@@ -80,7 +80,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '1.50.1';
+  static const _sdkVersion = '2.6.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -139,6 +139,7 @@ class LiveService {
       speechConfig: config?.speechConfig,
       thinkingConfig: config?.thinkingConfig,
       enableAffectiveDialog: config?.enableAffectiveDialog,
+      streamTranslationConfig: config?.streamTranslationConfig,
     );
   }
 
@@ -362,7 +363,8 @@ class LiveSession {
   final WebSocketChannel _channel;
   final void Function(String)? _logger;
 
-  LiveSession._(this._channel, {void Function(String)? logger}) : _logger = logger;
+  LiveSession._(this._channel, {void Function(String)? logger})
+    : _logger = logger;
 
   factory LiveSession.forTesting(WebSocketChannel channel) =>
       LiveSession._(channel);

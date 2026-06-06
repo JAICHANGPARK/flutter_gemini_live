@@ -6,6 +6,15 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'models.g.dart';
 
+Object? _computerUseFromJson(Object? json) => json;
+
+Object? _computerUseToJson(Object? value) {
+  if (value is ComputerUse) {
+    return value.toJson();
+  }
+  return value;
+}
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -312,6 +321,34 @@ enum ToolType {
   FILE_SEARCH,
 }
 
+/// Environments supported by the computer-use tool.
+@JsonEnum(alwaysCreate: true)
+enum Environment {
+  @JsonValue('ENVIRONMENT_UNSPECIFIED')
+  ENVIRONMENT_UNSPECIFIED,
+  @JsonValue('ENVIRONMENT_BROWSER')
+  ENVIRONMENT_BROWSER,
+  @JsonValue('ENVIRONMENT_MOBILE')
+  ENVIRONMENT_MOBILE,
+  @JsonValue('ENVIRONMENT_DESKTOP')
+  ENVIRONMENT_DESKTOP,
+}
+
+/// Thinking effort levels for models that support thought generation.
+@JsonEnum(alwaysCreate: true)
+enum ThinkingLevel {
+  @JsonValue('THINKING_LEVEL_UNSPECIFIED')
+  THINKING_LEVEL_UNSPECIFIED,
+  @JsonValue('MINIMAL')
+  MINIMAL,
+  @JsonValue('LOW')
+  LOW,
+  @JsonValue('MEDIUM')
+  MEDIUM,
+  @JsonValue('HIGH')
+  HIGH,
+}
+
 // ============================================================================
 // Data Classes - Base
 // ============================================================================
@@ -361,8 +398,9 @@ class Part {
 class Blob {
   final String mimeType;
   final String data;
+  final String? displayName;
 
-  Blob({required this.mimeType, required this.data});
+  Blob({required this.mimeType, required this.data, this.displayName});
 
   factory Blob.fromJson(Map<String, dynamic> json) => _$BlobFromJson(json);
 
@@ -443,9 +481,10 @@ class PrebuiltVoiceConfig {
 /// Voice settings applied to spoken responses.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class VoiceConfig {
+  final ReplicatedVoiceConfig? replicatedVoiceConfig;
   final PrebuiltVoiceConfig? prebuiltVoiceConfig;
 
-  VoiceConfig({this.prebuiltVoiceConfig});
+  VoiceConfig({this.replicatedVoiceConfig, this.prebuiltVoiceConfig});
 
   factory VoiceConfig.fromJson(Map<String, dynamic> json) =>
       _$VoiceConfigFromJson(json);
@@ -453,13 +492,59 @@ class VoiceConfig {
   Map<String, dynamic> toJson() => _$VoiceConfigToJson(this);
 }
 
+/// Voice cloning settings for custom speech output.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ReplicatedVoiceConfig {
+  final String? mimeType;
+  final String? voiceSampleAudio;
+
+  ReplicatedVoiceConfig({this.mimeType, this.voiceSampleAudio});
+
+  factory ReplicatedVoiceConfig.fromJson(Map<String, dynamic> json) =>
+      _$ReplicatedVoiceConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ReplicatedVoiceConfigToJson(this);
+}
+
+/// Voice assignment for one speaker in a multi-speaker response.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SpeakerVoiceConfig {
+  final String? speaker;
+  final VoiceConfig? voiceConfig;
+
+  SpeakerVoiceConfig({this.speaker, this.voiceConfig});
+
+  factory SpeakerVoiceConfig.fromJson(Map<String, dynamic> json) =>
+      _$SpeakerVoiceConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SpeakerVoiceConfigToJson(this);
+}
+
+/// Speech settings for two-speaker text-to-speech output.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class MultiSpeakerVoiceConfig {
+  final List<SpeakerVoiceConfig>? speakerVoiceConfigs;
+
+  MultiSpeakerVoiceConfig({this.speakerVoiceConfigs});
+
+  factory MultiSpeakerVoiceConfig.fromJson(Map<String, dynamic> json) =>
+      _$MultiSpeakerVoiceConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MultiSpeakerVoiceConfigToJson(this);
+}
+
 /// Speech generation settings for audio responses.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class SpeechConfig {
   final VoiceConfig? voiceConfig;
   final String? languageCode;
+  final MultiSpeakerVoiceConfig? multiSpeakerVoiceConfig;
 
-  SpeechConfig({this.voiceConfig, this.languageCode});
+  SpeechConfig({
+    this.voiceConfig,
+    this.languageCode,
+    this.multiSpeakerVoiceConfig,
+  });
 
   factory SpeechConfig.fromJson(Map<String, dynamic> json) =>
       _$SpeechConfigFromJson(json);
@@ -472,13 +557,32 @@ class SpeechConfig {
 class ThinkingConfig {
   final bool? includeThoughts;
   final int? thinkingBudget;
+  final ThinkingLevel? thinkingLevel;
 
-  ThinkingConfig({this.includeThoughts, this.thinkingBudget});
+  ThinkingConfig({
+    this.includeThoughts,
+    this.thinkingBudget,
+    this.thinkingLevel,
+  });
 
   factory ThinkingConfig.fromJson(Map<String, dynamic> json) =>
       _$ThinkingConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$ThinkingConfigToJson(this);
+}
+
+/// Stream translation settings for Live sessions.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class StreamTranslationConfig {
+  final bool? echoTargetLanguage;
+  final String? targetLanguageCode;
+
+  StreamTranslationConfig({this.echoTargetLanguage, this.targetLanguageCode});
+
+  factory StreamTranslationConfig.fromJson(Map<String, dynamic> json) =>
+      _$StreamTranslationConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StreamTranslationConfigToJson(this);
 }
 
 /// Generation parameters used when starting a Live API session.
@@ -494,6 +598,7 @@ class GenerationConfig {
   final SpeechConfig? speechConfig;
   final ThinkingConfig? thinkingConfig;
   final bool? enableAffectiveDialog;
+  final StreamTranslationConfig? streamTranslationConfig;
 
   GenerationConfig({
     this.temperature,
@@ -506,6 +611,7 @@ class GenerationConfig {
     this.speechConfig,
     this.thinkingConfig,
     this.enableAffectiveDialog,
+    this.streamTranslationConfig,
   });
 
   factory GenerationConfig.fromJson(Map<String, dynamic> json) =>
@@ -518,14 +624,47 @@ class GenerationConfig {
 // Function Calling Models
 // ============================================================================
 
+/// One streamed partial argument value for a function call.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class PartialArg {
+  final bool? boolValue;
+  final String? jsonPath;
+  final String? nullValue;
+  final double? numberValue;
+  final String? stringValue;
+  final bool? willContinue;
+
+  PartialArg({
+    this.boolValue,
+    this.jsonPath,
+    this.nullValue,
+    this.numberValue,
+    this.stringValue,
+    this.willContinue,
+  });
+
+  factory PartialArg.fromJson(Map<String, dynamic> json) =>
+      _$PartialArgFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PartialArgToJson(this);
+}
+
 /// A tool invocation requested by the model.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class FunctionCall {
   final String? id;
   final String? name;
   final Map<String, dynamic>? args;
+  final List<PartialArg>? partialArgs;
+  final bool? willContinue;
 
-  FunctionCall({this.id, this.name, this.args});
+  FunctionCall({
+    this.id,
+    this.name,
+    this.args,
+    this.partialArgs,
+    this.willContinue,
+  });
 
   factory FunctionCall.fromJson(Map<String, dynamic> json) =>
       _$FunctionCallFromJson(json);
@@ -568,8 +707,9 @@ class ToolResponse {
 class FunctionResponseBlob {
   final String? mimeType;
   final String? data;
+  final String? displayName;
 
-  FunctionResponseBlob({this.mimeType, this.data});
+  FunctionResponseBlob({this.mimeType, this.data, this.displayName});
 
   factory FunctionResponseBlob.fromJson(Map<String, dynamic> json) =>
       _$FunctionResponseBlobFromJson(json);
@@ -582,8 +722,9 @@ class FunctionResponseBlob {
 class FunctionResponseFileData {
   final String? fileUri;
   final String? mimeType;
+  final String? displayName;
 
-  FunctionResponseFileData({this.fileUri, this.mimeType});
+  FunctionResponseFileData({this.fileUri, this.mimeType, this.displayName});
 
   factory FunctionResponseFileData.fromJson(Map<String, dynamic> json) =>
       _$FunctionResponseFileDataFromJson(json);
@@ -727,7 +868,8 @@ class Tool {
   final Map<String, dynamic>? urlContext;
   final Map<String, dynamic>? googleMaps;
   final Map<String, dynamic>? retrieval;
-  final Map<String, dynamic>? computerUse;
+  @JsonKey(fromJson: _computerUseFromJson, toJson: _computerUseToJson)
+  final Object? computerUse;
   final Map<String, dynamic>? fileSearch;
   final Map<String, dynamic>? enterpriseWebSearch;
   final List<Map<String, dynamic>>? mcpServers;
@@ -749,6 +891,25 @@ class Tool {
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
+}
+
+/// Computer-use tool configuration.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ComputerUse {
+  final Environment? environment;
+  final List<String>? excludedPredefinedFunctions;
+  final bool? enablePromptInjectionDetection;
+
+  ComputerUse({
+    this.environment,
+    this.excludedPredefinedFunctions,
+    this.enablePromptInjectionDetection,
+  });
+
+  factory ComputerUse.fromJson(Map<String, dynamic> json) =>
+      _$ComputerUseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ComputerUseToJson(this);
 }
 
 // ============================================================================

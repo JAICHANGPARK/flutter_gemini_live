@@ -142,8 +142,13 @@ void main() {
             thinkingConfig: ThinkingConfig(
               thinkingBudget: 1024,
               includeThoughts: true,
+              thinkingLevel: ThinkingLevel.HIGH,
             ),
             enableAffectiveDialog: true,
+            streamTranslationConfig: StreamTranslationConfig(
+              targetLanguageCode: 'ko',
+              echoTargetLanguage: false,
+            ),
           ),
           tools: [
             Tool(
@@ -214,6 +219,18 @@ void main() {
       expect(restored.setup?.generationConfig?.responseModalities, [
         Modality.VIDEO,
       ]);
+      expect(
+        restored.setup?.generationConfig?.thinkingConfig?.thinkingLevel,
+        ThinkingLevel.HIGH,
+      );
+      expect(
+        restored
+            .setup
+            ?.generationConfig
+            ?.streamTranslationConfig
+            ?.targetLanguageCode,
+        'ko',
+      );
       expect(restored.setup?.avatarConfig?.avatarName, 'hero');
       expect(
         restored.setup?.avatarConfig?.customizedAvatar?.imageMimeType,
@@ -271,6 +288,48 @@ void main() {
       expect(restored.toolResponse?.response?['status'], 'ok');
       expect(restored.partMetadata?['source'], 'ref-sync');
     });
+
+    test(
+      'serializes streamed function args and response media display names',
+      () {
+        final functionCall = FunctionCall(
+          id: 'call-1',
+          name: 'lookup',
+          partialArgs: [
+            PartialArg(
+              jsonPath: r'$.city',
+              stringValue: 'Seo',
+              willContinue: true,
+            ),
+          ],
+          willContinue: true,
+        );
+        final responsePart = FunctionResponsePart(
+          inlineData: FunctionResponseBlob(
+            mimeType: 'image/png',
+            data: 'base64',
+            displayName: 'chart.png',
+          ),
+          fileData: FunctionResponseFileData(
+            fileUri: 'gs://bucket/report.pdf',
+            mimeType: 'application/pdf',
+            displayName: 'report.pdf',
+          ),
+        );
+
+        final callJson =
+            jsonDecode(jsonEncode(functionCall.toJson()))
+                as Map<String, dynamic>;
+        final partJson =
+            jsonDecode(jsonEncode(responsePart.toJson()))
+                as Map<String, dynamic>;
+
+        expect(callJson['partial_args'][0]['json_path'], r'$.city');
+        expect(callJson['will_continue'], true);
+        expect(partJson['inline_data']['display_name'], 'chart.png');
+        expect(partJson['file_data']['display_name'], 'report.pdf');
+      },
+    );
 
     test('serializes realtime input and tool response', () {
       final realtime = LiveClientRealtimeInput(

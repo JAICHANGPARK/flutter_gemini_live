@@ -66,12 +66,16 @@ Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
   'codeExecutionResult': ?instance.codeExecutionResult,
 };
 
-Blob _$BlobFromJson(Map<String, dynamic> json) =>
-    Blob(mimeType: json['mimeType'] as String, data: json['data'] as String);
+Blob _$BlobFromJson(Map<String, dynamic> json) => Blob(
+  mimeType: json['mimeType'] as String,
+  data: json['data'] as String,
+  displayName: json['displayName'] as String?,
+);
 
 Map<String, dynamic> _$BlobToJson(Blob instance) => <String, dynamic>{
   'mimeType': instance.mimeType,
   'data': instance.data,
+  'displayName': ?instance.displayName,
 };
 
 FileData _$FileDataFromJson(Map<String, dynamic> json) => FileData(
@@ -146,6 +150,11 @@ Map<String, dynamic> _$PrebuiltVoiceConfigToJson(
 ) => <String, dynamic>{'voice_name': ?instance.voiceName};
 
 VoiceConfig _$VoiceConfigFromJson(Map<String, dynamic> json) => VoiceConfig(
+  replicatedVoiceConfig: json['replicated_voice_config'] == null
+      ? null
+      : ReplicatedVoiceConfig.fromJson(
+          json['replicated_voice_config'] as Map<String, dynamic>,
+        ),
   prebuiltVoiceConfig: json['prebuilt_voice_config'] == null
       ? null
       : PrebuiltVoiceConfig.fromJson(
@@ -154,32 +163,108 @@ VoiceConfig _$VoiceConfigFromJson(Map<String, dynamic> json) => VoiceConfig(
 );
 
 Map<String, dynamic> _$VoiceConfigToJson(VoiceConfig instance) =>
-    <String, dynamic>{'prebuilt_voice_config': ?instance.prebuiltVoiceConfig};
+    <String, dynamic>{
+      'replicated_voice_config': ?instance.replicatedVoiceConfig,
+      'prebuilt_voice_config': ?instance.prebuiltVoiceConfig,
+    };
+
+ReplicatedVoiceConfig _$ReplicatedVoiceConfigFromJson(
+  Map<String, dynamic> json,
+) => ReplicatedVoiceConfig(
+  mimeType: json['mime_type'] as String?,
+  voiceSampleAudio: json['voice_sample_audio'] as String?,
+);
+
+Map<String, dynamic> _$ReplicatedVoiceConfigToJson(
+  ReplicatedVoiceConfig instance,
+) => <String, dynamic>{
+  'mime_type': ?instance.mimeType,
+  'voice_sample_audio': ?instance.voiceSampleAudio,
+};
+
+SpeakerVoiceConfig _$SpeakerVoiceConfigFromJson(Map<String, dynamic> json) =>
+    SpeakerVoiceConfig(
+      speaker: json['speaker'] as String?,
+      voiceConfig: json['voice_config'] == null
+          ? null
+          : VoiceConfig.fromJson(json['voice_config'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SpeakerVoiceConfigToJson(SpeakerVoiceConfig instance) =>
+    <String, dynamic>{
+      'speaker': ?instance.speaker,
+      'voice_config': ?instance.voiceConfig,
+    };
+
+MultiSpeakerVoiceConfig _$MultiSpeakerVoiceConfigFromJson(
+  Map<String, dynamic> json,
+) => MultiSpeakerVoiceConfig(
+  speakerVoiceConfigs: (json['speaker_voice_configs'] as List<dynamic>?)
+      ?.map((e) => SpeakerVoiceConfig.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MultiSpeakerVoiceConfigToJson(
+  MultiSpeakerVoiceConfig instance,
+) => <String, dynamic>{'speaker_voice_configs': ?instance.speakerVoiceConfigs};
 
 SpeechConfig _$SpeechConfigFromJson(Map<String, dynamic> json) => SpeechConfig(
   voiceConfig: json['voice_config'] == null
       ? null
       : VoiceConfig.fromJson(json['voice_config'] as Map<String, dynamic>),
   languageCode: json['language_code'] as String?,
+  multiSpeakerVoiceConfig: json['multi_speaker_voice_config'] == null
+      ? null
+      : MultiSpeakerVoiceConfig.fromJson(
+          json['multi_speaker_voice_config'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$SpeechConfigToJson(SpeechConfig instance) =>
     <String, dynamic>{
       'voice_config': ?instance.voiceConfig,
       'language_code': ?instance.languageCode,
+      'multi_speaker_voice_config': ?instance.multiSpeakerVoiceConfig,
     };
 
 ThinkingConfig _$ThinkingConfigFromJson(Map<String, dynamic> json) =>
     ThinkingConfig(
       includeThoughts: json['include_thoughts'] as bool?,
       thinkingBudget: (json['thinking_budget'] as num?)?.toInt(),
+      thinkingLevel: $enumDecodeNullable(
+        _$ThinkingLevelEnumMap,
+        json['thinking_level'],
+      ),
     );
 
 Map<String, dynamic> _$ThinkingConfigToJson(ThinkingConfig instance) =>
     <String, dynamic>{
       'include_thoughts': ?instance.includeThoughts,
       'thinking_budget': ?instance.thinkingBudget,
+      'thinking_level': ?_$ThinkingLevelEnumMap[instance.thinkingLevel],
     };
+
+const _$ThinkingLevelEnumMap = {
+  ThinkingLevel.THINKING_LEVEL_UNSPECIFIED: 'THINKING_LEVEL_UNSPECIFIED',
+  ThinkingLevel.MINIMAL: 'MINIMAL',
+  ThinkingLevel.LOW: 'LOW',
+  ThinkingLevel.MEDIUM: 'MEDIUM',
+  ThinkingLevel.HIGH: 'HIGH',
+};
+
+StreamTranslationConfig _$StreamTranslationConfigFromJson(
+  Map<String, dynamic> json,
+) => StreamTranslationConfig(
+  echoTargetLanguage: json['echo_target_language'] as bool?,
+  targetLanguageCode: json['target_language_code'] as String?,
+);
+
+Map<String, dynamic> _$StreamTranslationConfigToJson(
+  StreamTranslationConfig instance,
+) => <String, dynamic>{
+  'echo_target_language': ?instance.echoTargetLanguage,
+  'target_language_code': ?instance.targetLanguageCode,
+};
 
 GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
     GenerationConfig(
@@ -206,6 +291,11 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
               json['thinking_config'] as Map<String, dynamic>,
             ),
       enableAffectiveDialog: json['enable_affective_dialog'] as bool?,
+      streamTranslationConfig: json['stream_translation_config'] == null
+          ? null
+          : StreamTranslationConfig.fromJson(
+              json['stream_translation_config'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
@@ -222,6 +312,7 @@ Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
       'speech_config': ?instance.speechConfig,
       'thinking_config': ?instance.thinkingConfig,
       'enable_affective_dialog': ?instance.enableAffectiveDialog,
+      'stream_translation_config': ?instance.streamTranslationConfig,
     };
 
 const _$ModalityEnumMap = {
@@ -239,10 +330,33 @@ const _$MediaResolutionEnumMap = {
   MediaResolution.MEDIA_RESOLUTION_HIGH: 'MEDIA_RESOLUTION_HIGH',
 };
 
+PartialArg _$PartialArgFromJson(Map<String, dynamic> json) => PartialArg(
+  boolValue: json['bool_value'] as bool?,
+  jsonPath: json['json_path'] as String?,
+  nullValue: json['null_value'] as String?,
+  numberValue: (json['number_value'] as num?)?.toDouble(),
+  stringValue: json['string_value'] as String?,
+  willContinue: json['will_continue'] as bool?,
+);
+
+Map<String, dynamic> _$PartialArgToJson(PartialArg instance) =>
+    <String, dynamic>{
+      'bool_value': ?instance.boolValue,
+      'json_path': ?instance.jsonPath,
+      'null_value': ?instance.nullValue,
+      'number_value': ?instance.numberValue,
+      'string_value': ?instance.stringValue,
+      'will_continue': ?instance.willContinue,
+    };
+
 FunctionCall _$FunctionCallFromJson(Map<String, dynamic> json) => FunctionCall(
   id: json['id'] as String?,
   name: json['name'] as String?,
   args: json['args'] as Map<String, dynamic>?,
+  partialArgs: (json['partial_args'] as List<dynamic>?)
+      ?.map((e) => PartialArg.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  willContinue: json['will_continue'] as bool?,
 );
 
 Map<String, dynamic> _$FunctionCallToJson(FunctionCall instance) =>
@@ -250,6 +364,8 @@ Map<String, dynamic> _$FunctionCallToJson(FunctionCall instance) =>
       'id': ?instance.id,
       'name': ?instance.name,
       'args': ?instance.args,
+      'partial_args': ?instance.partialArgs,
+      'will_continue': ?instance.willContinue,
     };
 
 ToolCall _$ToolCallFromJson(Map<String, dynamic> json) => ToolCall(
@@ -291,17 +407,23 @@ FunctionResponseBlob _$FunctionResponseBlobFromJson(
 ) => FunctionResponseBlob(
   mimeType: json['mime_type'] as String?,
   data: json['data'] as String?,
+  displayName: json['display_name'] as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseBlobToJson(
   FunctionResponseBlob instance,
-) => <String, dynamic>{'mime_type': ?instance.mimeType, 'data': ?instance.data};
+) => <String, dynamic>{
+  'mime_type': ?instance.mimeType,
+  'data': ?instance.data,
+  'display_name': ?instance.displayName,
+};
 
 FunctionResponseFileData _$FunctionResponseFileDataFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponseFileData(
   fileUri: json['file_uri'] as String?,
   mimeType: json['mime_type'] as String?,
+  displayName: json['display_name'] as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseFileDataToJson(
@@ -309,6 +431,7 @@ Map<String, dynamic> _$FunctionResponseFileDataToJson(
 ) => <String, dynamic>{
   'file_uri': ?instance.fileUri,
   'mime_type': ?instance.mimeType,
+  'display_name': ?instance.displayName,
 };
 
 FunctionResponsePart _$FunctionResponsePartFromJson(
@@ -471,7 +594,7 @@ Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
   urlContext: json['url_context'] as Map<String, dynamic>?,
   googleMaps: json['google_maps'] as Map<String, dynamic>?,
   retrieval: json['retrieval'] as Map<String, dynamic>?,
-  computerUse: json['computer_use'] as Map<String, dynamic>?,
+  computerUse: _computerUseFromJson(json['computer_use']),
   fileSearch: json['file_search'] as Map<String, dynamic>?,
   enterpriseWebSearch: json['enterprise_web_search'] as Map<String, dynamic>?,
   mcpServers: (json['mcp_servers'] as List<dynamic>?)
@@ -487,10 +610,35 @@ Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
   'url_context': ?instance.urlContext,
   'google_maps': ?instance.googleMaps,
   'retrieval': ?instance.retrieval,
-  'computer_use': ?instance.computerUse,
+  'computer_use': ?_computerUseToJson(instance.computerUse),
   'file_search': ?instance.fileSearch,
   'enterprise_web_search': ?instance.enterpriseWebSearch,
   'mcp_servers': ?instance.mcpServers,
+};
+
+ComputerUse _$ComputerUseFromJson(Map<String, dynamic> json) => ComputerUse(
+  environment: $enumDecodeNullable(_$EnvironmentEnumMap, json['environment']),
+  excludedPredefinedFunctions:
+      (json['excluded_predefined_functions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+  enablePromptInjectionDetection:
+      json['enable_prompt_injection_detection'] as bool?,
+);
+
+Map<String, dynamic> _$ComputerUseToJson(
+  ComputerUse instance,
+) => <String, dynamic>{
+  'environment': ?_$EnvironmentEnumMap[instance.environment],
+  'excluded_predefined_functions': ?instance.excludedPredefinedFunctions,
+  'enable_prompt_injection_detection': ?instance.enablePromptInjectionDetection,
+};
+
+const _$EnvironmentEnumMap = {
+  Environment.ENVIRONMENT_UNSPECIFIED: 'ENVIRONMENT_UNSPECIFIED',
+  Environment.ENVIRONMENT_BROWSER: 'ENVIRONMENT_BROWSER',
+  Environment.ENVIRONMENT_MOBILE: 'ENVIRONMENT_MOBILE',
+  Environment.ENVIRONMENT_DESKTOP: 'ENVIRONMENT_DESKTOP',
 };
 
 AutomaticActivityDetection _$AutomaticActivityDetectionFromJson(

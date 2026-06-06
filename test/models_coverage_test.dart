@@ -10,31 +10,47 @@ void main() {
         id: 'call-1',
         name: 'lookup',
         args: {'city': 'Seoul'},
+        partialArgs: [
+          PartialArg(
+            jsonPath: r'$.city',
+            stringValue: 'Seo',
+            willContinue: true,
+          ),
+        ],
+        willContinue: true,
       );
       expect(FunctionCall.fromJson(normalizeJson(functionCall.toJson())).args, {
         'city': 'Seoul',
       });
+      expect(
+        FunctionCall.fromJson(
+          normalizeJson(functionCall.toJson()),
+        ).partialArgs?.single.stringValue,
+        'Seo',
+      );
 
       final responseBlob = FunctionResponseBlob(
         mimeType: 'image/png',
         data: 'base64',
+        displayName: 'image.png',
       );
       expect(
         FunctionResponseBlob.fromJson(
           normalizeJson(responseBlob.toJson()),
-        ).mimeType,
-        'image/png',
+        ).displayName,
+        'image.png',
       );
 
       final fileData = FunctionResponseFileData(
         fileUri: 'gs://bucket/file',
         mimeType: 'application/pdf',
+        displayName: 'file.pdf',
       );
       expect(
         FunctionResponseFileData.fromJson(
           normalizeJson(fileData.toJson()),
-        ).fileUri,
-        'gs://bucket/file',
+        ).displayName,
+        'file.pdf',
       );
 
       final responsePart = FunctionResponsePart(
@@ -162,6 +178,19 @@ void main() {
       final toolRoundTrip = Tool.fromJson(normalizeJson(tool.toJson()));
       expect(toolRoundTrip.codeExecution, {'enabled': true});
       expect(toolRoundTrip.mcpServers?.single['name'], 'server-1');
+
+      final typedComputerUseTool = Tool(
+        computerUse: ComputerUse(
+          environment: Environment.ENVIRONMENT_BROWSER,
+          excludedPredefinedFunctions: ['drag_and_drop'],
+          enablePromptInjectionDetection: true,
+        ),
+      );
+      final typedComputerUseJson = typedComputerUseTool.toJson();
+      expect(
+        typedComputerUseJson['computer_use']['enable_prompt_injection_detection'],
+        true,
+      );
     });
   });
 
@@ -251,15 +280,40 @@ void main() {
         seed: 7,
         speechConfig: SpeechConfig(
           voiceConfig: VoiceConfig(
+            replicatedVoiceConfig: ReplicatedVoiceConfig(
+              mimeType: 'audio/wav',
+              voiceSampleAudio: 'c2FtcGxl',
+            ),
             prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: 'Aoede'),
           ),
           languageCode: 'ko-KR',
+          multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig(
+            speakerVoiceConfigs: [
+              SpeakerVoiceConfig(
+                speaker: 'A',
+                voiceConfig: VoiceConfig(
+                  prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: 'Kore'),
+                ),
+              ),
+              SpeakerVoiceConfig(
+                speaker: 'B',
+                voiceConfig: VoiceConfig(
+                  prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: 'Puck'),
+                ),
+              ),
+            ],
+          ),
         ),
         thinkingConfig: ThinkingConfig(
           includeThoughts: true,
           thinkingBudget: 2048,
+          thinkingLevel: ThinkingLevel.MEDIUM,
         ),
         enableAffectiveDialog: true,
+        streamTranslationConfig: StreamTranslationConfig(
+          echoTargetLanguage: true,
+          targetLanguageCode: 'en',
+        ),
       );
 
       final tool = Tool(
@@ -311,6 +365,36 @@ void main() {
         Modality.AUDIO,
         Modality.VIDEO,
       ]);
+      expect(
+        setupRoundTrip
+            .generationConfig
+            ?.speechConfig
+            ?.voiceConfig
+            ?.replicatedVoiceConfig
+            ?.mimeType,
+        'audio/wav',
+      );
+      expect(
+        setupRoundTrip
+            .generationConfig
+            ?.speechConfig
+            ?.multiSpeakerVoiceConfig
+            ?.speakerVoiceConfigs
+            ?.last
+            .speaker,
+        'B',
+      );
+      expect(
+        setupRoundTrip.generationConfig?.thinkingConfig?.thinkingLevel,
+        ThinkingLevel.MEDIUM,
+      );
+      expect(
+        setupRoundTrip
+            .generationConfig
+            ?.streamTranslationConfig
+            ?.targetLanguageCode,
+        'en',
+      );
       expect(setupRoundTrip.avatarConfig?.avatarName, 'hero');
       expect(
         setupRoundTrip.avatarConfig?.customizedAvatar?.imageMimeType,
@@ -545,6 +629,14 @@ void main() {
                   'id': 'call-1',
                   'name': 'lookup',
                   'args': {'city': 'Seoul'},
+                  'partial_args': [
+                    {
+                      'json_path': r'$.city',
+                      'string_value': 'Seoul',
+                      'will_continue': false,
+                    },
+                  ],
+                  'will_continue': false,
                 },
                 'functionResponse': {
                   'id': 'call-1',
@@ -554,10 +646,15 @@ void main() {
                   'scheduling': 'INTERRUPT',
                   'parts': [
                     {
-                      'inline_data': {'mime_type': 'image/png', 'data': 'raw'},
+                      'inline_data': {
+                        'mime_type': 'image/png',
+                        'data': 'raw',
+                        'display_name': 'image.png',
+                      },
                       'file_data': {
                         'file_uri': 'gs://bucket/report.pdf',
                         'mime_type': 'application/pdf',
+                        'display_name': 'report.pdf',
                       },
                     },
                   ],
@@ -617,6 +714,14 @@ void main() {
               'id': 'call-1',
               'name': 'lookup',
               'args': {'city': 'Seoul'},
+              'partial_args': [
+                {
+                  'json_path': r'$.city',
+                  'string_value': 'Seoul',
+                  'will_continue': false,
+                },
+              ],
+              'will_continue': false,
             },
           ],
         },
@@ -642,6 +747,10 @@ void main() {
       );
       expect(message.serverContent?.inputTranscription?.finished, true);
       expect(message.toolCall?.functionCalls?.single.args, {'city': 'Seoul'});
+      expect(
+        message.toolCall?.functionCalls?.single.partialArgs?.single.jsonPath,
+        r'$.city',
+      );
       expect(message.toolCallCancellation?.ids, ['call-1']);
       expect(message.goAway?.timeRemaining, 45);
       expect(
@@ -668,6 +777,19 @@ void main() {
             .fileData
             ?.fileUri,
         'gs://bucket/report.pdf',
+      );
+      expect(
+        message
+            .serverContent
+            ?.modelTurn
+            ?.parts
+            ?.first
+            .functionResponse
+            ?.parts
+            ?.single
+            .inlineData
+            ?.displayName,
+        'image.png',
       );
     });
 
