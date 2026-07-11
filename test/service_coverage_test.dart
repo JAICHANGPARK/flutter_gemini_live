@@ -537,6 +537,77 @@ void main() {
         ),
       );
     });
+
+    test('connect does not resolve until setupComplete arrives', () async {
+      final channel = FakeWebSocketChannel();
+      final service = LiveService(
+        apiKey: 'plain-key',
+        connector: (uri, headers) async => channel,
+      );
+
+      var resolved = false;
+      final future = service
+          .connect(
+            LiveConnectParameters(
+              model: 'gemini-live-test',
+              callbacks: LiveCallbacks(),
+            ),
+          )
+          .then((session) {
+            resolved = true;
+            return session;
+          });
+
+      // A non-setup message must not resolve connect().
+      channel.emit('{"serverContent":{"turnComplete":true}}');
+      await pumpEventQueue();
+      expect(resolved, isFalse);
+
+      channel.emit('{"setupComplete":{"sessionId":"ready"}}');
+      final session = await future;
+      expect(resolved, isTrue);
+      expect(session.setupComplete?.sessionId, 'ready');
+    });
+
+    test(
+      'connect queues pre-setup messages and flushes them in order',
+      () async {
+        final channel = FakeWebSocketChannel();
+        final received = <LiveServerMessage>[];
+        final service = LiveService(
+          apiKey: 'plain-key',
+          connector: (uri, headers) async {
+            unawaited(
+              Future<void>.delayed(Duration.zero, () {
+                channel.emit('{"serverContent":{"turnComplete":false}}');
+                channel.emit('{"setupComplete":{"sessionId":"ready"}}');
+              }),
+            );
+            return channel;
+          },
+        );
+
+        final session = await service.connect(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            callbacks: LiveCallbacks(onMessage: received.add),
+          ),
+        );
+
+        // The pre-setup message and the setupComplete message are delivered
+        // (in order) only after connect() resolves.
+        expect(received, hasLength(2));
+        expect(received[0].serverContent?.turnComplete, false);
+        expect(received[1].setupComplete?.sessionId, 'ready');
+        expect(session.setupComplete?.sessionId, 'ready');
+
+        // Post-setup messages flow straight through.
+        channel.emit('{"serverContent":{"turnComplete":true}}');
+        await pumpEventQueue();
+        expect(received, hasLength(3));
+        expect(received[2].serverContent?.turnComplete, true);
+      },
+    );
   });
 
   group('LiveSession', () {

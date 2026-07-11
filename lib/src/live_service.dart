@@ -231,8 +231,17 @@ class LiveService {
     }
   }
 
-  /// Handles incoming WebSocket data and converts it to LiveServerMessage
-  void _handleWebSocketData(dynamic data, LiveCallbacks callbacks) {
+  /// Handles incoming WebSocket data and converts it to LiveServerMessage.
+  ///
+  /// Parse errors and unexpected data types are reported to
+  /// [LiveCallbacks.onError]. When a message parses successfully it is
+  /// dispatched via [onMessage] if provided, otherwise to
+  /// [LiveCallbacks.onMessage].
+  void _handleWebSocketData(
+    dynamic data,
+    LiveCallbacks callbacks, {
+    void Function(LiveServerMessage message)? onMessage,
+  }) {
     String jsonData;
     if (data is String) {
       jsonData = data;
@@ -252,7 +261,8 @@ class LiveService {
       final json = jsonDecode(jsonData);
       logger?.call('📥 Received JSON: $jsonData');
       final message = LiveServerMessage.fromJson(json);
-      callbacks.onMessage?.call(message);
+      final dispatch = onMessage ?? callbacks.onMessage;
+      dispatch?.call(message);
     } catch (e, st) {
       callbacks.onError?.call(e, st);
     }
@@ -300,22 +310,34 @@ class LiveService {
       final session = LiveSession._(channel, logger: logger);
       final setupCompleter = Completer<void>();
 
+      // Until connect() resolves, successfully parsed messages (including the
+      // setupComplete message itself) are queued instead of being forwarded to
+      // callbacks.onMessage. Once resolved, the queue is flushed in arrival
+      // order and subsequent messages flow directly to callbacks.onMessage.
+      var sessionResolved = false;
+      final messageQueue = <LiveServerMessage>[];
+
       StreamSubscription? streamSubscription;
       streamSubscription = channel.stream.listen(
         (data) {
-          final jsonData = data is String
-              ? data
-              : utf8.decode(data as List<int>);
-          logger?.call('📥 Received: $jsonData');
-
-          if (!setupCompleter.isCompleted) {
-            try {
-              setupCompleter.complete();
-            } catch (e) {
-              // Ignore parsing errors during setup
-            }
-          }
-          _handleWebSocketData(data, params.callbacks);
+          _handleWebSocketData(
+            data,
+            params.callbacks,
+            onMessage: (message) {
+              if (message.setupComplete != null &&
+                  session.setupComplete == null) {
+                session.setupComplete = message.setupComplete;
+                if (!setupCompleter.isCompleted) {
+                  setupCompleter.complete();
+                }
+              }
+              if (sessionResolved) {
+                params.callbacks.onMessage?.call(message);
+              } else {
+                messageQueue.add(message);
+              }
+            },
+          );
         },
         onError: (error, stackTrace) {
           if (!setupCompleter.isCompleted) {
@@ -346,6 +368,12 @@ class LiveService {
         },
       );
 
+      sessionResolved = true;
+      for (final message in messageQueue) {
+        params.callbacks.onMessage?.call(message);
+      }
+      messageQueue.clear();
+
       return session;
     } catch (e) {
       logger?.call("Failed to connect or setup WebSocket: $e");
@@ -370,6 +398,10 @@ class TimeoutException implements Exception {
 class LiveSession {
   final WebSocketChannel _channel;
   final void Function(String)? _logger;
+
+  /// The setup acknowledgement returned by the server, populated once the
+  /// initial `setupComplete` message arrives during [LiveService.connect].
+  LiveServerSetupComplete? setupComplete;
 
   LiveSession._(this._channel, {void Function(String)? logger})
     : _logger = logger;
