@@ -145,7 +145,7 @@ void main() {
               thinkingLevel: ThinkingLevel.HIGH,
             ),
             enableAffectiveDialog: true,
-            streamTranslationConfig: StreamTranslationConfig(
+            translationConfig: TranslationConfig(
               targetLanguageCode: 'ko',
               echoTargetLanguage: false,
             ),
@@ -227,7 +227,7 @@ void main() {
         restored
             .setup
             ?.generationConfig
-            ?.streamTranslationConfig
+            ?.translationConfig
             ?.targetLanguageCode,
         'ko',
       );

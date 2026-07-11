@@ -168,11 +168,25 @@ Map<String, dynamic> _$VoiceConfigToJson(VoiceConfig instance) =>
       'prebuilt_voice_config': ?instance.prebuiltVoiceConfig,
     };
 
+VoiceConsentSignature _$VoiceConsentSignatureFromJson(
+  Map<String, dynamic> json,
+) => VoiceConsentSignature(signature: json['signature'] as String?);
+
+Map<String, dynamic> _$VoiceConsentSignatureToJson(
+  VoiceConsentSignature instance,
+) => <String, dynamic>{'signature': ?instance.signature};
+
 ReplicatedVoiceConfig _$ReplicatedVoiceConfigFromJson(
   Map<String, dynamic> json,
 ) => ReplicatedVoiceConfig(
   mimeType: json['mime_type'] as String?,
   voiceSampleAudio: json['voice_sample_audio'] as String?,
+  consentAudio: json['consent_audio'] as String?,
+  voiceConsentSignature: json['voice_consent_signature'] == null
+      ? null
+      : VoiceConsentSignature.fromJson(
+          json['voice_consent_signature'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$ReplicatedVoiceConfigToJson(
@@ -180,6 +194,8 @@ Map<String, dynamic> _$ReplicatedVoiceConfigToJson(
 ) => <String, dynamic>{
   'mime_type': ?instance.mimeType,
   'voice_sample_audio': ?instance.voiceSampleAudio,
+  'consent_audio': ?instance.consentAudio,
+  'voice_consent_signature': ?instance.voiceConsentSignature,
 };
 
 SpeakerVoiceConfig _$SpeakerVoiceConfigFromJson(Map<String, dynamic> json) =>
@@ -252,19 +268,17 @@ const _$ThinkingLevelEnumMap = {
   ThinkingLevel.HIGH: 'HIGH',
 };
 
-StreamTranslationConfig _$StreamTranslationConfigFromJson(
-  Map<String, dynamic> json,
-) => StreamTranslationConfig(
-  echoTargetLanguage: json['echo_target_language'] as bool?,
-  targetLanguageCode: json['target_language_code'] as String?,
-);
+TranslationConfig _$TranslationConfigFromJson(Map<String, dynamic> json) =>
+    TranslationConfig(
+      echoTargetLanguage: json['echo_target_language'] as bool?,
+      targetLanguageCode: json['target_language_code'] as String?,
+    );
 
-Map<String, dynamic> _$StreamTranslationConfigToJson(
-  StreamTranslationConfig instance,
-) => <String, dynamic>{
-  'echo_target_language': ?instance.echoTargetLanguage,
-  'target_language_code': ?instance.targetLanguageCode,
-};
+Map<String, dynamic> _$TranslationConfigToJson(TranslationConfig instance) =>
+    <String, dynamic>{
+      'echo_target_language': ?instance.echoTargetLanguage,
+      'target_language_code': ?instance.targetLanguageCode,
+    };
 
 GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
     GenerationConfig(
@@ -291,10 +305,10 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
               json['thinking_config'] as Map<String, dynamic>,
             ),
       enableAffectiveDialog: json['enable_affective_dialog'] as bool?,
-      streamTranslationConfig: json['stream_translation_config'] == null
+      translationConfig: json['translation_config'] == null
           ? null
-          : StreamTranslationConfig.fromJson(
-              json['stream_translation_config'] as Map<String, dynamic>,
+          : TranslationConfig.fromJson(
+              json['translation_config'] as Map<String, dynamic>,
             ),
     );
 
@@ -312,7 +326,7 @@ Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
       'speech_config': ?instance.speechConfig,
       'thinking_config': ?instance.thinkingConfig,
       'enable_affective_dialog': ?instance.enableAffectiveDialog,
-      'stream_translation_config': ?instance.streamTranslationConfig,
+      'translation_config': ?instance.translationConfig,
     };
 
 const _$ModalityEnumMap = {
@@ -600,6 +614,9 @@ Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
   mcpServers: (json['mcp_servers'] as List<dynamic>?)
       ?.map((e) => e as Map<String, dynamic>)
       .toList(),
+  exaAiSearch: json['exa_ai_search'] == null
+      ? null
+      : ToolExaAiSearch.fromJson(json['exa_ai_search'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
@@ -614,7 +631,20 @@ Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
   'file_search': ?instance.fileSearch,
   'enterprise_web_search': ?instance.enterpriseWebSearch,
   'mcp_servers': ?instance.mcpServers,
+  'exa_ai_search': ?instance.exaAiSearch,
 };
+
+ToolExaAiSearch _$ToolExaAiSearchFromJson(Map<String, dynamic> json) =>
+    ToolExaAiSearch(
+      apiKey: json['api_key'] as String?,
+      customConfigs: json['custom_configs'] as Map<String, dynamic>?,
+    );
+
+Map<String, dynamic> _$ToolExaAiSearchToJson(ToolExaAiSearch instance) =>
+    <String, dynamic>{
+      'api_key': ?instance.apiKey,
+      'custom_configs': ?instance.customConfigs,
+    };
 
 ComputerUse _$ComputerUseFromJson(Map<String, dynamic> json) => ComputerUse(
   environment: $enumDecodeNullable(_$EnvironmentEnumMap, json['environment']),
@@ -624,6 +654,9 @@ ComputerUse _$ComputerUseFromJson(Map<String, dynamic> json) => ComputerUse(
           .toList(),
   enablePromptInjectionDetection:
       json['enable_prompt_injection_detection'] as bool?,
+  disabledSafetyPolicies: (json['disabled_safety_policies'] as List<dynamic>?)
+      ?.map((e) => $enumDecode(_$SafetyPolicyEnumMap, e))
+      .toList(),
 );
 
 Map<String, dynamic> _$ComputerUseToJson(
@@ -632,6 +665,9 @@ Map<String, dynamic> _$ComputerUseToJson(
   'environment': ?_$EnvironmentEnumMap[instance.environment],
   'excluded_predefined_functions': ?instance.excludedPredefinedFunctions,
   'enable_prompt_injection_detection': ?instance.enablePromptInjectionDetection,
+  'disabled_safety_policies': ?instance.disabledSafetyPolicies
+      ?.map((e) => _$SafetyPolicyEnumMap[e]!)
+      .toList(),
 };
 
 const _$EnvironmentEnumMap = {
@@ -639,6 +675,17 @@ const _$EnvironmentEnumMap = {
   Environment.ENVIRONMENT_BROWSER: 'ENVIRONMENT_BROWSER',
   Environment.ENVIRONMENT_MOBILE: 'ENVIRONMENT_MOBILE',
   Environment.ENVIRONMENT_DESKTOP: 'ENVIRONMENT_DESKTOP',
+};
+
+const _$SafetyPolicyEnumMap = {
+  SafetyPolicy.SAFETY_POLICY_UNSPECIFIED: 'SAFETY_POLICY_UNSPECIFIED',
+  SafetyPolicy.FINANCIAL_TRANSACTIONS: 'FINANCIAL_TRANSACTIONS',
+  SafetyPolicy.SENSITIVE_DATA_MODIFICATION: 'SENSITIVE_DATA_MODIFICATION',
+  SafetyPolicy.COMMUNICATION_TOOL: 'COMMUNICATION_TOOL',
+  SafetyPolicy.ACCOUNT_CREATION: 'ACCOUNT_CREATION',
+  SafetyPolicy.DATA_MODIFICATION: 'DATA_MODIFICATION',
+  SafetyPolicy.USER_CONSENT_MANAGEMENT: 'USER_CONSENT_MANAGEMENT',
+  SafetyPolicy.LEGAL_TERMS_AND_AGREEMENTS: 'LEGAL_TERMS_AND_AGREEMENTS',
 };
 
 AutomaticActivityDetection _$AutomaticActivityDetectionFromJson(
@@ -759,17 +806,47 @@ Map<String, dynamic> _$ContextWindowCompressionConfigToJson(
   'sliding_window': ?instance.slidingWindow,
 };
 
+LanguageAuto _$LanguageAutoFromJson(Map<String, dynamic> json) =>
+    LanguageAuto();
+
+Map<String, dynamic> _$LanguageAutoToJson(LanguageAuto instance) =>
+    <String, dynamic>{};
+
+LanguageHints _$LanguageHintsFromJson(Map<String, dynamic> json) =>
+    LanguageHints(
+      languageCodes: (json['language_codes'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$LanguageHintsToJson(LanguageHints instance) =>
+    <String, dynamic>{'language_codes': ?instance.languageCodes};
+
 AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
   Map<String, dynamic> json,
 ) => AudioTranscriptionConfig(
   languageCodes: (json['language_codes'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
+  languageAuto: json['language_auto'] == null
+      ? null
+      : LanguageAuto.fromJson(json['language_auto'] as Map<String, dynamic>),
+  languageHints: json['language_hints'] == null
+      ? null
+      : LanguageHints.fromJson(json['language_hints'] as Map<String, dynamic>),
+  adaptationPhrases: (json['adaptation_phrases'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
 );
 
 Map<String, dynamic> _$AudioTranscriptionConfigToJson(
   AudioTranscriptionConfig instance,
-) => <String, dynamic>{'language_codes': ?instance.languageCodes};
+) => <String, dynamic>{
+  'language_codes': ?instance.languageCodes,
+  'language_auto': ?instance.languageAuto,
+  'language_hints': ?instance.languageHints,
+  'adaptation_phrases': ?instance.adaptationPhrases,
+};
 
 ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
     ProactivityConfig(proactiveAudio: json['proactive_audio'] as bool?);
@@ -1032,12 +1109,20 @@ Map<String, dynamic> _$LiveClientMessageToJson(LiveClientMessage instance) =>
 
 LiveServerSetupComplete _$LiveServerSetupCompleteFromJson(
   Map<String, dynamic> json,
-) => LiveServerSetupComplete(sessionId: json['sessionId'] as String?);
+) => LiveServerSetupComplete(
+  sessionId: json['sessionId'] as String?,
+  voiceConsentSignature: json['voiceConsentSignature'] == null
+      ? null
+      : VoiceConsentSignature.fromJson(
+          json['voiceConsentSignature'] as Map<String, dynamic>,
+        ),
+);
 
 Transcription _$TranscriptionFromJson(Map<String, dynamic> json) =>
     Transcription(
       text: json['text'] as String?,
       finished: json['finished'] as bool?,
+      languageCode: json['languageCode'] as String?,
     );
 
 ExecutableCode _$ExecutableCodeFromJson(Map<String, dynamic> json) =>
@@ -1094,6 +1179,11 @@ LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
         json['turnCompleteReason'],
       ),
       waitingForInput: json['waitingForInput'] as bool?,
+      interimInputTranscription: json['interimInputTranscription'] == null
+          ? null
+          : Transcription.fromJson(
+              json['interimInputTranscription'] as Map<String, dynamic>,
+            ),
     );
 
 const _$TurnCompleteReasonEnumMap = {
@@ -1184,6 +1274,7 @@ VoiceActivity _$VoiceActivityFromJson(Map<String, dynamic> json) =>
         _$VoiceActivityTypeEnumMap,
         json['voiceActivityType'],
       ),
+      audioOffset: json['audioOffset'] as String?,
     );
 
 const _$VoiceActivityTypeEnumMap = {
@@ -1230,6 +1321,7 @@ UsageMetadata _$UsageMetadataFromJson(
           ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
           .toList(),
   trafficType: $enumDecodeNullable(_$TrafficTypeEnumMap, json['trafficType']),
+  serviceTier: $enumDecodeNullable(_$ServiceTierEnumMap, json['serviceTier']),
 );
 
 const _$TrafficTypeEnumMap = {
@@ -1238,6 +1330,13 @@ const _$TrafficTypeEnumMap = {
   TrafficType.ON_DEMAND_PRIORITY: 'ON_DEMAND_PRIORITY',
   TrafficType.ON_DEMAND_FLEX: 'ON_DEMAND_FLEX',
   TrafficType.PROVISIONED_THROUGHPUT: 'PROVISIONED_THROUGHPUT',
+};
+
+const _$ServiceTierEnumMap = {
+  ServiceTier.UNSPECIFIED: 'unspecified',
+  ServiceTier.FLEX: 'flex',
+  ServiceTier.STANDARD: 'standard',
+  ServiceTier.PRIORITY: 'priority',
 };
 
 LiveServerMessage _$LiveServerMessageFromJson(

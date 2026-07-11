@@ -310,7 +310,7 @@ void main() {
           thinkingLevel: ThinkingLevel.MEDIUM,
         ),
         enableAffectiveDialog: true,
-        streamTranslationConfig: StreamTranslationConfig(
+        translationConfig: TranslationConfig(
           echoTargetLanguage: true,
           targetLanguageCode: 'en',
         ),
@@ -391,7 +391,7 @@ void main() {
       expect(
         setupRoundTrip
             .generationConfig
-            ?.streamTranslationConfig
+            ?.translationConfig
             ?.targetLanguageCode,
         'en',
       );
@@ -816,6 +816,157 @@ void main() {
 
       expect(LiveServerGoAway(timeLeft: null).timeRemaining, isNull);
       expect(LiveServerGoAway(timeLeft: 'soon').timeRemaining, isNull);
+    });
+  });
+
+  group('js-genai 2.11.0 sync', () {
+    test('TranslationConfig serializes under translation_config', () {
+      final config = GenerationConfig(
+        translationConfig: TranslationConfig(
+          echoTargetLanguage: true,
+          targetLanguageCode: 'es',
+        ),
+      );
+      final json = normalizeJson(config.toJson());
+      expect(json['translation_config'], {
+        'echo_target_language': true,
+        'target_language_code': 'es',
+      });
+
+      final roundTrip = GenerationConfig.fromJson(json);
+      expect(roundTrip.translationConfig?.targetLanguageCode, 'es');
+      expect(roundTrip.translationConfig?.echoTargetLanguage, true);
+    });
+
+    test('AudioTranscriptionConfig serializes new language options', () {
+      final config = AudioTranscriptionConfig(
+        languageAuto: LanguageAuto(),
+        adaptationPhrases: ['Gemini', 'Vertex'],
+      );
+      final json = normalizeJson(config.toJson());
+      expect(json['language_auto'], <String, dynamic>{});
+      expect(json['adaptation_phrases'], ['Gemini', 'Vertex']);
+
+      final roundTrip = AudioTranscriptionConfig.fromJson(json);
+      expect(roundTrip.languageAuto, isA<LanguageAuto>());
+      expect(roundTrip.adaptationPhrases, ['Gemini', 'Vertex']);
+
+      final hintsConfig = AudioTranscriptionConfig(
+        languageHints: LanguageHints(languageCodes: ['en', 'ko']),
+      );
+      final hintsJson = normalizeJson(hintsConfig.toJson());
+      expect(hintsJson['language_hints'], {
+        'language_codes': ['en', 'ko'],
+      });
+      expect(
+        AudioTranscriptionConfig.fromJson(
+          hintsJson,
+        ).languageHints?.languageCodes,
+        ['en', 'ko'],
+      );
+    });
+
+    test('ReplicatedVoiceConfig serializes consent fields', () {
+      final config = ReplicatedVoiceConfig(
+        mimeType: 'audio/wav',
+        voiceSampleAudio: 'c2FtcGxl',
+        consentAudio: 'Y29uc2VudA==',
+        voiceConsentSignature: VoiceConsentSignature(signature: 'sig-123'),
+      );
+      final json = normalizeJson(config.toJson());
+      expect(json['consent_audio'], 'Y29uc2VudA==');
+      expect(json['voice_consent_signature'], {'signature': 'sig-123'});
+
+      final roundTrip = ReplicatedVoiceConfig.fromJson(json);
+      expect(roundTrip.consentAudio, 'Y29uc2VudA==');
+      expect(roundTrip.voiceConsentSignature?.signature, 'sig-123');
+    });
+
+    test('ComputerUse serializes disabledSafetyPolicies', () {
+      final config = ComputerUse(
+        environment: Environment.ENVIRONMENT_BROWSER,
+        disabledSafetyPolicies: [
+          SafetyPolicy.FINANCIAL_TRANSACTIONS,
+          SafetyPolicy.DATA_MODIFICATION,
+        ],
+      );
+      final json = normalizeJson(config.toJson());
+      expect(json['disabled_safety_policies'], [
+        'FINANCIAL_TRANSACTIONS',
+        'DATA_MODIFICATION',
+      ]);
+
+      final roundTrip = ComputerUse.fromJson(json);
+      expect(roundTrip.disabledSafetyPolicies, [
+        SafetyPolicy.FINANCIAL_TRANSACTIONS,
+        SafetyPolicy.DATA_MODIFICATION,
+      ]);
+    });
+
+    test('Tool serializes exaAiSearch', () {
+      final tool = Tool(
+        exaAiSearch: ToolExaAiSearch(
+          apiKey: 'exa-key',
+          customConfigs: {'numResults': 5},
+        ),
+      );
+      final json = normalizeJson(tool.toJson());
+      expect(json['exa_ai_search'], {
+        'api_key': 'exa-key',
+        'custom_configs': {'numResults': 5},
+      });
+
+      final roundTrip = Tool.fromJson(json);
+      expect(roundTrip.exaAiSearch?.apiKey, 'exa-key');
+      expect(roundTrip.exaAiSearch?.customConfigs, {'numResults': 5});
+    });
+
+    test('server fields parse from camelCase JSON', () {
+      final setupComplete = LiveServerSetupComplete.fromJson({
+        'sessionId': 'sess-1',
+        'voiceConsentSignature': {'signature': 'server-sig'},
+      });
+      expect(setupComplete.voiceConsentSignature?.signature, 'server-sig');
+
+      final transcription = Transcription.fromJson({
+        'text': 'hola',
+        'finished': true,
+        'languageCode': 'es',
+      });
+      expect(transcription.languageCode, 'es');
+
+      final serverContent = LiveServerContent.fromJson({
+        'interimInputTranscription': {
+          'text': 'partial',
+          'finished': false,
+          'languageCode': 'en',
+        },
+      });
+      expect(serverContent.interimInputTranscription?.text, 'partial');
+      expect(serverContent.interimInputTranscription?.languageCode, 'en');
+
+      final voiceActivity = VoiceActivity.fromJson({
+        'voiceActivityType': 'ACTIVITY_START',
+        'audioOffset': '1.5s',
+      });
+      expect(voiceActivity.audioOffset, '1.5s');
+      expect(voiceActivity.speechActive, true);
+
+      final usageMetadata = UsageMetadata.fromJson({
+        'totalTokenCount': 10,
+        'serviceTier': 'flex',
+      });
+      expect(usageMetadata.serviceTier, ServiceTier.FLEX);
+    });
+
+    test('deprecated StreamTranslationConfig alias still works', () {
+      // ignore: deprecated_member_use_from_same_package
+      final StreamTranslationConfig legacy = StreamTranslationConfig(
+        targetLanguageCode: 'fr',
+      );
+      final config = GenerationConfig(translationConfig: legacy);
+      // ignore: deprecated_member_use_from_same_package
+      expect(config.streamTranslationConfig?.targetLanguageCode, 'fr');
     });
   });
 

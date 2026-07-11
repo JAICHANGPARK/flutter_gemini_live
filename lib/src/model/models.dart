@@ -349,6 +349,42 @@ enum ThinkingLevel {
   HIGH,
 }
 
+/// Safety policies that can be disabled for the computer-use tool.
+@JsonEnum(alwaysCreate: true)
+enum SafetyPolicy {
+  @JsonValue('SAFETY_POLICY_UNSPECIFIED')
+  SAFETY_POLICY_UNSPECIFIED,
+  @JsonValue('FINANCIAL_TRANSACTIONS')
+  FINANCIAL_TRANSACTIONS,
+  @JsonValue('SENSITIVE_DATA_MODIFICATION')
+  SENSITIVE_DATA_MODIFICATION,
+  @JsonValue('COMMUNICATION_TOOL')
+  COMMUNICATION_TOOL,
+  @JsonValue('ACCOUNT_CREATION')
+  ACCOUNT_CREATION,
+  @JsonValue('DATA_MODIFICATION')
+  DATA_MODIFICATION,
+  @JsonValue('USER_CONSENT_MANAGEMENT')
+  USER_CONSENT_MANAGEMENT,
+  @JsonValue('LEGAL_TERMS_AND_AGREEMENTS')
+  LEGAL_TERMS_AND_AGREEMENTS,
+}
+
+/// Pricing and performance service tier reported in usage metadata.
+///
+/// Note: wire values are lowercase.
+@JsonEnum(alwaysCreate: true)
+enum ServiceTier {
+  @JsonValue('unspecified')
+  UNSPECIFIED,
+  @JsonValue('flex')
+  FLEX,
+  @JsonValue('standard')
+  STANDARD,
+  @JsonValue('priority')
+  PRIORITY,
+}
+
 // ============================================================================
 // Data Classes - Base
 // ============================================================================
@@ -492,13 +528,39 @@ class VoiceConfig {
   Map<String, dynamic> toJson() => _$VoiceConfigToJson(this);
 }
 
+/// The signature of a voice consent check.
+@JsonSerializable(includeIfNull: false)
+class VoiceConsentSignature {
+  final String? signature;
+
+  VoiceConsentSignature({this.signature});
+
+  factory VoiceConsentSignature.fromJson(Map<String, dynamic> json) =>
+      _$VoiceConsentSignatureFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VoiceConsentSignatureToJson(this);
+}
+
 /// Voice cloning settings for custom speech output.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ReplicatedVoiceConfig {
   final String? mimeType;
   final String? voiceSampleAudio;
 
-  ReplicatedVoiceConfig({this.mimeType, this.voiceSampleAudio});
+  /// Recorded consent verifying ownership of the voice, as base64-encoded
+  /// 16-bit signed little-endian WAV data with a 24kHz sampling rate.
+  final String? consentAudio;
+
+  /// Signature of a previously verified consent audio, used instead of
+  /// [consentAudio] to reduce latency.
+  final VoiceConsentSignature? voiceConsentSignature;
+
+  ReplicatedVoiceConfig({
+    this.mimeType,
+    this.voiceSampleAudio,
+    this.consentAudio,
+    this.voiceConsentSignature,
+  });
 
   factory ReplicatedVoiceConfig.fromJson(Map<String, dynamic> json) =>
       _$ReplicatedVoiceConfigFromJson(json);
@@ -573,17 +635,21 @@ class ThinkingConfig {
 
 /// Stream translation settings for Live sessions.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
-class StreamTranslationConfig {
+class TranslationConfig {
   final bool? echoTargetLanguage;
   final String? targetLanguageCode;
 
-  StreamTranslationConfig({this.echoTargetLanguage, this.targetLanguageCode});
+  TranslationConfig({this.echoTargetLanguage, this.targetLanguageCode});
 
-  factory StreamTranslationConfig.fromJson(Map<String, dynamic> json) =>
-      _$StreamTranslationConfigFromJson(json);
+  factory TranslationConfig.fromJson(Map<String, dynamic> json) =>
+      _$TranslationConfigFromJson(json);
 
-  Map<String, dynamic> toJson() => _$StreamTranslationConfigToJson(this);
+  Map<String, dynamic> toJson() => _$TranslationConfigToJson(this);
 }
+
+/// Deprecated alias for [TranslationConfig].
+@Deprecated('Use TranslationConfig instead.')
+typedef StreamTranslationConfig = TranslationConfig;
 
 /// Generation parameters used when starting a Live API session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
@@ -598,7 +664,7 @@ class GenerationConfig {
   final SpeechConfig? speechConfig;
   final ThinkingConfig? thinkingConfig;
   final bool? enableAffectiveDialog;
-  final StreamTranslationConfig? streamTranslationConfig;
+  final TranslationConfig? translationConfig;
 
   GenerationConfig({
     this.temperature,
@@ -611,8 +677,12 @@ class GenerationConfig {
     this.speechConfig,
     this.thinkingConfig,
     this.enableAffectiveDialog,
-    this.streamTranslationConfig,
+    this.translationConfig,
   });
+
+  /// Deprecated alias for [translationConfig].
+  @Deprecated('Use translationConfig instead.')
+  TranslationConfig? get streamTranslationConfig => translationConfig;
 
   factory GenerationConfig.fromJson(Map<String, dynamic> json) =>
       _$GenerationConfigFromJson(json);
@@ -873,6 +943,7 @@ class Tool {
   final Map<String, dynamic>? fileSearch;
   final Map<String, dynamic>? enterpriseWebSearch;
   final List<Map<String, dynamic>>? mcpServers;
+  final ToolExaAiSearch? exaAiSearch;
 
   Tool({
     this.functionDeclarations,
@@ -886,11 +957,28 @@ class Tool {
     this.fileSearch,
     this.enterpriseWebSearch,
     this.mcpServers,
+    this.exaAiSearch,
   });
 
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
+}
+
+/// A tool that uses the Exa.ai search engine for grounding.
+///
+/// Not supported in the Gemini Developer API.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ToolExaAiSearch {
+  final String? apiKey;
+  final Map<String, dynamic>? customConfigs;
+
+  ToolExaAiSearch({this.apiKey, this.customConfigs});
+
+  factory ToolExaAiSearch.fromJson(Map<String, dynamic> json) =>
+      _$ToolExaAiSearchFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolExaAiSearchToJson(this);
 }
 
 /// Computer-use tool configuration.
@@ -899,11 +987,13 @@ class ComputerUse {
   final Environment? environment;
   final List<String>? excludedPredefinedFunctions;
   final bool? enablePromptInjectionDetection;
+  final List<SafetyPolicy>? disabledSafetyPolicies;
 
   ComputerUse({
     this.environment,
     this.excludedPredefinedFunctions,
     this.enablePromptInjectionDetection,
+    this.disabledSafetyPolicies,
   });
 
   factory ComputerUse.fromJson(Map<String, dynamic> json) =>
@@ -999,12 +1089,57 @@ class ContextWindowCompressionConfig {
   Map<String, dynamic> toJson() => _$ContextWindowCompressionConfigToJson(this);
 }
 
+/// Indicates the language of the audio should be automatically detected.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class LanguageAuto {
+  /// Creates a language auto-detection marker.
+  LanguageAuto();
+
+  /// Creates a [LanguageAuto] from a JSON payload.
+  factory LanguageAuto.fromJson(Map<String, dynamic> json) =>
+      _$LanguageAutoFromJson(json);
+
+  /// Converts this marker to a JSON payload.
+  Map<String, dynamic> toJson() => _$LanguageAutoToJson(this);
+}
+
+/// Provides hints to the model about possible languages present in the audio.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class LanguageHints {
+  final List<String>? languageCodes;
+
+  LanguageHints({this.languageCodes});
+
+  factory LanguageHints.fromJson(Map<String, dynamic> json) =>
+      _$LanguageHintsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LanguageHintsToJson(this);
+}
+
 /// Audio transcription settings for input or output streams.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
+  /// Deprecated upstream: use [languageAuto] or [languageHints] instead.
   final List<String>? languageCodes;
 
-  AudioTranscriptionConfig({this.languageCodes});
+  /// The model will detect the language automatically. Do not use together
+  /// with [languageHints].
+  final LanguageAuto? languageAuto;
+
+  /// Specifies one or more languages in the audio. Do not use together with
+  /// [languageAuto].
+  final LanguageHints? languageHints;
+
+  /// Phrases used for speech adaptation to bias the ASR model toward these
+  /// specific terms.
+  final List<String>? adaptationPhrases;
+
+  AudioTranscriptionConfig({
+    this.languageCodes,
+    this.languageAuto,
+    this.languageHints,
+    this.adaptationPhrases,
+  });
 
   factory AudioTranscriptionConfig.fromJson(Map<String, dynamic> json) =>
       _$AudioTranscriptionConfigFromJson(json);
@@ -1229,8 +1364,9 @@ class LiveClientMessage {
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerSetupComplete {
   final String? sessionId;
+  final VoiceConsentSignature? voiceConsentSignature;
 
-  LiveServerSetupComplete({this.sessionId});
+  LiveServerSetupComplete({this.sessionId, this.voiceConsentSignature});
 
   factory LiveServerSetupComplete.fromJson(Map<String, dynamic> json) =>
       _$LiveServerSetupCompleteFromJson(json);
@@ -1242,7 +1378,10 @@ class Transcription {
   final String? text;
   final bool? finished;
 
-  Transcription({this.text, this.finished});
+  /// The BCP-47 language code of the transcription.
+  final String? languageCode;
+
+  Transcription({this.text, this.finished, this.languageCode});
 
   factory Transcription.fromJson(Map<String, dynamic> json) =>
       _$TranscriptionFromJson(json);
@@ -1292,6 +1431,9 @@ class LiveServerContent {
   final TurnCompleteReason? turnCompleteReason;
   final bool? waitingForInput;
 
+  /// Low-latency transcription updated while the user is speaking.
+  final Transcription? interimInputTranscription;
+
   LiveServerContent({
     this.modelTurn,
     this.turnComplete,
@@ -1303,6 +1445,7 @@ class LiveServerContent {
     this.urlContextMetadata,
     this.turnCompleteReason,
     this.waitingForInput,
+    this.interimInputTranscription,
   });
 
   factory LiveServerContent.fromJson(Map<String, dynamic> json) =>
@@ -1391,7 +1534,11 @@ class VoiceActivityDetectionSignal {
 class VoiceActivity {
   final VoiceActivityType? voiceActivityType;
 
-  VoiceActivity({this.voiceActivityType});
+  /// The time voice activity was detected, as a Duration string (e.g. "1.5s"),
+  /// relative to the start of the audio stream.
+  final String? audioOffset;
+
+  VoiceActivity({this.voiceActivityType, this.audioOffset});
 
   factory VoiceActivity.fromJson(Map<String, dynamic> json) =>
       _$VoiceActivityFromJson(json);
@@ -1430,6 +1577,7 @@ class UsageMetadata {
   final List<ModalityTokenCount>? responseTokensDetails;
   final List<ModalityTokenCount>? toolUsePromptTokensDetails;
   final TrafficType? trafficType;
+  final ServiceTier? serviceTier;
 
   UsageMetadata({
     this.promptTokenCount,
@@ -1443,6 +1591,7 @@ class UsageMetadata {
     this.responseTokensDetails,
     this.toolUsePromptTokensDetails,
     this.trafficType,
+    this.serviceTier,
   });
 
   factory UsageMetadata.fromJson(Map<String, dynamic> json) =>

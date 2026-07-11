@@ -246,6 +246,25 @@ void main() {
       },
     );
 
+    test('buildSetupMessage throws for tools with exaAiSearch', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            callbacks: LiveCallbacks(),
+            tools: [Tool(exaAiSearch: ToolExaAiSearch(apiKey: 'exa-key'))],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('exaAiSearch parameter is not supported in Gemini API'),
+          ),
+        ),
+      );
+    });
+
     test('validateFunctionResponses rejects invalid tool payloads', () {
       expect(
         () => LiveService.validateFunctionResponses([]),
@@ -355,9 +374,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.6.0 dart/9.9',
+          'google-genai-sdk/2.11.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.6.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.11.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)

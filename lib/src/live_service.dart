@@ -80,7 +80,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.6.0';
+  static const _sdkVersion = '2.11.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -139,7 +139,7 @@ class LiveService {
       speechConfig: config?.speechConfig,
       thinkingConfig: config?.thinkingConfig,
       enableAffectiveDialog: config?.enableAffectiveDialog,
-      streamTranslationConfig: config?.streamTranslationConfig,
+      translationConfig: config?.translationConfig,
     );
   }
 
@@ -168,6 +168,14 @@ class LiveService {
       (setting) => setting.method != null,
     )) {
       throw _unsupportedSafetyMethodError();
+    }
+
+    if ((params.tools ?? const <Tool>[]).any(
+      (tool) => tool.exaAiSearch != null,
+    )) {
+      throw UnsupportedError(
+        'exaAiSearch parameter is not supported in Gemini API.',
+      );
     }
 
     final modelName = params.model.startsWith('models/')
