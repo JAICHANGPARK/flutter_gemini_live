@@ -1,5 +1,23 @@
 ## Unreleased
 
+## 2026.7.11
+
+### Added
+- Synced Live-facing DTOs with `js-genai` 2.11.0:
+  - `VoiceConsentSignature`, plus `ReplicatedVoiceConfig.consentAudio` and `ReplicatedVoiceConfig.voiceConsentSignature`.
+  - `AudioTranscriptionConfig.languageAuto`, `AudioTranscriptionConfig.languageHints`, and `AudioTranscriptionConfig.adaptationPhrases`, with the new `LanguageAuto` and `LanguageHints` types (`languageCodes` is now deprecated upstream).
+  - `ComputerUse.disabledSafetyPolicies` and the `SafetyPolicy` enum.
+  - `Tool.exaAiSearch` and the `ToolExaAiSearch` type (rejected for the Gemini API during setup).
+  - Server fields: `LiveServerSetupComplete.voiceConsentSignature`, `Transcription.languageCode`, `LiveServerContent.interimInputTranscription`, `VoiceActivity.audioOffset`, and `UsageMetadata.serviceTier` with the new lowercase-valued `ServiceTier` enum.
+  - `LiveSession.setupComplete`, populated once the initial `setupComplete` message arrives.
+
+### Changed
+- Renamed `StreamTranslationConfig` to `TranslationConfig` and `GenerationConfig.streamTranslationConfig` to `GenerationConfig.translationConfig` (wire key `translation_config`). A deprecated `StreamTranslationConfig` typedef and `GenerationConfig.streamTranslationConfig` getter remain for backward compatibility.
+- `connect()` now resolves on the `setupComplete` message instead of the first frame: messages received before setup completes (including `setupComplete` itself) are queued and flushed to `onMessage` in arrival order once the session resolves.
+- Updated Live SDK request headers to `google-genai-sdk/2.11.0`.
+- Updated package metadata and README installation snippets to `2026.7.11`.
+- Updated the example lockfile to reference the current local package version.
+
 ## 2026.6.6
 
 ### Changed
