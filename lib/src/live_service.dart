@@ -56,6 +56,10 @@ class LiveConnectParameters {
   final AvatarConfig? avatarConfig;
   final List<SafetySetting>? safetySettings;
 
+  /// Configures the exchange of history between the client and the server.
+  /// See [HistoryConfig] for details.
+  final HistoryConfig? historyConfig;
+
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
@@ -71,6 +75,7 @@ class LiveConnectParameters {
     this.explicitVadSignal,
     this.avatarConfig,
     this.safetySettings,
+    this.historyConfig,
   });
 }
 
@@ -80,7 +85,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.11.0';
+  static const _sdkVersion = '2.12.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -196,6 +201,7 @@ class LiveService {
         proactivity: params.proactivity,
         avatarConfig: params.avatarConfig,
         safetySettings: params.safetySettings,
+        historyConfig: params.historyConfig,
       ),
     );
   }

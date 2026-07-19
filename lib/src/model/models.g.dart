@@ -834,6 +834,9 @@ AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
   languageHints: json['language_hints'] == null
       ? null
       : LanguageHints.fromJson(json['language_hints'] as Map<String, dynamic>),
+  customVocabulary: (json['custom_vocabulary'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
   adaptationPhrases: (json['adaptation_phrases'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
@@ -845,6 +848,7 @@ Map<String, dynamic> _$AudioTranscriptionConfigToJson(
   'language_codes': ?instance.languageCodes,
   'language_auto': ?instance.languageAuto,
   'language_hints': ?instance.languageHints,
+  'custom_vocabulary': ?instance.customVocabulary,
   'adaptation_phrases': ?instance.adaptationPhrases,
 };
 
@@ -853,6 +857,18 @@ ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$ProactivityConfigToJson(ProactivityConfig instance) =>
     <String, dynamic>{'proactive_audio': ?instance.proactiveAudio};
+
+HistoryConfig _$HistoryConfigFromJson(Map<String, dynamic> json) =>
+    HistoryConfig(
+      initialHistoryInClientContent:
+          json['initial_history_in_client_content'] as bool?,
+    );
+
+Map<String, dynamic> _$HistoryConfigToJson(
+  HistoryConfig instance,
+) => <String, dynamic>{
+  'initial_history_in_client_content': ?instance.initialHistoryInClientContent,
+};
 
 SafetySetting _$SafetySettingFromJson(Map<String, dynamic> json) =>
     SafetySetting(
@@ -987,6 +1003,9 @@ LiveClientSetup _$LiveClientSetupFromJson(
   safetySettings: (json['safety_settings'] as List<dynamic>?)
       ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
       .toList(),
+  historyConfig: json['history_config'] == null
+      ? null
+      : HistoryConfig.fromJson(json['history_config'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
@@ -1004,6 +1023,7 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'explicit_vad_signal': ?instance.explicitVadSignal,
       'avatar_config': ?instance.avatarConfig,
       'safety_settings': ?instance.safetySettings,
+      'history_config': ?instance.historyConfig,
     };
 
 LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>

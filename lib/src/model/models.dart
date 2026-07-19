@@ -1130,14 +1130,22 @@ class AudioTranscriptionConfig {
   /// [languageAuto].
   final LanguageHints? languageHints;
 
-  /// Phrases used for speech adaptation to bias the ASR model toward these
-  /// specific terms.
+  /// A list of custom vocabulary phrases which bias the ASR model to improve
+  /// recognition of these specific terms. Prefer this over [adaptationPhrases].
+  final List<String>? customVocabulary;
+
+  /// Deprecated: use [customVocabulary] instead. A list of phrases used for
+  /// speech adaptation, which biases the ASR model to improve recognition of
+  /// these specific terms.
+  @Deprecated('Use customVocabulary instead.')
   final List<String>? adaptationPhrases;
 
   AudioTranscriptionConfig({
     this.languageCodes,
     this.languageAuto,
     this.languageHints,
+    this.customVocabulary,
+    // ignore: deprecated_member_use_from_same_package
     this.adaptationPhrases,
   });
 
@@ -1158,6 +1166,25 @@ class ProactivityConfig {
       _$ProactivityConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$ProactivityConfigToJson(this);
+}
+
+/// Configuration for history exchange between client and server.
+///
+/// When [initialHistoryInClientContent] is `true`, after sending
+/// `setup_complete` the server waits for `client_content` messages until
+/// `turn_complete` is `true`. This initial history will not trigger a model
+/// call and may end with model content. After `turn_complete` the client can
+/// start the realtime conversation via `realtime_input`.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class HistoryConfig {
+  final bool? initialHistoryInClientContent;
+
+  HistoryConfig({this.initialHistoryInClientContent});
+
+  factory HistoryConfig.fromJson(Map<String, dynamic> json) =>
+      _$HistoryConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$HistoryConfigToJson(this);
 }
 
 /// Safety settings to block unsafe content in Gemini responses.
@@ -1227,6 +1254,9 @@ class LiveClientSetup {
   final AvatarConfig? avatarConfig;
   final List<SafetySetting>? safetySettings;
 
+  /// Configures the exchange of history between the client and the server.
+  final HistoryConfig? historyConfig;
+
   LiveClientSetup({
     required this.model,
     this.generationConfig,
@@ -1241,6 +1271,7 @@ class LiveClientSetup {
     this.explicitVadSignal,
     this.avatarConfig,
     this.safetySettings,
+    this.historyConfig,
   });
 
   factory LiveClientSetup.fromJson(Map<String, dynamic> json) =>

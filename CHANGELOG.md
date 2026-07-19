@@ -1,5 +1,15 @@
 ## Unreleased
 
+## 2026.7.19
+
+### Added
+- Synced Live-facing DTOs with `js-genai` 2.12.0:
+  - `HistoryConfig` — new type with `initialHistoryInClientContent` flag; also added `LiveClientSetup.historyConfig` and `LiveConnectParameters.historyConfig`.
+  - `AudioTranscriptionConfig.customVocabulary` — preferred replacement for `adaptationPhrases` (which is now `@Deprecated`).
+
+### Changed
+- Updated Live SDK request headers to `google-genai-sdk/2.12.0`.
+
 ## 2026.7.11
 
 ### Added
