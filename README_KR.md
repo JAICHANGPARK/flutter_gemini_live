@@ -8,7 +8,7 @@
 
 - Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [실험적인 Gemini Live API](https://ai.google.dev/gemini-api/docs/live)를 사용하기 위한 Flutter 패키지입니다.
 - 이 패키지는 Firebase / Firebase AI Logic 사용 없이 활용가능 합니다.
-- `gemini-live-2.5-flash-preview`, `gemini-2.5-flash-native-audio-preview-12-2025` 등 최신 Gemini Live 모델 계열을 사용할 수 있습니다.
+- `gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025` 등 최신 Gemini Live 모델 계열을 사용할 수 있습니다.
 - response_modalities : 모델 지원 범위에 따라 `TEXT`, `AUDIO`, `VIDEO` 사용 가능
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
@@ -83,7 +83,7 @@ Future<void> connect() async {
   try {
     session = await genAI.live.connect(
       LiveConnectParameters(
-        model: 'gemini-live-2.5-flash-preview',
+        model: 'gemini-3.1-flash-live-preview',
         config: GenerationConfig(responseModalities: [Modality.TEXT]),
         callbacks: LiveCallbacks(
           onOpen: () => print('✅ 연결 성공'),
@@ -123,7 +123,7 @@ late final LiveSession session;
 
 session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     tools: [
       Tool(
         functionDeclarations: [
@@ -193,7 +193,7 @@ session.sendAudioStreamEnd();
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
         disabled: true, // 자동 감지 비활성화
@@ -219,7 +219,7 @@ session.sendActivityEnd();
 // 첫 연결 시 세션 재개 설정
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     sessionResumption: SessionResumptionConfig(
       handle: previousSessionHandle, // 이전 세션 핸들
     ),

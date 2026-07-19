@@ -10,7 +10,7 @@
 
 - A Flutter package for using [the experimental Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - No Firebase / Firebase AI Logic dependency
-- Supports current Gemini Live model families (for example `gemini-live-2.5-flash-preview` and `gemini-2.5-flash-native-audio-preview-12-2025`).
+- Supports current Gemini Live model families: `gemini-3.1-flash-live-preview` (latest) and `gemini-2.5-flash-native-audio-preview-12-2025`.
 - Supports `TEXT`, `AUDIO`, and `VIDEO` response modalities, depending on model capability.
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
@@ -91,7 +91,7 @@ Future<void> connect() async {
   try {
     session = await genAI.live.connect(
       LiveConnectParameters(
-        model: 'gemini-live-2.5-flash-preview',
+        model: 'gemini-3.1-flash-live-preview',
         config: GenerationConfig(responseModalities: [Modality.TEXT]),
         callbacks: LiveCallbacks(
           onOpen: () => print('✅ Connection opened'),
@@ -131,7 +131,7 @@ late final LiveSession session;
 
 session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     tools: [
       Tool(
         functionDeclarations: [
@@ -201,7 +201,7 @@ Disable automatic VAD and control manually:
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     realtimeInputConfig: RealtimeInputConfig(
       automaticActivityDetection: AutomaticActivityDetection(
         disabled: true, // Disable automatic detection
@@ -227,7 +227,7 @@ Resume sessions after connection drops:
 // First connection with session resumption
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     sessionResumption: SessionResumptionConfig(
       handle: previousSessionHandle, // Previous session handle
     ),
@@ -287,7 +287,7 @@ Enable real-time speech-to-speech translation by setting `translationConfig` in 
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     config: GenerationConfig(
       responseModalities: [Modality.AUDIO],
       translationConfig: TranslationConfig(
@@ -311,7 +311,7 @@ Feed an initial history before the realtime turn starts:
 ```dart
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-live-2.5-flash-preview',
+    model: 'gemini-3.1-flash-live-preview',
     historyConfig: HistoryConfig(
       initialHistoryInClientContent: true,
     ),

@@ -126,7 +126,7 @@ dart examples/ephemeral_token.dart
 ```dart
 LiveClientMessage(
   setup: LiveClientSetup(
-    model: 'models/gemini-live-2.5-flash-preview',
+    model: 'models/gemini-3.1-flash-live-preview',
     generationConfig: GenerationConfig(...),
     systemInstruction: Content(...),
     tools: [...],

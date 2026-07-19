@@ -22,7 +22,7 @@ void main() async {
 
   final session = await genAI.live.connect(
     LiveConnectParameters(
-      model: 'gemini-live-2.5-flash-preview',
+      model: 'gemini-3.1-flash-live-preview',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
         onOpen: () => print('✅ Connected with ephemeral token'),

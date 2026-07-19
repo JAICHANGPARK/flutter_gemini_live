@@ -18,7 +18,7 @@ void main() async {
   // Connect to Live API with tools enabled
   session = await liveService.connect(
     LiveConnectParameters(
-      model: 'gemini-live-2.5-flash-preview',
+      model: 'gemini-3.1-flash-live-preview',
       callbacks: LiveCallbacks(
         onOpen: () {
           print('✅ Connected to Live API');
