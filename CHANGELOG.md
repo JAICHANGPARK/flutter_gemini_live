@@ -9,6 +9,10 @@
 
 ### Changed
 - Updated Live SDK request headers to `google-genai-sdk/2.12.0`.
+- Updated all example and documentation model references from the deprecated `gemini-live-2.5-flash-preview` (shut down) to `gemini-3.1-flash-live-preview` (latest, March 2026).
+  - Note: `js-genai` ref still uses the old model string in its test/sample files; this change is based on the official Gemini API models documentation.
+- Updated README and README_KR supported model descriptions to reflect the current lineup.
+- Bumped package version to `2026.7.19`.
 
 ## 2026.7.11
 
