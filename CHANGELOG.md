@@ -1,5 +1,11 @@
 ## Unreleased
 
+## 2026.7.24
+
+### Changed
+- Synced Live SDK request headers to `google-genai-sdk/2.13.0` (synced with `js-genai` 2.13.0).
+- Bumped package version to `2026.7.24`.
+
 ## 2026.7.19
 
 ### Added
