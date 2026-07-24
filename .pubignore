@@ -26,3 +26,5 @@ build/
 
 # Local-only reference and generated artifacts
 ref/
+examples/
+imgs/
