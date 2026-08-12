@@ -1,10 +1,10 @@
-# 📘 Gemini Live API & Package Error Codes Specification
+# Gemini Live API & Package Error Codes Specification
 
 이 명세서는 `flutter_gemini_live` 패키지 및 Google Gemini Live API 사용 중 발생할 수 있는 클라이언트 예외, WebSocket 종료 코드, 서버 응답 턴 종료 이유(`TurnCompleteReason`), HTTP 상태 코드의 의미와 조치 방안을 상세히 정리한 문서입니다.
 
 ---
 
-## 📑 목차
+## 목차
 1. [클라이언트 패키지 예외 (Dart Client Exceptions)](#1-클라이언트-패키지-예외-dart-client-exceptions)
 2. [WebSocket 종료 코드 (WebSocket Close Codes)](#2-websocket-종료-코드-websocket-close-codes)
 3. [서버 턴 종료 사유 (TurnCompleteReason Enum)](#3-서버-턴-종료-사유-turncompletereason-enum)
@@ -85,7 +85,7 @@ Gemini Live 연결 유지 중 서버로부터 `message.goAway` 메세지가 도�
 ```dart
 if (message.goAway != null) {
   final remainingSeconds = message.goAway!.timeRemaining;
-  print('⚠️ Session expiring in ${remainingSeconds}s. Reason: ${message.goAway!.reason}');
+  print('Session expiring in ${remainingSeconds}s. Reason: ${message.goAway!.reason}');
 }
 ```
 
@@ -96,7 +96,7 @@ if (message.goAway != null) {
 
 ## 6. 트러블슈팅 및 가이드
 
-### 💡 코드 구현 예시 (에러 처리 패턴)
+### 코드 구현 예시 (에러 처리 패턴)
 
 ```dart
 final genAI = GoogleGenAI(
@@ -109,40 +109,40 @@ try {
     LiveConnectParameters(
       model: 'gemini-3.1-flash-live-preview',
       callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Connected'),
+        onOpen: () => print('Connected'),
         onMessage: (message) {
           // 1. 턴 종료 이유 검사
           final reason = message.serverContent?.turnCompleteReason;
           if (reason == TurnCompleteReason.TOO_MANY_TOOL_CALLS) {
-            print('⚠️ Tool call limit reached!');
+            print('Tool call limit reached!');
           } else if (reason == TurnCompleteReason.GENERATED_CONTENT_SAFETY) {
-            print('⚠️ Content blocked by safety policy.');
+            print('Content blocked by safety policy.');
           }
           
           // 2. 세션 만료 경고 검사
           if (message.goAway != null) {
-            print('⏰ Session expiring soon: ${message.goAway!.timeRemaining}s left');
+            print('Session expiring soon: ${message.goAway!.timeRemaining}s left');
           }
         },
         onError: (error, stackTrace) {
-          print('🚨 Error occurred: $error');
+          print('Error occurred: $error');
         },
         onClose: (code, reason) {
-          print('🔒 Closed code: $code, reason: $reason');
+          print('Closed code: $code, reason: $reason');
           if (code == 4004) {
-            print('🚨 Quota exceeded! Please check your API usage.');
+            print('Quota exceeded! Please check your API usage.');
           } else if (code == 1006) {
-            print('🔄 Abnormal disconnect, attempting reconnect...');
+            print('Abnormal disconnect, attempting reconnect...');
           }
         },
       ),
     ),
   );
 } on TimeoutException catch (e) {
-  print('⏰ Connection timed out: $e');
+  print('Connection timed out: $e');
 } on UnsupportedError catch (e) {
-  print('❌ Configuration unsupported: $e');
+  print('Configuration unsupported: $e');
 } catch (e) {
-  print('🚨 General error: $e');
+  print('General error: $e');
 }
 ```

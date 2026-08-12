@@ -1,4 +1,4 @@
-# 📚 Gemini Live API & Flutter SDK API Reference
+# Gemini Live API & Flutter SDK API Reference
 
 This document provides a comprehensive API reference for the `gemini_live` package.
 

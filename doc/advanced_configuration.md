@@ -1,10 +1,10 @@
-# ⚙️ Gemini Live API Advanced Configuration Guide
+# Gemini Live API Advanced Configuration Guide
 
 This guide details advanced capabilities of the `gemini_live` package, with complete code examples.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 1. [Function Calling](#1-function-calling)
 2. [Voice Activity Detection (VAD)](#2-voice-activity-detection-vad)
 3. [Session Resumption](#3-session-resumption)

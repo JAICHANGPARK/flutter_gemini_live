@@ -15,7 +15,7 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
-## 🏁 설치하기 (Installation)
+## 설치하기 (Installation)
 
 Flutter 프로젝트에 패키지를 추가합니다:
 
@@ -29,7 +29,7 @@ Dart 코드에서 패키지를 임포트합니다:
 import 'package:gemini_live/gemini_live.dart';
 ```
 
-## ⚡ 빠른 시작 (Quick Start)
+## 빠른 시작 (Quick Start)
 
 20줄 미만의 간단한 코드로 Gemini Live 대화를 시작할 수 있습니다:
 
@@ -46,14 +46,14 @@ void main() async {
       model: 'gemini-3.1-flash-live-preview',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Live 세션 연결 완료!'),
+        onOpen: () => print('Live 세션 연결 완료!'),
         onMessage: (message) {
           if (message.text != null) {
             print('Gemini: ${message.text}');
           }
         },
-        onError: (error, st) => print('🚨 에러: $error'),
-        onClose: (code, reason) => print('🔒 연결 종료: $code - $reason'),
+        onError: (error, st) => print('에러: $error'),
+        onClose: (code, reason) => print('연결 종료: $code - $reason'),
       ),
     ),
   );
@@ -63,16 +63,16 @@ void main() async {
 }
 ```
 
-## 📚 상세 문서 & 가이드 (Documentation)
+## 상세 문서 & 가이드 (Documentation)
 
 상세한 가이드와 API 명세는 [`doc/`](doc/) 디렉토리에 모듈별로 정리되어 있습니다:
 
-- 📖 **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
-- ⚙️ **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법
-- 📘 **[에러 코드 & 트러블슈팅 명세서](doc/error_codes_specification.md)**: 발생 가능한 에러 코드, 종료 코드, `TurnCompleteReason` Enum, 트러블슈팅 가이드
-- 💡 **[실행 가능한 예제 모음](examples/README.md)**: 기본 대화, 툴 호출, 카메라/오디오 스트리밍, Google Maps 그라운딩 CLI 예제
+- **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
+- **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법
+- **[에러 코드 & 트러블슈팅 명세서](doc/error_codes_specification.md)**: 발생 가능한 에러 코드, 종료 코드, `TurnCompleteReason` Enum, 트러블슈팅 가이드
+- **[실행 가능한 예제 모음](examples/README.md)**: 기본 대화, 툴 호출, 카메라/오디오 스트리밍, Google Maps 그라운딩 CLI 예제
 
-## ✨ 주요 기능 요약
+## 주요 기능 요약
 
 * **실시간 통신**: 저지연 WebSocket 양방향 대화.
 * **멀티모달 입력 & 스트리밍 출력**: 텍스트, 오디오, 카메라 프레임 입력 및 실시간 응답 스트리밍.
@@ -89,6 +89,6 @@ void main() async {
 
 ---
 
-## 📄 라이선스
+## 라이선스
 
 이 프로젝트는 BSD 3-Clause 라이선스에 따라 제공됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.

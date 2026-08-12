@@ -15,7 +15,7 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
-## 🏁 Installation
+## Installation
 
 Add the package to your Flutter project:
 
@@ -29,7 +29,7 @@ Import the package in Dart:
 import 'package:gemini_live/gemini_live.dart';
 ```
 
-## ⚡ Quick Start
+## Quick Start
 
 Get up and running in under 20 lines of code:
 
@@ -46,14 +46,14 @@ void main() async {
       model: 'gemini-3.1-flash-live-preview',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Live Session Connected!'),
+        onOpen: () => print('Live Session Connected!'),
         onMessage: (message) {
           if (message.text != null) {
             print('Gemini: ${message.text}');
           }
         },
-        onError: (error, st) => print('🚨 Error: $error'),
-        onClose: (code, reason) => print('🔒 Closed: $code - $reason'),
+        onError: (error, st) => print('Error: $error'),
+        onClose: (code, reason) => print('Closed: $code - $reason'),
       ),
     ),
   );
@@ -63,16 +63,16 @@ void main() async {
 }
 ```
 
-## 📚 Documentation & Guides
+## Documentation & Guides
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
 
-- 📖 **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
-- ⚙️ **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
-- 📘 **[Error Codes & Specifications](doc/error_codes_specification.md)**: Complete error codes, close codes, `TurnCompleteReason` enums, and troubleshooting strategies.
-- 💡 **[Runnable Examples](examples/README.md)**: Dedicated CLI scripts for basic usage, function calling, audio/video streaming, and Google Maps grounding.
+- **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
+- **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
+- **[Error Codes & Specifications](doc/error_codes_specification.md)**: Complete error codes, close codes, `TurnCompleteReason` enums, and troubleshooting strategies.
+- **[Runnable Examples](examples/README.md)**: Dedicated CLI scripts for basic usage, function calling, audio/video streaming, and Google Maps grounding.
 
-## ✨ Key Features Overview
+## Key Features Overview
 
 * **Real-time Communication**: Low-latency WebSocket interaction.
 * **Multimodal Input & Streaming Output**: Text, audio, and camera frame input with live streaming responses.
@@ -89,6 +89,6 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.

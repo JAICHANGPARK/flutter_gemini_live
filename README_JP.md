@@ -15,7 +15,7 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
-## 🏁 インストール (Installation)
+## インストール (Installation)
 
 Flutter プロジェクトにパッケージを追加します：
 
@@ -29,7 +29,7 @@ Dart コードでインポートします：
 import 'package:gemini_live/gemini_live.dart';
 ```
 
-## ⚡ クイックスタート (Quick Start)
+## クイックスタート (Quick Start)
 
 20行未満のコードで簡単に対話を開始できます：
 
@@ -46,14 +46,14 @@ void main() async {
       model: 'gemini-3.1-flash-live-preview',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Live セッション接続完了!'),
+        onOpen: () => print('Live セッション接続完了!'),
         onMessage: (message) {
           if (message.text != null) {
             print('Gemini: ${message.text}');
           }
         },
-        onError: (error, st) => print('🚨 エラー: $error'),
-        onClose: (code, reason) => print('🔒 接続終了: $code - $reason'),
+        onError: (error, st) => print('エラー: $error'),
+        onClose: (code, reason) => print('接続終了: $code - $reason'),
       ),
     ),
   );
@@ -63,16 +63,16 @@ void main() async {
 }
 ```
 
-## 📚 ドキュメント & ガイド (Documentation)
+## ドキュメント & ガイド (Documentation)
 
 詳細なガイドや仕様は [`doc/`](doc/) ディレクトリに整理されています：
 
-- 📖 **[API リファレンス](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` などの完全なクラス・メソッド仕様
-- ⚙️ **[高度な設定ガイド](doc/advanced_configuration.md)**: Function Calling, VAD, セッション再開, 音声書き起こし, リアルタイム翻訳, グラウンディング, エフェメラルトークンの詳細
-- 📘 **[エラーコード & 仕様書](doc/error_codes_specification.md)**: エラーコード, 終了コード, `TurnCompleteReason` Enum, トラブルシューティング
-- 💡 **[実行可能なサンプル集](examples/README.md)**: 基本会話, ツール呼び出し, カメラ/音声ストリーミング, Google Maps グラウンディング CLI 例
+- **[API リファレンス](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` などの完全なクラス・メソッド仕様
+- **[高度な設定ガイド](doc/advanced_configuration.md)**: Function Calling, VAD, セッション再開, 音声書き起こし, リアルタイム翻訳, グラウンディング, エフェメラルトークンの詳細
+- **[エラーコード & 仕様書](doc/error_codes_specification.md)**: エラーコード, 終了コード, `TurnCompleteReason` Enum, トラブルシューティング
+- **[実行可能なサンプル集](examples/README.md)**: 基本会話, ツール呼び出し, カメラ/音声ストリーミング, Google Maps グラウンディング CLI 例
 
-## ✨ 主な機能概要
+## 主な機能概要
 
 * **リアルタイム通信**: 低レイテンシの WebSocket 双方向対話。
 * **マルチモーダル入力 & ストリーミング出力**: テキスト、音声、カメラフレーム入力とリアルタイム応答。
@@ -84,6 +84,6 @@ void main() async {
 
 ---
 
-## 📄 ライセンス
+## ライセンス
 
 このプロジェクトは BSD 3-Clause ライセンスのもとでライセンスされています。[LICENSE](LICENSE) ファイルを参照してください。

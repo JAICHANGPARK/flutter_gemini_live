@@ -15,7 +15,7 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
-## 🏁 安装 (Installation)
+## 安装 (Installation)
 
 在 Flutter 项目中添加软件包：
 
@@ -29,7 +29,7 @@ flutter pub add gemini_live
 import 'package:gemini_live/gemini_live.dart';
 ```
 
-## ⚡ 快速入门 (Quick Start)
+## 快速入门 (Quick Start)
 
 只需不到 20 行代码即可轻松启动对话：
 
@@ -46,14 +46,14 @@ void main() async {
       model: 'gemini-3.1-flash-live-preview',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
-        onOpen: () => print('✅ Live 会话已连接！'),
+        onOpen: () => print('Live 会话已连接！'),
         onMessage: (message) {
           if (message.text != null) {
             print('Gemini: ${message.text}');
           }
         },
-        onError: (error, st) => print('🚨 错误: $error'),
-        onClose: (code, reason) => print('🔒 连接已关闭: $code - $reason'),
+        onError: (error, st) => print('错误: $error'),
+        onClose: (code, reason) => print('连接已关闭: $code - $reason'),
       ),
     ),
   );
@@ -63,16 +63,16 @@ void main() async {
 }
 ```
 
-## 📚 文档与指南 (Documentation)
+## 文档与指南 (Documentation)
 
 更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
 
-- 📖 **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
-- ⚙️ **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
-- 📘 **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
-- 💡 **[可运行示例集](examples/README.md)**：包含基础对话、工具调用、摄像头/音频流传输与 Google Maps 接地 CLI 脚本
+- **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
+- **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
+- **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
+- **[可运行示例集](examples/README.md)**：包含基础对话、工具调用、摄像头/音频流传输与 Google Maps 接地 CLI 脚本
 
-## ✨ 主要功能特性
+## 主要功能特性
 
 * **实时通信**：低延迟 WebSocket 双向交互。
 * **多模态输入与流式输出**：支持文本、音频、摄像头图像帧输入与实时响应流。
@@ -84,6 +84,6 @@ void main() async {
 
 ---
 
-## 📄 开源许可
+## 开源许可
 
 本项目遵循 BSD 3-Clause 许可证开源。详情请参阅 [LICENSE](LICENSE) 文件。
