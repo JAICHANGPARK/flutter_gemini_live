@@ -8,182 +8,82 @@
 
 ---
 
-- 用于使用 [实验性 Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
-- 无 Firebase / Firebase AI Logic 依赖。
-- 支持当前的 Gemini Live 模型系列：`gemini-3.1-flash-live-preview`（最新）和 `gemini-2.5-flash-native-audio-preview-12-2025`。
-- 根据模型能力，支持 `TEXT`、`AUDIO` 和 `VIDEO` 响应模态。
+- 用于 [实验性 Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
+- **零 Firebase 依赖**：无须安装 Firebase 或 Firebase AI Logic，直接通过 WebSocket 建立连接。
+- 支持最新的 Gemini Live 模型（`gemini-3.1-flash-live-preview`，`gemini-2.5-flash-native-audio-preview-12-2025`）。
+- 支持 `TEXT`、`AUDIO` 和 `VIDEO` 响应模态。
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
+## 🏁 安装 (Installation)
 
-## ✨ 功能特性
-
-* **实时通信**：建立 WebSocket 连接，实现低延迟的双向交互。
-* **多模态输入**：在单个对话轮次中发送文本、图像和音频。
-* **流式响应**：在模型生成文本响应时实时接收。
-* **易于使用的回调**：基于事件的简单处理程序，支持 `onOpen`、`onMessage`、`onError` 和 `onClose`。
-* **函数调用 (Function Calling)**：通过 `Behavior` 和 `FunctionResponseScheduling` 控制同步和异步函数调用。
-* **会话恢复**：连接中断后，可使用保存的句柄恢复会话。
-* **语音活动检测 (VAD)**：自动或手动语音活动检测。
-* **实时媒体分片**：实时发送音频/图像块。
-* **语音转写**：将语音输入和输出转写为文本，支持 `LanguageAuto`、`LanguageHints` 和 `customVocabulary` 自定义词汇提示。
-* **实时翻译**：通过 `TranslationConfig` 实现实时语音到语音翻译。
-* **上下文窗口压缩**：滑动窗口压缩，使长会话保持在 Token 限制内。
-* **历史记录配置**：通过 `HistoryConfig` 在实时轮次之前预加载对话历史。
-* **接地 (Grounding)**：Google 搜索接地和 URL 上下文工具。
-* **Google Maps 接地**：支持位置和路线感知的 `GoogleMaps` 接地 (`places`, `routing`)。
-* **临时令牌 (Ephemeral Tokens)**：通过短有效期令牌实现安全的客户端身份验证。
-
-| 演示 1：吉娃娃 vs 玛芬 | 演示 2：拉布拉多贵宾犬 vs 炸鸡 |
-| :---: | :---: |
-| <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222333.png?raw=true" alt="实时对话演示" width="400"/> | <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222355.png?raw=true" alt="多模态输入演示" width="400"/> |
-| *吉娃娃 vs 玛芬* | *拉布拉多贵宾犬 vs 炸鸡* |
-
-## 🏁 快速入门
-
-### 前置条件
-
-使用此软件包需要 Google Gemini API 密钥。您可以从 [Google AI Studio](https://aistudio.google.com/app/apikey) 获取密钥。
-
-### 安装
-
-将软件包添加到您的 `pubspec.yaml` 文件中：
-
-```yaml
-dependencies:
-  gemini_live: ^2026.8.12 # 使用最新发布的版本
-```
-
-或运行此命令（推荐）：
+在 Flutter 项目中添加软件包：
 
 ```bash
 flutter pub add gemini_live
 ```
 
-在终端中安装软件包：
-
-```bash
-flutter pub get
-```
-
-现在，在您的 Dart 代码中导入软件包：
+在 Dart 代码中导入软件包：
 
 ```dart
 import 'package:gemini_live/gemini_live.dart';
 ```
 
-## 🚀 使用方法
+## ⚡ 快速入门 (Quick Start)
 
-### 基础示例
-
-以下是使用 `gemini_live` 软件包启动会话并发送消息的基础示例。
-
-**安全提示**：请勿硬编码您的 API 密钥。强烈建议配合 `flutter_dotenv` 等软件包使用 `.env` 文件来保持凭据安全。
+只需不到 20 行代码即可轻松启动对话：
 
 ```dart
 import 'package:gemini_live/gemini_live.dart';
 
-// 1. 使用 API 密钥初始化 Gemini
-final genAI = GoogleGenAI(apiKey: 'YOUR_API_KEY_HERE');
-LiveSession? session;
+void main() async {
+  // 1. 初始化 Gemini Live 客户端
+  final genAI = GoogleGenAI(apiKey: 'YOUR_GEMINI_API_KEY', logger: print);
 
-// 2. 连接到 Live API
-Future<void> connect() async {
-  try {
-    session = await genAI.live.connect(
-      LiveConnectParameters(
-        model: 'gemini-3.1-flash-live-preview',
-        config: GenerationConfig(responseModalities: [Modality.TEXT]),
-        callbacks: LiveCallbacks(
-          onOpen: () => print('✅ 连接已建立'),
-          onMessage: (LiveServerMessage message) {
-            // 3. 处理来自模型的接收消息
-            if (message.text != null) {
-              print('接收到分片: ${message.text}');
-            }
-            if (message.serverContent?.turnComplete ?? false) {
-              print('✅ 对话轮次完成!');
-            }
-          },
-          onError: (e, s) => print('🚨 错误: $e'),
-          onClose: (code, reason) => print('🚪 连接已关闭'),
-        ),
+  // 2. 连接到 Live API
+  final session = await genAI.live.connect(
+    LiveConnectParameters(
+      model: 'gemini-3.1-flash-live-preview',
+      config: GenerationConfig(responseModalities: [Modality.TEXT]),
+      callbacks: LiveCallbacks(
+        onOpen: () => print('✅ Live 会话已连接！'),
+        onMessage: (message) {
+          if (message.text != null) {
+            print('Gemini: ${message.text}');
+          }
+        },
+        onError: (error, st) => print('🚨 错误: $error'),
+        onClose: (code, reason) => print('🔒 连接已关闭: $code - $reason'),
       ),
-    );
-  } catch (e) {
-    print('连接失败: $e');
-  }
-}
+    ),
+  );
 
-// 4. 向模型发送消息
-void sendMessage(String text) {
-  session?.sendText(text);
+  // 3. 发送消息
+  session.sendText('你好 Gemini，请讲一个简短的笑话！');
 }
 ```
 
-#### Google Maps 接地工具
+## 📚 文档与指南 (Documentation)
 
-使用 `GoogleMaps` 工具启用位置和路线感知接地：
+更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
 
-```dart
-final session = await genAI.live.connect(
-  LiveConnectParameters(
-    model: 'gemini-3.1-flash-live-preview',
-    tools: [
-      Tool(
-        googleMaps: GoogleMaps(
-          groundingTypes: ['places', 'routing'],
-        ),
-      ),
-    ],
-  ),
-);
-```
+- 📖 **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
+- ⚙️ **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
+- 📘 **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
+- 💡 **[可运行示例集](examples/README.md)**：包含基础对话、工具调用、摄像头/音频流传输与 Google Maps 接地 CLI 脚本
 
-## 📚 API 参考指南
+## ✨ 主要功能特性
 
-### LiveSession 方法
-
-- `sendText(String text)` - 发送文本消息
-- `sendClientContent({List<Content>? turns, bool turnComplete})` - 发送多轮对话内容
-- `sendRealtimeInput({...})` - 发送实时输入（音频、图像帧、文本）
-- `sendMediaChunks(List<Blob> mediaChunks)` - 发送媒体块
-- `sendAudioStreamEnd()` - 发送音频流结束信号
-- `sendRealtimeText(String text)` - 发送实时文本
-- `sendActivityStart()` / `sendActivityEnd()` - 发送活动开始/结束信号
-- `sendToolResponse({required List<FunctionResponse> functionResponses})` - 发送工具响应
-- `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - 发送单个函数响应
-- `sendVideo(List<int> videoBytes, {String mimeType})` - 通过 Live API `video` 字段发送图像字节（`image/*` MIME 类型）
-- `sendAudio(List<int> audioBytes)` - 发送音频
-- `close()` - 关闭连接
-- `isClosed` - 检查连接状态
-
-### LiveServerMessage 属性
-
-- `text` - 文本响应（当前轮次拼接的非思考文本）
-- `data` - 当前轮次 Base64 编码的内联二进制数据
-- `serverContent` - 完整服务器内容（`modelTurn`, `turnComplete`, `interrupted`, `inputTranscription`, `outputTranscription`, `interimInputTranscription`, 包含 `TOO_MANY_TOOL_CALLS` 的 `turnCompleteReason` 等）
-- `setupComplete` - 包含 `sessionId` 和可选 `voiceConsentSignature` 的设置完成确认
-- `toolCall` - 工具调用请求
-- `toolCallCancellation` - 工具调用取消
-- `sessionResumptionUpdate` - 会话恢复令牌更新
-- `voiceActivity` - 高层语音活动事件（带 `audioOffset`）
-- `voiceActivityDetectionSignal` - 低层 VAD 信号
-- `goAway` - 服务器断开连接警告（带 `timeRemaining` 辅助函数）
-- `usageMetadata` - Token 使用量明细（提示词、响应、思考、模态详情）
-
-## 📖 示例与详细文档
-
-有关更详细的使用示例，请参阅 [`examples/`](https://github.com/JAICHANGPARK/flutter_gemini_live/tree/main/examples) 目录：
-
-* **[`basic_usage.dart`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/examples/basic_usage.dart)**：连接、发送和接收的基本流程。
-* **[`function_calling.dart`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/examples/function_calling.dart)**：Function Calling 的设置与响应处理。
-* **[`realtime_audio_video.dart`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/examples/realtime_audio_video.dart)**：实时音频和视频流传输。
-* **[`google_maps_grounding.dart`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/examples/google_maps_grounding.dart)**：Google Maps 接地与自定义词汇表设置。
-* **[`session_resumption.dart`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/examples/session_resumption.dart)**：保存与恢复会话句柄。
+* **实时通信**：低延迟 WebSocket 双向交互。
+* **多模态输入与流式输出**：支持文本、音频、摄像头图像帧输入与实时响应流。
+* **函数调用 (Function Calling)**：同步与异步函数执行。
+* **会话恢复**：通过会话句柄无缝恢复断开的连接。
+* **Google Maps 与搜索接地**：位置与路线感知的智能接地响应。
+* **语音活动检测 (VAD)**：支持自动与手动 VAD。
+* **实时语音翻译**：语音到语音实时翻译 (`TranslationConfig`)。
 
 ---
 
 ## 📄 开源许可
 
-本项目遵循 BSD 3-Clause 许可证开源。详情请参阅 [LICENSE](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/LICENSE) 文件。
+本项目遵循 BSD 3-Clause 许可证开源。详情请参阅 [LICENSE](LICENSE) 文件。
