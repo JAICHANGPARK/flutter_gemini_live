@@ -47,6 +47,11 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
       : CodeExecutionResult.fromJson(
           json['codeExecutionResult'] as Map<String, dynamic>,
         ),
+  audioTranscription: json['audio_transcription'] == null
+      ? null
+      : AudioTranscriptionConfig.fromJson(
+          json['audio_transcription'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
@@ -64,6 +69,7 @@ Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
   'partMetadata': ?instance.partMetadata,
   'executableCode': ?instance.executableCode,
   'codeExecutionResult': ?instance.codeExecutionResult,
+  'audio_transcription': ?instance.audioTranscription,
 };
 
 Blob _$BlobFromJson(Map<String, dynamic> json) => Blob(
@@ -310,6 +316,11 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
           : TranslationConfig.fromJson(
               json['translation_config'] as Map<String, dynamic>,
             ),
+      audioTranscriptionConfig: json['audio_transcription_config'] == null
+          ? null
+          : AudioTranscriptionConfig.fromJson(
+              json['audio_transcription_config'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
@@ -327,6 +338,7 @@ Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
       'thinking_config': ?instance.thinkingConfig,
       'enable_affective_dialog': ?instance.enableAffectiveDialog,
       'translation_config': ?instance.translationConfig,
+      'audio_transcription_config': ?instance.audioTranscriptionConfig,
     };
 
 const _$ModalityEnumMap = {
@@ -592,6 +604,15 @@ Map<String, dynamic> _$GoogleSearchRetrievalToJson(
   'dynamic_retrieval_config': ?instance.dynamicRetrievalConfig,
 };
 
+GoogleMaps _$GoogleMapsFromJson(Map<String, dynamic> json) => GoogleMaps(
+  groundingTypes: (json['grounding_types'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
+);
+
+Map<String, dynamic> _$GoogleMapsToJson(GoogleMaps instance) =>
+    <String, dynamic>{'grounding_types': ?instance.groundingTypes};
+
 Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
   functionDeclarations: (json['function_declarations'] as List<dynamic>?)
       ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
@@ -606,7 +627,7 @@ Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
         ),
   codeExecution: json['code_execution'] as Map<String, dynamic>?,
   urlContext: json['url_context'] as Map<String, dynamic>?,
-  googleMaps: json['google_maps'] as Map<String, dynamic>?,
+  googleMaps: _googleMapsFromJson(json['google_maps']),
   retrieval: json['retrieval'] as Map<String, dynamic>?,
   computerUse: _computerUseFromJson(json['computer_use']),
   fileSearch: json['file_search'] as Map<String, dynamic>?,
@@ -625,7 +646,7 @@ Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
   'google_search_retrieval': ?instance.googleSearchRetrieval,
   'code_execution': ?instance.codeExecution,
   'url_context': ?instance.urlContext,
-  'google_maps': ?instance.googleMaps,
+  'google_maps': ?_googleMapsToJson(instance.googleMaps),
   'retrieval': ?instance.retrieval,
   'computer_use': ?_computerUseToJson(instance.computerUse),
   'file_search': ?instance.fileSearch,
@@ -1243,6 +1264,7 @@ const _$TurnCompleteReasonEnumMap = {
   TurnCompleteReason.OUTPUT_IMAGE_IP_PROHIBITED: 'OUTPUT_IMAGE_IP_PROHIBITED',
   TurnCompleteReason.GENERATED_OTHER: 'GENERATED_OTHER',
   TurnCompleteReason.MAX_REGENERATION_REACHED: 'MAX_REGENERATION_REACHED',
+  TurnCompleteReason.TOO_MANY_TOOL_CALLS: 'TOO_MANY_TOOL_CALLS',
 };
 
 LiveServerToolCall _$LiveServerToolCallFromJson(Map<String, dynamic> json) =>

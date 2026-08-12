@@ -968,6 +968,62 @@ void main() {
       // ignore: deprecated_member_use_from_same_package
       expect(config.streamTranslationConfig?.targetLanguageCode, 'fr');
     });
+
+    test('js-genai 2.14.0-2.16.0 features serialize correctly', () {
+      // 1. GenerationConfig.audioTranscriptionConfig & Part.audioTranscription
+      final audioConfig = AudioTranscriptionConfig(
+        customVocabulary: ['Flutter', 'Gemini'],
+      );
+      final genConfig = GenerationConfig(
+        audioTranscriptionConfig: audioConfig,
+      );
+      final genJson = genConfig.toJson();
+      final audioConfigJson = (genJson['audio_transcription_config'] is Map<String, dynamic>)
+          ? genJson['audio_transcription_config'] as Map<String, dynamic>
+          : (genJson['audio_transcription_config'] as AudioTranscriptionConfig).toJson();
+      expect(audioConfigJson['custom_vocabulary'], [
+        'Flutter',
+        'Gemini',
+      ]);
+
+      final part = Part(
+        text: 'test',
+        audioTranscription: audioConfig,
+      );
+      final partJson = part.toJson();
+      final partAudioJson = (partJson['audio_transcription'] is Map<String, dynamic>)
+          ? partJson['audio_transcription'] as Map<String, dynamic>
+          : (partJson['audio_transcription'] as AudioTranscriptionConfig).toJson();
+      expect(partAudioJson['custom_vocabulary'], [
+        'Flutter',
+        'Gemini',
+      ]);
+      final parsedPart = Part.fromJson({
+        'text': 'test',
+        'audio_transcription': {'custom_vocabulary': ['Flutter', 'Gemini']},
+      });
+      expect(parsedPart.audioTranscription?.customVocabulary, ['Flutter', 'Gemini']);
+
+      // 2. GoogleMaps & Tool.googleMaps
+      final maps = GoogleMaps(groundingTypes: ['places', 'routing']);
+      final toolWithMapsObj = Tool(googleMaps: maps);
+      final toolWithMapsJson = toolWithMapsObj.toJson();
+      expect(toolWithMapsJson['google_maps']['grounding_types'], ['places', 'routing']);
+
+      final parsedTool = Tool.fromJson({
+        'google_maps': {
+          'grounding_types': ['places', 'routing'],
+        },
+      });
+      expect(parsedTool.googleMaps, isA<GoogleMaps>());
+      expect((parsedTool.googleMaps as GoogleMaps).groundingTypes, ['places', 'routing']);
+
+      // 3. TurnCompleteReason.TOO_MANY_TOOL_CALLS
+      final serverContent = LiveServerContent.fromJson({
+        'turnCompleteReason': 'TOO_MANY_TOOL_CALLS',
+      });
+      expect(serverContent.turnCompleteReason, TurnCompleteReason.TOO_MANY_TOOL_CALLS);
+    });
   });
 
   test('send parameter containers retain constructor arguments', () {

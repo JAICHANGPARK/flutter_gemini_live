@@ -43,6 +43,17 @@ Shows how to send realtime media input:
 dart examples/realtime_audio_video.dart
 ```
 
+### 3.5. google_maps_grounding.dart
+Demonstrates Google Maps grounding and custom audio transcription configuration:
+- Configuring `GoogleMaps` grounding tool with `places` and `routing`
+- Setting `AudioTranscriptionConfig` with `customVocabulary`
+- Receiving location-aware model responses
+
+**Run:**
+```bash
+dart examples/google_maps_grounding.dart
+```
+
 ### 4. session_resumption.dart
 Demonstrates session management features:
 - Configuring session resumption

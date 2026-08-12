@@ -1,5 +1,17 @@
 ## Unreleased
 
+## 2026.8.12
+
+### Added
+- Synced DTOs and features with `js-genai` versions 2.14.0, 2.15.0, and 2.16.0 (changes after July 24, 2026):
+  - `GenerationConfig.audioTranscriptionConfig` (`audio_transcription_config`) and `Part.audioTranscription` (`audio_transcription`).
+  - `GoogleMaps` model class and `Tool.googleMaps` grounding options (`groundingTypes`, e.g., `places`, `routing`).
+  - `TurnCompleteReason.TOO_MANY_TOOL_CALLS` enum value for tool iteration safety terminations.
+
+### Changed
+- Synced Live SDK request headers to `google-genai-sdk/2.16.0` (synced with `js-genai` 2.16.0).
+- Bumped package version to `2026.8.12`.
+
 ## 2026.7.24
 
 ### Changed

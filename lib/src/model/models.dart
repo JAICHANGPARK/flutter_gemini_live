@@ -15,6 +15,20 @@ Object? _computerUseToJson(Object? value) {
   return value;
 }
 
+Object? _googleMapsFromJson(Object? json) {
+  if (json is Map<String, dynamic>) {
+    return GoogleMaps.fromJson(json);
+  }
+  return json;
+}
+
+Object? _googleMapsToJson(Object? value) {
+  if (value is GoogleMaps) {
+    return value.toJson();
+  }
+  return value;
+}
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -233,6 +247,8 @@ enum TurnCompleteReason {
   GENERATED_OTHER,
   @JsonValue('MAX_REGENERATION_REACHED')
   MAX_REGENERATION_REACHED,
+  @JsonValue('TOO_MANY_TOOL_CALLS')
+  TOO_MANY_TOOL_CALLS,
 }
 
 /// Voice activity detection signals emitted by the server.
@@ -406,6 +422,8 @@ class Part {
   final Map<String, dynamic>? partMetadata;
   final ExecutableCode? executableCode;
   final CodeExecutionResult? codeExecutionResult;
+  @JsonKey(name: 'audio_transcription')
+  final AudioTranscriptionConfig? audioTranscription;
 
   Part({
     this.mediaResolution,
@@ -422,6 +440,7 @@ class Part {
     this.partMetadata,
     this.executableCode,
     this.codeExecutionResult,
+    this.audioTranscription,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
@@ -665,6 +684,7 @@ class GenerationConfig {
   final ThinkingConfig? thinkingConfig;
   final bool? enableAffectiveDialog;
   final TranslationConfig? translationConfig;
+  final AudioTranscriptionConfig? audioTranscriptionConfig;
 
   GenerationConfig({
     this.temperature,
@@ -678,6 +698,7 @@ class GenerationConfig {
     this.thinkingConfig,
     this.enableAffectiveDialog,
     this.translationConfig,
+    this.audioTranscriptionConfig,
   });
 
   /// Deprecated alias for [translationConfig].
@@ -928,6 +949,20 @@ class GoogleSearchRetrieval {
   Map<String, dynamic> toJson() => _$GoogleSearchRetrievalToJson(this);
 }
 
+/// Configuration options for Google Maps grounding in [Tool].
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class GoogleMaps {
+  /// Grounding types supported by Google Maps, e.g. "places", "routing".
+  final List<String>? groundingTypes;
+
+  GoogleMaps({this.groundingTypes});
+
+  factory GoogleMaps.fromJson(Map<String, dynamic> json) =>
+      _$GoogleMapsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GoogleMapsToJson(this);
+}
+
 /// A tool bundle that can be attached to a model session.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class Tool {
@@ -936,7 +971,8 @@ class Tool {
   final GoogleSearchRetrieval? googleSearchRetrieval;
   final Map<String, dynamic>? codeExecution;
   final Map<String, dynamic>? urlContext;
-  final Map<String, dynamic>? googleMaps;
+  @JsonKey(fromJson: _googleMapsFromJson, toJson: _googleMapsToJson)
+  final Object? googleMaps;
   final Map<String, dynamic>? retrieval;
   @JsonKey(fromJson: _computerUseFromJson, toJson: _computerUseToJson)
   final Object? computerUse;

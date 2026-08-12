@@ -85,7 +85,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.13.0';
+  static const _sdkVersion = '2.16.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -145,6 +145,7 @@ class LiveService {
       thinkingConfig: config?.thinkingConfig,
       enableAffectiveDialog: config?.enableAffectiveDialog,
       translationConfig: config?.translationConfig,
+      audioTranscriptionConfig: config?.audioTranscriptionConfig,
     );
   }
 
