@@ -121,6 +121,57 @@ void sendMessage(String text) {
 }
 ```
 
+#### Google Maps 接地工具
+
+使用 `GoogleMaps` 工具启用位置和路线感知接地：
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-3.1-flash-live-preview',
+    tools: [
+      Tool(
+        googleMaps: GoogleMaps(
+          groundingTypes: ['places', 'routing'],
+        ),
+      ),
+    ],
+  ),
+);
+```
+
+## 📚 API 参考指南
+
+### LiveSession 方法
+
+- `sendText(String text)` - 发送文本消息
+- `sendClientContent({List<Content>? turns, bool turnComplete})` - 发送多轮对话内容
+- `sendRealtimeInput({...})` - 发送实时输入（音频、图像帧、文本）
+- `sendMediaChunks(List<Blob> mediaChunks)` - 发送媒体块
+- `sendAudioStreamEnd()` - 发送音频流结束信号
+- `sendRealtimeText(String text)` - 发送实时文本
+- `sendActivityStart()` / `sendActivityEnd()` - 发送活动开始/结束信号
+- `sendToolResponse({required List<FunctionResponse> functionResponses})` - 发送工具响应
+- `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - 发送单个函数响应
+- `sendVideo(List<int> videoBytes, {String mimeType})` - 通过 Live API `video` 字段发送图像字节（`image/*` MIME 类型）
+- `sendAudio(List<int> audioBytes)` - 发送音频
+- `close()` - 关闭连接
+- `isClosed` - 检查连接状态
+
+### LiveServerMessage 属性
+
+- `text` - 文本响应（当前轮次拼接的非思考文本）
+- `data` - 当前轮次 Base64 编码的内联二进制数据
+- `serverContent` - 完整服务器内容（`modelTurn`, `turnComplete`, `interrupted`, `inputTranscription`, `outputTranscription`, `interimInputTranscription`, 包含 `TOO_MANY_TOOL_CALLS` 的 `turnCompleteReason` 等）
+- `setupComplete` - 包含 `sessionId` 和可选 `voiceConsentSignature` 的设置完成确认
+- `toolCall` - 工具调用请求
+- `toolCallCancellation` - 工具调用取消
+- `sessionResumptionUpdate` - 会话恢复令牌更新
+- `voiceActivity` - 高层语音活动事件（带 `audioOffset`）
+- `voiceActivityDetectionSignal` - 低层 VAD 信号
+- `goAway` - 服务器断开连接警告（带 `timeRemaining` 辅助函数）
+- `usageMetadata` - Token 使用量明细（提示词、响应、思考、模态详情）
+
 ## 📖 示例与详细文档
 
 有关更详细的使用示例，请参阅 [`examples/`](https://github.com/JAICHANGPARK/flutter_gemini_live/tree/main/examples) 目录：

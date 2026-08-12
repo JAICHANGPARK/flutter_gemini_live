@@ -271,6 +271,25 @@ final session = await genAI.live.connect(
 
 > Gemini API 참고: `AudioTranscriptionConfig.languageCodes` 는 현재 Gemini Live에서 지원되지 않습니다. 설정하지 않은 상태로 사용하세요.
 
+#### Google Maps Grounding Tool
+
+`GoogleMaps` 도구를 사용하여 위치 및 경로 인식 그라운딩을 활성화합니다:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-3.1-flash-live-preview',
+    tools: [
+      Tool(
+        googleMaps: GoogleMaps(
+          groundingTypes: ['places', 'routing'],
+        ),
+      ),
+    ],
+  ),
+);
+```
+
 #### 에페메럴 토큰 (Client-to-Server)
 
 발급된 에페메럴 토큰(`auth_tokens/...`)을 `apiKey`로 사용하고 `apiVersion`을 `v1alpha`로 설정하세요:

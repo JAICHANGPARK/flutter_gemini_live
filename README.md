@@ -304,6 +304,25 @@ final session = await genAI.live.connect(
 
 > Note: Live Translation requires audio-only input (`Modality.AUDIO`) and does not support tools or system instructions.
 
+#### Google Maps Grounding Tool
+
+Enable location- and routing-aware grounding using `GoogleMaps` tool:
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-3.1-flash-live-preview',
+    tools: [
+      Tool(
+        googleMaps: GoogleMaps(
+          groundingTypes: ['places', 'routing'],
+        ),
+      ),
+    ],
+  ),
+);
+```
+
 #### History Config (pre-load conversation history)
 
 Feed an initial history before the realtime turn starts:
@@ -428,7 +447,7 @@ See [examples/README.md](/Users/jaichang/Documents/GitHub/flutter_gemini_live/ex
 
 - `text` - Text response (concatenated non-thought text from the current turn)
 - `data` - Base64 encoded inline binary data from the current turn
-- `serverContent` - Full server content (`modelTurn`, `turnComplete`, `interrupted`, `inputTranscription`, `outputTranscription`, `interimInputTranscription`, etc.)
+- `serverContent` - Full server content (`modelTurn`, `turnComplete`, `interrupted`, `inputTranscription`, `outputTranscription`, `interimInputTranscription`, `turnCompleteReason` including `TOO_MANY_TOOL_CALLS`, etc.)
 - `setupComplete` - Setup acknowledgement including `sessionId` and optional `voiceConsentSignature`
 - `toolCall` - Tool call request
 - `toolCallCancellation` - Tool call cancellation

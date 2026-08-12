@@ -121,6 +121,57 @@ void sendMessage(String text) {
 }
 ```
 
+#### Google Maps グラウンディング ツール
+
+`GoogleMaps` ツールを使用して、位置情報やルートを認識するグラウンディングを有効化します：
+
+```dart
+final session = await genAI.live.connect(
+  LiveConnectParameters(
+    model: 'gemini-3.1-flash-live-preview',
+    tools: [
+      Tool(
+        googleMaps: GoogleMaps(
+          groundingTypes: ['places', 'routing'],
+        ),
+      ),
+    ],
+  ),
+);
+```
+
+## 📚 API リファレンス
+
+### LiveSession メソッド
+
+- `sendText(String text)` - テキストメッセージの送信
+- `sendClientContent({List<Content>? turns, bool turnComplete})` - マルチターンコンテンツの送信
+- `sendRealtimeInput({...})` - リアルタイム入力（音声、画像フレーム、テキスト）の送信
+- `sendMediaChunks(List<Blob> mediaChunks)` - メディアチャンクの送信
+- `sendAudioStreamEnd()` - 音声ストリーム終了シグナルの送信
+- `sendRealtimeText(String text)` - リアルタイムテキストの送信
+- `sendActivityStart()` / `sendActivityEnd()` - アクティビティ開始/終了シグナルの送信
+- `sendToolResponse({required List<FunctionResponse> functionResponses})` - ツール応答の送信
+- `sendFunctionResponse({required String id, required String name, required Map<String, dynamic> response})` - 単一の関数応答の送信
+- `sendVideo(List<int> videoBytes, {String mimeType})` - Live API の `video` フィールド経由で画像バイトを送信 (`image/*` MIME タイプ)
+- `sendAudio(List<int> audioBytes)` - 音声の送信
+- `close()` - 接続を閉じる
+- `isClosed` - 接続状態の確認
+
+### LiveServerMessage プロパティ
+
+- `text` - テキスト応答（現在のターンからの思考部分を除いた連結テキスト）
+- `data` - 現在のターンからの Base64 エンコードされたインラインバイナリデータ
+- `serverContent` - サーバーコンテンツ (`modelTurn`, `turnComplete`, `interrupted`, `inputTranscription`, `outputTranscription`, `interimInputTranscription`, `TOO_MANY_TOOL_CALLS` を含む `turnCompleteReason` など)
+- `setupComplete` - `sessionId` およびオプションの `voiceConsentSignature` を含むセットアップ完了通知
+- `toolCall` - ツール呼び出しリクエスト
+- `toolCallCancellation` - ツール呼び出しのキャンセル
+- `sessionResumptionUpdate` - セッション再開トークンの更新
+- `voiceActivity` - 音声アクティビティイベント (`audioOffset` 付き)
+- `voiceActivityDetectionSignal` - 低レベル VAD シグナル
+- `goAway` - サーバー切断警告 (`timeRemaining` ヘルパー付き)
+- `usageMetadata` - トークン使用量の内訳（プロンプト、応答、思考、モダリティ詳細）
+
 ## 📖 サンプルと詳細ドキュメント
 
 より詳細な使用例については、[`examples/`](https://github.com/JAICHANGPARK/flutter_gemini_live/tree/main/examples) ディレクトリを参照してください：
