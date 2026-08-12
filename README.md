@@ -67,6 +67,7 @@ void main() async {
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
 
+- **[AI Agent Skill Guide](SKILL.md)**: Agent instructions & prompt rules for AI coding assistants (Antigravity, Cursor, Windsurf, Claude Code, etc.) to integrate this package.
 - **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
 - **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
 - **[Error Codes & Specifications](doc/error_codes_specification.md)**: Complete error codes, close codes, `TurnCompleteReason` enums, and troubleshooting strategies.

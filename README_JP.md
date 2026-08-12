@@ -67,6 +67,7 @@ void main() async {
 
 詳細なガイドや仕様は [`doc/`](doc/) ディレクトリに整理されています：
 
+- **[AI Agent Skill ガイド](SKILL.md)**: AI コーディングアシスタント (Antigravity, Cursor, Windsurf, Claude Code など) がこのパッケージを適切に統合するためのプロンプト & スキル仕様書
 - **[API リファレンス](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` などの完全なクラス・メソッド仕様
 - **[高度な設定ガイド](doc/advanced_configuration.md)**: Function Calling, VAD, セッション再開, 音声書き起こし, リアルタイム翻訳, グラウンディング, エフェメラルトークンの詳細
 - **[エラーコード & 仕様書](doc/error_codes_specification.md)**: エラーコード, 終了コード, `TurnCompleteReason` Enum, トラブルシューティング

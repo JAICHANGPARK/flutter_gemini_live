@@ -67,6 +67,7 @@ void main() async {
 
 更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
 
+- **[AI Agent Skill 指南](SKILL.md)**：供 AI 编程助手 (Antigravity, Cursor, Windsurf, Claude Code 等) 正确集成此软件包的提示词与 Skill 规范
 - **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
 - **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
 - **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
