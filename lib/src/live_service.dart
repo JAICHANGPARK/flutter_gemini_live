@@ -271,6 +271,7 @@ class LiveService {
       final dispatch = onMessage ?? callbacks.onMessage;
       dispatch?.call(message);
     } catch (e, st) {
+      logger?.call('🚨 JSON parse / message processing error: $e');
       callbacks.onError?.call(e, st);
     }
   }
@@ -347,12 +348,16 @@ class LiveService {
           );
         },
         onError: (error, stackTrace) {
+          logger?.call('🚨 WebSocket stream error: $error');
           if (!setupCompleter.isCompleted) {
             setupCompleter.completeError(error, stackTrace);
           }
           params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
+          logger?.call(
+            '🔒 WebSocket connection closed (code: ${channel.closeCode}, reason: ${channel.closeReason})',
+          );
           params.callbacks.onClose?.call(
             channel.closeCode,
             channel.closeReason,

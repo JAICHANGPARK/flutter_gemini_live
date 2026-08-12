@@ -58,20 +58,32 @@ class GoogleGenAI {
   /// This is marked as `late` because it is initialized in the constructor.
   late final LiveService live;
 
+  /// An optional logger function to receive WebSocket traffic and connection logs.
+  ///
+  /// For example, pass `print` to log all WebSocket messages to the console,
+  /// or pass a custom logging function.
+  final void Function(String message)? logger;
+
   /// Creates a new instance of the [GoogleGenAI] client.
   ///
   /// [apiKey] is your Google AI API key, which is required for all requests.
   /// [httpClient] is an optional client to use for making HTTP requests.
+  /// [logger] is an optional logging callback for network & WebSocket events.
   GoogleGenAI({
     required this.apiKey,
     this.httpClient,
     this.apiVersion = 'v1beta',
+    this.logger,
   }) {
     // Initialize the internal API client with the provided credentials and HTTP client.
     _apiClient = ApiClient(apiKey: apiKey, httpClient: httpClient);
 
     // Initialize the LiveService, which handles real-time interactions.
-    live = LiveService(apiKey: apiKey, apiVersion: apiVersion);
+    live = LiveService(
+      apiKey: apiKey,
+      apiVersion: apiVersion,
+      logger: logger,
+    );
   }
 
   /// Releases any resources held by the client.
