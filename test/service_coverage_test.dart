@@ -265,6 +265,31 @@ void main() {
       );
     });
 
+    test('buildSetupMessage throws for tools with parallelAiSearch', () {
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            callbacks: LiveCallbacks(),
+            tools: [
+              Tool(
+                parallelAiSearch: ToolParallelAiSearch(
+                  apiKey: 'parallel-key',
+                ),
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('parallelAiSearch parameter is not supported in Gemini API'),
+          ),
+        ),
+      );
+    });
+
     test('validateFunctionResponses rejects invalid tool payloads', () {
       expect(
         () => LiveService.validateFunctionResponses([]),
@@ -374,9 +399,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.16.0 dart/9.9',
+          'google-genai-sdk/2.21.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.16.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.21.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)

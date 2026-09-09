@@ -1024,6 +1024,96 @@ void main() {
       });
       expect(serverContent.turnCompleteReason, TurnCompleteReason.TOO_MANY_TOOL_CALLS);
     });
+
+    test('js-genai 2.17.0-2.21.0 sync features serialize and deserialize correctly', () {
+      // 1. InteractionStatus & LiveServerContent.interactionStatus
+      final serverContentIdle = LiveServerContent.fromJson({
+        'interactionStatus': 'IDLE',
+      });
+      expect(serverContentIdle.interactionStatus, InteractionStatus.IDLE);
+
+      final serverContentInProgress = LiveServerContent.fromJson({
+        'interactionStatus': 'IN_PROGRESS',
+      });
+      expect(serverContentInProgress.interactionStatus, InteractionStatus.IN_PROGRESS);
+
+      // Deprecated REQUIRES_ACTION
+      // ignore: deprecated_member_use_from_same_package
+      final serverContentAction = LiveServerContent.fromJson({
+        'interactionStatus': 'REQUIRES_ACTION',
+      });
+      // ignore: deprecated_member_use_from_same_package
+      expect(serverContentAction.interactionStatus, InteractionStatus.REQUIRES_ACTION);
+
+      // 2. MediaProcessing & Part.mediaProcessing
+      final partStatic = Part(
+        text: 'hello',
+        mediaProcessing: MediaProcessing.STATIC,
+      );
+      expect(partStatic.toJson()['mediaProcessing'], 'STATIC');
+
+      final partAgentic = Part(
+        text: 'hello agent',
+        mediaProcessing: MediaProcessing.AGENTIC,
+      );
+      expect(partAgentic.toJson()['mediaProcessing'], 'AGENTIC');
+
+      final parsedPart = Part.fromJson({
+        'text': 'video frame',
+        'mediaProcessing': 'AGENTIC',
+      });
+      expect(parsedPart.mediaProcessing, MediaProcessing.AGENTIC);
+
+      // 3. AudioTranscriptionConfigMode & AudioTranscriptionConfig.mode
+      final audioConfigSmart = AudioTranscriptionConfig(
+        mode: AudioTranscriptionConfigMode.SMART,
+      );
+      expect(audioConfigSmart.toJson()['mode'], 'SMART');
+
+      final audioConfigVerbatim = AudioTranscriptionConfig(
+        mode: AudioTranscriptionConfigMode.VERBATIM,
+      );
+      expect(audioConfigVerbatim.toJson()['mode'], 'VERBATIM');
+
+      final parsedAudioConfig = AudioTranscriptionConfig.fromJson({
+        'mode': 'SMART',
+      });
+      expect(parsedAudioConfig.mode, AudioTranscriptionConfigMode.SMART);
+
+      // 4. ToolParallelAiSearch & Tool.parallelAiSearch
+      final parallelSearch = ToolParallelAiSearch(
+        apiKey: 'parallel-api-key',
+        customConfigs: {'mode': 'fast', 'max_results': 5},
+        enableZeroDataRetention: true,
+      );
+      final parallelJson = parallelSearch.toJson();
+      expect(parallelJson['api_key'], 'parallel-api-key');
+      expect(parallelJson['custom_configs'], {'mode': 'fast', 'max_results': 5});
+      expect(parallelJson['enable_zero_data_retention'], true);
+
+      final toolWithParallel = Tool(parallelAiSearch: parallelSearch);
+      final toolJson = normalizeJson(toolWithParallel.toJson());
+      expect(toolJson['parallel_ai_search'], isNotNull);
+      expect(toolJson['parallel_ai_search']['api_key'], 'parallel-api-key');
+
+      final parsedTool = Tool.fromJson({
+        'parallel_ai_search': {
+          'api_key': 'key-123',
+          'enable_zero_data_retention': true,
+        },
+      });
+      expect(parsedTool.parallelAiSearch?.apiKey, 'key-123');
+      expect(parsedTool.parallelAiSearch?.enableZeroDataRetention, true);
+
+      // 5. ToolType.MEDIA_PROCESSING
+      expect(ToolType.MEDIA_PROCESSING.name, 'MEDIA_PROCESSING');
+
+      // 6. ServiceTier.DEFERRED & UsageMetadata.serviceTier
+      final usage = UsageMetadata.fromJson({
+        'serviceTier': 'deferred',
+      });
+      expect(usage.serviceTier, ServiceTier.DEFERRED);
+    });
   });
 
   test('send parameter containers retain constructor arguments', () {
