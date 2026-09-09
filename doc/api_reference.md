@@ -12,6 +12,7 @@ This document provides a comprehensive API reference for the `gemini_live` packa
 5. [LiveSession](#5-livesession)
 6. [LiveServerMessage](#6-liveservermessage)
 7. [Models & Enums](#7-models--enums)
+8. [Flutter UI Widgets](#8-flutter-ui-widgets)
 
 ---
 

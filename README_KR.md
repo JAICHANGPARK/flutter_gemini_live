@@ -69,6 +69,7 @@ void main() async {
 
 - **[AI Agent Skill 가이드](SKILL.md)**: AI 코딩 어시스턴트(Antigravity, Cursor, Windsurf, Claude Code 등)가 이 패키지를 정확히 연동하도록 돕는 프롬프트 & 스킬 명세서
 - **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
+- **[UI 위젯 가이드 & 명세서](doc/widgets_guide.md)**: `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator` 등 내장 UI 위젯 상세 사용법 및 전체 화면 예제
 - **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법
 - **[에러 코드 & 트러블슈팅 명세서](doc/error_codes_specification.md)**: 발생 가능한 에러 코드, 종료 코드, `TurnCompleteReason` Enum, 트러블슈팅 가이드
 - **[실행 가능한 예제 모음](examples/README.md)**: 기본 대화, 툴 호출, 카메라/오디오 스트리밍, Google Maps 그라운딩 CLI 예제
