@@ -52,6 +52,10 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
       : AudioTranscriptionConfig.fromJson(
           json['audio_transcription'] as Map<String, dynamic>,
         ),
+  mediaProcessing: $enumDecodeNullable(
+    _$MediaProcessingEnumMap,
+    json['mediaProcessing'],
+  ),
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
@@ -70,6 +74,13 @@ Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
   'executableCode': ?instance.executableCode,
   'codeExecutionResult': ?instance.codeExecutionResult,
   'audio_transcription': ?instance.audioTranscription,
+  'mediaProcessing': ?_$MediaProcessingEnumMap[instance.mediaProcessing],
+};
+
+const _$MediaProcessingEnumMap = {
+  MediaProcessing.MEDIA_PROCESSING_UNSPECIFIED: 'MEDIA_PROCESSING_UNSPECIFIED',
+  MediaProcessing.STATIC: 'STATIC',
+  MediaProcessing.AGENTIC: 'AGENTIC',
 };
 
 Blob _$BlobFromJson(Map<String, dynamic> json) => Blob(
@@ -413,6 +424,7 @@ const _$ToolTypeEnumMap = {
   ToolType.URL_CONTEXT: 'URL_CONTEXT',
   ToolType.GOOGLE_MAPS: 'GOOGLE_MAPS',
   ToolType.FILE_SEARCH: 'FILE_SEARCH',
+  ToolType.MEDIA_PROCESSING: 'MEDIA_PROCESSING',
 };
 
 ToolResponse _$ToolResponseFromJson(Map<String, dynamic> json) => ToolResponse(
@@ -638,6 +650,11 @@ Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
   exaAiSearch: json['exa_ai_search'] == null
       ? null
       : ToolExaAiSearch.fromJson(json['exa_ai_search'] as Map<String, dynamic>),
+  parallelAiSearch: json['parallel_ai_search'] == null
+      ? null
+      : ToolParallelAiSearch.fromJson(
+          json['parallel_ai_search'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
@@ -653,6 +670,25 @@ Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
   'enterprise_web_search': ?instance.enterpriseWebSearch,
   'mcp_servers': ?instance.mcpServers,
   'exa_ai_search': ?instance.exaAiSearch,
+  'parallel_ai_search': ?instance.parallelAiSearch,
+};
+
+ToolParallelAiSearch _$ToolParallelAiSearchFromJson(
+  Map<String, dynamic> json,
+) => ToolParallelAiSearch(
+  apiKey: json['api_key'] as String?,
+  customConfigs: json['custom_configs'] as Map<String, dynamic>?,
+  enableDataRetention: json['enable_data_retention'] as bool?,
+  enableZeroDataRetention: json['enable_zero_data_retention'] as bool?,
+);
+
+Map<String, dynamic> _$ToolParallelAiSearchToJson(
+  ToolParallelAiSearch instance,
+) => <String, dynamic>{
+  'api_key': ?instance.apiKey,
+  'custom_configs': ?instance.customConfigs,
+  'enable_data_retention': ?instance.enableDataRetention,
+  'enable_zero_data_retention': ?instance.enableZeroDataRetention,
 };
 
 ToolExaAiSearch _$ToolExaAiSearchFromJson(Map<String, dynamic> json) =>
@@ -861,6 +897,10 @@ AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
   adaptationPhrases: (json['adaptation_phrases'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
+  mode: $enumDecodeNullable(
+    _$AudioTranscriptionConfigModeEnumMap,
+    json['mode'],
+  ),
 );
 
 Map<String, dynamic> _$AudioTranscriptionConfigToJson(
@@ -871,6 +911,13 @@ Map<String, dynamic> _$AudioTranscriptionConfigToJson(
   'language_hints': ?instance.languageHints,
   'custom_vocabulary': ?instance.customVocabulary,
   'adaptation_phrases': ?instance.adaptationPhrases,
+  'mode': ?_$AudioTranscriptionConfigModeEnumMap[instance.mode],
+};
+
+const _$AudioTranscriptionConfigModeEnumMap = {
+  AudioTranscriptionConfigMode.MODE_UNSPECIFIED: 'MODE_UNSPECIFIED',
+  AudioTranscriptionConfigMode.VERBATIM: 'VERBATIM',
+  AudioTranscriptionConfigMode.SMART: 'SMART',
 };
 
 ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
@@ -1225,6 +1272,10 @@ LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
           : Transcription.fromJson(
               json['interimInputTranscription'] as Map<String, dynamic>,
             ),
+      interactionStatus: $enumDecodeNullable(
+        _$InteractionStatusEnumMap,
+        json['interactionStatus'],
+      ),
     );
 
 const _$TurnCompleteReasonEnumMap = {
@@ -1265,6 +1316,14 @@ const _$TurnCompleteReasonEnumMap = {
   TurnCompleteReason.GENERATED_OTHER: 'GENERATED_OTHER',
   TurnCompleteReason.MAX_REGENERATION_REACHED: 'MAX_REGENERATION_REACHED',
   TurnCompleteReason.TOO_MANY_TOOL_CALLS: 'TOO_MANY_TOOL_CALLS',
+};
+
+const _$InteractionStatusEnumMap = {
+  InteractionStatus.INTERACTION_STATUS_UNSPECIFIED:
+      'INTERACTION_STATUS_UNSPECIFIED',
+  InteractionStatus.IN_PROGRESS: 'IN_PROGRESS',
+  InteractionStatus.REQUIRES_ACTION: 'REQUIRES_ACTION',
+  InteractionStatus.IDLE: 'IDLE',
 };
 
 LiveServerToolCall _$LiveServerToolCallFromJson(Map<String, dynamic> json) =>
@@ -1379,6 +1438,7 @@ const _$ServiceTierEnumMap = {
   ServiceTier.FLEX: 'flex',
   ServiceTier.STANDARD: 'standard',
   ServiceTier.PRIORITY: 'priority',
+  ServiceTier.DEFERRED: 'deferred',
 };
 
 LiveServerMessage _$LiveServerMessageFromJson(

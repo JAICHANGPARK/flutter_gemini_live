@@ -251,6 +251,21 @@ enum TurnCompleteReason {
   TOO_MANY_TOOL_CALLS,
 }
 
+/// The different activity states of the live session.
+@JsonEnum(alwaysCreate: true)
+enum InteractionStatus {
+  @JsonValue('INTERACTION_STATUS_UNSPECIFIED')
+  INTERACTION_STATUS_UNSPECIFIED,
+  @JsonValue('IN_PROGRESS')
+  IN_PROGRESS,
+  /// Deprecated: Use [IDLE] instead.
+  @Deprecated('Use IDLE instead.')
+  @JsonValue('REQUIRES_ACTION')
+  REQUIRES_ACTION,
+  @JsonValue('IDLE')
+  IDLE,
+}
+
 /// Voice activity detection signals emitted by the server.
 @JsonEnum(alwaysCreate: true)
 enum VadSignalType {
@@ -335,6 +350,8 @@ enum ToolType {
   GOOGLE_MAPS,
   @JsonValue('FILE_SEARCH')
   FILE_SEARCH,
+  @JsonValue('MEDIA_PROCESSING')
+  MEDIA_PROCESSING,
 }
 
 /// Environments supported by the computer-use tool.
@@ -399,6 +416,19 @@ enum ServiceTier {
   STANDARD,
   @JsonValue('priority')
   PRIORITY,
+  @JsonValue('deferred')
+  DEFERRED,
+}
+
+/// How the model processes input media for understanding.
+@JsonEnum(alwaysCreate: true)
+enum MediaProcessing {
+  @JsonValue('MEDIA_PROCESSING_UNSPECIFIED')
+  MEDIA_PROCESSING_UNSPECIFIED,
+  @JsonValue('STATIC')
+  STATIC,
+  @JsonValue('AGENTIC')
+  AGENTIC,
 }
 
 // ============================================================================
@@ -424,6 +454,7 @@ class Part {
   final CodeExecutionResult? codeExecutionResult;
   @JsonKey(name: 'audio_transcription')
   final AudioTranscriptionConfig? audioTranscription;
+  final MediaProcessing? mediaProcessing;
 
   Part({
     this.mediaResolution,
@@ -441,6 +472,7 @@ class Part {
     this.executableCode,
     this.codeExecutionResult,
     this.audioTranscription,
+    this.mediaProcessing,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
@@ -980,6 +1012,7 @@ class Tool {
   final Map<String, dynamic>? enterpriseWebSearch;
   final List<Map<String, dynamic>>? mcpServers;
   final ToolExaAiSearch? exaAiSearch;
+  final ToolParallelAiSearch? parallelAiSearch;
 
   Tool({
     this.functionDeclarations,
@@ -994,11 +1027,39 @@ class Tool {
     this.enterpriseWebSearch,
     this.mcpServers,
     this.exaAiSearch,
+    this.parallelAiSearch,
   });
 
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
+}
+
+/// A tool that uses the Parallel.ai search engine for grounding.
+///
+/// Not supported in the Gemini Developer API.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ToolParallelAiSearch {
+  final String? apiKey;
+  final Map<String, dynamic>? customConfigs;
+
+  /// Deprecated: Use [enableZeroDataRetention] instead.
+  @Deprecated('Use enableZeroDataRetention instead.')
+  final bool? enableDataRetention;
+  final bool? enableZeroDataRetention;
+
+  ToolParallelAiSearch({
+    this.apiKey,
+    this.customConfigs,
+    // ignore: deprecated_member_use_from_same_package
+    this.enableDataRetention,
+    this.enableZeroDataRetention,
+  });
+
+  factory ToolParallelAiSearch.fromJson(Map<String, dynamic> json) =>
+      _$ToolParallelAiSearchFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ToolParallelAiSearchToJson(this);
 }
 
 /// A tool that uses the Exa.ai search engine for grounding.
@@ -1152,6 +1213,17 @@ class LanguageHints {
   Map<String, dynamic> toJson() => _$LanguageHintsToJson(this);
 }
 
+/// Configures transcription mode for audio transcription.
+@JsonEnum(alwaysCreate: true)
+enum AudioTranscriptionConfigMode {
+  @JsonValue('MODE_UNSPECIFIED')
+  MODE_UNSPECIFIED,
+  @JsonValue('VERBATIM')
+  VERBATIM,
+  @JsonValue('SMART')
+  SMART,
+}
+
 /// Audio transcription settings for input or output streams.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
@@ -1176,6 +1248,10 @@ class AudioTranscriptionConfig {
   @Deprecated('Use customVocabulary instead.')
   final List<String>? adaptationPhrases;
 
+  /// Optional. Configures transcription mode. Supported values: `VERBATIM`, `SMART`.
+  /// Defaults to `VERBATIM` transcription if unspecified.
+  final AudioTranscriptionConfigMode? mode;
+
   AudioTranscriptionConfig({
     this.languageCodes,
     this.languageAuto,
@@ -1183,6 +1259,7 @@ class AudioTranscriptionConfig {
     this.customVocabulary,
     // ignore: deprecated_member_use_from_same_package
     this.adaptationPhrases,
+    this.mode,
   });
 
   factory AudioTranscriptionConfig.fromJson(Map<String, dynamic> json) =>
@@ -1501,6 +1578,9 @@ class LiveServerContent {
   /// Low-latency transcription updated while the user is speaking.
   final Transcription? interimInputTranscription;
 
+  /// The current activity status of the live session. Always sent alongside `turn_complete`.
+  final InteractionStatus? interactionStatus;
+
   LiveServerContent({
     this.modelTurn,
     this.turnComplete,
@@ -1513,6 +1593,7 @@ class LiveServerContent {
     this.turnCompleteReason,
     this.waitingForInput,
     this.interimInputTranscription,
+    this.interactionStatus,
   });
 
   factory LiveServerContent.fromJson(Map<String, dynamic> json) =>
