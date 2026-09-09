@@ -1482,3 +1482,56 @@ LiveServerMessage _$LiveServerMessageFromJson(
       ? null
       : VoiceActivity.fromJson(json['voiceActivity'] as Map<String, dynamic>),
 );
+
+AuthToken _$AuthTokenFromJson(Map<String, dynamic> json) => AuthToken(
+  name: json['name'] as String?,
+  expireTime: json['expire_time'] as String?,
+  newSessionExpireTime: json['new_session_expire_time'] as String?,
+  uses: (json['uses'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$AuthTokenToJson(AuthToken instance) => <String, dynamic>{
+  'name': ?instance.name,
+  'expire_time': ?instance.expireTime,
+  'new_session_expire_time': ?instance.newSessionExpireTime,
+  'uses': ?instance.uses,
+};
+
+LiveConnectConstraints _$LiveConnectConstraintsFromJson(
+  Map<String, dynamic> json,
+) => LiveConnectConstraints(
+  model: json['model'] as String?,
+  config: json['config'] == null
+      ? null
+      : GenerationConfig.fromJson(json['config'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$LiveConnectConstraintsToJson(
+  LiveConnectConstraints instance,
+) => <String, dynamic>{'model': ?instance.model, 'config': ?instance.config};
+
+CreateAuthTokenConfig _$CreateAuthTokenConfigFromJson(
+  Map<String, dynamic> json,
+) => CreateAuthTokenConfig(
+  expireTime: json['expire_time'] as String?,
+  newSessionExpireTime: json['new_session_expire_time'] as String?,
+  uses: (json['uses'] as num?)?.toInt(),
+  liveConnectConstraints: json['live_connect_constraints'] == null
+      ? null
+      : LiveConnectConstraints.fromJson(
+          json['live_connect_constraints'] as Map<String, dynamic>,
+        ),
+  lockAdditionalFields: (json['lock_additional_fields'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
+);
+
+Map<String, dynamic> _$CreateAuthTokenConfigToJson(
+  CreateAuthTokenConfig instance,
+) => <String, dynamic>{
+  'expire_time': ?instance.expireTime,
+  'new_session_expire_time': ?instance.newSessionExpireTime,
+  'uses': ?instance.uses,
+  'live_connect_constraints': ?instance.liveConnectConstraints,
+  'lock_additional_fields': ?instance.lockAdditionalFields,
+};

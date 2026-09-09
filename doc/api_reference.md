@@ -162,3 +162,6 @@ Top-level message object received from the Gemini Live server via `onMessage`.
 - **`GenerationConfig`**: `temperature`, `topK`, `topP`, `maxOutputTokens`, `responseModalities`, `speechConfig`, `thinkingConfig`, `translationConfig`, `audioTranscriptionConfig`
 - **`AudioTranscriptionConfig`**: `languageAuto`, `languageHints`, `customVocabulary`, `adaptationPhrases` (deprecated), `mode`
 - **`Part`**: `text`, `thought`, `inlineData`, `fileData`, `functionCall`, `functionResponse`, `audioTranscription`, `mediaProcessing`
+- **`AuthToken`**: `name`, `expireTime`, `newSessionExpireTime`, `uses`
+- **`LiveConnectConstraints`**: `model`, `config`
+- **`CreateAuthTokenConfig`**: `expireTime`, `newSessionExpireTime`, `uses`, `liveConnectConstraints`, `lockAdditionalFields`

@@ -11,6 +11,7 @@
   - `ToolParallelAiSearch` model class and `Tool.parallelAiSearch` field (supported in enterprise agent platform grounding).
   - `ToolType.MEDIA_PROCESSING` enum value.
   - `ServiceTier.DEFERRED` (`'deferred'`) enum value in `ServiceTier`.
+  - `AuthToken`, `LiveConnectConstraints`, and `CreateAuthTokenConfig` DTO classes for ephemeral token constraints and configuration (`expireTime`, `newSessionExpireTime`, `uses`).
 
 ### Changed
 - Synced Live SDK request headers and user-agent to `google-genai-sdk/2.21.0` (synced with upstream `js-genai` 2.21.0).

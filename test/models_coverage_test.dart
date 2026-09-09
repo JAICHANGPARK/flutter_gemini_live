@@ -1142,6 +1142,47 @@ void main() {
     expect(sendRealtimeInput.activityEnd, false);
     expect(sendToolResponse.functionResponses.single.response, {'ok': true});
   });
+
+  test('AuthToken and LiveConnectConstraints DTOs round-trip correctly', () {
+    final token = AuthToken(
+      name: 'auth_tokens/123',
+      expireTime: '2026-09-10T12:00:00Z',
+      newSessionExpireTime: '2026-09-09T18:30:00Z',
+      uses: 3,
+    );
+    final tokenJson = normalizeJson(token.toJson());
+    expect(tokenJson['name'], 'auth_tokens/123');
+    expect(tokenJson['expire_time'], '2026-09-10T12:00:00Z');
+    expect(tokenJson['new_session_expire_time'], '2026-09-09T18:30:00Z');
+    expect(tokenJson['uses'], 3);
+
+    final parsedToken = AuthToken.fromJson(tokenJson);
+    expect(parsedToken.name, 'auth_tokens/123');
+    expect(parsedToken.expireTime, '2026-09-10T12:00:00Z');
+    expect(parsedToken.newSessionExpireTime, '2026-09-09T18:30:00Z');
+    expect(parsedToken.uses, 3);
+
+    final constraints = LiveConnectConstraints(
+      model: 'models/gemini-3.1-flash-live-preview',
+      config: GenerationConfig(
+        responseModalities: [Modality.AUDIO],
+      ),
+    );
+    final constraintsJson = normalizeJson(constraints.toJson());
+    expect(constraintsJson['model'], 'models/gemini-3.1-flash-live-preview');
+    expect(constraintsJson['config']['response_modalities'], ['AUDIO']);
+
+    final createConfig = CreateAuthTokenConfig(
+      expireTime: '2026-09-10T12:00:00Z',
+      uses: 1,
+      liveConnectConstraints: constraints,
+      lockAdditionalFields: ['config.generation_config.response_modalities'],
+    );
+    final createJson = normalizeJson(createConfig.toJson());
+    expect(createJson['uses'], 1);
+    expect(createJson['live_connect_constraints']['model'], 'models/gemini-3.1-flash-live-preview');
+    expect(createJson['lock_additional_fields'], ['config.generation_config.response_modalities']);
+  });
 }
 
 Map<String, dynamic> normalizeJson(Map<String, dynamic> json) =>
