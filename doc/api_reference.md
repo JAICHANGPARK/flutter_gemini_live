@@ -165,3 +165,43 @@ Top-level message object received from the Gemini Live server via `onMessage`.
 - **`AuthToken`**: `name`, `expireTime`, `newSessionExpireTime`, `uses`
 - **`LiveConnectConstraints`**: `model`, `config`
 - **`CreateAuthTokenConfig`**: `expireTime`, `newSessionExpireTime`, `uses`, `liveConnectConstraints`, `lockAdditionalFields`
+
+---
+
+## 8. Flutter UI Widgets
+
+The package provides pre-built, dependency-free Flutter Material widgets for common Gemini Live UI workflows:
+
+### `GeminiLiveStatusBadge`
+Compact badge showing real-time connection state (`disconnected`, `connecting`, `connected`, `inProgress`) with animated pulse indicators and `InteractionStatus` support.
+
+```dart
+GeminiLiveStatusBadge.fromFlags(
+  isConnected: isConnected,
+  isConnecting: isConnecting,
+  interactionStatus: interactionStatus, // optional: IN_PROGRESS / IDLE
+)
+```
+
+### `GeminiLiveMicButton`
+Microphone toggle button with smooth pulsing ripple animations during active recording.
+
+```dart
+GeminiLiveMicButton(
+  isRecording: isRecording,
+  onPressed: toggleRecording,
+  tooltip: 'Tap to speak',
+)
+```
+
+### `GeminiLiveVoiceIndicator`
+Animated audio waveform bar visualizer that dances rhythmically when speech or live streaming is active.
+
+```dart
+GeminiLiveVoiceIndicator(
+  isSpeaking: isSpeaking,
+  barCount: 5,
+  height: 24,
+  color: Colors.blueAccent,
+)
+```

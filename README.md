@@ -82,11 +82,40 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 * **Google Maps & Search Grounding**: Location and routing-aware responses.
 * **Voice Activity Detection**: Automatic and manual VAD.
 * **Live Speech Translation**: Real-time speech-to-speech translation (`TranslationConfig`).
+* **Pre-built Flutter Widgets**: Drop-in UI widgets (`GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator`) for seamless app integration.
 
 | Demo 1: Chihuahua vs muffin | Demo 2: Labradoodle vs fried chicken |
 | :---: | :---: |
 | <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222333.png?raw=true" alt="Live Conversation Demo" width="400"/> | <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222355.png?raw=true" alt="Multimodal Demo" width="400"/> |
 | *Chihuahua vs muffin* | *Labradoodle vs fried chicken* |
+
+---
+
+## Pre-built UI Widgets
+
+The package ships with ready-to-use Flutter Material widgets to accelerate building Live conversational interfaces:
+
+```dart
+// 1. Status Badge with live interaction tracking
+GeminiLiveStatusBadge.fromFlags(
+  isConnected: isConnected,
+  isConnecting: isConnecting,
+  interactionStatus: sessionStatus, // IN_PROGRESS / IDLE
+)
+
+// 2. Animated Mic Button with pulse ripples
+GeminiLiveMicButton(
+  isRecording: isRecording,
+  onPressed: toggleVoice,
+)
+
+// 3. Dancing Voice Waveform Bars
+GeminiLiveVoiceIndicator(
+  isSpeaking: isSpeaking,
+  barCount: 5,
+  color: Colors.blueAccent,
+)
+```
 
 ---
 

@@ -12,8 +12,16 @@
   - `ToolType.MEDIA_PROCESSING` enum value.
   - `ServiceTier.DEFERRED` (`'deferred'`) enum value in `ServiceTier`.
   - `AuthToken`, `LiveConnectConstraints`, and `CreateAuthTokenConfig` DTO classes for ephemeral token constraints and configuration (`expireTime`, `newSessionExpireTime`, `uses`).
+- **Reusable Flutter Material Widgets**:
+  - `GeminiLiveStatusBadge` & `GeminiLiveStatusBadge.fromFlags()`: Real-time visual badge tracking connection state and `InteractionStatus` with animated pulsing indicators.
+  - `GeminiLiveMicButton`: Interactive microphone button with animated ripple effects during voice recording.
+  - `GeminiLiveVoiceIndicator`: Lightweight waveform audio bar visualizer animating rhythmically when speech or streaming is active.
+- **Example App Updates**:
+  - Integrated `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, and `GeminiLiveVoiceIndicator` into `LiveAPIDemoPage`, `ChatPage`, and `RealtimeMediaDemoPage`.
+  - Added live `InteractionStatus` monitoring (`IN_PROGRESS` / `IDLE`) and `AudioTranscriptionConfigMode.SMART` toggle to `LiveAPIDemoPage`.
 
 ### Changed
+- Upgraded package and example dependencies to their latest compatible versions (`camera: ^0.12.1`, `build_runner: ^2.16.1`, `flutter_lints: ^6.0.0`, etc.).
 - Synced Live SDK request headers and user-agent to `google-genai-sdk/2.21.0` (synced with upstream `js-genai` 2.21.0).
 - `LiveService.buildSetupMessage` now explicitly validates and rejects `Tool.parallelAiSearch` in Gemini Developer API mode with clear descriptive error messages.
 - Bumped package version to `2026.9.9`.

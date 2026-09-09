@@ -82,11 +82,40 @@ void main() async {
 * **Google Maps & Search 그라운딩**: 위치 및 경로 감지 답변 생성.
 * **음성 활동 감지 (VAD)**: 자동 및 수동 VAD 지원.
 * **실시간 음성 번역**: Speech-to-Speech 실시간 번역 (`TranslationConfig`).
+* **내장 Flutter UI 위젯 제공**: 별도 추가 패키지 없이 바로 사용할 수 있는 실시간 UI 위젯(`GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator`).
 
 | 데모 1: 치와와 vs 마핀 | 데모 2: 라브라도리 vs 프라이드치킨 |
 | :---: | :---: |
 | <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222333.png?raw=true" alt="실시간 대화 데모" width="400"/> | <img src="https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/imgs/Screenshot_20250613_222355.png?raw=true" alt="멀티모달 데모" width="400"/> |
 | *치와와 vs 마핀* | *라브라도리 vs 프라이드치킨* |
+
+---
+
+## 내장 UI 위젯 (Pre-built UI Widgets)
+
+Flutter 개발자가 즉시 연동하여 사용할 수 있도록 가볍고 의존성 없는 핵심 UI 위젯을 기본 제공합니다:
+
+```dart
+// 1. 실시간 세션 상태 배지 (InteractionStatus 및 연결 상태 연동)
+GeminiLiveStatusBadge.fromFlags(
+  isConnected: isConnected,
+  isConnecting: isConnecting,
+  interactionStatus: sessionStatus, // IN_PROGRESS / IDLE
+)
+
+// 2. 펄스 애니메이션 마이크 버튼
+GeminiLiveMicButton(
+  isRecording: isRecording,
+  onPressed: toggleVoice,
+)
+
+// 3. 음성 파형 애니메이션 바 (음성 발화/스트리밍 시 실시간 애니메이션)
+GeminiLiveVoiceIndicator(
+  isSpeaking: isSpeaking,
+  barCount: 5,
+  color: Colors.blueAccent,
+)
+```
 
 ---
 
