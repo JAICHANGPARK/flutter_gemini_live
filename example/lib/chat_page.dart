@@ -648,16 +648,10 @@ class _ChatScreenState extends State<ChatPage> {
               ),
               // Button to toggle audio recording.
               if (_voiceModeEnabled)
-                IconButton(
-                  icon: Icon(
-                    _isRecording
-                        ? Icons.stop_circle_outlined
-                        : Icons.mic_none_outlined,
-                  ),
-                  color: _isRecording
-                      ? Colors.red
-                      : Theme.of(context).iconTheme.color,
+                GeminiLiveMicButton(
+                  isRecording: _isRecording,
                   onPressed: _toggleRecording,
+                  tooltip: _isRecording ? 'Stop recording' : 'Record voice',
                 ),
               // The main text input field.
               Expanded(
@@ -722,14 +716,9 @@ class _ChatScreenState extends State<ChatPage> {
           // A visual indicator for the connection status.
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Icon(
-              Icons.circle,
-              color: _connectionStatus == ConnectionStatus.connected
-                  ? Colors.green
-                  : _connectionStatus == ConnectionStatus.connecting
-                  ? Colors.orange
-                  : Colors.red,
-              size: 16,
+            child: GeminiLiveStatusBadge.fromFlags(
+              isConnected: _connectionStatus == ConnectionStatus.connected,
+              isConnecting: _connectionStatus == ConnectionStatus.connecting,
             ),
           ),
         ],

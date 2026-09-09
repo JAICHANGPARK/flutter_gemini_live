@@ -724,7 +724,18 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Realtime Media Demo')),
+      appBar: AppBar(
+        title: const Text('Realtime Media Demo'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: GeminiLiveStatusBadge.fromFlags(
+              isConnected: _isConnected,
+              isConnecting: _isConnecting,
+            ),
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 1100;
@@ -1067,11 +1078,19 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _buildStatChip(
                       Icons.mic,
                       _isStreamingAudio ? 'Mic on' : 'Mic idle',
                     ),
+                    if (_isStreamingAudio)
+                      GeminiLiveVoiceIndicator(
+                        isSpeaking: _cameraInputActive,
+                        barCount: 5,
+                        height: 24,
+                        color: Colors.blueAccent,
+                      ),
                     _buildStatChip(Icons.image, 'Frames $_videoFramesSent'),
                     _buildStatChip(
                       Icons.graphic_eq,

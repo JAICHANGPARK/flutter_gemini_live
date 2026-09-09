@@ -21,6 +21,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   // Connection state
   bool _isConnected = false;
   bool _isConnecting = false;
+  InteractionStatus? _interactionStatus;
 
   // Message logs
   final List<LogEntry> _logs = [];
@@ -28,6 +29,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   // Feature toggles
   bool _enableRealtimeConfig = true;
   bool _enableTranscription = true;
+  bool _useSmartTranscription = false;
   bool _enableSessionResumption = false;
   bool _enableContextCompression = true;
 
@@ -106,10 +108,18 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
               : null,
           // Audio transcription
           inputAudioTranscription: _enableTranscription
-              ? AudioTranscriptionConfig()
+              ? AudioTranscriptionConfig(
+                  mode: _useSmartTranscription
+                      ? AudioTranscriptionConfigMode.SMART
+                      : AudioTranscriptionConfigMode.VERBATIM,
+                )
               : null,
           outputAudioTranscription: _enableTranscription
-              ? AudioTranscriptionConfig()
+              ? AudioTranscriptionConfig(
+                  mode: _useSmartTranscription
+                      ? AudioTranscriptionConfigMode.SMART
+                      : AudioTranscriptionConfigMode.VERBATIM,
+                )
               : null,
           // Session resumption
           sessionResumption: _enableSessionResumption && _sessionHandle != null
@@ -128,13 +138,17 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
               setState(() {
                 _isConnected = true;
                 _isConnecting = false;
+                _interactionStatus = null;
               });
             },
             onMessage: _handleMessage,
             onError: (error, stack) {
               unawaited(_responseAudioPlayer.stop());
               _addLog('ERROR', '❌ Error: $error');
-              setState(() => _isConnecting = false);
+              setState(() {
+                _isConnecting = false;
+                _interactionStatus = null;
+              });
             },
             onClose: (code, reason) {
               unawaited(_responseAudioPlayer.stop());
@@ -145,6 +159,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
               setState(() {
                 _isConnected = false;
                 _isConnecting = false;
+                _interactionStatus = null;
               });
             },
           ),
@@ -166,6 +181,13 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
 
     if (serverContent?.interrupted ?? false) {
       _responseAudioPlayer.clear();
+    }
+
+    // Handle interaction status
+    if (serverContent?.interactionStatus != null) {
+      final status = serverContent!.interactionStatus!;
+      setState(() => _interactionStatus = status);
+      _addLog('STATUS', '⚡ Interaction status: ${status.name}');
     }
 
     // Handle text
@@ -320,6 +342,14 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
       appBar: AppBar(
         title: const Text('Live API Features Demo'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: GeminiLiveStatusBadge.fromFlags(
+              isConnected: _isConnected,
+              isConnecting: _isConnecting,
+              interactionStatus: _interactionStatus,
+            ),
+          ),
           if (_isConnected)
             IconButton(
               icon: const Icon(Icons.close),
@@ -363,6 +393,12 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
             _enableTranscription,
             (v) => setState(() => _enableTranscription = v),
           ),
+          if (_enableTranscription)
+            _buildToggle(
+              'Smart Mode',
+              _useSmartTranscription,
+              (v) => setState(() => _useSmartTranscription = v),
+            ),
           _buildToggle(
             'Session Resume',
             _enableSessionResumption,
@@ -541,6 +577,10 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
       case 'WARNING':
         icon = Icons.warning;
         color = Colors.amber;
+        break;
+      case 'STATUS':
+        icon = Icons.bolt;
+        color = Colors.amber.shade700;
         break;
       case 'CONNECTION':
         icon = Icons.link;
