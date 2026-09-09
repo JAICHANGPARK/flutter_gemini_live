@@ -127,12 +127,13 @@ if (message.sessionResumptionUpdate != null) {
 
 ## 4. Audio Transcription & Custom Vocabulary
 
-Transcribe audio input/output and bias ASR towards domain-specific terms.
+Transcribe audio input/output, select transcription mode (`VERBATIM` or `SMART`), and bias ASR towards domain-specific terms.
 
 ```dart
 inputAudioTranscription: AudioTranscriptionConfig(
   languageAuto: LanguageAuto(),
   customVocabulary: ['Gemini', 'Flutter', 'Dart', 'Antigravity'],
+  mode: AudioTranscriptionConfigMode.SMART, // Performs disfluency removal and light grammatical cleanup
 ),
 outputAudioTranscription: AudioTranscriptionConfig(),
 ```

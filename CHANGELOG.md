@@ -1,6 +1,21 @@
 ## Unreleased
 
-## 2026.8.12
+## 2026.9.9
+
+### Added
+- Synced DTOs and features with `js-genai` versions 2.17.0 through 2.21.0 and `python-genai` 2.17.0 through 2.22.0 (changes through September 2026):
+  - `InteractionStatus` enum (`UNSPECIFIED`, `IN_PROGRESS`, `@Deprecated('Use IDLE instead.') REQUIRES_ACTION`, `IDLE`) representing the live session activity status.
+  - `LiveServerContent.interactionStatus` property sent by the server alongside `turnComplete`.
+  - `MediaProcessing` enum (`MEDIA_PROCESSING_UNSPECIFIED`, `STATIC`, `AGENTIC`) and `Part.mediaProcessing` field indicating how input media is processed.
+  - `AudioTranscriptionConfigMode` enum (`MODE_UNSPECIFIED`, `VERBATIM`, `SMART`) and `AudioTranscriptionConfig.mode` field for configuring smart disfluency removal and formatting.
+  - `ToolParallelAiSearch` model class and `Tool.parallelAiSearch` field (supported in enterprise agent platform grounding).
+  - `ToolType.MEDIA_PROCESSING` enum value.
+  - `ServiceTier.DEFERRED` (`'deferred'`) enum value in `ServiceTier`.
+
+### Changed
+- Synced Live SDK request headers and user-agent to `google-genai-sdk/2.21.0` (synced with upstream `js-genai` 2.21.0).
+- `LiveService.buildSetupMessage` now explicitly validates and rejects `Tool.parallelAiSearch` in Gemini Developer API mode with clear descriptive error messages.
+- Bumped package version to `2026.9.9`.
 
 ### Added
 - Synced DTOs and features with `js-genai` versions 2.14.0, 2.15.0, and 2.16.0 (changes after July 24, 2026):

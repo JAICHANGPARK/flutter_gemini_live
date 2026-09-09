@@ -138,6 +138,7 @@ Top-level message object received from the Gemini Live server via `onMessage`.
 - `voiceActivityDetectionSignal` (`VoiceActivityDetectionSignal?`): Low-level VAD signal.
 - `goAway` (`LiveServerGoAway?`): Disconnect warning with `timeRemaining` helper.
 - `usageMetadata` (`UsageMetadata?`): Prompt, response, thoughts, and modality token counts.
+- `interactionStatus` (`InteractionStatus?`): The current session activity status (`IN_PROGRESS`, `IDLE`).
 
 ---
 
@@ -146,14 +147,18 @@ Top-level message object received from the Gemini Live server via `onMessage`.
 ### Key Enums
 
 - **`Modality`**: `TEXT`, `AUDIO`, `VIDEO`
+- **`InteractionStatus`**: `INTERACTION_STATUS_UNSPECIFIED`, `IN_PROGRESS`, `IDLE` (`REQUIRES_ACTION` is deprecated)
+- **`MediaProcessing`**: `MEDIA_PROCESSING_UNSPECIFIED`, `STATIC`, `AGENTIC`
+- **`AudioTranscriptionConfigMode`**: `MODE_UNSPECIFIED`, `VERBATIM`, `SMART`
 - **`TurnCompleteReason`**: `TURN_COMPLETE_REASON_UNSPECIFIED`, `TOO_MANY_TOOL_CALLS`, `MALFORMED_FUNCTION_CALL`, `PROHIBITED_INPUT_CONTENT`, `GENERATED_CONTENT_SAFETY`, `MAX_REGENERATION_REACHED`, etc.
-- **`ServiceTier`**: `standard`, `flex`, `priority`
+- **`ServiceTier`**: `standard`, `flex`, `priority`, `deferred`
 - **`StartSensitivity`**: `START_SENSITIVITY_UNSPECIFIED`, `START_SENSITIVITY_HIGH`, `START_SENSITIVITY_LOW`
 - **`EndSensitivity`**: `END_SENSITIVITY_UNSPECIFIED`, `END_SENSITIVITY_HIGH`, `END_SENSITIVITY_LOW`
 
 ### Key Data Classes
 
 - **`GoogleMaps`**: `groundingTypes` (`places`, `routing`)
-- **`Tool`**: `functionDeclarations`, `googleSearch`, `googleSearchRetrieval`, `codeExecution`, `googleMaps`, `computerUse`
+- **`Tool`**: `functionDeclarations`, `googleSearch`, `googleSearchRetrieval`, `codeExecution`, `googleMaps`, `computerUse`, `parallelAiSearch`
 - **`GenerationConfig`**: `temperature`, `topK`, `topP`, `maxOutputTokens`, `responseModalities`, `speechConfig`, `thinkingConfig`, `translationConfig`, `audioTranscriptionConfig`
-- **`AudioTranscriptionConfig`**: `languageAuto`, `languageHints`, `customVocabulary`, `adaptationPhrases` (deprecated)
+- **`AudioTranscriptionConfig`**: `languageAuto`, `languageHints`, `customVocabulary`, `adaptationPhrases` (deprecated), `mode`
+- **`Part`**: `text`, `thought`, `inlineData`, `fileData`, `functionCall`, `functionResponse`, `audioTranscription`, `mediaProcessing`
