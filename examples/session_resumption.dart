@@ -121,8 +121,8 @@ String? _handleMessage(LiveServerMessage message, String? sessionHandle) {
   if (message.usageMetadata != null) {
     final usage = message.usageMetadata!;
     print(
-      '📊 Token usage: ${usage.totalTokenCount} ' +
-          '(prompt: ${usage.promptTokenCount}, response: ${usage.responseTokenCount})',
+      '📊 Token usage: ${usage.totalTokenCount} '
+      '(prompt: ${usage.promptTokenCount}, response: ${usage.responseTokenCount})',
     );
   }
 

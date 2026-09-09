@@ -100,9 +100,9 @@ void _handleMessage(LiveServerMessage message) {
   // Handle usage metadata
   if (message.usageMetadata != null) {
     print(
-      '📊 Tokens: ${message.usageMetadata!.totalTokenCount} ' +
-          '(prompt: ${message.usageMetadata!.promptTokenCount}, ' +
-          'response: ${message.usageMetadata!.responseTokenCount})',
+      '📊 Tokens: ${message.usageMetadata!.totalTokenCount} '
+      '(prompt: ${message.usageMetadata!.promptTokenCount}, '
+      'response: ${message.usageMetadata!.responseTokenCount})',
     );
   }
 }

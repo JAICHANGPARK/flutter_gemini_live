@@ -118,16 +118,16 @@ void _handleMessage(LiveServerMessage message) {
   if (message.serverContent?.inputTranscription != null) {
     final transcription = message.serverContent!.inputTranscription!;
     print(
-      '🎤 Input transcription: ${transcription.text} ' +
-          '(finished: ${transcription.finished})',
+      '🎤 Input transcription: ${transcription.text} '
+      '(finished: ${transcription.finished})',
     );
   }
 
   if (message.serverContent?.outputTranscription != null) {
     final transcription = message.serverContent!.outputTranscription!;
     print(
-      '🔈 Output transcription: ${transcription.text} ' +
-          '(finished: ${transcription.finished})',
+      '🔈 Output transcription: ${transcription.text} '
+      '(finished: ${transcription.finished})',
     );
   }
 
