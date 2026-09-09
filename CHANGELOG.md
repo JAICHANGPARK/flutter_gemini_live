@@ -19,12 +19,19 @@
 - **Example App Updates**:
   - Integrated `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, and `GeminiLiveVoiceIndicator` into `LiveAPIDemoPage`, `ChatPage`, and `RealtimeMediaDemoPage`.
   - Added live `InteractionStatus` monitoring (`IN_PROGRESS` / `IDLE`) and `AudioTranscriptionConfigMode.SMART` toggle to `LiveAPIDemoPage`.
+- **Documentation & Specifications**:
+  - Added dedicated `doc/widgets_guide.md` specifying widget states, visual indicators, constructor APIs, and a complete end-to-end screen example.
+  - Updated `doc/api_reference.md`, `README.md`, and `README_KR.md` with official widget documentation links.
 
 ### Changed
 - Upgraded package and example dependencies to their latest compatible versions (`camera: ^0.12.1`, `build_runner: ^2.16.1`, `flutter_lints: ^6.0.0`, etc.).
 - Synced Live SDK request headers and user-agent to `google-genai-sdk/2.21.0` (synced with upstream `js-genai` 2.21.0).
 - `LiveService.buildSetupMessage` now explicitly validates and rejects `Tool.parallelAiSearch` in Gemini Developer API mode with clear descriptive error messages.
 - Bumped package version to `2026.9.9`.
+
+### Fixed & Tested
+- Expanded widget test suite (`test/widgets_test.dart`) to achieve 95%+ line coverage across all newly introduced Flutter widgets.
+- Verified 0 warnings and 0 errors across `dart doc --dry-run` and `flutter analyze --fatal-infos --fatal-warnings`.
 
 ### Added
 - Synced DTOs and features with `js-genai` versions 2.14.0, 2.15.0, and 2.16.0 (changes after July 24, 2026):
