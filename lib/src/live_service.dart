@@ -85,7 +85,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.16.0';
+  static const _sdkVersion = '2.21.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -181,6 +181,14 @@ class LiveService {
     )) {
       throw UnsupportedError(
         'exaAiSearch parameter is not supported in Gemini API.',
+      );
+    }
+
+    if ((params.tools ?? const <Tool>[]).any(
+      (tool) => tool.parallelAiSearch != null,
+    )) {
+      throw UnsupportedError(
+        'parallelAiSearch parameter is not supported in Gemini API.',
       );
     }
 
