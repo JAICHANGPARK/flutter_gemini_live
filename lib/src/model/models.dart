@@ -1596,6 +1596,20 @@ class LiveServerContent {
     this.interactionStatus,
   });
 
+  /// Whether the server content indicates that the interaction is complete.
+  ///
+  /// Synced with official Google GenAI SDK logic (`python-genai` 2.23.0):
+  /// - If [interactionStatus] is present and not unspecified, returns `true`
+  ///   only when it equals [InteractionStatus.IDLE].
+  /// - Otherwise, falls back to [turnComplete] == `true`.
+  bool get isInteractionComplete {
+    if (interactionStatus != null &&
+        interactionStatus != InteractionStatus.INTERACTION_STATUS_UNSPECIFIED) {
+      return interactionStatus == InteractionStatus.IDLE;
+    }
+    return turnComplete ?? false;
+  }
+
   factory LiveServerContent.fromJson(Map<String, dynamic> json) =>
       _$LiveServerContentFromJson(json);
 }

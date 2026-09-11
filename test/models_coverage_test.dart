@@ -1183,6 +1183,53 @@ void main() {
     expect(createJson['live_connect_constraints']['model'], 'models/gemini-3.1-flash-live-preview');
     expect(createJson['lock_additional_fields'], ['config.generation_config.response_modalities']);
   });
+
+  test('LiveServerContent.isInteractionComplete behaves consistently with python-genai 2.23.0', () {
+    // 1. When interactionStatus is specified: IDLE is true, others are false regardless of turnComplete
+    final idleContent = LiveServerContent(
+      interactionStatus: InteractionStatus.IDLE,
+      turnComplete: false,
+    );
+    expect(idleContent.isInteractionComplete, isTrue);
+
+    final idleWithTurnComplete = LiveServerContent(
+      interactionStatus: InteractionStatus.IDLE,
+      turnComplete: true,
+    );
+    expect(idleWithTurnComplete.isInteractionComplete, isTrue);
+
+    final inProgressWithTurnComplete = LiveServerContent(
+      interactionStatus: InteractionStatus.IN_PROGRESS,
+      turnComplete: true,
+    );
+    expect(inProgressWithTurnComplete.isInteractionComplete, isFalse);
+
+    // 2. When interactionStatus is null or UNSPECIFIED: fallback to turnComplete
+    final unspecifiedWithTurnComplete = LiveServerContent(
+      interactionStatus: InteractionStatus.INTERACTION_STATUS_UNSPECIFIED,
+      turnComplete: true,
+    );
+    expect(unspecifiedWithTurnComplete.isInteractionComplete, isTrue);
+
+    final unspecifiedWithoutTurnComplete = LiveServerContent(
+      interactionStatus: InteractionStatus.INTERACTION_STATUS_UNSPECIFIED,
+      turnComplete: false,
+    );
+    expect(unspecifiedWithoutTurnComplete.isInteractionComplete, isFalse);
+
+    final nullStatusWithTurnComplete = LiveServerContent(
+      turnComplete: true,
+    );
+    expect(nullStatusWithTurnComplete.isInteractionComplete, isTrue);
+
+    final nullStatusWithoutTurnComplete = LiveServerContent(
+      turnComplete: false,
+    );
+    expect(nullStatusWithoutTurnComplete.isInteractionComplete, isFalse);
+
+    final emptyContent = LiveServerContent();
+    expect(emptyContent.isInteractionComplete, isFalse);
+  });
 }
 
 Map<String, dynamic> normalizeJson(Map<String, dynamic> json) =>

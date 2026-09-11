@@ -1,5 +1,20 @@
 ## Unreleased
 
+## 2026.9.11
+
+### Added
+- Added `LiveServerContent.isInteractionComplete` getter aligned with upstream `python-genai` 2.23.0 interaction lifecycle logic:
+  - If `interactionStatus` is specified, evaluates whether the status has settled to `InteractionStatus.IDLE`.
+  - Otherwise, cleanly falls back to `turnComplete == true`.
+  - Makes handling multi-turn conversational chunking, tool call completion, and live agent turn boundaries significantly more ergonomic for Flutter developers.
+
+### Changed
+- Synced Gemini Live SDK request headers and user-agent string to `google-genai-sdk/2.22.0` (aligned with upstream `js-genai` 2.22.0).
+- Bumped package version to `2026.9.11`.
+
+### Tested
+- Added unit tests for `LiveServerContent.isInteractionComplete` across all permutations (`turnComplete`, `interactionStatus` transitions).
+
 ## 2026.9.9
 
 ### Added
