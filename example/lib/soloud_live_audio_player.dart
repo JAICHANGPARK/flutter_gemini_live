@@ -42,10 +42,21 @@ class SoloudLiveAudioPlayer {
     }
   }
 
+  bool _turnIsEnded = false;
+
   void _ensureStream() {
     if (!_isInitialized || !SoLoud.instance.isInitialized) return;
 
-    if (_currentSource == null) {
+    if (_currentSource == null || _turnIsEnded) {
+      // Dispose finished previous turn stream if any
+      if (_turnIsEnded && _currentSource != null) {
+        try {
+          SoLoud.instance.disposeSource(_currentSource!);
+        } catch (_) {}
+        _currentSource = null;
+        _currentHandle = null;
+      }
+
       try {
         _currentSource = SoLoud.instance.setBufferStream(
           sampleRate: 24000,
@@ -61,6 +72,7 @@ class SoloudLiveAudioPlayer {
 
         _currentHandle = SoLoud.instance.play(_currentSource!);
         _isPlaying = true;
+        _turnIsEnded = false;
       } catch (e) {
         debugPrint('Failed to initialize buffer stream: $e');
       }
@@ -103,8 +115,7 @@ class SoloudLiveAudioPlayer {
         debugPrint('SoLoud setDataIsEnded error: $e');
       }
     }
-    _currentSource = null;
-    _currentHandle = null;
+    _turnIsEnded = true;
   }
 
   /// Immediately interrupts and flushes audio playback (e.g. user barge-in).
@@ -126,6 +137,7 @@ class SoloudLiveAudioPlayer {
     }
 
     _isPlaying = false;
+    _turnIsEnded = false;
   }
 
   /// Stops current playback.

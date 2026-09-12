@@ -10,6 +10,7 @@ import 'package:record/record.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'live_api_defaults.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Fullscreen real-time multimodal Vision & Voice call page
@@ -258,6 +259,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           systemInstruction: systemInstruction,
           config: GenerationConfig(
             responseModalities: const [Modality.AUDIO],
+            mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
             speechConfig: SpeechConfig(
               voiceConfig: VoiceConfig(
                 prebuiltVoiceConfig: PrebuiltVoiceConfig(
@@ -365,15 +367,14 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       }
     }
 
-    if (serverContent?.outputTranscription != null) {
-      final text = serverContent!.outputTranscription!.text ?? '';
-      if (text.isNotEmpty) {
-        _addChatMessage(isUser: false, text: text);
-        if (mounted) {
-          setState(() {
-            _liveSubtitle = '🌿 $text';
-          });
-        }
+    // Output transcription or fallback text updates
+    final outputText = visibleModelText(message);
+    if (outputText != null && outputText.isNotEmpty) {
+      _addChatMessage(isUser: false, text: outputText);
+      if (mounted) {
+        setState(() {
+          _liveSubtitle = '🌿 $outputText';
+        });
       }
     }
 
@@ -430,6 +431,12 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           audio: Blob(mimeType: _audioMimeType, data: base64Encode(chunk)),
         );
       });
+    } else {
+      if (mounted) {
+        setState(() {
+          _liveSubtitle = '⚠️ 마이크 권한이 필요합니다. 설정에서 권한을 허용해 주세요.';
+        });
+      }
     }
 
     // 2. Camera snapshot loop
