@@ -1094,20 +1094,6 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'history_config': ?instance.historyConfig,
     };
 
-LiveClientContent _$LiveClientContentFromJson(Map<String, dynamic> json) =>
-    LiveClientContent(
-      turns: (json['turns'] as List<dynamic>?)
-          ?.map((e) => Content.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      turnComplete: json['turn_complete'] as bool?,
-    );
-
-Map<String, dynamic> _$LiveClientContentToJson(LiveClientContent instance) =>
-    <String, dynamic>{
-      'turns': ?instance.turns,
-      'turn_complete': ?instance.turnComplete,
-    };
-
 ActivityStart _$ActivityStartFromJson(Map<String, dynamic> json) =>
     ActivityStart();
 
@@ -1118,52 +1104,6 @@ ActivityEnd _$ActivityEndFromJson(Map<String, dynamic> json) => ActivityEnd();
 
 Map<String, dynamic> _$ActivityEndToJson(ActivityEnd instance) =>
     <String, dynamic>{};
-
-LiveClientRealtimeInput _$LiveClientRealtimeInputFromJson(
-  Map<String, dynamic> json,
-) => LiveClientRealtimeInput(
-  mediaChunks: (json['media_chunks'] as List<dynamic>?)
-      ?.map((e) => Blob.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  audio: json['audio'] == null
-      ? null
-      : Blob.fromJson(json['audio'] as Map<String, dynamic>),
-  video: json['video'] == null
-      ? null
-      : Blob.fromJson(json['video'] as Map<String, dynamic>),
-  audioStreamEnd: json['audio_stream_end'] as bool?,
-  text: json['text'] as String?,
-  activityStart: json['activity_start'] == null
-      ? null
-      : ActivityStart.fromJson(json['activity_start'] as Map<String, dynamic>),
-  activityEnd: json['activity_end'] == null
-      ? null
-      : ActivityEnd.fromJson(json['activity_end'] as Map<String, dynamic>),
-);
-
-Map<String, dynamic> _$LiveClientRealtimeInputToJson(
-  LiveClientRealtimeInput instance,
-) => <String, dynamic>{
-  'media_chunks': ?instance.mediaChunks,
-  'audio': ?instance.audio,
-  'video': ?instance.video,
-  'audio_stream_end': ?instance.audioStreamEnd,
-  'text': ?instance.text,
-  'activity_start': ?instance.activityStart,
-  'activity_end': ?instance.activityEnd,
-};
-
-LiveClientToolResponse _$LiveClientToolResponseFromJson(
-  Map<String, dynamic> json,
-) => LiveClientToolResponse(
-  functionResponses: (json['function_responses'] as List<dynamic>?)
-      ?.map((e) => FunctionResponse.fromJson(e as Map<String, dynamic>))
-      .toList(),
-);
-
-Map<String, dynamic> _$LiveClientToolResponseToJson(
-  LiveClientToolResponse instance,
-) => <String, dynamic>{'function_responses': ?instance.functionResponses};
 
 LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
     LiveClientMessage(

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gemini_live/gemini_live.dart';
@@ -430,8 +432,14 @@ class _ChatScreenState extends State<ChatPage> {
         logExampleEvent('CHAT', 'Recorded voice input saved at: $path');
 
         // 1. Read the recorded audio file as bytes.
-        final file = File(path);
-        final audioBytes = await file.readAsBytes();
+        final Uint8List audioBytes;
+        if (kIsWeb) {
+          final response = await http.get(Uri.parse(path));
+          audioBytes = response.bodyBytes;
+        } else {
+          final file = File(path);
+          audioBytes = await file.readAsBytes();
+        }
 
         _stopAllBubblePlayback();
         _currentResponseAudioChunkCount = 0;
@@ -456,6 +464,8 @@ class _ChatScreenState extends State<ChatPage> {
             'Sending recorded voice input (${audioBytes.length} bytes).',
           );
 
+          final mimeType = kIsWeb ? 'audio/wav' : 'audio/m4a';
+
           _session!.sendMessage(
             LiveClientMessage(
               clientContent: LiveClientContent(
@@ -464,49 +474,56 @@ class _ChatScreenState extends State<ChatPage> {
                     role: "user",
                     parts: [
                       Part(
-                        // The 'inlineData' field is used for sending binary data like images or audio.
                         inlineData: Blob(
-                          // The MIME type must match the audio format.
-                          // The `record` package with `AudioEncoder.aacLc` produces 'audio/m4a'.
-                          // Adjust this if you use a different encoder (e.g., 'audio/wav' for pcm16bits).
-                          mimeType: 'audio/m4a',
-                          // The binary data must be Base64 encoded.
+                          mimeType: mimeType,
                           data: base64Encode(audioBytes),
                         ),
                       ),
                     ],
                   ),
                 ],
-                turnComplete: true, // Signal that this is a complete user turn.
+                turnComplete: true,
               ),
             ),
           );
         }
-        // 4. Delete the temporary audio file to save space.
       }
     } else {
       // --- Start Recording Logic ---
-      if (await _audioRecorder.hasPermission()) {
-        final tempDir = await getTemporaryDirectory();
-        // Use a file extension that matches the encoder. .m4a is for AAC.
-        final recordingsDir = Directory(
-          '${tempDir.path}/gemini_live_recordings',
-        );
-        await recordingsDir.create(recursive: true);
-        final timestamp = DateTime.now().microsecondsSinceEpoch;
-        final filePath = '${recordingsDir.path}/input_$timestamp.m4a';
+      try {
+        if (await _audioRecorder.hasPermission()) {
+          String filePath = '';
+          if (!kIsWeb) {
+            final tempDir = await getTemporaryDirectory();
+            final recordingsDir = Directory(
+              '${tempDir.path}/gemini_live_recordings',
+            );
+            await recordingsDir.create(recursive: true);
+            final timestamp = DateTime.now().microsecondsSinceEpoch;
+            filePath = '${recordingsDir.path}/input_$timestamp.m4a';
+          }
 
-        // Start recording with a configuration that matches the MIME type.
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: filePath,
-        );
-        logExampleEvent('CHAT', 'Started voice recording.');
-      } else {
-        logExampleEvent('CHAT', 'Microphone permission was denied.');
+          // Start recording with a configuration that matches the MIME type.
+          await _audioRecorder.start(
+            kIsWeb
+                ? const RecordConfig(encoder: AudioEncoder.wav)
+                : const RecordConfig(encoder: AudioEncoder.aacLc),
+            path: filePath,
+          );
+          logExampleEvent('CHAT', 'Started voice recording.');
+        } else {
+          logExampleEvent('CHAT', 'Microphone permission was denied.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Microphone permission is required.")),
+            );
+          }
+        }
+      } catch (e) {
+        logExampleEvent('ERROR', 'Failed to start voice recording: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Microphone permission is required.")),
+            SnackBar(content: Text("마이크 녹음 오류: $e")),
           );
         }
       }
@@ -615,10 +632,15 @@ class _ChatScreenState extends State<ChatPage> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(_pickedImage!.path),
-                        fit: BoxFit.cover,
-                      ),
+                      child: kIsWeb
+                          ? Image.network(
+                              _pickedImage!.path,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.file(
+                              File(_pickedImage!.path),
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     Positioned(
                       top: -4,

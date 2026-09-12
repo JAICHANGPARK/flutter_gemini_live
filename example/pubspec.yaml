@@ -33,6 +33,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.7
   waveform_flutter: ^1.2.0
   camera_desktop: ^1.1.2
+  http: ^1.6.0
 
 
 dev_dependencies:

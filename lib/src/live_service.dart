@@ -458,9 +458,11 @@ class LiveSession {
   /// Sends audio data to the server
   void sendAudio(List<int> audioBytes) {
     final base64Audio = base64Encode(audioBytes);
+    final blob = Blob(mimeType: 'audio/pcm', data: base64Audio);
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(
-        audio: Blob(mimeType: 'audio/pcm', data: base64Audio),
+        mediaChunks: [blob],
+        audio: blob,
       ),
     );
     sendMessage(message);
@@ -469,13 +471,15 @@ class LiveSession {
   /// Sends video data to the server
   void sendVideo(List<int> videoBytes, {String mimeType = 'image/jpeg'}) {
     final base64Video = base64Encode(videoBytes);
+    final blob = Blob(mimeType: mimeType, data: base64Video);
     LiveService.validateRealtimeBlob(
-      Blob(mimeType: mimeType, data: base64Video),
+      blob,
       expectedPrefix: 'image/',
     );
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(
-        video: Blob(mimeType: mimeType, data: base64Video),
+        mediaChunks: [blob],
+        video: blob,
       ),
     );
     sendMessage(message);

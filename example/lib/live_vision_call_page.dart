@@ -210,8 +210,17 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     }
   }
 
-  void _toggleMicMute() {
+  Future<void> _toggleMicMute() async {
+    if (_audioStreamSubscription == null) {
+      await _startMicStream();
+      return;
+    }
     setState(() => _isMicMuted = !_isMicMuted);
+    if (!_isMicMuted && kIsWeb) {
+      try {
+        await _audioRecorder.resume();
+      } catch (_) {}
+    }
   }
 
   Future<void> _openSettings() async {
@@ -435,9 +444,22 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   Future<void> _startLiveStreams() async {
-    // 1. Microphone streaming
-    final hasMicPermission = await _audioRecorder.hasPermission();
-    if (hasMicPermission) {
+    await _startMicStream();
+    _startCameraFrameLoop();
+  }
+
+  Future<void> _startMicStream() async {
+    try {
+      final hasMicPermission = await _audioRecorder.hasPermission();
+      if (!hasMicPermission) {
+        if (mounted) {
+          setState(() {
+            _liveSubtitle = '⚠️ 마이크 권한이 필요합니다. 아래 마이크 버튼을 눌러 허용해 주세요.';
+          });
+        }
+        return;
+      }
+
       final stream = await _audioRecorder.startStream(
         const RecordConfig(
           encoder: AudioEncoder.pcm16bits,
@@ -451,22 +473,34 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       );
 
       await _audioStreamSubscription?.cancel();
-      _audioStreamSubscription = stream.listen((chunk) {
-        if (_session == null || !_isConnected || _isMicMuted) return;
-        _session!.sendRealtimeInput(
-          audio: Blob(mimeType: _audioMimeType, data: base64Encode(chunk)),
-        );
-      });
-    } else {
+      _audioStreamSubscription = stream.listen(
+        (chunk) {
+          if (_session == null || !_isConnected || _isMicMuted) return;
+          final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
+          _session!.sendRealtimeInput(
+            mediaChunks: [blob],
+            audio: blob,
+          );
+        },
+        onError: (e) {
+          debugPrint('Microphone stream error: $e');
+        },
+        cancelOnError: false,
+      );
+
       if (mounted) {
         setState(() {
-          _liveSubtitle = '⚠️ 마이크 권한이 필요합니다. 설정에서 권한을 허용해 주세요.';
+          _isMicMuted = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to start mic stream: $e');
+      if (mounted) {
+        setState(() {
+          _liveSubtitle = '⚠️ 마이크 시작 실패: $e';
         });
       }
     }
-
-    // 2. Camera snapshot loop
-    _startCameraFrameLoop();
   }
 
   void _startCameraFrameLoop() {
@@ -494,9 +528,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     try {
       final file = await controller.takePicture();
       final bytes = await file.readAsBytes();
+      final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
 
       _session!.sendRealtimeInput(
-        video: Blob(mimeType: 'image/jpeg', data: base64Encode(bytes)),
+        mediaChunks: [blob],
+        video: blob,
       );
     } catch (e) {
       debugPrint('Camera snapshot send error: $e');

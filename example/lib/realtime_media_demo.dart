@@ -552,9 +552,10 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
         (chunk) {
           if (_session == null || !_isConnected) return;
 
-          _audioChunksSent += 1;
+          final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
           _session!.sendRealtimeInput(
-            audio: Blob(mimeType: _audioMimeType, data: base64Encode(chunk)),
+            mediaChunks: [blob],
+            audio: blob,
           );
 
           if (mounted && _audioChunksSent % 12 == 0) {
@@ -652,8 +653,10 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
       final image = await controller.takePicture();
       final bytes = await image.readAsBytes();
 
+      final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
       _session!.sendRealtimeInput(
-        video: Blob(mimeType: 'image/jpeg', data: base64Encode(bytes)),
+        mediaChunks: [blob],
+        video: blob,
       );
 
       _videoFramesSent += 1;
