@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'package:record/record.dart';
@@ -11,6 +11,7 @@ import 'package:record/record.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'live_api_defaults.dart';
+import 'live_audio_player.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Fullscreen real-time multimodal Vision & Voice call page
@@ -35,9 +36,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   static const _audioSampleRate = 16000;
   static const _audioMimeType = 'audio/pcm;rate=16000';
 
-  late final GoogleGenAI _genAI;
   final SoloudLiveAudioPlayer _audioPlayer = SoloudLiveAudioPlayer();
+  final LiveAudioPlayer _fallbackAudioPlayer = LiveAudioPlayer();
   final AudioRecorder _audioRecorder = AudioRecorder();
+  bool _useFallbackAudio = kIsWeb;
 
   LiveSession? _session;
   CameraController? _cameraController;
@@ -70,7 +72,6 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
 
     _dotsAnimController = AnimationController(
       vsync: this,
@@ -89,7 +90,16 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   Future<void> _initAll() async {
-    await _audioPlayer.init();
+    if (!kIsWeb) {
+      try {
+        await _audioPlayer.init();
+      } catch (e) {
+        debugPrint('SoLoud init error, fallback to audioplayers: $e');
+        _useFallbackAudio = true;
+      }
+    } else {
+      _useFallbackAudio = true;
+    }
     await _loadCameras();
     await _connectSession();
   }
@@ -106,6 +116,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
     _session?.close();
     unawaited(_audioPlayer.dispose());
+    unawaited(_fallbackAudioPlayer.dispose());
     super.dispose();
   }
 
@@ -210,6 +221,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       _cameraFrameTimer?.cancel();
       _audioStreamSubscription?.cancel();
       await _audioPlayer.stop();
+      await _fallbackAudioPlayer.stop();
       await _session?.close();
       setState(() {
         _session = null;
@@ -238,7 +250,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     setState(() => _isConnecting = true);
 
     try {
-      _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
+      final genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
       final currentModel = ApiKeyStore.liveModel;
 
       final promptText = widget.customSystemPrompt ??
@@ -253,7 +265,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
         ],
       );
 
-      final session = await _genAI.live.connect(
+      final session = await genAI.live.connect(
         LiveConnectParameters(
           model: currentModel,
           systemInstruction: systemInstruction,
@@ -332,7 +344,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
     // Interruption (User barged in)
     if (serverContent?.interrupted ?? false) {
-      _audioPlayer.clear();
+      if (_useFallbackAudio) {
+        _fallbackAudioPlayer.clear();
+      } else {
+        _audioPlayer.clear();
+      }
       if (mounted) {
         setState(() {
           _isAiResponding = false;
@@ -342,7 +358,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
     // Audio stream data from Gemini
     if (message.data != null && message.data!.isNotEmpty) {
-      _audioPlayer.appendBase64Chunk(message.data!);
+      if (_useFallbackAudio) {
+        _fallbackAudioPlayer.appendBase64Chunk(message.data!);
+      } else {
+        _audioPlayer.appendBase64Chunk(message.data!);
+      }
       if (mounted) {
         setState(() => _isAiResponding = true);
       }
@@ -351,7 +371,13 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     // Turn complete
     if ((serverContent?.turnComplete ?? false) ||
         (serverContent?.generationComplete ?? false)) {
-      _audioPlayer.onTurnComplete();
+      if (_useFallbackAudio) {
+        if (_fallbackAudioPlayer.hasBufferedAudio) {
+          unawaited(_fallbackAudioPlayer.playBufferedAudio());
+        }
+      } else {
+        _audioPlayer.onTurnComplete();
+      }
     }
 
     // Transcription updates
