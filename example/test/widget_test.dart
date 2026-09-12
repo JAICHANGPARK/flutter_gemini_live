@@ -8,9 +8,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Gemini Live API Examples'), findsOneWidget);
+    expect(find.text('✨ Live Vision Agent'), findsOneWidget);
     expect(find.text('Chat Interface'), findsOneWidget);
     expect(find.text('Live API Features'), findsOneWidget);
     expect(find.text('Function Calling'), findsOneWidget);
-    expect(find.text('Realtime Media'), findsOneWidget);
   });
 }

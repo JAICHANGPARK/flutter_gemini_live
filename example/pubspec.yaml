@@ -28,6 +28,7 @@ dependencies:
   record: ^7.1.1
   shared_preferences: ^2.5.5
   audioplayers: ^6.6.0  
+  flutter_soloud: ^5.0.2
   camera: ^0.12.1
   flutter_markdown_plus: ^1.0.7
   waveform_flutter: ^1.2.0

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'api_key_store.dart';
+import 'app_settings_dialog.dart';
 import 'chat_page.dart';
 import 'function_calling_demo.dart';
 import 'live_api_demo.dart';
+import 'live_vision_call_page.dart';
 import 'realtime_media_demo.dart';
 
 Future<void> main() async {
@@ -38,51 +40,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Future<void> _openApiKeySettings() async {
-    final controller = TextEditingController(text: ApiKeyStore.apiKey);
-
-    final changed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Gemini API Key'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Paste your API key',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await ApiKeyStore.save('');
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop(true);
-                }
-              },
-              child: const Text('Clear'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                await ApiKeyStore.save(controller.text);
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop(true);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-
-    controller.dispose();
-
+    final changed = await AppSettingsDialog.show(context);
     if (changed == true && mounted) {
       setState(() {});
     }
@@ -122,6 +80,17 @@ class _HomePageState extends State<HomePage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildHeader('Featured: Live Vision & Voice Call'),
+          _buildDemoCard(
+            context: context,
+            title: '✨ Live Vision Agent',
+            subtitle:
+                'Universal real-time camera viewfinder & mic streaming with low-latency flutter_soloud audio response',
+            icon: Icons.auto_awesome_rounded,
+            color: const Color(0xFF14532D),
+            page: const LiveVisionCallPage(),
+          ),
+          const SizedBox(height: 16),
           _buildHeader('Basic Examples'),
           _buildDemoCard(
             context: context,
