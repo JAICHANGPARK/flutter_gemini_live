@@ -1545,22 +1545,17 @@ class LiveClientRealtimeInput {
   }
 
   Map<String, dynamic> toJson() {
-    final effectiveChunks = mediaChunks ?? [
-      ?audio,
-      ?video,
-    ];
-
     final json = <String, dynamic>{};
-    if (effectiveChunks.isNotEmpty) {
-      final list = effectiveChunks.map((e) => e.toJson()).toList();
-      json['mediaChunks'] = list;
-      json['media_chunks'] = list;
-    }
     if (audio != null) {
       json['audio'] = audio!.toJson();
     }
     if (video != null) {
       json['video'] = video!.toJson();
+    }
+    if (mediaChunks != null && mediaChunks!.isNotEmpty) {
+      final list = mediaChunks!.map((e) => e.toJson()).toList();
+      json['mediaChunks'] = list;
+      json['media_chunks'] = list;
     }
     if (audioStreamEnd != null) {
       json['audioStreamEnd'] = audioStreamEnd;

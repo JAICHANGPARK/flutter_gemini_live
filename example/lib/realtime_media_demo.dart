@@ -554,7 +554,6 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
 
           final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
           _session!.sendRealtimeInput(
-            mediaChunks: [blob],
             audio: blob,
           );
 
@@ -655,7 +654,6 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
 
       final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
       _session!.sendRealtimeInput(
-        mediaChunks: [blob],
         video: blob,
       );
 

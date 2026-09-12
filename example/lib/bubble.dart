@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:waveform_flutter/waveform_flutter.dart';
@@ -56,10 +57,15 @@ class Bubble extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
-                        child: Image.file(
-                          File(message.image!.path),
-                          height: 150,
-                        ),
+                      child: kIsWeb
+                          ? Image.network(
+                              message.image!.path,
+                              height: 150,
+                            )
+                          : Image.file(
+                              File(message.image!.path),
+                              height: 150,
+                            ),
                       ),
                     ),
                   if (message.audio != null)

@@ -461,7 +461,6 @@ class LiveSession {
     final blob = Blob(mimeType: 'audio/pcm', data: base64Audio);
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(
-        mediaChunks: [blob],
         audio: blob,
       ),
     );
@@ -478,7 +477,6 @@ class LiveSession {
     );
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(
-        mediaChunks: [blob],
         video: blob,
       ),
     );

@@ -478,7 +478,6 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           if (_session == null || !_isConnected || _isMicMuted) return;
           final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
           _session!.sendRealtimeInput(
-            mediaChunks: [blob],
             audio: blob,
           );
         },
@@ -531,7 +530,6 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
 
       _session!.sendRealtimeInput(
-        mediaChunks: [blob],
         video: blob,
       );
     } catch (e) {
