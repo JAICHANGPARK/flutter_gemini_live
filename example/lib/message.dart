@@ -62,12 +62,14 @@ class ChatMessage {
   final String text;
   final Role author;
   final XFile? image;
+  final Uint8List? imageBytes;
   final ChatAudioClip? audio;
 
   ChatMessage({
     required this.text,
     required this.author,
     this.image,
+    this.imageBytes,
     this.audio,
     String? id,
   }) : id = id ?? 'chat_message_${_nextId++}';
@@ -76,6 +78,7 @@ class ChatMessage {
     String? text,
     Role? author,
     XFile? image,
+    Uint8List? imageBytes,
     ChatAudioClip? audio,
     bool clearImage = false,
     bool clearAudio = false,
@@ -85,6 +88,7 @@ class ChatMessage {
       text: text ?? this.text,
       author: author ?? this.author,
       image: clearImage ? null : (image ?? this.image),
+      imageBytes: clearImage ? null : (imageBytes ?? this.imageBytes),
       audio: clearAudio ? null : (audio ?? this.audio),
     );
   }

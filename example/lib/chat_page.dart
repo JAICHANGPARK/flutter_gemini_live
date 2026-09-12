@@ -52,6 +52,7 @@ class _ChatScreenState extends State<ChatPage> {
 
   // --- Image and Audio Handling Variables ---
   XFile? _pickedImage; // Holds the image file selected by the user.
+  Uint8List? _pickedImageBytes; // Holds in-memory bytes of the picked image for cross-platform rendering.
   final ImagePicker _picker =
       ImagePicker(); // An instance of the image picker utility.
   StreamSubscription<RecordState>?
@@ -199,6 +200,7 @@ class _ChatScreenState extends State<ChatPage> {
       _streamingMessage = null;
       _isReplying = false;
       _pickedImage = null;
+      _pickedImageBytes = null;
       _updateAudioPlaybackTarget();
       _messages.clear(); // Clear previous chat history.
       // Add a temporary message to inform the user about the connection attempt.
@@ -406,8 +408,12 @@ class _ChatScreenState extends State<ChatPage> {
         imageQuality: 70, // Compress image to reduce size.
       );
       if (image != null && mounted) {
-        setState(() => _pickedImage = image);
-        logExampleEvent('CHAT', 'Selected image: ${image.path}');
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _pickedImage = image;
+          _pickedImageBytes = bytes;
+        });
+        logExampleEvent('CHAT', 'Selected image: ${image.path} (${bytes.length} bytes)');
       }
     } catch (error) {
       logExampleEvent('CHAT', 'Image picker failed: $error');
@@ -549,7 +555,12 @@ class _ChatScreenState extends State<ChatPage> {
 
     // Add the user's message to the UI immediately for a responsive feel.
     _addMessage(
-      ChatMessage(text: text, author: Role.user, image: _pickedImage),
+      ChatMessage(
+        text: text,
+        author: Role.user,
+        image: _pickedImage,
+        imageBytes: _pickedImageBytes,
+      ),
     );
 
     setState(() => _isReplying = true);
@@ -560,7 +571,7 @@ class _ChatScreenState extends State<ChatPage> {
       parts.add(Part(text: text));
     }
     if (_pickedImage != null) {
-      final imageBytes = await _pickedImage!.readAsBytes();
+      final imageBytes = _pickedImageBytes ?? await _pickedImage!.readAsBytes();
       parts.add(
         Part(
           inlineData: Blob(
@@ -583,7 +594,10 @@ class _ChatScreenState extends State<ChatPage> {
 
     // Clear the input fields after sending.
     _textController.clear();
-    setState(() => _pickedImage = null);
+    setState(() {
+      _pickedImage = null;
+      _pickedImageBytes = null;
+    });
   }
 
   /// Builds the text input composer with buttons for image, audio, and sending.
@@ -632,14 +646,28 @@ class _ChatScreenState extends State<ChatPage> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: kIsWeb
-                          ? Image.network(
-                              _pickedImage!.path,
+                      child: _pickedImageBytes != null
+                          ? Image.memory(
+                              _pickedImageBytes!,
                               fit: BoxFit.cover,
                             )
-                          : Image.file(
-                              File(_pickedImage!.path),
-                              fit: BoxFit.cover,
+                          : FutureBuilder<Uint8List>(
+                              future: _pickedImage!.readAsBytes(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Image.memory(
+                                    snapshot.data!,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                                return const SizedBox(
+                                  width: 100,
+                                  height: 100,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              },
                             ),
                     ),
                     Positioned(
@@ -654,7 +682,10 @@ class _ChatScreenState extends State<ChatPage> {
                             Shadow(color: Colors.black54, blurRadius: 4),
                           ],
                         ),
-                        onPressed: () => setState(() => _pickedImage = null),
+                        onPressed: () => setState(() {
+                          _pickedImage = null;
+                          _pickedImageBytes = null;
+                        }),
                       ),
                     ),
                   ],

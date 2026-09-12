@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
@@ -52,20 +51,41 @@ class Bubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (message.image != null)
+                  if (message.imageBytes != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
-                      child: kIsWeb
-                          ? Image.network(
-                              message.image!.path,
+                        child: Image.memory(
+                          message.imageBytes!,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
+                  else if (message.image != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: FutureBuilder<Uint8List>(
+                          future: message.image!.readAsBytes(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return Image.memory(
+                                snapshot.data!,
+                                height: 150,
+                                fit: BoxFit.cover,
+                              );
+                            }
+                            return const SizedBox(
                               height: 150,
-                            )
-                          : Image.file(
-                              File(message.image!.path),
-                              height: 150,
-                            ),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   if (message.audio != null)

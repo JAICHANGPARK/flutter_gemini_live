@@ -63,6 +63,8 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   // Speech & VAD states
   bool _isUserSpeaking = false;
+  double _userMicVolume = 0.0;
+  DateTime _lastMicInputTime = DateTime.fromMillisecondsSinceEpoch(0);
   bool _isAiResponding = false;
   String _liveSubtitle = '';
   final List<_ChatMessage> _chatHistory = [];
@@ -80,10 +82,20 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       duration: const Duration(milliseconds: 1000),
     )..repeat();
 
-    _waveformTicker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    _waveformTicker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       if (mounted) {
+        final hasRecentMic =
+            DateTime.now().difference(_lastMicInputTime).inMilliseconds < 350;
+        if (!hasRecentMic) {
+          _userMicVolume = _userMicVolume * 0.75;
+          if (_userMicVolume < 0.01) _userMicVolume = 0.0;
+        }
+        final isSpeaking = hasRecentMic && _userMicVolume > 0.03;
         setState(() {
           _isAiResponding = _audioPlayer.isPlaying;
+          if (!_isMicMuted) {
+            _isUserSpeaking = isSpeaking;
+          }
         });
       }
     });
@@ -243,7 +255,13 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       await _startMicStream();
       return;
     }
-    setState(() => _isMicMuted = !_isMicMuted);
+    setState(() {
+      _isMicMuted = !_isMicMuted;
+      if (_isMicMuted) {
+        _userMicVolume = 0.0;
+        _isUserSpeaking = false;
+      }
+    });
     if (!_isMicMuted && kIsWeb) {
       try {
         await _audioRecorder.resume();
@@ -504,6 +522,22 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       _audioStreamSubscription = stream.listen(
         (chunk) {
           if (_session == null || !_isConnected || _isMicMuted) return;
+
+          // Real-time amplitude from raw PCM 16-bit audio
+          if (chunk.length >= 2) {
+            final byteData = ByteData.sublistView(chunk);
+            var peak = 0;
+            for (var i = 0; i < chunk.length - 1; i += 2) {
+              final sample = byteData.getInt16(i, Endian.little).abs();
+              if (sample > peak) peak = sample;
+            }
+            final norm = (peak / 32768.0).clamp(0.0, 1.0);
+            _userMicVolume = (_userMicVolume * 0.3) + (norm * 0.7);
+            if (_userMicVolume > 0.035) {
+              _lastMicInputTime = DateTime.now();
+            }
+          }
+
           final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
           _session!.sendRealtimeInput(
             audio: blob,
@@ -1088,7 +1122,8 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       animation: _dotsAnimController,
       builder: (context, child) {
         final animValue = _dotsAnimController.value * 2 * math.pi;
-        final isActive = _isAiResponding || _isUserSpeaking;
+        final isUserActive = _isUserSpeaking && !_isMicMuted;
+        final isActive = _isAiResponding || isUserActive;
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1096,23 +1131,27 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           children: List.generate(dotCount, (i) {
             // Wave calculation
             final wave = math.sin(animValue + (i * 0.45));
-            final baseHeight = 4.0;
+            const baseHeight = 4.0;
             final dynamicHeight = isActive
-                ? (baseHeight + (wave.abs() * (_isAiResponding ? 14.0 : 8.0)))
+                ? (isUserActive
+                    ? (baseHeight +
+                        (wave.abs() * (6.0 + (_userMicVolume * 22.0))))
+                    : (baseHeight + (wave.abs() * 14.0)))
                 : baseHeight;
             final alpha = isActive
-                ? (150 + (wave.abs() * 105)).toInt().clamp(100, 255)
-                : 120;
+                ? (160 + (wave.abs() * 95)).toInt().clamp(120, 255)
+                : 100;
+
+            final dotColor = _isAiResponding
+                ? Colors.greenAccent
+                : (isUserActive ? const Color(0xFFFFD54F) : Colors.white);
 
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 2.2),
               width: 4.0,
               height: dynamicHeight,
               decoration: BoxDecoration(
-                color: (_isAiResponding
-                        ? Colors.greenAccent
-                        : (_isUserSpeaking ? Colors.amberAccent : Colors.white))
-                    .withAlpha(alpha),
+                color: dotColor.withAlpha(alpha),
                 borderRadius: BorderRadius.circular(2.0),
               ),
             );
