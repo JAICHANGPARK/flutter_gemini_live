@@ -55,18 +55,25 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   bool _isConnected = false;
   bool _isConnecting = false;
-  bool _isMicMuted = false;
-  bool _isVideoPaused = false;
   bool _isCameraInitializing = false;
   String? _cameraErrorMessage;
-  bool _captureInFlight = false;
 
-  // Speech & VAD states
-  bool _isUserSpeaking = false;
+  // Granular Reactive Notifiers (avoids screen-wide setState rebuilds)
+  final ValueNotifier<_AudioActivity> _audioActivity =
+      ValueNotifier(const _AudioActivity());
+  final ValueNotifier<String> _liveSubtitleNotifier = ValueNotifier('');
+  final ValueNotifier<bool> _isMicMutedNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> _isVideoPausedNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> _captureInFlightNotifier = ValueNotifier(false);
+
+  bool get _isMicMuted => _isMicMutedNotifier.value;
+  bool get _isVideoPaused => _isVideoPausedNotifier.value;
+  bool get _captureInFlight => _captureInFlightNotifier.value;
+
+  // Local speech tracking state (no full-page rebuild needed)
+  bool _serverVadSpeaking = false;
   double _userMicVolume = 0.0;
   DateTime _lastMicInputTime = DateTime.fromMillisecondsSinceEpoch(0);
-  bool _isAiResponding = false;
-  String _liveSubtitle = '';
   final List<_ChatMessage> _chatHistory = [];
 
   bool get _cameraReady =>
@@ -83,21 +90,22 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     )..repeat();
 
     _waveformTicker = Timer.periodic(const Duration(milliseconds: 50), (_) {
-      if (mounted) {
-        final hasRecentMic =
-            DateTime.now().difference(_lastMicInputTime).inMilliseconds < 350;
-        if (!hasRecentMic) {
-          _userMicVolume = _userMicVolume * 0.75;
-          if (_userMicVolume < 0.01) _userMicVolume = 0.0;
-        }
-        final isSpeaking = hasRecentMic && _userMicVolume > 0.03;
-        setState(() {
-          _isAiResponding = _audioPlayer.isPlaying;
-          if (!_isMicMuted) {
-            _isUserSpeaking = isSpeaking;
-          }
-        });
+      final hasRecentMic =
+          DateTime.now().difference(_lastMicInputTime).inMilliseconds < 350;
+      if (!hasRecentMic) {
+        _userMicVolume = _userMicVolume * 0.75;
+        if (_userMicVolume < 0.01) _userMicVolume = 0.0;
       }
+      final isSpeaking = hasRecentMic && _userMicVolume > 0.03;
+      final isAi = _audioPlayer.isPlaying || _fallbackAudioPlayer.isPlaying;
+      final isUser = !_isMicMuted && (_serverVadSpeaking || isSpeaking);
+
+      // Updates only listening widgets via ValueNotifier without full-screen rebuild!
+      _audioActivity.value = _AudioActivity(
+        isAiResponding: isAi,
+        isUserSpeaking: isUser,
+        userMicVolume: _userMicVolume,
+      );
     });
 
     _initAll();
@@ -125,6 +133,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     _cameraFrameTimer?.cancel();
     _audioStreamSubscription?.cancel();
     _dotsAnimController.dispose();
+    _audioActivity.dispose();
+    _liveSubtitleNotifier.dispose();
+    _isMicMutedNotifier.dispose();
+    _isVideoPausedNotifier.dispose();
+    _captureInFlightNotifier.dispose();
     unawaited(_audioRecorder.stop());
     unawaited(_audioRecorder.dispose());
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
@@ -241,7 +254,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   void _toggleVideoPause() {
-    setState(() => _isVideoPaused = !_isVideoPaused);
+    _isVideoPausedNotifier.value = !_isVideoPausedNotifier.value;
     if (_isVideoPaused) {
       _cameraFrameTimer?.cancel();
       _cameraFrameTimer = null;
@@ -255,14 +268,17 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       await _startMicStream();
       return;
     }
-    setState(() {
-      _isMicMuted = !_isMicMuted;
-      if (_isMicMuted) {
-        _userMicVolume = 0.0;
-        _isUserSpeaking = false;
-      }
-    });
-    if (!_isMicMuted && kIsWeb) {
+    final nextMuted = !_isMicMutedNotifier.value;
+    _isMicMutedNotifier.value = nextMuted;
+    if (nextMuted) {
+      _userMicVolume = 0.0;
+      _audioActivity.value = _AudioActivity(
+        isAiResponding: _audioActivity.value.isAiResponding,
+        isUserSpeaking: false,
+        userMicVolume: 0.0,
+      );
+    }
+    if (!nextMuted && kIsWeb) {
       try {
         await _audioRecorder.resume();
       } catch (_) {}
@@ -360,20 +376,20 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             onError: (error, stack) {
               debugPrint('Live session error: $error');
               if (!mounted) return;
+              _liveSubtitleNotifier.value = '⚠️ 연결 끊김 / 오류: $error';
               setState(() {
                 _isConnected = false;
                 _isConnecting = false;
-                _liveSubtitle = '⚠️ 연결 끊김 / 오류: $error';
               });
             },
             onClose: (code, reason) {
               if (!mounted) return;
+              if (reason != null && reason.isNotEmpty) {
+                _liveSubtitleNotifier.value = '연결 종료: $reason';
+              }
               setState(() {
                 _isConnected = false;
                 _isConnecting = false;
-                if (reason != null && reason.isNotEmpty) {
-                  _liveSubtitle = '연결 종료: $reason';
-                }
               });
             },
           ),
@@ -386,9 +402,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     } catch (e) {
       debugPrint('Failed to connect live session: $e');
       if (mounted) {
+        _liveSubtitleNotifier.value = '⚠️ 연결 실패: $e\n(상단 ⚙️ 설정을 확인하세요)';
         setState(() {
           _isConnecting = false;
-          _liveSubtitle = '⚠️ 연결 실패: $e\n(상단 ⚙️ 설정을 확인하세요)';
         });
       }
     }
@@ -404,11 +420,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       } else {
         _audioPlayer.clear();
       }
-      if (mounted) {
-        setState(() {
-          _isAiResponding = false;
-        });
-      }
+      _audioActivity.value = _AudioActivity(
+        isAiResponding: false,
+        isUserSpeaking: _audioActivity.value.isUserSpeaking,
+        userMicVolume: _audioActivity.value.userMicVolume,
+      );
     }
 
     // Audio stream data from Gemini
@@ -418,9 +434,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       } else {
         _audioPlayer.appendBase64Chunk(message.data!);
       }
-      if (mounted) {
-        setState(() => _isAiResponding = true);
-      }
+      _audioActivity.value = _AudioActivity(
+        isAiResponding: true,
+        isUserSpeaking: _audioActivity.value.isUserSpeaking,
+        userMicVolume: _audioActivity.value.userMicVolume,
+      );
     }
 
     // Turn complete
@@ -440,11 +458,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       final text = serverContent!.inputTranscription!.text ?? '';
       if (text.isNotEmpty) {
         _addChatMessage(isUser: true, text: text);
-        if (mounted) {
-          setState(() {
-            _liveSubtitle = '🎤 $text';
-          });
-        }
+        _liveSubtitleNotifier.value = '🎤 $text';
       }
     }
 
@@ -452,41 +466,31 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     final outputText = visibleModelText(message);
     if (outputText != null && outputText.isNotEmpty) {
       _addChatMessage(isUser: false, text: outputText);
-      if (mounted) {
-        setState(() {
-          _liveSubtitle = '🌿 $outputText';
-        });
-      }
+      _liveSubtitleNotifier.value = '🌿 $outputText';
     }
 
     // Voice Activity Detection (VAD)
     if (message.voiceActivity != null) {
-      if (mounted) {
-        setState(() {
-          _isUserSpeaking = message.voiceActivity!.speechActive == true;
-        });
-      }
+      _serverVadSpeaking = message.voiceActivity!.speechActive == true;
     }
     if (message.voiceActivityDetectionSignal != null) {
       final sig = message.voiceActivityDetectionSignal!;
-      if (sig.start == true && mounted) {
-        setState(() => _isUserSpeaking = true);
+      if (sig.start == true) {
+        _serverVadSpeaking = true;
       }
-      if (sig.end == true && mounted) {
-        setState(() => _isUserSpeaking = false);
+      if (sig.end == true) {
+        _serverVadSpeaking = false;
       }
     }
   }
 
   void _addChatMessage({required bool isUser, required String text}) {
     if (!mounted) return;
-    setState(() {
-      _chatHistory.add(_ChatMessage(
-        isUser: isUser,
-        text: text,
-        timestamp: DateTime.now(),
-      ));
-    });
+    _chatHistory.add(_ChatMessage(
+      isUser: isUser,
+      text: text,
+      timestamp: DateTime.now(),
+    ));
   }
 
   Future<void> _startLiveStreams() async {
@@ -496,12 +500,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   Future<void> _startMicStream() async {
     try {
-      final hasMicPermission = await _audioRecorder.hasPermission();
-      if (!hasMicPermission) {
+      if (!await _audioRecorder.hasPermission()) {
+        debugPrint('Microphone permission denied.');
         if (mounted) {
-          setState(() {
-            _liveSubtitle = '⚠️ 마이크 권한이 필요합니다. 아래 마이크 버튼을 눌러 허용해 주세요.';
-          });
+          _liveSubtitleNotifier.value = '⚠️ 마이크 권한이 필요합니다. 아래 마이크 버튼을 눌러 허용해 주세요.';
         }
         return;
       }
@@ -550,16 +552,12 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       );
 
       if (mounted) {
-        setState(() {
-          _isMicMuted = false;
-        });
+        _isMicMutedNotifier.value = false;
       }
     } catch (e) {
       debugPrint('Failed to start mic stream: $e');
       if (mounted) {
-        setState(() {
-          _liveSubtitle = '⚠️ 마이크 시작 실패: $e';
-        });
+        _liveSubtitleNotifier.value = '⚠️ 마이크 시작 실패: $e';
       }
     }
   }
@@ -585,7 +583,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       return;
     }
 
-    _captureInFlight = true;
+    _captureInFlightNotifier.value = true;
     try {
       final file = await controller.takePicture();
       final bytes = await file.readAsBytes();
@@ -597,7 +595,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     } catch (e) {
       debugPrint('Camera snapshot send error: $e');
     } finally {
-      _captureInFlight = false;
+      _captureInFlightNotifier.value = false;
     }
   }
 
@@ -737,29 +735,34 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             ),
 
             // Live subtitle badge if any
-            if (_liveSubtitle.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(160),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Text(
-                    _liveSubtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+            ValueListenableBuilder<String>(
+              valueListenable: _liveSubtitleNotifier,
+              builder: (context, subtitle, _) {
+                if (subtitle.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(160),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
+            ),
 
             // 3. Bottom Control Bar (5 buttons)
             _buildBottomControlBar(),
@@ -809,34 +812,51 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                 ),
               ),
               const SizedBox(height: 2),
-              Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: _isConnected
-                          ? (_isAiResponding
-                              ? Colors.greenAccent
-                              : (_isUserSpeaking ? Colors.amberAccent : Colors.green))
-                          : (_isConnecting ? Colors.orangeAccent : Colors.redAccent),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _isConnected
-                        ? (_isAiResponding
-                            ? 'AI Speaking...'
-                            : (_isUserSpeaking ? 'Listening...' : 'Live · ${ApiKeyStore.liveModel}'))
-                        : (_isConnecting ? 'Connecting...' : 'Disconnected'),
-                    style: TextStyle(
-                      color: Colors.white.withAlpha(180),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              ValueListenableBuilder<_AudioActivity>(
+                valueListenable: _audioActivity,
+                builder: (context, act, _) {
+                  final isAiSpeaking = act.isAiResponding;
+                  final isUserSpeaking = act.isUserSpeaking;
+
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: _isConnected
+                              ? (isAiSpeaking
+                                  ? Colors.greenAccent
+                                  : (isUserSpeaking
+                                      ? Colors.amberAccent
+                                      : Colors.green))
+                              : (_isConnecting
+                                  ? Colors.orangeAccent
+                                  : Colors.redAccent),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isConnected
+                            ? (isAiSpeaking
+                                ? 'AI Speaking...'
+                                : (isUserSpeaking
+                                    ? 'Listening...'
+                                    : 'Live · ${ApiKeyStore.liveModel}'))
+                            : (_isConnecting
+                                ? 'Connecting...'
+                                : 'Disconnected'),
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(180),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -892,82 +912,122 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   Widget _buildCameraViewfinder() {
     const viewfinderRadius = 28.0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF04100A),
-        borderRadius: BorderRadius.circular(viewfinderRadius),
-        border: Border.all(
-          color: _isAiResponding
-              ? Colors.greenAccent.withAlpha(120)
-              : Colors.white.withAlpha(18),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(100),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    return ValueListenableBuilder<_AudioActivity>(
+      valueListenable: _audioActivity,
+      builder: (context, act, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF04100A),
+            borderRadius: BorderRadius.circular(viewfinderRadius),
+            border: Border.all(
+              color: act.isAiResponding
+                  ? Colors.greenAccent.withAlpha(120)
+                  : Colors.white.withAlpha(18),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(100),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
+          child: child,
+        );
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(viewfinderRadius - 1.5),
         child: Stack(
           fit: StackFit.expand,
           children: [
             // Camera Preview or Loading/Error state
-            if (_cameraReady && !_isVideoPaused)
-              _buildPreviewWidget()
-            else
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _cameraErrorMessage != null
-                            ? Icons.videocam_off_outlined
-                            : (_isVideoPaused
-                                ? Icons.pause_circle_outline
-                                : Icons.camera_alt_outlined),
-                        color: _cameraErrorMessage != null
-                            ? Colors.redAccent.withAlpha(200)
-                            : Colors.white38,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _cameraErrorMessage ??
-                            (_isVideoPaused
-                                ? '카메라 전송이 일시 중지됨'
-                                : (_isCameraInitializing
-                                    ? '카메라 초기화 중...'
-                                    : '카메라 준비 중...')),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
+            ValueListenableBuilder<bool>(
+              valueListenable: _isVideoPausedNotifier,
+              builder: (context, isPaused, _) {
+                if (_cameraReady && !isPaused) {
+                  return _buildPreviewWidget();
+                }
+
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _cameraErrorMessage != null
+                              ? Icons.videocam_off_outlined
+                              : (isPaused
+                                  ? Icons.pause_circle_outline
+                                  : Icons.camera_alt_outlined),
                           color: _cameraErrorMessage != null
-                              ? Colors.redAccent.shade100
-                              : Colors.white54,
-                          fontSize: 14,
+                              ? Colors.redAccent.withAlpha(200)
+                              : Colors.white38,
+                          size: 48,
                         ),
-                      ),
-                      if (_cameraErrorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: _loadCameras,
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: const Text('카메라 다시 시도 / 권한 허용'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white12,
-                            foregroundColor: Colors.white,
+                        const SizedBox(height: 12),
+                        Text(
+                          _cameraErrorMessage ??
+                              (isPaused
+                                  ? '카메라가 일시정지되었습니다'
+                                  : (_isCameraInitializing
+                                      ? '카메라 연결 중...'
+                                      : '카메라 준비 중...')),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(180),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
+                        if (_cameraErrorMessage != null) ...[
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: _loadCameras,
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: const Text('카메라 다시 시도'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white24),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
+                );
+              },
+            ),
+
+            // Top-left label pill
+            Positioned(
+              top: 14,
+              left: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.remove_red_eye_outlined, color: Colors.white70, size: 14),
+                    SizedBox(width: 5),
+                    Text(
+                      'Gemini Vision',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
 
             // Subtle focus crosshair or corner guides
             Positioned.fill(
@@ -990,40 +1050,45 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             ),
 
             // Indicator pill (Sending frame)
-            if (_captureInFlight)
-              Positioned(
-                top: 14,
-                right: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 8,
-                        height: 8,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.greenAccent,
+            ValueListenableBuilder<bool>(
+              valueListenable: _captureInFlightNotifier,
+              builder: (context, inFlight, _) {
+                if (!inFlight) return const SizedBox.shrink();
+                return Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 8,
+                          height: 8,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.greenAccent,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Colors.greenAccent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(width: 6),
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -1046,14 +1111,20 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           ),
 
           // 2. Camera Toggle button (White circle)
-          _buildActionButton(
-            backgroundColor: Colors.white,
-            icon: _isVideoPaused
-                ? Icons.videocam_off_rounded
-                : Icons.videocam_rounded,
-            iconColor: _isVideoPaused ? Colors.black54 : const Color(0xFF0F2D1E),
-            onTap: _toggleVideoPause,
-            tooltip: 'Camera On/Off',
+          ValueListenableBuilder<bool>(
+            valueListenable: _isVideoPausedNotifier,
+            builder: (context, isPaused, _) {
+              return _buildActionButton(
+                backgroundColor: Colors.white,
+                icon: isPaused
+                    ? Icons.videocam_off_rounded
+                    : Icons.videocam_rounded,
+                iconColor:
+                    isPaused ? Colors.black54 : const Color(0xFF0F2D1E),
+                onTap: _toggleVideoPause,
+                tooltip: 'Camera On/Off',
+              );
+            },
           ),
 
           // 3. Central Dot Waveform Visualizer
@@ -1067,12 +1138,18 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           ),
 
           // 4. Microphone Toggle button (White circle)
-          _buildActionButton(
-            backgroundColor: Colors.white,
-            icon: _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-            iconColor: _isMicMuted ? Colors.redAccent : const Color(0xFF0F2D1E),
-            onTap: _toggleMicMute,
-            tooltip: 'Microphone Mute',
+          ValueListenableBuilder<bool>(
+            valueListenable: _isMicMutedNotifier,
+            builder: (context, isMuted, _) {
+              return _buildActionButton(
+                backgroundColor: Colors.white,
+                icon: isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                iconColor:
+                    isMuted ? Colors.redAccent : const Color(0xFF0F2D1E),
+                onTap: _toggleMicMute,
+                tooltip: 'Microphone Mute',
+              );
+            },
           ),
 
           // 5. End Call button (Red circle)
@@ -1119,11 +1196,13 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     const dotCount = 14;
 
     return AnimatedBuilder(
-      animation: _dotsAnimController,
+      animation: Listenable.merge([_dotsAnimController, _audioActivity]),
       builder: (context, child) {
         final animValue = _dotsAnimController.value * 2 * math.pi;
-        final isUserActive = _isUserSpeaking && !_isMicMuted;
-        final isActive = _isAiResponding || isUserActive;
+        final act = _audioActivity.value;
+        final isUserActive = act.isUserSpeaking;
+        final isAiActive = act.isAiResponding;
+        final isActive = isAiActive || isUserActive;
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1135,14 +1214,14 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             final dynamicHeight = isActive
                 ? (isUserActive
                     ? (baseHeight +
-                        (wave.abs() * (6.0 + (_userMicVolume * 22.0))))
+                        (wave.abs() * (6.0 + (act.userMicVolume * 22.0))))
                     : (baseHeight + (wave.abs() * 14.0)))
                 : baseHeight;
             final alpha = isActive
                 ? (160 + (wave.abs() * 95)).toInt().clamp(120, 255)
                 : 100;
 
-            final dotColor = _isAiResponding
+            final dotColor = isAiActive
                 ? Colors.greenAccent
                 : (isUserActive ? const Color(0xFFFFD54F) : Colors.white);
 
@@ -1172,4 +1251,31 @@ class _ChatMessage {
   final bool isUser;
   final String text;
   final DateTime timestamp;
+}
+
+/// Immutable state holder for real-time audio & voice activity.
+/// Used with [ValueNotifier] to completely avoid full-page [setState] calls.
+class _AudioActivity {
+  const _AudioActivity({
+    this.isAiResponding = false,
+    this.isUserSpeaking = false,
+    this.userMicVolume = 0.0,
+  });
+
+  final bool isAiResponding;
+  final bool isUserSpeaking;
+  final double userMicVolume;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _AudioActivity &&
+          runtimeType == other.runtimeType &&
+          isAiResponding == other.isAiResponding &&
+          isUserSpeaking == other.isUserSpeaking &&
+          (userMicVolume - other.userMicVolume).abs() < 0.005;
+
+  @override
+  int get hashCode =>
+      Object.hash(isAiResponding, isUserSpeaking, (userMicVolume * 100).round());
 }

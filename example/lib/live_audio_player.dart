@@ -17,6 +17,7 @@ class LiveAudioPlayer {
   final AudioPlayer _player = AudioPlayer();
   final List<int> _pcmBytes = <int>[];
 
+  bool get isPlaying => _player.state == PlayerState.playing;
   bool get hasBufferedAudio => _pcmBytes.isNotEmpty;
 
   void appendBase64Chunk(String base64Chunk) {
