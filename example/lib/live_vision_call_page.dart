@@ -58,6 +58,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   bool _isMicMuted = false;
   bool _isVideoPaused = false;
   bool _isCameraInitializing = false;
+  String? _cameraErrorMessage;
   bool _captureInFlight = false;
 
   // Speech & VAD states
@@ -66,7 +67,8 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   String _liveSubtitle = '';
   final List<_ChatMessage> _chatHistory = [];
 
-  bool get _cameraReady => _cameraController?.value.isInitialized ?? false;
+  bool get _cameraReady =>
+      _cameraController != null && _cameraController!.value.isInitialized;
 
   @override
   void initState() {
@@ -139,6 +141,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   Future<void> _loadCameras() async {
+    setState(() {
+      _cameraErrorMessage = null;
+      _isCameraInitializing = true;
+    });
+
     try {
       final cameras = await availableCameras();
       if (!mounted) return;
@@ -149,15 +156,32 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
       if (cameras.isNotEmpty) {
         await _initCameraController(cameras.first);
+      } else {
+        if (mounted) {
+          setState(() {
+            _isCameraInitializing = false;
+            _cameraErrorMessage = '사용 가능한 카메라를 찾을 수 없습니다.';
+          });
+        }
       }
     } catch (e) {
       debugPrint('Camera load error: $e');
+      if (mounted) {
+        setState(() {
+          _isCameraInitializing = false;
+          _cameraErrorMessage = kIsWeb
+              ? '브라우저 카메라 권한을 허용해 주세요: $e'
+              : '카메라를 불러오지 못했습니다: $e';
+        });
+      }
     }
   }
 
   Future<void> _initCameraController(CameraDescription description) async {
-    if (_isCameraInitializing) return;
-    setState(() => _isCameraInitializing = true);
+    setState(() {
+      _isCameraInitializing = true;
+      _cameraErrorMessage = null;
+    });
 
     try {
       await _cameraController?.dispose();
@@ -176,6 +200,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       setState(() {
         _cameraController = controller;
         _isCameraInitializing = false;
+        _cameraErrorMessage = null;
       });
 
       if (_isConnected && !_isVideoPaused) {
@@ -183,7 +208,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isCameraInitializing = false);
+        setState(() {
+          _isCameraInitializing = false;
+          _cameraErrorMessage = '카메라 초기화 실패: $e';
+        });
       }
       debugPrint('Camera controller init error: $e');
     }
@@ -797,6 +825,36 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     );
   }
 
+  Widget _buildPreviewWidget() {
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) {
+      return const SizedBox.shrink();
+    }
+
+    final previewSize = controller.value.previewSize;
+    if (previewSize == null) {
+      return CameraPreview(controller);
+    }
+
+    // On mobile devices (Android/iOS portrait), width and height are swapped because sensors are naturally landscape.
+    // On Web and Desktop, sensors match window orientation and should NOT be swapped.
+    final bool swapDimensions = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+         defaultTargetPlatform == TargetPlatform.iOS);
+
+    final double previewWidth = swapDimensions ? previewSize.height : previewSize.width;
+    final double previewHeight = swapDimensions ? previewSize.width : previewSize.height;
+
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: previewWidth,
+        height: previewHeight,
+        child: CameraPreview(controller),
+      ),
+    );
+  }
+
   Widget _buildCameraViewfinder() {
     const viewfinderRadius = 28.0;
 
@@ -823,32 +881,57 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Camera Preview or Loading state
+            // Camera Preview or Loading/Error state
             if (_cameraReady && !_isVideoPaused)
-              FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _cameraController!.value.previewSize?.height ?? 1,
-                  height: _cameraController!.value.previewSize?.width ?? 1,
-                  child: CameraPreview(_cameraController!),
-                ),
-              )
+              _buildPreviewWidget()
             else
               Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _isVideoPaused ? Icons.videocam_off_outlined : Icons.camera_alt_outlined,
-                      color: Colors.white38,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _isVideoPaused ? '카메라 전송이 일시 중지됨' : '카메라 초기화 중...',
-                      style: const TextStyle(color: Colors.white54, fontSize: 14),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _cameraErrorMessage != null
+                            ? Icons.videocam_off_outlined
+                            : (_isVideoPaused
+                                ? Icons.pause_circle_outline
+                                : Icons.camera_alt_outlined),
+                        color: _cameraErrorMessage != null
+                            ? Colors.redAccent.withAlpha(200)
+                            : Colors.white38,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _cameraErrorMessage ??
+                            (_isVideoPaused
+                                ? '카메라 전송이 일시 중지됨'
+                                : (_isCameraInitializing
+                                    ? '카메라 초기화 중...'
+                                    : '카메라 준비 중...')),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _cameraErrorMessage != null
+                              ? Colors.redAccent.shade100
+                              : Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (_cameraErrorMessage != null) ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _loadCameras,
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('카메라 다시 시도 / 권한 허용'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white12,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
 
