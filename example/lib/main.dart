@@ -5,6 +5,7 @@ import 'app_settings_dialog.dart';
 import 'chat_page.dart';
 import 'function_calling_demo.dart';
 import 'live_api_demo.dart';
+import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
 import 'realtime_media_demo.dart';
 
@@ -80,7 +81,17 @@ class _HomePageState extends State<HomePage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildHeader('Featured: Live Vision & Voice Call'),
+          _buildHeader('Featured Services'),
+          _buildDemoCard(
+            context: context,
+            title: '🌐 Live Translation (양방향 대면 번역)',
+            subtitle:
+                '실시간 음성 대 음성 통역 · 테이블 대면 플립 뷰 (180도 회전 자막) · gemini-3.5-live-translate-preview',
+            icon: Icons.translate_rounded,
+            color: Colors.teal.shade700,
+            page: const LiveTranslationPage(),
+          ),
+          const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
             title: '✨ Live Vision Agent',
