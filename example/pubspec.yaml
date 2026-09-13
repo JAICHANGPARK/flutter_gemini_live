@@ -34,6 +34,7 @@ dependencies:
   waveform_flutter: ^1.2.0
   camera_desktop: ^1.1.2
   http: ^1.6.0
+  image: ^4.9.2
 
 
 dev_dependencies:

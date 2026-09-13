@@ -6,6 +6,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
+import 'package:image/image.dart' as img;
 import 'package:record/record.dart';
 
 import 'api_key_store.dart';
@@ -53,6 +54,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   final List<CameraDescription> _availableCameras = [];
   int _selectedCameraIndex = 0;
 
+  final List<InputDevice> _availableAudioDevices = [];
+  InputDevice? _selectedAudioDevice;
+
   bool _isConnected = false;
   bool _isConnecting = false;
   bool _isCameraInitializing = false;
@@ -65,16 +69,33 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   final ValueNotifier<bool> _isMicMutedNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _isVideoPausedNotifier = ValueNotifier(false);
   final ValueNotifier<bool> _captureInFlightNotifier = ValueNotifier(false);
+  final ValueNotifier<bool> _isCameraFlippedNotifier =
+      ValueNotifier(ApiKeyStore.isCameraFlipped);
 
   bool get _isMicMuted => _isMicMutedNotifier.value;
   bool get _isVideoPaused => _isVideoPausedNotifier.value;
   bool get _captureInFlight => _captureInFlightNotifier.value;
+  bool get _isCameraFlipped => _isCameraFlippedNotifier.value;
 
   // Local speech tracking state (no full-page rebuild needed)
   bool _serverVadSpeaking = false;
   double _userMicVolume = 0.0;
   DateTime _lastMicInputTime = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime? _lastAiAudioReceivedTime;
   final List<_ChatMessage> _chatHistory = [];
+
+  bool get _isAiSpeaking {
+    final isPlaying = _useFallbackAudio
+        ? _fallbackAudioPlayer.isPlaying
+        : _audioPlayer.isPlaying;
+    if (isPlaying) return true;
+    if (_lastAiAudioReceivedTime != null) {
+      final diff =
+          DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
+      if (diff < 1200) return true;
+    }
+    return false;
+  }
 
   bool get _cameraReady =>
       _cameraController != null && _cameraController!.value.isInitialized;
@@ -86,17 +107,17 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
     _dotsAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1400),
     )..repeat();
 
     _waveformTicker = Timer.periodic(const Duration(milliseconds: 50), (_) {
       final hasRecentMic =
-          DateTime.now().difference(_lastMicInputTime).inMilliseconds < 350;
+          DateTime.now().difference(_lastMicInputTime).inMilliseconds < 450;
       if (!hasRecentMic) {
         _userMicVolume = _userMicVolume * 0.75;
-        if (_userMicVolume < 0.01) _userMicVolume = 0.0;
+        if (_userMicVolume < 0.005) _userMicVolume = 0.0;
       }
-      final isSpeaking = hasRecentMic && _userMicVolume > 0.03;
+      final isSpeaking = hasRecentMic && _userMicVolume > 0.015;
       final isAi = _audioPlayer.isPlaying || _fallbackAudioPlayer.isPlaying;
       final isUser = !_isMicMuted && (_serverVadSpeaking || isSpeaking);
 
@@ -122,8 +143,49 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     } else {
       _useFallbackAudio = true;
     }
+    await _loadAudioDevices();
+    await _startMicStream();
     await _loadCameras();
     await _connectSession();
+  }
+
+  Future<void> _loadAudioDevices() async {
+    try {
+      final devices = await _audioRecorder.listInputDevices();
+      if (!mounted) return;
+      _availableAudioDevices
+        ..clear()
+        ..addAll(devices);
+      if (ApiKeyStore.audioDeviceId.isNotEmpty) {
+        _selectedAudioDevice = devices
+            .where((d) => d.id == ApiKeyStore.audioDeviceId)
+            .firstOrNull;
+      } else {
+        _selectedAudioDevice = null;
+      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Failed to load audio input devices: $e');
+    }
+  }
+
+  Future<void> _switchAudioDevice(InputDevice? device) async {
+    if (_selectedAudioDevice?.id == device?.id) return;
+    setState(() {
+      _selectedAudioDevice = device;
+    });
+    await ApiKeyStore.saveAudioDevice(device?.id ?? '', device?.label ?? '');
+
+    if (_audioStreamSubscription != null) {
+      await _audioStreamSubscription?.cancel();
+      _audioStreamSubscription = null;
+      try {
+        await _audioRecorder.stop();
+      } catch (_) {}
+      if (!_isMicMuted && mounted) {
+        await _startMicStream();
+      }
+    }
   }
 
   @override
@@ -138,6 +200,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     _isMicMutedNotifier.dispose();
     _isVideoPausedNotifier.dispose();
     _captureInFlightNotifier.dispose();
+    _isCameraFlippedNotifier.dispose();
     unawaited(_audioRecorder.stop());
     unawaited(_audioRecorder.dispose());
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
@@ -149,19 +212,29 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final controller = _cameraController;
-    if (controller == null || !controller.value.isInitialized) return;
+    // On Desktop (macOS, Windows, Linux) and Web, switching focus to another window
+    // (inactive) should NOT dispose or freeze the camera!
+    final bool isDesktopOrWeb = kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux;
 
-    if (state == AppLifecycleState.inactive) {
+    if (isDesktopOrWeb) return;
+
+    // Mobile (Android / iOS) lifecycle handling
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       _cameraFrameTimer?.cancel();
-      unawaited(controller.dispose());
-      if (mounted) {
+      final controller = _cameraController;
+      if (controller != null) {
         setState(() {
           _cameraController = null;
         });
+        unawaited(controller.dispose());
       }
     } else if (state == AppLifecycleState.resumed && _availableCameras.isNotEmpty) {
-      unawaited(_initCameraController(_availableCameras[_selectedCameraIndex]));
+      if (_cameraController == null && !_isCameraInitializing) {
+        unawaited(_initCameraController(_availableCameras[_selectedCameraIndex]));
+      }
     }
   }
 
@@ -203,13 +276,15 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   Future<void> _initCameraController(CameraDescription description) async {
+    final oldController = _cameraController;
     setState(() {
+      _cameraController = null;
       _isCameraInitializing = true;
       _cameraErrorMessage = null;
     });
 
     try {
-      await _cameraController?.dispose();
+      await oldController?.dispose();
       final controller = CameraController(
         description,
         ResolutionPreset.medium,
@@ -263,6 +338,38 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     }
   }
 
+  Future<void> _toggleCameraFlip() async {
+    final next = !_isCameraFlippedNotifier.value;
+    _isCameraFlippedNotifier.value = next;
+    await ApiKeyStore.saveCameraFlipped(next);
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Row(
+            children: [
+              Icon(
+                next ? Icons.flip_rounded : Icons.swap_horiz_rounded,
+                color: Colors.greenAccent,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                next
+                    ? '카메라 좌우 반전 켜짐 (텍스트 정상 읽기 모드)'
+                    : '카메라 좌우 반전 꺼짐 (거울 모드)',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _toggleMicMute() async {
     if (_audioStreamSubscription == null) {
       await _startMicStream();
@@ -288,6 +395,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   Future<void> _openSettings() async {
     final updated = await AppSettingsDialog.show(context);
     if (updated == true && mounted) {
+      await _loadAudioDevices();
       setState(() {});
       _cameraFrameTimer?.cancel();
       _audioStreamSubscription?.cancel();
@@ -346,7 +454,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             speechConfig: SpeechConfig(
               voiceConfig: VoiceConfig(
                 prebuiltVoiceConfig: PrebuiltVoiceConfig(
-                  voiceName: 'Puck',
+                  voiceName: ApiKeyStore.voice,
                 ),
               ),
             ),
@@ -355,26 +463,28 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           realtimeInputConfig: RealtimeInputConfig(
             automaticActivityDetection: AutomaticActivityDetection(
               disabled: false,
-              startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
+              startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
               endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
               prefixPaddingMs: 250,
-              silenceDurationMs: 400,
+              silenceDurationMs: 500,
             ),
           ),
           inputAudioTranscription: AudioTranscriptionConfig(),
           outputAudioTranscription: AudioTranscriptionConfig(),
           callbacks: LiveCallbacks(
             onOpen: () {
+              debugPrint('🌐 Live session onOpen received.');
               if (!mounted) return;
               setState(() {
                 _isConnected = true;
                 _isConnecting = false;
               });
-              _startLiveStreams();
             },
-            onMessage: _handleServerMessage,
+            onMessage: (msg) {
+              _handleServerMessage(msg);
+            },
             onError: (error, stack) {
-              debugPrint('Live session error: $error');
+              debugPrint('❌ Live session error: $error');
               if (!mounted) return;
               _liveSubtitleNotifier.value = '⚠️ 연결 끊김 / 오류: $error';
               setState(() {
@@ -383,6 +493,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               });
             },
             onClose: (code, reason) {
+              debugPrint('🔒 Live session closed ($code): $reason');
               if (!mounted) return;
               if (reason != null && reason.isNotEmpty) {
                 _liveSubtitleNotifier.value = '연결 종료: $reason';
@@ -397,7 +508,12 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       );
 
       if (mounted) {
-        setState(() => _session = session);
+        setState(() {
+          _session = session;
+          _isConnected = true;
+          _isConnecting = false;
+        });
+        _startLiveStreams();
       }
     } catch (e) {
       debugPrint('Failed to connect live session: $e');
@@ -415,11 +531,15 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
     // Interruption (User barged in)
     if (serverContent?.interrupted ?? false) {
+      debugPrint(
+        '⚡ Server reported interrupted (userVol: ${_userMicVolume.toStringAsFixed(3)}, isAiSpeaking: $_isAiSpeaking)',
+      );
       if (_useFallbackAudio) {
         _fallbackAudioPlayer.clear();
       } else {
         _audioPlayer.clear();
       }
+      _lastAiAudioReceivedTime = null;
       _audioActivity.value = _AudioActivity(
         isAiResponding: false,
         isUserSpeaking: _audioActivity.value.isUserSpeaking,
@@ -429,6 +549,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
     // Audio stream data from Gemini
     if (message.data != null && message.data!.isNotEmpty) {
+      _lastAiAudioReceivedTime = DateTime.now();
       if (_useFallbackAudio) {
         _fallbackAudioPlayer.appendBase64Chunk(message.data!);
       } else {
@@ -494,7 +615,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   Future<void> _startLiveStreams() async {
-    await _startMicStream();
+    if (_audioStreamSubscription == null) {
+      await _startMicStream();
+    }
     _startCameraFrameLoop();
   }
 
@@ -503,27 +626,33 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       if (!await _audioRecorder.hasPermission()) {
         debugPrint('Microphone permission denied.');
         if (mounted) {
-          _liveSubtitleNotifier.value = '⚠️ 마이크 권한이 필요합니다. 아래 마이크 버튼을 눌러 허용해 주세요.';
+          _liveSubtitleNotifier.value =
+              '⚠️ 마이크 권한이 필요합니다. macOS [시스템 설정 > 개인정보 보호 및 보안 > 마이크]에서 앱을 허용해 주세요.';
         }
         return;
       }
 
+      final bool enableVoiceProc = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      debugPrint('🎙️ Starting mic stream (sampleRate: $_audioSampleRate, device: ${_selectedAudioDevice?.label ?? "default"}, voiceProc: $enableVoiceProc)...');
+
       final stream = await _audioRecorder.startStream(
-        const RecordConfig(
+        RecordConfig(
           encoder: AudioEncoder.pcm16bits,
           sampleRate: _audioSampleRate,
           numChannels: 1,
-          autoGain: true,
-          echoCancel: true,
-          noiseSuppress: true,
+          device: _selectedAudioDevice,
+          autoGain: enableVoiceProc,
+          echoCancel: enableVoiceProc,
+          noiseSuppress: enableVoiceProc,
           streamBufferSize: 2048,
         ),
       );
 
       await _audioStreamSubscription?.cancel();
+      int chunkCount = 0;
       _audioStreamSubscription = stream.listen(
         (chunk) {
-          if (_session == null || !_isConnected || _isMicMuted) return;
+          if (_isMicMuted) return;
 
           // Real-time amplitude from raw PCM 16-bit audio
           if (chunk.length >= 2) {
@@ -534,11 +663,32 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               if (sample > peak) peak = sample;
             }
             final norm = (peak / 32768.0).clamp(0.0, 1.0);
-            _userMicVolume = (_userMicVolume * 0.3) + (norm * 0.7);
-            if (_userMicVolume > 0.035) {
+            _userMicVolume = (_userMicVolume * 0.25) + (norm * 0.75);
+            if (_userMicVolume > 0.015) {
               _lastMicInputTime = DateTime.now();
             }
           }
+
+          // 소프트웨어 에코 억제 및 끼어들기(Barge-in) 필터링:
+          // AI가 응답을 생성하거나 스피커로 재생 중일 때, 스피커 소리가 마이크로 재유입되어
+          // Gemini Live 서버가 "사용자가 끼어들었다"고 오판하여 자기 말을 끊는(interrupted) 현상 방지!
+          if (_isAiSpeaking) {
+            // 사용자가 스피커 소리를 뚫고 명시적으로 크게 말한 경우(진짜 끼어들기)에만 패킷 전송 허용
+            const double intentionalBargeInThreshold = 0.12;
+            if (_userMicVolume < intentionalBargeInThreshold) {
+              // 스피커 에코이므로 서버로 보내지 않음!
+              return;
+            } else {
+              debugPrint('🗣️ Intentional user barge-in detected (vol=${_userMicVolume.toStringAsFixed(3)})');
+            }
+          }
+
+          chunkCount++;
+          if (chunkCount % 40 == 1) {
+            debugPrint('🎙️ Mic chunk: len=${chunk.length}, vol=${_userMicVolume.toStringAsFixed(3)}, connected=$_isConnected');
+          }
+
+          if (_session == null || !_isConnected) return;
 
           final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
           _session!.sendRealtimeInput(
@@ -554,6 +704,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       if (mounted) {
         _isMicMutedNotifier.value = false;
       }
+      debugPrint('🎙️ Mic stream successfully started and listening.');
     } catch (e) {
       debugPrint('Failed to start mic stream: $e');
       if (mounted) {
@@ -587,7 +738,21 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     try {
       final file = await controller.takePicture();
       final bytes = await file.readAsBytes();
-      final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
+
+      Uint8List sendBytes = bytes;
+      if (_isCameraFlipped) {
+        try {
+          final decoded = img.decodeImage(bytes);
+          if (decoded != null) {
+            final flipped = img.flipHorizontal(decoded);
+            sendBytes = Uint8List.fromList(img.encodeJpg(flipped, quality: 75));
+          }
+        } catch (e) {
+          debugPrint('Camera snapshot flip error: $e');
+        }
+      }
+
+      final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(sendBytes));
 
       _session!.sendRealtimeInput(
         video: blob,
@@ -861,6 +1026,98 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             ],
           ),
           const Spacer(),
+          // Audio Input Device selector
+          PopupMenuButton<String>(
+            tooltip:
+                '마이크 입력 장치 선택 (${_selectedAudioDevice?.label.isNotEmpty == true ? _selectedAudioDevice!.label : "기본 마이크"})',
+            icon: Icon(
+              _selectedAudioDevice != null
+                  ? Icons.mic_external_on_rounded
+                  : Icons.mic_rounded,
+              color: Colors.white70,
+              size: 22,
+            ),
+            onOpened: _loadAudioDevices,
+            onSelected: (deviceId) {
+              if (deviceId == '__default__') {
+                _switchAudioDevice(null);
+              } else {
+                final dev = _availableAudioDevices
+                    .where((d) => d.id == deviceId)
+                    .firstOrNull;
+                _switchAudioDevice(dev);
+              }
+            },
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem<String>(
+                  value: '__default__',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _selectedAudioDevice == null
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 16,
+                        color: _selectedAudioDevice == null
+                            ? Colors.blueAccent
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('기본 마이크 (System Default)'),
+                    ],
+                  ),
+                ),
+                ..._availableAudioDevices.map((dev) {
+                  final isSelected = _selectedAudioDevice?.id == dev.id;
+                  return PopupMenuItem<String>(
+                    value: dev.id,
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          size: 16,
+                          color: isSelected ? Colors.blueAccent : Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            dev.label.isNotEmpty ? dev.label : '마이크 (${dev.id})',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ];
+            },
+          ),
+          // Flip Camera Toggle button (좌우 반전 / 거울 모드)
+          ValueListenableBuilder<bool>(
+            valueListenable: _isCameraFlippedNotifier,
+            builder: (context, isFlipped, _) {
+              return IconButton(
+                onPressed: _toggleCameraFlip,
+                icon: Icon(
+                  isFlipped ? Icons.flip_rounded : Icons.swap_horiz_rounded,
+                  color: isFlipped ? Colors.greenAccent : Colors.white70,
+                  size: 22,
+                ),
+                tooltip: isFlipped
+                    ? '좌우 반전 켜짐 (텍스트 정상 읽기 모드)'
+                    : '좌우 반전 꺼짐 (거울 모드)',
+              );
+            },
+          ),
           // Camera Switch button in header
           if (_availableCameras.length > 1)
             IconButton(
@@ -886,9 +1143,6 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     }
 
     final previewSize = controller.value.previewSize;
-    if (previewSize == null) {
-      return CameraPreview(controller);
-    }
 
     // On mobile devices (Android/iOS portrait), width and height are swapped because sensors are naturally landscape.
     // On Web and Desktop, sensors match window orientation and should NOT be swapped.
@@ -896,16 +1150,38 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
         (defaultTargetPlatform == TargetPlatform.android ||
          defaultTargetPlatform == TargetPlatform.iOS);
 
-    final double previewWidth = swapDimensions ? previewSize.height : previewSize.width;
-    final double previewHeight = swapDimensions ? previewSize.width : previewSize.height;
+    final double? previewWidth = previewSize != null
+        ? (swapDimensions ? previewSize.height : previewSize.width)
+        : null;
+    final double? previewHeight = previewSize != null
+        ? (swapDimensions ? previewSize.width : previewSize.height)
+        : null;
 
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: previewWidth,
-        height: previewHeight,
-        child: CameraPreview(controller),
-      ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isCameraFlippedNotifier,
+      builder: (context, isFlipped, _) {
+        final preview = CameraPreview(controller, key: ValueKey(controller.hashCode));
+        final flippedPreview = isFlipped
+            ? Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.rotationY(math.pi),
+                child: preview,
+              )
+            : preview;
+
+        if (previewWidth == null || previewHeight == null) {
+          return flippedPreview;
+        }
+
+        return FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: previewWidth,
+            height: previewHeight,
+            child: flippedPreview,
+          ),
+        );
+      },
     );
   }
 
@@ -1029,6 +1305,58 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               ),
             ),
 
+            // Top-right camera flip toggle pill
+            Positioned(
+              top: 14,
+              right: 14,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _isCameraFlippedNotifier,
+                builder: (context, isFlipped, _) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _toggleCameraFlip,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isFlipped
+                              ? const Color(0xFF104626).withAlpha(220)
+                              : Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isFlipped
+                                ? Colors.greenAccent.withAlpha(160)
+                                : Colors.white24,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.swap_horiz_rounded,
+                              color: isFlipped ? Colors.greenAccent : Colors.white70,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isFlipped ? '좌우반전 (글자 읽기)' : '거울 모드',
+                              style: TextStyle(
+                                color: isFlipped ? Colors.greenAccent : Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
             // Subtle focus crosshair or corner guides
             Positioned.fill(
               child: IgnorePointer(
@@ -1055,7 +1383,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               builder: (context, inFlight, _) {
                 if (!inFlight) return const SizedBox.shrink();
                 return Positioned(
-                  top: 14,
+                  bottom: 14,
                   right: 14,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1200,9 +1528,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       builder: (context, child) {
         final animValue = _dotsAnimController.value * 2 * math.pi;
         final act = _audioActivity.value;
-        final isUserActive = act.isUserSpeaking;
+        final isUserSpeaking = act.isUserSpeaking || act.userMicVolume > 0.015;
         final isAiActive = act.isAiResponding;
-        final isActive = isAiActive || isUserActive;
+        final isActive = isAiActive || isUserSpeaking;
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1212,9 +1540,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             final wave = math.sin(animValue + (i * 0.45));
             const baseHeight = 4.0;
             final dynamicHeight = isActive
-                ? (isUserActive
+                ? (isUserSpeaking
                     ? (baseHeight +
-                        (wave.abs() * (6.0 + (act.userMicVolume * 22.0))))
+                        (wave.abs() * (8.0 + (act.userMicVolume * 28.0))))
                     : (baseHeight + (wave.abs() * 14.0)))
                 : baseHeight;
             final alpha = isActive
@@ -1223,7 +1551,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
             final dotColor = isAiActive
                 ? Colors.greenAccent
-                : (isUserActive ? const Color(0xFFFFD54F) : Colors.white);
+                : (isUserSpeaking ? const Color(0xFFFFD54F) : Colors.white);
 
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 2.2),
