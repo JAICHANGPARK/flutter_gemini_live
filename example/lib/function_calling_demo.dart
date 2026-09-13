@@ -54,9 +54,13 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
     await _responseAudioPlayer.stop();
 
     try {
+      final modelToUse = ApiKeyStore.liveModel.isNotEmpty
+          ? ApiKeyStore.liveModel
+          : kCompatibilityLiveModel;
+
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: kCompatibilityLiveModel,
+          model: modelToUse,
           config: buildExampleAudioGenerationConfig(temperature: 0.7),
           outputAudioTranscription: AudioTranscriptionConfig(),
           systemInstruction: Content(

@@ -18,7 +18,16 @@ class SoloudLiveAudioPlayer {
   StreamSubscription<AudioVisualizationData>? _visSubscription;
   Float32List? _latestWave;
 
-  bool get isPlaying => _isPlaying;
+  bool get isPlaying {
+    if (!_isPlaying || _currentHandle == null || !SoLoud.instance.isInitialized) {
+      return false;
+    }
+    try {
+      return SoLoud.instance.getIsValidVoiceHandle(_currentHandle!);
+    } catch (_) {
+      return _isPlaying;
+    }
+  }
 
   /// Initializes the SoLoud audio engine if not already initialized.
   Future<void> init() async {
@@ -63,7 +72,7 @@ class SoloudLiveAudioPlayer {
           channels: Channels.mono,
           format: BufferType.s16le,
           bufferingType: BufferingType.released,
-          bufferingTimeNeeds: 0.05, // 50ms initial buffer for low latency
+          bufferingTimeNeeds: 0.12, // 120ms initial buffer for jitter-free playback
           maxBufferSizeDuration: const Duration(seconds: 30),
           onBuffering: (isBuffering, handle, time) {
             _isPlaying = !isBuffering;

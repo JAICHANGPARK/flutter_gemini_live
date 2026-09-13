@@ -78,9 +78,13 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
     await _responseAudioPlayer.stop();
 
     try {
+      final modelToUse = ApiKeyStore.liveModel.isNotEmpty
+          ? ApiKeyStore.liveModel
+          : kCompatibilityLiveModel;
+
       final session = await _genAI.live.connect(
         LiveConnectParameters(
-          model: kCompatibilityLiveModel,
+          model: modelToUse,
           config: buildExampleAudioGenerationConfig(temperature: 0.7),
           systemInstruction: Content(
             parts: [

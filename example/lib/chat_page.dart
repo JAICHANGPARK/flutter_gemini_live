@@ -11,6 +11,7 @@ import 'package:gemini_live/gemini_live.dart';
 // Importing custom widgets and data models from the project.
 import 'bubble.dart'; // A widget to display a single chat message bubble.
 import 'api_key_store.dart'; // Stores API key from settings.
+import 'app_settings_dialog.dart';
 import 'example_debug_log.dart';
 import 'live_audio_player.dart';
 import 'live_api_defaults.dart';
@@ -33,8 +34,6 @@ class ChatPage extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatPage> {
   // --- Gemini Live API and Session Management ---
-  late final GoogleGenAI
-  _genAI; // The main instance for interacting with the Gemini API.
   LiveSession?
   _session; // The active WebSocket session for real-time communication.
   final TextEditingController _textController =
@@ -132,8 +131,6 @@ class _ChatScreenState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize the GoogleGenAI instance with the API key.
-    _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
     // Start the connection process.
     _initialize();
     // Subscribe to the audio recorder's state to update the UI (e.g., change the mic icon).
@@ -215,11 +212,17 @@ class _ChatScreenState extends State<ChatPage> {
     });
 
     try {
+      final genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
+      final modelToUse = ApiKeyStore.liveModel.isNotEmpty
+          ? ApiKeyStore.liveModel
+          : kLatestRealtimeLiveModel;
+
       // Initiate the connection with specified parameters.
-      final session = await _genAI.live.connect(
+      final session = await genAI.live.connect(
         LiveConnectParameters(
-          model: kCompatibilityLiveModel,
+          model: modelToUse,
           config: buildExampleAudioGenerationConfig(),
+          inputAudioTranscription: AudioTranscriptionConfig(),
           outputAudioTranscription: AudioTranscriptionConfig(),
           // Provide system instructions to guide the model's behavior.
           systemInstruction: Content(
@@ -290,7 +293,18 @@ class _ChatScreenState extends State<ChatPage> {
     } catch (e) {
       logExampleEvent('CHAT', 'Connection failed: $e');
       if (_canApplySessionUpdate(connectVersion)) {
-        setState(() => _connectionStatus = ConnectionStatus.disconnected);
+        setState(() {
+          _connectionStatus = ConnectionStatus.disconnected;
+          if (_messages.isNotEmpty && _messages.last.text.startsWith('Connecting to Gemini Live API')) {
+            _messages.removeLast();
+          }
+          _addMessage(
+            ChatMessage(
+              text: "Failed to connect to Gemini Live API: $e\nPlease check your API key or model in Settings.",
+              author: Role.model,
+            ),
+          );
+        });
       }
     }
   }
@@ -509,11 +523,21 @@ class _ChatScreenState extends State<ChatPage> {
             filePath = '${recordingsDir.path}/input_$timestamp.m4a';
           }
 
+          InputDevice? selectedDevice;
+          if (ApiKeyStore.audioDeviceId.isNotEmpty) {
+            try {
+              final devs = await _audioRecorder.listInputDevices();
+              selectedDevice = devs
+                  .where((d) => d.id == ApiKeyStore.audioDeviceId)
+                  .firstOrNull;
+            } catch (_) {}
+          }
+
           // Start recording with a configuration that matches the MIME type.
           await _audioRecorder.start(
             kIsWeb
-                ? const RecordConfig(encoder: AudioEncoder.wav)
-                : const RecordConfig(encoder: AudioEncoder.aacLc),
+                ? RecordConfig(encoder: AudioEncoder.wav, device: selectedDevice)
+                : RecordConfig(encoder: AudioEncoder.aacLc, device: selectedDevice),
             path: filePath,
           );
           logExampleEvent('CHAT', 'Started voice recording.');
@@ -521,7 +545,11 @@ class _ChatScreenState extends State<ChatPage> {
           logExampleEvent('CHAT', 'Microphone permission was denied.');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Microphone permission is required.")),
+              const SnackBar(
+                content: Text(
+                  '마이크 권한이 필요합니다. macOS [시스템 설정 > 개인정보 보호 및 보안 > 마이크]에서 앱을 허용해 주세요.',
+                ),
+              ),
             );
           }
         }
@@ -731,6 +759,13 @@ class _ChatScreenState extends State<ChatPage> {
     );
   }
 
+  Future<void> _openApiKeySettings() async {
+    final changed = await AppSettingsDialog.show(context);
+    if (changed == true && mounted) {
+      _connectToLiveAPI();
+    }
+  }
+
   // --- UI Widget Builder ---
   @override
   Widget build(BuildContext context) {
@@ -765,6 +800,11 @@ class _ChatScreenState extends State<ChatPage> {
             icon: Icon(
               _voiceModeEnabled ? Icons.graphic_eq : Icons.text_fields,
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            tooltip: 'API Key & Model Settings',
+            onPressed: _openApiKeySettings,
           ),
           // A visual indicator for the connection status.
           Padding(
