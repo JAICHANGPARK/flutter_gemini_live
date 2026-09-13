@@ -10,6 +10,7 @@ import 'package:record/record.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'live_audio_player.dart';
+import 'soloud_live_audio_player.dart';
 
 /// Supported target languages for Gemini Live Translation.
 const List<Map<String, String>> kTranslationLanguages = [
@@ -56,7 +57,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   static const int _audioSampleRate = 16000;
 
   final AudioRecorder _audioRecorder = AudioRecorder();
-  final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
+  final SoloudLiveAudioPlayer _audioPlayer = SoloudLiveAudioPlayer();
+  final LiveAudioPlayer _fallbackAudioPlayer = LiveAudioPlayer();
+  bool _useFallbackAudio = false;
+  bool _isAudioOutputEnabled = true; // 음성 출력 (스피커) ON/OFF
 
   StreamSubscription<Uint8List>? _audioStreamSubscription;
   LiveSession? _session;
@@ -80,6 +84,15 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   void initState() {
     super.initState();
     _loadAudioDevice();
+    _initAudioPlayer();
+  }
+
+  Future<void> _initAudioPlayer() async {
+    if (!kIsWeb) {
+      await _audioPlayer.init();
+    } else {
+      _useFallbackAudio = true;
+    }
   }
 
   Future<void> _loadAudioDevice() async {
@@ -92,11 +105,28 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     } catch (_) {}
   }
 
+  Timer? _webAudioFlushTimer;
+
+  void _toggleAudioOutput() {
+    setState(() {
+      _isAudioOutputEnabled = !_isAudioOutputEnabled;
+      if (!_isAudioOutputEnabled) {
+        if (!_useFallbackAudio) {
+          _audioPlayer.clear();
+        } else {
+          _fallbackAudioPlayer.clear();
+        }
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _webAudioFlushTimer?.cancel();
     _audioStreamSubscription?.cancel();
     _audioRecorder.dispose();
-    _responseAudioPlayer.dispose();
+    unawaited(_audioPlayer.dispose());
+    _fallbackAudioPlayer.dispose();
     _session?.close();
     _scrollController.dispose();
     _partnerScrollController.dispose();
@@ -211,7 +241,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
   Future<void> _disconnect() async {
     await _stopMicStreaming();
-    await _responseAudioPlayer.stop();
+    if (!_useFallbackAudio) {
+      await _audioPlayer.stop();
+    } else {
+      await _fallbackAudioPlayer.stop();
+    }
     await _session?.close();
     setState(() {
       _session = null;
@@ -292,25 +326,49 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     }
   }
 
+  void _feedAudioChunk(String base64Data) {
+    if (!_isAudioOutputEnabled) return;
+    if (!_useFallbackAudio) {
+      _audioPlayer.appendBase64Chunk(base64Data);
+    } else {
+      _fallbackAudioPlayer.appendBase64Chunk(base64Data);
+      _webAudioFlushTimer?.cancel();
+      _webAudioFlushTimer = Timer(const Duration(milliseconds: 350), () {
+        if (_isAudioOutputEnabled &&
+            _fallbackAudioPlayer.hasBufferedAudio &&
+            !_fallbackAudioPlayer.isPlaying) {
+          unawaited(_fallbackAudioPlayer.playBufferedAudio());
+        }
+      });
+    }
+  }
+
   void _handleServerMessage(LiveServerMessage message) {
     // 1. Translated Audio output
-    if (message.data != null && message.data!.isNotEmpty) {
-      _responseAudioPlayer.appendBase64Chunk(message.data!);
-    }
+    if (_isAudioOutputEnabled) {
+      if (message.data != null && message.data!.isNotEmpty) {
+        _feedAudioChunk(message.data!);
+      }
 
-    final parts = message.serverContent?.modelTurn?.parts;
-    if (parts != null) {
-      for (final part in parts) {
-        final data = part.inlineData?.data;
-        if (data != null && data.isNotEmpty) {
-          _responseAudioPlayer.appendBase64Chunk(data);
+      final parts = message.serverContent?.modelTurn?.parts;
+      if (parts != null) {
+        for (final part in parts) {
+          final data = part.inlineData?.data;
+          if (data != null && data.isNotEmpty) {
+            _feedAudioChunk(data);
+          }
         }
       }
-    }
 
-    final turnComplete = message.serverContent?.turnComplete ?? false;
-    if (turnComplete) {
-      unawaited(_responseAudioPlayer.playBufferedAudio());
+      final turnComplete = message.serverContent?.turnComplete ?? false;
+      if (turnComplete) {
+        if (!_useFallbackAudio) {
+          _audioPlayer.onTurnComplete();
+        } else {
+          _webAudioFlushTimer?.cancel();
+          unawaited(_fallbackAudioPlayer.playBufferedAudio());
+        }
+      }
     }
 
     // 2. Transcriptions
@@ -364,6 +422,19 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           ],
         ),
         actions: [
+          // Voice Output Toggle Button (번역 음성 스피커 출력 ON/OFF)
+          IconButton(
+            icon: Icon(
+              _isAudioOutputEnabled
+                  ? Icons.volume_up_rounded
+                  : Icons.volume_off_rounded,
+              color: _isAudioOutputEnabled ? Colors.greenAccent : Colors.white54,
+            ),
+            tooltip: _isAudioOutputEnabled
+                ? '번역 음성 출력 켜짐 (클릭하여 음소거)'
+                : '번역 음성 출력 꺼짐 (클릭하여 켜기)',
+            onPressed: _toggleAudioOutput,
+          ),
           // Dual Flip Mode Toggle Button
           IconButton(
             icon: Icon(
@@ -524,6 +595,51 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Voice output toggle pill (클릭하여 켜기/끄기)
+                  InkWell(
+                    onTap: _toggleAudioOutput,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _isAudioOutputEnabled
+                            ? Colors.green.withValues(alpha: 0.15)
+                            : Colors.grey.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: _isAudioOutputEnabled
+                              ? Colors.greenAccent.withValues(alpha: 0.5)
+                              : Colors.grey.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isAudioOutputEnabled
+                                ? Icons.volume_up_rounded
+                                : Icons.volume_off_rounded,
+                            size: 14,
+                            color: _isAudioOutputEnabled
+                                ? Colors.greenAccent
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isAudioOutputEnabled ? '음성 출력 ON' : '음성 출력 OFF',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: _isAudioOutputEnabled
+                                  ? Colors.greenAccent
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
