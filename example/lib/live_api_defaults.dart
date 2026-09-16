@@ -1,8 +1,9 @@
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
 
-const String kCompatibilityLiveModel = 'gemini-3.1-flash-live-preview';
-const String kLatestRealtimeLiveModel = 'gemini-3.1-flash-live-preview';
+const String kCompatibilityLiveModel = 'gemini-3.8-live';
+const String kLatestRealtimeLiveModel = 'gemini-3.8-live';
+const String kExtendedThinkingLiveModel = 'gemini-3.8-live-extended-thinking';
 
 GenerationConfig buildExampleAudioGenerationConfig({
   double? temperature,

@@ -30,6 +30,29 @@ Object? _googleMapsToJson(Object? value) {
 }
 
 // ============================================================================
+// Live Model Identifiers
+// ============================================================================
+
+/// Well-known model identifiers supported by the Gemini Live API.
+abstract final class LiveModels {
+  /// Default stable Live model for low-latency voice and multimodal dialogue
+  /// without reasoning-induced delays.
+  static const String gemini38Live = 'gemini-3.8-live';
+
+  /// Stable high-reasoning Live model for voice interactions requiring
+  /// deep background reasoning.
+  static const String gemini38LiveExtendedThinking =
+      'gemini-3.8-live-extended-thinking';
+
+  /// Previous-generation preview Live model.
+  static const String gemini31FlashLivePreview = 'gemini-3.1-flash-live-preview';
+
+  /// Native audio output preview model.
+  static const String gemini25FlashNativeAudioPreview =
+      'gemini-2.5-flash-native-audio-preview-12-2025';
+}
+
+// ============================================================================
 // Enums
 // ============================================================================
 

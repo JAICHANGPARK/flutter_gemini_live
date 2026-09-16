@@ -1,4 +1,21 @@
-## Unreleased
+## 2026.9.16
+
+### Added
+- **Gemini 3.8 Live & Extended Thinking Support**:
+  - Added `LiveModels` class providing canonical model identifiers:
+    - `LiveModels.gemini38Live` (`'gemini-3.8-live'`): Default stable Live API model for low-latency voice and multimodal dialogue without reasoning-induced delays.
+    - `LiveModels.gemini38LiveExtendedThinking` (`'gemini-3.8-live-extended-thinking'`): High-reasoning Live model for voice interactions requiring deep background reasoning.
+    - `LiveModels.gemini31FlashLivePreview` (`'gemini-3.1-flash-live-preview'`): Previous preview model.
+    - `LiveModels.gemini25FlashNativeAudioPreview` (`'gemini-2.5-flash-native-audio-preview-12-2025'`).
+- **Example App Updates**:
+  - Set default model to `gemini-3.8-live` in `ApiKeyStore` and `LiveAPIDefaults`.
+  - Added `gemini-3.8-live` and `gemini-3.8-live-extended-thinking` to model selection lists across all demo pages.
+  - Updated connection logging to display active Gemini 3.8 Live model code.
+- **Documentation & Guides**:
+  - Updated `README.md`, `README_KR.md`, `README_JP.md`, and `README_ZH.md` with official Gemini 3.8 Live models.
+  - Added Supported Live Models table to `doc/api_reference.md`.
+  - Added Section 10: *Gemini 3.8 Live Migration & Best Practices* in `doc/advanced_configuration.md` covering model selection, omitting `thinking_level` on `gemini-3.8-live`, default non-blocking function execution, and completion tracking via `LiveServerContent.isInteractionComplete`.
+  - Updated AI Agent Skill definition (`SKILL.md`) to guide assistant models with Gemini 3.8 Live patterns.
 
 ## 2026.9.11
 

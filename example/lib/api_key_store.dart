@@ -10,8 +10,10 @@ class ApiKeyStore {
   static const _audioDeviceLabelKey = 'gemini_selected_audio_device_label';
   static const _cameraFlippedKey = 'gemini_camera_flipped';
 
-  static const String defaultModel = 'gemini-3.1-flash-live-preview';
+  static const String defaultModel = 'gemini-3.8-live';
   static const List<String> availableModels = [
+    'gemini-3.8-live',
+    'gemini-3.8-live-extended-thinking',
     'gemini-3.1-flash-live-preview',
     'gemini-3.5-live-translate-preview',
     'gemini-2.5-flash-native-audio-preview-12-2025',

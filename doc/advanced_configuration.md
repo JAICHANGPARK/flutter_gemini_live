@@ -14,6 +14,7 @@ This guide details advanced capabilities of the `gemini_live` package, with comp
 7. [History Pre-loading](#7-history-pre-loading)
 8. [Ephemeral Tokens](#8-ephemeral-tokens)
 9. [Context Window Compression](#9-context-window-compression)
+10. [Gemini 3.8 Live Migration & Best Practices](#10-gemini-38-live-migration--best-practices)
 
 ---
 
@@ -236,3 +237,22 @@ contextWindowCompression: ContextWindowCompressionConfig(
   slidingWindow: SlidingWindow(targetTokens: '5000'),
 )
 ```
+
+---
+
+## 10. Gemini 3.8 Live Migration & Best Practices
+
+Gemini 3.8 Live is Google's default stable Live API model:
+
+- **Model Codes**:
+  - `gemini-3.8-live`: Default for low-latency voice and multimodal agent experiences without reasoning delays.
+  - `gemini-3.8-live-extended-thinking`: High-reasoning Live model for voice interactions requiring deeper background reasoning.
+- **Thinking Configuration**:
+  - Do **not** pass `thinkingConfig` with `thinkingLevel` to `gemini-3.8-live` (it will error). Use `gemini-3.8-live-extended-thinking` when thinking/reasoning is required.
+- **Affective Dialogue**:
+  - `enableAffectiveDialog` has been removed from the API in Gemini 3.8 Live.
+- **Asynchronous Function Calling**:
+  - `gemini-3.8-live` defaults to non-blocking tool calls (`Behavior.NON_BLOCKING`). Use `LiveServerContent.isInteractionComplete` to determine when model responses and tool executions have fully completed.
+- **Audio & Activity**:
+  - Proactive audio is permanently enabled.
+  - Default turn coverage is `TurnCoverage.TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO`.

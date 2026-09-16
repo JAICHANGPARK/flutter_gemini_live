@@ -1230,6 +1230,30 @@ void main() {
     final emptyContent = LiveServerContent();
     expect(emptyContent.isInteractionComplete, isFalse);
   });
+
+  test('LiveModels defines canonical model identifiers', () {
+    expect(LiveModels.gemini38Live, 'gemini-3.8-live');
+    expect(
+      LiveModels.gemini38LiveExtendedThinking,
+      'gemini-3.8-live-extended-thinking',
+    );
+    expect(
+      LiveModels.gemini31FlashLivePreview,
+      'gemini-3.1-flash-live-preview',
+    );
+    expect(
+      LiveModels.gemini25FlashNativeAudioPreview,
+      'gemini-2.5-flash-native-audio-preview-12-2025',
+    );
+
+    final setup = LiveService.buildSetupMessage(
+      LiveConnectParameters(
+        model: LiveModels.gemini38Live,
+        callbacks: LiveCallbacks(),
+      ),
+    );
+    expect(setup.setup?.model, 'models/gemini-3.8-live');
+  });
 }
 
 Map<String, dynamic> normalizeJson(Map<String, dynamic> json) =>

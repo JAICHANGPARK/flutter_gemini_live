@@ -167,6 +167,15 @@ Top-level message object received from the Gemini Live server via `onMessage`.
 - **`LiveConnectConstraints`**: `model`, `config`
 - **`CreateAuthTokenConfig`**: `expireTime`, `newSessionExpireTime`, `uses`, `liveConnectConstraints`, `lockAdditionalFields`
 
+### Supported Live Models
+
+| Model | Code | Status | Recommendation | Notes |
+|---|---|---|---|---|
+| **Gemini 3.8 Live** | `gemini-3.8-live` | **Stable** | **Default** | Low-latency voice/multimodal dialogue without reasoning delays. Omit `thinking_level`. Default async `NON_BLOCKING` tools. |
+| **Gemini 3.8 Live Extended Thinking** | `gemini-3.8-live-extended-thinking` | **Stable** | Complex reasoning | High-reasoning voice interactions with background reasoning. Track completion via `LiveServerContent.isInteractionComplete`. |
+| **Gemini 3.1 Flash Live** | `gemini-3.1-flash-live-preview` | Preview (Legacy) | Compatibility | Previous preview model. |
+| **Gemini 2.5 Flash Native Audio** | `gemini-2.5-flash-native-audio-preview-12-2025` | Preview | Audio research | Native audio generation preview. |
+
 ---
 
 ## 8. Flutter UI Widgets

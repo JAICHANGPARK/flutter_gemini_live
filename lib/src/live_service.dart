@@ -37,7 +37,10 @@ class LiveCallbacks {
 // Live Connect Parameters
 // ============================================================================
 
-/// Parameters for establishing a Live API connection
+/// Parameters for establishing a Live API connection.
+///
+/// Use [LiveModels.gemini38Live] for default low-latency voice interactions,
+/// or [LiveModels.gemini38LiveExtendedThinking] for high-reasoning tasks.
 class LiveConnectParameters {
   final String model;
   final LiveCallbacks callbacks;

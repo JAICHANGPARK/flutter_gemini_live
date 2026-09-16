@@ -275,7 +275,7 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
     }
 
     setState(() => _isConnecting = true);
-    _addLog('SYSTEM', 'Connecting to Live API with Gemini 3.1 Flash Live...');
+    _addLog('SYSTEM', 'Connecting to Live API with Gemini 3.8 Live ($kLatestRealtimeLiveModel)...');
     await _responseAudioPlayer.stop();
 
     try {

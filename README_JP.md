@@ -10,7 +10,7 @@
 
 - GoogleのGeminiモデルとリアルタイムでマルチモーダルな会話を実現する[実験的なGemini Live API](https://ai.google.dev/gemini-api/docs/live)用のFlutterパッケージです。
 - **Firebase 依存なし**: Firebase や Firebase AI Logic を使用せず、直接 WebSocket で接続可能です。
-- 最新の Gemini Live モデルをサポート (`gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025`)。
+- 最新の Gemini Live モデルをサポート (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025`)。
 - `TEXT`、`AUDIO`、`VIDEO` の応答モダリティをサポート。
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e

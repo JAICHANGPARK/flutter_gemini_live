@@ -12,7 +12,7 @@ This skill guides AI agents (Antigravity, Cursor, Windsurf, Claude Code, GitHub 
 ## Key Package Principles
 
 1. **Zero Firebase Dependency**: Connects directly to Google Generative Language WebSocket endpoints without Firebase or Firebase AI Logic SDKs.
-2. **Supported Models**: `gemini-3.1-flash-live-preview` (default) and `gemini-2.5-flash-native-audio-preview-12-2025`.
+2. **Supported Models**: `gemini-3.8-live` (default, stable low latency), `gemini-3.8-live-extended-thinking` (stable high reasoning), `gemini-3.1-flash-live-preview`, and `gemini-2.5-flash-native-audio-preview-12-2025`.
 3. **Response Modalities**: `Modality.TEXT`, `Modality.AUDIO`, and `Modality.VIDEO`.
 
 ---
