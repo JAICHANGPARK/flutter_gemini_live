@@ -8,7 +8,7 @@
 
 ---
 
-- Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [실험적인 Gemini Live API](https://ai.google.dev/gemini-api/docs/live)용 Flutter 패키지입니다.
+- Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live)용 Flutter 패키지입니다.
 - **Firebase 의존성 Zero**: Firebase / Firebase AI Logic 설치 없이 직접 WebSocket으로 연동됩니다.
 - 최신 Gemini Live 모델 지원 (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025`).
 - 모델 사양에 따라 `TEXT`, `AUDIO`, `VIDEO` 응답 모다리티를 지원합니다.

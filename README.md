@@ -8,7 +8,7 @@
 
 ---
 
-- A Flutter package for [the experimental Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
+- A Flutter package for the [Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - **Zero Firebase Dependency**: Direct WebSocket connection without Firebase or Firebase AI Logic.
 - Supports latest Gemini Live models (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025`).
 - Supports `TEXT`, `AUDIO`, and `VIDEO` response modalities.

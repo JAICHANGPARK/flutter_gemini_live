@@ -8,7 +8,7 @@
 
 ---
 
-- 用于 [实验性 Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
+- 用于 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
 - **零 Firebase 依赖**：无须安装 Firebase 或 Firebase AI Logic，直接通过 WebSocket 建立连接。
 - 支持最新的 Gemini Live 模型（`gemini-3.8-live`，`gemini-3.8-live-extended-thinking`，`gemini-3.1-flash-live-preview`，`gemini-2.5-flash-native-audio-preview-12-2025`）。
 - 支持 `TEXT`、`AUDIO` 和 `VIDEO` 响应模态。
