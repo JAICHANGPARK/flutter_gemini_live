@@ -1111,8 +1111,10 @@ void main() {
       // 6. ServiceTier.DEFERRED & UsageMetadata.serviceTier
       final usage = UsageMetadata.fromJson({
         'serviceTier': 'deferred',
+        'trafficType': 'ON_DEMAND_OFFPEAK',
       });
       expect(usage.serviceTier, ServiceTier.DEFERRED);
+      expect(usage.trafficType, TrafficType.ON_DEMAND_OFFPEAK);
     });
   });
 

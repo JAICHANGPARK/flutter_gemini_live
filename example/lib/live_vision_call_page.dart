@@ -84,6 +84,11 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   DateTime? _lastAiAudioReceivedTime;
   final List<_ChatMessage> _chatHistory = [];
 
+  // Real-time token usage and cost tracker
+  final GeminiTokenUsageTracker _usageTracker = GeminiTokenUsageTracker(
+    model: ApiKeyStore.liveModel,
+  );
+
   bool get _isAiSpeaking {
     final isPlaying = _useFallbackAudio
         ? _fallbackAudioPlayer.isPlaying
@@ -207,6 +212,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     _session?.close();
     unawaited(_audioPlayer.dispose());
     unawaited(_fallbackAudioPlayer.dispose());
+    _usageTracker.dispose();
     super.dispose();
   }
 
@@ -527,6 +533,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   void _handleServerMessage(LiveServerMessage message) {
+    // Record real-time token usage and cost
+    _usageTracker.recordMessage(message);
+
     final serverContent = message.serverContent;
 
     // Interruption (User barged in)
@@ -1026,6 +1035,15 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             ],
           ),
           const Spacer(),
+          // Real-time token usage and cost badge
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: GeminiLiveUsageBadge(
+              tracker: _usageTracker,
+              backgroundColor: Colors.white.withAlpha(25),
+              foregroundColor: Colors.white,
+            ),
+          ),
           // Audio Input Device selector
           PopupMenuButton<String>(
             tooltip:

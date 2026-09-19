@@ -80,6 +80,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
   InputDevice? _selectedAudioDevice;
 
+  // Real-time token and cost tracker
+  final GeminiTokenUsageTracker _usageTracker = GeminiTokenUsageTracker(
+    model: 'gemini-3.5-live-translate-preview',
+  );
+
   @override
   void initState() {
     super.initState();
@@ -130,6 +135,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     _session?.close();
     _scrollController.dispose();
     _partnerScrollController.dispose();
+    _usageTracker.dispose();
     super.dispose();
   }
 
@@ -344,6 +350,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   }
 
   void _handleServerMessage(LiveServerMessage message) {
+    // Record real-time token usage and cost
+    _usageTracker.recordMessage(message);
+
     // 1. Translated Audio output
     if (_isAudioOutputEnabled) {
       if (message.data != null && message.data!.isNotEmpty) {
@@ -422,6 +431,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           ],
         ),
         actions: [
+          // Real-time token usage and cost badge
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: GeminiLiveUsageBadge(tracker: _usageTracker),
+          ),
           // Voice Output Toggle Button (번역 음성 스피커 출력 ON/OFF)
           IconButton(
             icon: Icon(

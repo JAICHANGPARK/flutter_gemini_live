@@ -1,3 +1,18 @@
+## 2026.9.19
+
+### Added
+- **Real-time Token Usage & Cost Tracking**:
+  - Added `GeminiTokenUsageTracker`: Automatically tracks real-time prompt, candidate, thoughts, audio, video, image, and document token consumption per turn and session with model-specific cost estimation.
+  - Added `GeminiLiveUsageBadge`: Sleek Material widget showing live token count and estimated cost, with interactive tap dialog (`GeminiLiveUsageDetailsDialog`) showing full multi-modal breakdowns.
+- **Upstream Sync with `js-genai` 2.23.0 & `python-genai` 2.24.0**:
+  - Added `TrafficType.ON_DEMAND_OFFPEAK` (`'ON_DEMAND_OFFPEAK'`) enum value.
+  - Synced Live SDK request headers and user-agent string to `google-genai-sdk/2.23.0`.
+  - Regenerated code generation artifacts (`models.g.dart`).
+- **Example App Enhancements**:
+  - Integrated `GeminiLiveUsageBadge` across live demo pages.
+  - Added Live Media Subtitle & Live Smart Notetaker workflows.
+- Removed legacy `experimental` designation across package metadata and documentation to reflect the official Stable release of the Gemini Live API.
+
 ## 2026.9.16
 
 ### Added

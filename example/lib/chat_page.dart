@@ -65,6 +65,9 @@ class _ChatScreenState extends State<ChatPage> {
   StreamSubscription<List<int>>?
   _audioStreamSubscription; // Subscription for an audio stream (not used in this implementation but good practice to have).
   final LiveAudioPlayer _responseAudioPlayer = LiveAudioPlayer();
+  late final GeminiTokenUsageTracker _usageTracker = GeminiTokenUsageTracker(
+    model: ApiKeyStore.liveModel,
+  );
   ResponseMode _responseMode = ResponseMode.text;
   int _audioPlaybackCommand = 0;
   String? _activeAudioMessageId;
@@ -154,6 +157,7 @@ class _ChatScreenState extends State<ChatPage> {
         ?.cancel(); // Cancel any active stream subscriptions.
     _audioRecorder.dispose(); // Dispose of the audio recorder.
     unawaited(_responseAudioPlayer.dispose());
+    _usageTracker.dispose();
     _textController.dispose(); // Dispose of the text controller.
     super.dispose();
   }
@@ -199,6 +203,7 @@ class _ChatScreenState extends State<ChatPage> {
       _pickedImage = null;
       _pickedImageBytes = null;
       _updateAudioPlaybackTarget();
+      _usageTracker.reset();
       _messages.clear(); // Clear previous chat history.
       // Add a temporary message to inform the user about the connection attempt.
       _addMessage(
@@ -313,6 +318,7 @@ class _ChatScreenState extends State<ChatPage> {
   /// Handles incoming messages from the Gemini Live API.
   void _handleLiveAPIResponse(LiveServerMessage message) {
     if (!mounted) return;
+    _usageTracker.recordMessage(message);
 
     final serverContent = message.serverContent;
     final turnFinished =
@@ -805,6 +811,10 @@ class _ChatScreenState extends State<ChatPage> {
             icon: const Icon(Icons.tune_rounded),
             tooltip: 'API Key & Model Settings',
             onPressed: _openApiKeySettings,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: GeminiLiveUsageBadge(tracker: _usageTracker),
           ),
           // A visual indicator for the connection status.
           Padding(

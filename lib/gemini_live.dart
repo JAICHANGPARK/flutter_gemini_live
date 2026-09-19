@@ -9,3 +9,5 @@ export 'src/utils/wav_header.dart';
 export 'src/widgets/live_status_badge.dart';
 export 'src/widgets/live_mic_button.dart';
 export 'src/widgets/live_voice_indicator.dart';
+export 'src/utils/token_usage_tracker.dart';
+export 'src/widgets/live_usage_badge.dart';

@@ -5,6 +5,8 @@ import 'app_settings_dialog.dart';
 import 'chat_page.dart';
 import 'function_calling_demo.dart';
 import 'live_api_demo.dart';
+import 'live_media_subtitle_page.dart';
+import 'live_smart_notetaker_page.dart';
 import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
 import 'realtime_media_demo.dart';
@@ -90,6 +92,26 @@ class _HomePageState extends State<HomePage> {
             icon: Icons.translate_rounded,
             color: Colors.teal.shade700,
             page: const LiveTranslationPage(),
+          ),
+          const SizedBox(height: 12),
+          _buildDemoCard(
+            context: context,
+            title: '🎬 Live Media Subtitles (유튜브/미디어 실시간 번역 자막)',
+            subtitle:
+                'YouTube 영상 링크 재생 · 시스템/마이크 오디오 실시간 번역 자막 HUD · gemini-3.8-live',
+            icon: Icons.subtitles_rounded,
+            color: Colors.indigo.shade700,
+            page: const LiveMediaSubtitlePage(),
+          ),
+          const SizedBox(height: 12),
+          _buildDemoCard(
+            context: context,
+            title: '📝 Live AI Smart NoteTaker (실시간 강의/회의 통번역 노트)',
+            subtitle:
+                '실시간 음성 전사(STT) · 동시 번역 · 마크다운 실시간 구조화 노트 및 액션 아이템 추출',
+            icon: Icons.edit_note_rounded,
+            color: Colors.amber.shade900,
+            page: const LiveSmartNotePage(),
           ),
           const SizedBox(height: 12),
           _buildDemoCard(
