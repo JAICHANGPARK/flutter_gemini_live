@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import 'client/api_client.dart';
 import 'live_service.dart';
+import 'voices_service.dart';
 
 // Re-export key classes from the live service module.
 // This allows users to access LiveCallbacks, LiveConnectParameters, and LiveSession
@@ -18,6 +19,9 @@ export 'live_service.dart'
 // This provides a single, convenient import for all data structures
 // used by the API.
 export 'model/models.dart';
+
+// Re-export voices service for managing custom voices.
+export 'voices_service.dart';
 
 /// The primary class for interacting with the Google Generative AI API.
 ///
@@ -58,6 +62,11 @@ class GoogleGenAI {
   /// This is marked as `late` because it is initialized in the constructor.
   late final LiveService live;
 
+  /// Provides access to the Gemini Voices API for managing custom and prebuilt voices.
+  ///
+  /// This is marked as `late` because it is initialized in the constructor.
+  late final GeminiVoicesService voices;
+
   /// An optional logger function to receive WebSocket traffic and connection logs.
   ///
   /// For example, pass `print` to log all WebSocket messages to the console,
@@ -84,6 +93,9 @@ class GoogleGenAI {
       apiVersion: apiVersion,
       logger: logger,
     );
+
+    // Initialize the VoicesService for custom and system voice operations.
+    voices = GeminiVoicesService.fromApiClient(_apiClient);
   }
 
   /// Releases any resources held by the client.

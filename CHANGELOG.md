@@ -1,3 +1,20 @@
+## 2026.9.20
+
+### Added
+- **Gemini Voices API Integration & Support**:
+  - Added `GeminiVoicesService` (accessible via `genAI.voices` or standalone) for managing custom and prebuilt system voice catalog resources (`listVoices`, `createVoice`, `getVoice`, `deleteVoice`).
+  - Added `VoiceResource` model supporting custom Google-managed voices, client-managed replication keys, and prebuilt catalog voices.
+  - Added `CreateVoiceRequest` supporting natural-language prompted voices (`CreateVoiceRequest.prompted`) and audio-cloned replicated voices (`CreateVoiceRequest.replicated`).
+  - Added `VoiceType` (`replicated`, `prompted`, `prebuilt`), `VoicePitch` (`low`, `medium`, `high`), `PromptedVoice`, `ReplicatedVoice`, `VoiceAudioData`, `ListVoicesResponse`, and `DeleteVoiceResponse` data models.
+- **VoiceConfig & SpeechConfig Enhancements**:
+  - Added `VoiceConfig.voice` string property to directly pass custom voice IDs (`voice_...`), replication keys (`voicekey_...`), or prebuilt voice names directly into speech synthesis.
+  - Added `VoiceConfig.promptedVoiceConfig` support for natural-language designed voices.
+  - Added ergonomic constructors: `VoiceConfig.fromVoiceName(String name)` and `VoiceConfig.fromVoiceId(String id)`.
+  - Added `SpeechConfig.voice` property and `SpeechConfig.fromVoice(String voiceNameOrId, {String? languageCode})` convenience factory.
+- **Upstream Sync & Documentation**:
+  - Synced with upstream `js-genai` and `python-genai` discovery doc and Voices API resource updates.
+  - Updated `AudioTranscriptionConfig.languageCodes` documentation reflecting current upstream preference over deprecated `languageHints`/`languageAuto`.
+
 ## 2026.9.19
 
 ### Added

@@ -577,6 +577,311 @@ class Content {
   Map<String, dynamic> toJson() => _$ContentToJson(this);
 }
 
+/// The type of voice resource.
+enum VoiceType {
+  @JsonValue('replicated')
+  replicated,
+  @JsonValue('prompted')
+  prompted,
+  @JsonValue('prebuilt')
+  prebuilt,
+}
+
+/// The perceived pitch of a synthesized voice.
+enum VoicePitch {
+  @JsonValue('low')
+  low,
+  @JsonValue('medium')
+  medium,
+  @JsonValue('high')
+  high,
+}
+
+/// Audio data containing base64-encoded audio bytes and mime type.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class VoiceAudioData {
+  /// Base64-encoded audio bytes.
+  final String data;
+
+  /// The IANA standard MIME type of the source data (e.g. `audio/wav`, `audio/pcm`).
+  final String mimeType;
+
+  VoiceAudioData({required this.data, required this.mimeType});
+
+  factory VoiceAudioData.fromJson(Map<String, dynamic> json) =>
+      _$VoiceAudioDataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VoiceAudioDataToJson(this);
+}
+
+/// Parameters for prompted voice generation.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class PromptedVoice {
+  /// Natural-language prompt describing the desired voice personality, tone, and character.
+  final String input;
+
+  PromptedVoice({required this.input});
+
+  factory PromptedVoice.fromJson(Map<String, dynamic> json) =>
+      _$PromptedVoiceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PromptedVoiceToJson(this);
+}
+
+/// Parameters for replicated (cloned) voice generation.
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
+class ReplicatedVoice {
+  /// Recorded consent audio verifying ownership/permission of the voice.
+  final VoiceAudioData? consentAudio;
+
+  /// Source reference audio sample used for voice cloning.
+  final VoiceAudioData? sourceAudio;
+
+  ReplicatedVoice({this.consentAudio, this.sourceAudio});
+
+  factory ReplicatedVoice.fromJson(Map<String, dynamic> json) =>
+      _$ReplicatedVoiceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ReplicatedVoiceToJson(this);
+}
+
+/// A custom voice resource (created via CreateVoice) or prebuilt system voice (returned by ListVoices).
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
+class VoiceResource {
+  /// Unique voice identifier (e.g. `voice_abc123` for Google-managed voices, or catalog name).
+  final String? id;
+
+  /// Client-managed voice replication key (`voicekey_...`) returned when `store == false`.
+  final String? key;
+
+  /// The voice type: `replicated`, `prompted`, or `prebuilt`.
+  final VoiceType? type;
+
+  /// User-provided display name or catalog name.
+  final String? displayName;
+
+  /// Descriptive summary of vocal timbre, personality, and tone.
+  final String? description;
+
+  /// Regional accent descriptor (e.g. "American", "British").
+  final String? accent;
+
+  /// Perceived voice gender presentation (e.g. "female", "male", "neutral").
+  final String? gender;
+
+  /// Primary BCP-47 language tag (e.g. "en-US", "fr-FR", "ko-KR").
+  final String? languageCode;
+
+  /// Intended persona or character archetype (e.g. "Warm, Friendly", "Narrator").
+  final String? persona;
+
+  /// Pitch of the voice: `low`, `medium`, or `high`.
+  final VoicePitch? pitch;
+
+  /// Optimal usage context or domain (e.g. "Conversational", "Audiobook", "News").
+  final String? context;
+
+  /// Geographic region code (e.g. "US", "GB", "KR").
+  final String? regionCode;
+
+  /// Model used to design or replicate the voice.
+  final String? model;
+
+  /// Expiration timestamp for custom stored voices or keys.
+  final String? expireTime;
+
+  /// Parameters for prompted voice generation, if applicable.
+  final PromptedVoice? prompted;
+
+  /// Parameters for replicated voice generation, if applicable.
+  final ReplicatedVoice? replicated;
+
+  VoiceResource({
+    this.id,
+    this.key,
+    this.type,
+    this.displayName,
+    this.description,
+    this.accent,
+    this.gender,
+    this.languageCode,
+    this.persona,
+    this.pitch,
+    this.context,
+    this.regionCode,
+    this.model,
+    this.expireTime,
+    this.prompted,
+    this.replicated,
+  });
+
+  factory VoiceResource.fromJson(Map<String, dynamic> json) =>
+      _$VoiceResourceFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VoiceResourceToJson(this);
+}
+
+/// Request payload for creating a custom voice.
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
+class CreateVoiceRequest {
+  /// Required. The type of voice to create (`prompted` or `replicated`).
+  final VoiceType type;
+
+  /// Required if [type] is [VoiceType.prompted].
+  final PromptedVoice? prompted;
+
+  /// Required if [type] is [VoiceType.replicated].
+  final ReplicatedVoice? replicated;
+
+  /// Whether to store the voice in Google's voice repository (`true`), or return an ephemeral replication key (`false`).
+  final bool? store;
+
+  /// User-facing display name.
+  final String? displayName;
+
+  /// Descriptive summary of vocal timbre and personality.
+  final String? description;
+
+  /// Regional accent descriptor.
+  final String? accent;
+
+  /// Perceived voice gender presentation.
+  final String? gender;
+
+  /// Primary BCP-47 language tag.
+  final String? languageCode;
+
+  /// Intended persona or character archetype.
+  final String? persona;
+
+  /// Pitch setting.
+  final VoicePitch? pitch;
+
+  /// Optimal usage context or domain.
+  final String? context;
+
+  /// Geographic region code.
+  final String? regionCode;
+
+  /// Model used to design or replicate the voice.
+  final String? model;
+
+  CreateVoiceRequest({
+    required this.type,
+    this.prompted,
+    this.replicated,
+    this.store,
+    this.displayName,
+    this.description,
+    this.accent,
+    this.gender,
+    this.languageCode,
+    this.persona,
+    this.pitch,
+    this.context,
+    this.regionCode,
+    this.model,
+  });
+
+  /// Factory helper for creating a prompted voice.
+  factory CreateVoiceRequest.prompted({
+    required String prompt,
+    String? displayName,
+    String? description,
+    String? accent,
+    String? gender,
+    String? languageCode,
+    String? persona,
+    VoicePitch? pitch,
+    String? context,
+    String? regionCode,
+    String? model,
+    bool store = true,
+  }) =>
+      CreateVoiceRequest(
+        type: VoiceType.prompted,
+        prompted: PromptedVoice(input: prompt),
+        displayName: displayName,
+        description: description,
+        accent: accent,
+        gender: gender,
+        languageCode: languageCode,
+        persona: persona,
+        pitch: pitch,
+        context: context,
+        regionCode: regionCode,
+        model: model,
+        store: store,
+      );
+
+  /// Factory helper for creating a replicated (cloned) voice.
+  factory CreateVoiceRequest.replicated({
+    required VoiceAudioData sourceAudio,
+    VoiceAudioData? consentAudio,
+    String? displayName,
+    String? description,
+    String? accent,
+    String? gender,
+    String? languageCode,
+    String? persona,
+    VoicePitch? pitch,
+    String? context,
+    String? regionCode,
+    String? model,
+    bool store = true,
+  }) =>
+      CreateVoiceRequest(
+        type: VoiceType.replicated,
+        replicated: ReplicatedVoice(
+          sourceAudio: sourceAudio,
+          consentAudio: consentAudio,
+        ),
+        displayName: displayName,
+        description: description,
+        accent: accent,
+        gender: gender,
+        languageCode: languageCode,
+        persona: persona,
+        pitch: pitch,
+        context: context,
+        regionCode: regionCode,
+        model: model,
+        store: store,
+      );
+
+  factory CreateVoiceRequest.fromJson(Map<String, dynamic> json) =>
+      _$CreateVoiceRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CreateVoiceRequestToJson(this);
+}
+
+/// Response returned by ListVoices.
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
+class ListVoicesResponse {
+  final List<VoiceResource>? voices;
+  final String? nextPageToken;
+
+  ListVoicesResponse({this.voices, this.nextPageToken});
+
+  factory ListVoicesResponse.fromJson(Map<String, dynamic> json) =>
+      _$ListVoicesResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ListVoicesResponseToJson(this);
+}
+
+/// Response returned by DeleteVoice.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class DeleteVoiceResponse {
+  final String? message;
+
+  DeleteVoiceResponse({this.message});
+
+  factory DeleteVoiceResponse.fromJson(Map<String, dynamic> json) =>
+      _$DeleteVoiceResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DeleteVoiceResponseToJson(this);
+}
+
 /// A prebuilt voice selection for synthesized audio output.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class PrebuiltVoiceConfig {
@@ -591,12 +896,32 @@ class PrebuiltVoiceConfig {
 }
 
 /// Voice settings applied to spoken responses.
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
 class VoiceConfig {
   final ReplicatedVoiceConfig? replicatedVoiceConfig;
   final PrebuiltVoiceConfig? prebuiltVoiceConfig;
 
-  VoiceConfig({this.replicatedVoiceConfig, this.prebuiltVoiceConfig});
+  /// Optional. Direct voice identifier or key (e.g. Google-managed custom voice
+  /// ID `voice_...`, replication key `voicekey_...`, or catalog voice name).
+  final String? voice;
+
+  /// Optional. Prompted voice parameters for generating natural-language designed voices.
+  final PromptedVoice? promptedVoiceConfig;
+
+  VoiceConfig({
+    this.replicatedVoiceConfig,
+    this.prebuiltVoiceConfig,
+    this.voice,
+    this.promptedVoiceConfig,
+  });
+
+  /// Convenience constructor to create a [VoiceConfig] with a prebuilt voice name.
+  factory VoiceConfig.fromVoiceName(String voiceName) =>
+      VoiceConfig(prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: voiceName), voice: voiceName);
+
+  /// Convenience constructor to create a [VoiceConfig] with a custom voice ID or key.
+  factory VoiceConfig.fromVoiceId(String voiceId) =>
+      VoiceConfig(voice: voiceId);
 
   factory VoiceConfig.fromJson(Map<String, dynamic> json) =>
       _$VoiceConfigFromJson(json);
@@ -672,17 +997,29 @@ class MultiSpeakerVoiceConfig {
 }
 
 /// Speech generation settings for audio responses.
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+@JsonSerializable(includeIfNull: false, explicitToJson: true, fieldRename: FieldRename.snake)
 class SpeechConfig {
   final VoiceConfig? voiceConfig;
   final String? languageCode;
   final MultiSpeakerVoiceConfig? multiSpeakerVoiceConfig;
 
+  /// Optional. Direct voice identifier or name shortcut.
+  final String? voice;
+
   SpeechConfig({
     this.voiceConfig,
     this.languageCode,
     this.multiSpeakerVoiceConfig,
+    this.voice,
   });
+
+  /// Convenience constructor for single-voice configuration with a given voice name or ID.
+  factory SpeechConfig.fromVoice(String voiceNameOrId, {String? languageCode}) =>
+      SpeechConfig(
+        voiceConfig: VoiceConfig.fromVoiceName(voiceNameOrId),
+        voice: voiceNameOrId,
+        languageCode: languageCode,
+      );
 
   factory SpeechConfig.fromJson(Map<String, dynamic> json) =>
       _$SpeechConfigFromJson(json);
@@ -1252,7 +1589,9 @@ enum AudioTranscriptionConfigMode {
 /// Audio transcription settings for input or output streams.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
-  /// Deprecated upstream: use [languageAuto] or [languageHints] instead.
+  /// BCP-47 language codes providing hints about the languages present in the audio.
+  /// If omitted or empty, defaults to automatic language detection. Standard upstream
+  /// field (preferred over deprecated [languageHints] and [languageAuto]).
   final List<String>? languageCodes;
 
   /// The model will detect the language automatically. Do not use together

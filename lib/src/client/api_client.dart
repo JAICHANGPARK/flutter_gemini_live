@@ -47,11 +47,40 @@ class ApiClient {
   ///
   /// It combines the [baseUrl] (or a default), [apiVersion], the resource [path],
   /// and attaches the [apiKey] as a query parameter for authentication.
-  Uri _buildUri(String path) {
+  Uri _buildUri(String path, [Map<String, String>? queryParams]) {
     // Use the provided baseUrl or fall back to the default Google API endpoint.
     final effectiveBaseUrl =
         baseUrl ?? 'https://generativelanguage.googleapis.com';
-    return Uri.parse('$effectiveBaseUrl/$apiVersion/$path?key=$apiKey');
+    final baseUri = Uri.parse('$effectiveBaseUrl/$apiVersion/$path');
+    final query = Map<String, String>.from(baseUri.queryParameters);
+    query['key'] = apiKey;
+    if (queryParams != null) {
+      query.addAll(queryParams);
+    }
+    return baseUri.replace(queryParameters: query);
+  }
+
+  /// Sends a GET request to the specified API [path].
+  ///
+  /// - [path]: The specific API resource path (e.g., 'voices').
+  /// - [queryParams]: Optional query parameters to append.
+  ///
+  /// Returns the decoded JSON response as a [Map<String, dynamic>].
+  Future<Map<String, dynamic>> get(
+    String path, [
+    Map<String, String>? queryParams,
+  ]) async {
+    final uri = _buildUri(path, queryParams);
+    final response = await _httpClient.get(
+      uri,
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('API Error: ${response.statusCode} ${response.body}');
+    }
   }
 
   /// Sends a POST request to the specified API [path] with a JSON [body].
@@ -66,9 +95,9 @@ class ApiClient {
   ///
   /// Throws an [Exception] if the API returns a non-successful status code (not 2xx).
   Future<Map<String, dynamic>> post(
-      String path,
-      Map<String, dynamic> body,
-      ) async {
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final uri = _buildUri(path);
     final response = await _httpClient.post(
       uri,
@@ -81,6 +110,26 @@ class ApiClient {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       // If the server returned an error, throw an exception with details.
+      throw Exception('API Error: ${response.statusCode} ${response.body}');
+    }
+  }
+
+  /// Sends a DELETE request to the specified API [path].
+  ///
+  /// - [path]: The specific API resource path (e.g., 'voices/voice_123').
+  ///
+  /// Returns the decoded JSON response as a [Map<String, dynamic>].
+  Future<Map<String, dynamic>> delete(String path) async {
+    final uri = _buildUri(path);
+    final response = await _httpClient.delete(
+      uri,
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return <String, dynamic>{};
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
       throw Exception('API Error: ${response.statusCode} ${response.body}');
     }
   }
