@@ -63,6 +63,9 @@ class LiveConnectParameters {
   /// See [HistoryConfig] for details.
   final HistoryConfig? historyConfig;
 
+  /// User-defined metadata labels for tracking or billing categorization.
+  final Map<String, String>? labels;
+
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
@@ -79,6 +82,7 @@ class LiveConnectParameters {
     this.avatarConfig,
     this.safetySettings,
     this.historyConfig,
+    this.labels,
   });
 }
 
@@ -88,7 +92,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.23.0';
+  static const _sdkVersion = '2.25.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -149,6 +153,7 @@ class LiveService {
       enableAffectiveDialog: config?.enableAffectiveDialog,
       translationConfig: config?.translationConfig,
       audioTranscriptionConfig: config?.audioTranscriptionConfig,
+      labels: config?.labels,
     );
   }
 
@@ -214,6 +219,7 @@ class LiveService {
         avatarConfig: params.avatarConfig,
         safetySettings: params.safetySettings,
         historyConfig: params.historyConfig,
+        labels: params.labels ?? params.config?.labels,
       ),
     );
   }

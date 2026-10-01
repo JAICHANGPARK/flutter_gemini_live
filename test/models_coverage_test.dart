@@ -1248,6 +1248,15 @@ void main() {
       'gemini-2.5-flash-native-audio-preview-12-2025',
     );
 
+    expect(
+      LiveModels.gemini38FlashTts,
+      'gemini-3.8-flash-tts',
+    );
+    expect(
+      LiveModels.gemini38FlashLiteTts,
+      'gemini-3.8-flash-lite-tts',
+    );
+
     final setup = LiveService.buildSetupMessage(
       LiveConnectParameters(
         model: LiveModels.gemini38Live,
@@ -1255,6 +1264,58 @@ void main() {
       ),
     );
     expect(setup.setup?.model, 'models/gemini-3.8-live');
+  });
+
+  test('SpeechMetadata and Part with speechMetadata round-trip serialization', () {
+    final speechMeta = SpeechMetadata(
+      speaker: 'speaker_1',
+      style: 'excited, fast-paced',
+    );
+    final json = speechMeta.toJson();
+    expect(json['speaker'], 'speaker_1');
+    expect(json['style'], 'excited, fast-paced');
+
+    final deserialized = SpeechMetadata.fromJson(json);
+    expect(deserialized.speaker, 'speaker_1');
+    expect(deserialized.style, 'excited, fast-paced');
+
+    final part = Part(
+      text: 'Hello world',
+      speechMetadata: speechMeta,
+    );
+    final partJson = normalizeJson(part.toJson());
+    expect(partJson['speech_metadata']['speaker'], 'speaker_1');
+    expect(partJson['speech_metadata']['style'], 'excited, fast-paced');
+
+    final deserializedPart = Part.fromJson(partJson);
+    expect(deserializedPart.text, 'Hello world');
+    expect(deserializedPart.speechMetadata?.speaker, 'speaker_1');
+    expect(deserializedPart.speechMetadata?.style, 'excited, fast-paced');
+  });
+
+  test('GenerationConfig and LiveClientSetup labels serialization', () {
+    final labels = {'env': 'production', 'user_id': 'u123'};
+
+    final config = GenerationConfig(
+      temperature: 0.7,
+      labels: labels,
+    );
+    final configJson = normalizeJson(config.toJson());
+    expect(configJson['labels'], labels);
+
+    final deserializedConfig = GenerationConfig.fromJson(configJson);
+    expect(deserializedConfig.labels, labels);
+
+    final setup = LiveClientSetup(
+      model: 'models/gemini-3.8-live',
+      generationConfig: config,
+      labels: labels,
+    );
+    final setupJson = normalizeJson(setup.toJson());
+    expect(setupJson['labels'], labels);
+
+    final deserializedSetup = LiveClientSetup.fromJson(setupJson);
+    expect(deserializedSetup.labels, labels);
   });
 }
 

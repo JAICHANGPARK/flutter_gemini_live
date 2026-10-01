@@ -1,3 +1,22 @@
+## 2026.10.1
+
+### Added
+- **LiveClientSetup & GenerationConfig Metadata Labels**:
+  - Added `labels` (`Map<String, String>?`) to `LiveConnectParameters`, `LiveClientSetup`, and `GenerationConfig`.
+  - Enables user-defined metadata labels for tracking, attribution, and aggregator safety identifiers (e.g. `safety_identifier`) adhering to unified Cloud label formatting.
+- **Speech Synthesis Metadata (`SpeechMetadata`)**:
+  - Added `SpeechMetadata` data model with `speaker` and `style` fields.
+  - Added `Part.speechMetadata` (`speech_metadata`) to control per-part multi-speaker allocation and vocal styles (e.g. "whispering", "excited, fast-paced") during speech synthesis and Live conversations.
+- **Gemini 3.8 Flash TTS Canonical Model Identifiers**:
+  - Added canonical TTS model constants to `LiveModels`:
+    - `LiveModels.gemini38FlashTts` (`'gemini-3.8-flash-tts'`): High-fidelity Gemini 3.8 Flash text-to-speech model.
+    - `LiveModels.gemini38FlashLiteTts` (`'gemini-3.8-flash-lite-tts'`): Ultra-low-latency lightweight Gemini 3.8 Flash text-to-speech model.
+- **Voice Resource Sample Audio**:
+  - Added `sampleAudio` (`VoiceAudioData?`) to `VoiceResource` and `CreateVoiceRequest` (`sample_audio`), providing audio payload reference for newly designed and replicated voice assets.
+- **Upstream Sync with `js-genai` 2.25.0 & `python-genai` 2.26.0**:
+  - Bumped internal SDK client user-agent to `google-genai-sdk/2.25.0`.
+  - Regenerated serialization code and updated unit test suites.
+
 ## 2026.9.20
 
 ### Added

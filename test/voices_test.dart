@@ -79,6 +79,7 @@ void main() {
         model: 'voice-design-001',
         expireTime: '2026-10-01T00:00:00Z',
         prompted: PromptedVoice(input: 'Calm voice'),
+        sampleAudio: VoiceAudioData(data: 'c2FtcGxl', mimeType: 'audio/wav'),
       );
 
       final json = voice.toJson();
@@ -87,6 +88,7 @@ void main() {
       expect(json['type'], 'prompted');
       expect(json['pitch'], 'medium');
       expect(json['display_name'], 'Mentor Voice');
+      expect(json['sample_audio']['data'], 'c2FtcGxl');
 
       final deserialized = VoiceResource.fromJson(json);
       expect(deserialized.id, 'voice_abc123');
@@ -94,6 +96,7 @@ void main() {
       expect(deserialized.type, VoiceType.prompted);
       expect(deserialized.pitch, VoicePitch.medium);
       expect(deserialized.prompted?.input, 'Calm voice');
+      expect(deserialized.sampleAudio?.data, 'c2FtcGxl');
     });
 
     test('CreateVoiceRequest factories and round-trip serialization', () {
@@ -117,6 +120,7 @@ void main() {
       final reqReplicated = CreateVoiceRequest.replicated(
         sourceAudio: VoiceAudioData(data: 'c291cmNl', mimeType: 'audio/wav'),
         consentAudio: VoiceAudioData(data: 'Y29uc2VudA==', mimeType: 'audio/wav'),
+        sampleAudio: VoiceAudioData(data: 'c2FtcGxl', mimeType: 'audio/wav'),
         displayName: 'Cloned Voice',
         store: false,
       );
@@ -124,12 +128,14 @@ void main() {
       expect(jsonReplicated['type'], 'replicated');
       expect(jsonReplicated['replicated']['source_audio']['data'], 'c291cmNl');
       expect(jsonReplicated['replicated']['consent_audio']['data'], 'Y29uc2VudA==');
+      expect(jsonReplicated['sample_audio']['data'], 'c2FtcGxl');
       expect(jsonReplicated['store'], false);
 
       final deserializedReplicated = CreateVoiceRequest.fromJson(jsonReplicated);
       expect(deserializedReplicated.type, VoiceType.replicated);
       expect(deserializedReplicated.replicated?.sourceAudio?.data, 'c291cmNl');
       expect(deserializedReplicated.replicated?.consentAudio?.data, 'Y29uc2VudA==');
+      expect(deserializedReplicated.sampleAudio?.data, 'c2FtcGxl');
     });
 
     test('ListVoicesResponse and DeleteVoiceResponse serialization', () {

@@ -50,6 +50,12 @@ abstract final class LiveModels {
   /// Native audio output preview model.
   static const String gemini25FlashNativeAudioPreview =
       'gemini-2.5-flash-native-audio-preview-12-2025';
+
+  /// Gemini 3.8 Flash TTS model for text-to-speech generation.
+  static const String gemini38FlashTts = 'gemini-3.8-flash-tts';
+
+  /// Gemini 3.8 Flash Lite TTS model for high-efficiency text-to-speech generation.
+  static const String gemini38FlashLiteTts = 'gemini-3.8-flash-lite-tts';
 }
 
 // ============================================================================
@@ -460,6 +466,25 @@ enum MediaProcessing {
 // Data Classes - Base
 // ============================================================================
 
+/// Extra metadata associated with a content part for speech synthesis.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SpeechMetadata {
+  /// The speaker for this part, which must match a `speaker` name in
+  /// `MultiSpeakerVoiceConfig.speaker_voice_configs`.
+  final String? speaker;
+
+  /// The style instruction for how the voice should be synthesized
+  /// (e.g. "excited, fast-paced", "whispering").
+  final String? style;
+
+  SpeechMetadata({this.speaker, this.style});
+
+  factory SpeechMetadata.fromJson(Map<String, dynamic> json) =>
+      _$SpeechMetadataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SpeechMetadataToJson(this);
+}
+
 /// A single multimodal part within a content turn.
 @JsonSerializable(includeIfNull: false)
 class Part {
@@ -480,6 +505,8 @@ class Part {
   @JsonKey(name: 'audio_transcription')
   final AudioTranscriptionConfig? audioTranscription;
   final MediaProcessing? mediaProcessing;
+  @JsonKey(name: 'speech_metadata')
+  final SpeechMetadata? speechMetadata;
 
   Part({
     this.mediaResolution,
@@ -498,6 +525,7 @@ class Part {
     this.codeExecutionResult,
     this.audioTranscription,
     this.mediaProcessing,
+    this.speechMetadata,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
@@ -696,6 +724,9 @@ class VoiceResource {
   /// Parameters for replicated voice generation, if applicable.
   final ReplicatedVoice? replicated;
 
+  /// Audio payload used for voice creation or sample audio preview.
+  final VoiceAudioData? sampleAudio;
+
   VoiceResource({
     this.id,
     this.key,
@@ -713,6 +744,7 @@ class VoiceResource {
     this.expireTime,
     this.prompted,
     this.replicated,
+    this.sampleAudio,
   });
 
   factory VoiceResource.fromJson(Map<String, dynamic> json) =>
@@ -732,6 +764,9 @@ class CreateVoiceRequest {
 
   /// Required if [type] is [VoiceType.replicated].
   final ReplicatedVoice? replicated;
+
+  /// Optional. Audio payload used for voice creation.
+  final VoiceAudioData? sampleAudio;
 
   /// Whether to store the voice in Google's voice repository (`true`), or return an ephemeral replication key (`false`).
   final bool? store;
@@ -770,6 +805,7 @@ class CreateVoiceRequest {
     required this.type,
     this.prompted,
     this.replicated,
+    this.sampleAudio,
     this.store,
     this.displayName,
     this.description,
@@ -818,6 +854,7 @@ class CreateVoiceRequest {
   factory CreateVoiceRequest.replicated({
     required VoiceAudioData sourceAudio,
     VoiceAudioData? consentAudio,
+    VoiceAudioData? sampleAudio,
     String? displayName,
     String? description,
     String? accent,
@@ -836,6 +873,7 @@ class CreateVoiceRequest {
           sourceAudio: sourceAudio,
           consentAudio: consentAudio,
         ),
+        sampleAudio: sampleAudio,
         displayName: displayName,
         description: description,
         accent: accent,
@@ -1079,6 +1117,7 @@ class GenerationConfig {
   final bool? enableAffectiveDialog;
   final TranslationConfig? translationConfig;
   final AudioTranscriptionConfig? audioTranscriptionConfig;
+  final Map<String, String>? labels;
 
   GenerationConfig({
     this.temperature,
@@ -1093,6 +1132,7 @@ class GenerationConfig {
     this.enableAffectiveDialog,
     this.translationConfig,
     this.audioTranscriptionConfig,
+    this.labels,
   });
 
   /// Deprecated alias for [translationConfig].
@@ -1734,6 +1774,9 @@ class LiveClientSetup {
   /// Configures the exchange of history between the client and the server.
   final HistoryConfig? historyConfig;
 
+  /// User-defined metadata labels for tracking or billing categorization.
+  final Map<String, String>? labels;
+
   LiveClientSetup({
     required this.model,
     this.generationConfig,
@@ -1749,6 +1792,7 @@ class LiveClientSetup {
     this.avatarConfig,
     this.safetySettings,
     this.historyConfig,
+    this.labels,
   });
 
   factory LiveClientSetup.fromJson(Map<String, dynamic> json) =>
@@ -1788,6 +1832,9 @@ class LiveClientSetup {
     }
     if (historyConfig != null) {
       json['historyConfig'] = historyConfig!.toJson();
+    }
+    if (labels != null) {
+      json['labels'] = labels;
     }
     return json;
   }

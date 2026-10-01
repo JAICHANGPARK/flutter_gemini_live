@@ -6,6 +6,15 @@ part of 'models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+SpeechMetadata _$SpeechMetadataFromJson(Map<String, dynamic> json) =>
+    SpeechMetadata(
+      speaker: json['speaker'] as String?,
+      style: json['style'] as String?,
+    );
+
+Map<String, dynamic> _$SpeechMetadataToJson(SpeechMetadata instance) =>
+    <String, dynamic>{'speaker': ?instance.speaker, 'style': ?instance.style};
+
 Part _$PartFromJson(Map<String, dynamic> json) => Part(
   mediaResolution: json['mediaResolution'] == null
       ? null
@@ -56,6 +65,11 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
     _$MediaProcessingEnumMap,
     json['mediaProcessing'],
   ),
+  speechMetadata: json['speech_metadata'] == null
+      ? null
+      : SpeechMetadata.fromJson(
+          json['speech_metadata'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
@@ -75,6 +89,7 @@ Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
   'codeExecutionResult': ?instance.codeExecutionResult,
   'audio_transcription': ?instance.audioTranscription,
   'mediaProcessing': ?_$MediaProcessingEnumMap[instance.mediaProcessing],
+  'speech_metadata': ?instance.speechMetadata,
 };
 
 const _$MediaProcessingEnumMap = {
@@ -191,31 +206,33 @@ Map<String, dynamic> _$ReplicatedVoiceToJson(ReplicatedVoice instance) =>
       'source_audio': ?instance.sourceAudio?.toJson(),
     };
 
-VoiceResource _$VoiceResourceFromJson(Map<String, dynamic> json) =>
-    VoiceResource(
-      id: json['id'] as String?,
-      key: json['key'] as String?,
-      type: $enumDecodeNullable(_$VoiceTypeEnumMap, json['type']),
-      displayName: json['display_name'] as String?,
-      description: json['description'] as String?,
-      accent: json['accent'] as String?,
-      gender: json['gender'] as String?,
-      languageCode: json['language_code'] as String?,
-      persona: json['persona'] as String?,
-      pitch: $enumDecodeNullable(_$VoicePitchEnumMap, json['pitch']),
-      context: json['context'] as String?,
-      regionCode: json['region_code'] as String?,
-      model: json['model'] as String?,
-      expireTime: json['expire_time'] as String?,
-      prompted: json['prompted'] == null
-          ? null
-          : PromptedVoice.fromJson(json['prompted'] as Map<String, dynamic>),
-      replicated: json['replicated'] == null
-          ? null
-          : ReplicatedVoice.fromJson(
-              json['replicated'] as Map<String, dynamic>,
-            ),
-    );
+VoiceResource _$VoiceResourceFromJson(
+  Map<String, dynamic> json,
+) => VoiceResource(
+  id: json['id'] as String?,
+  key: json['key'] as String?,
+  type: $enumDecodeNullable(_$VoiceTypeEnumMap, json['type']),
+  displayName: json['display_name'] as String?,
+  description: json['description'] as String?,
+  accent: json['accent'] as String?,
+  gender: json['gender'] as String?,
+  languageCode: json['language_code'] as String?,
+  persona: json['persona'] as String?,
+  pitch: $enumDecodeNullable(_$VoicePitchEnumMap, json['pitch']),
+  context: json['context'] as String?,
+  regionCode: json['region_code'] as String?,
+  model: json['model'] as String?,
+  expireTime: json['expire_time'] as String?,
+  prompted: json['prompted'] == null
+      ? null
+      : PromptedVoice.fromJson(json['prompted'] as Map<String, dynamic>),
+  replicated: json['replicated'] == null
+      ? null
+      : ReplicatedVoice.fromJson(json['replicated'] as Map<String, dynamic>),
+  sampleAudio: json['sample_audio'] == null
+      ? null
+      : VoiceAudioData.fromJson(json['sample_audio'] as Map<String, dynamic>),
+);
 
 Map<String, dynamic> _$VoiceResourceToJson(VoiceResource instance) =>
     <String, dynamic>{
@@ -235,6 +252,7 @@ Map<String, dynamic> _$VoiceResourceToJson(VoiceResource instance) =>
       'expire_time': ?instance.expireTime,
       'prompted': ?instance.prompted?.toJson(),
       'replicated': ?instance.replicated?.toJson(),
+      'sample_audio': ?instance.sampleAudio?.toJson(),
     };
 
 const _$VoiceTypeEnumMap = {
@@ -249,35 +267,38 @@ const _$VoicePitchEnumMap = {
   VoicePitch.high: 'high',
 };
 
-CreateVoiceRequest _$CreateVoiceRequestFromJson(Map<String, dynamic> json) =>
-    CreateVoiceRequest(
-      type: $enumDecode(_$VoiceTypeEnumMap, json['type']),
-      prompted: json['prompted'] == null
-          ? null
-          : PromptedVoice.fromJson(json['prompted'] as Map<String, dynamic>),
-      replicated: json['replicated'] == null
-          ? null
-          : ReplicatedVoice.fromJson(
-              json['replicated'] as Map<String, dynamic>,
-            ),
-      store: json['store'] as bool?,
-      displayName: json['display_name'] as String?,
-      description: json['description'] as String?,
-      accent: json['accent'] as String?,
-      gender: json['gender'] as String?,
-      languageCode: json['language_code'] as String?,
-      persona: json['persona'] as String?,
-      pitch: $enumDecodeNullable(_$VoicePitchEnumMap, json['pitch']),
-      context: json['context'] as String?,
-      regionCode: json['region_code'] as String?,
-      model: json['model'] as String?,
-    );
+CreateVoiceRequest _$CreateVoiceRequestFromJson(
+  Map<String, dynamic> json,
+) => CreateVoiceRequest(
+  type: $enumDecode(_$VoiceTypeEnumMap, json['type']),
+  prompted: json['prompted'] == null
+      ? null
+      : PromptedVoice.fromJson(json['prompted'] as Map<String, dynamic>),
+  replicated: json['replicated'] == null
+      ? null
+      : ReplicatedVoice.fromJson(json['replicated'] as Map<String, dynamic>),
+  sampleAudio: json['sample_audio'] == null
+      ? null
+      : VoiceAudioData.fromJson(json['sample_audio'] as Map<String, dynamic>),
+  store: json['store'] as bool?,
+  displayName: json['display_name'] as String?,
+  description: json['description'] as String?,
+  accent: json['accent'] as String?,
+  gender: json['gender'] as String?,
+  languageCode: json['language_code'] as String?,
+  persona: json['persona'] as String?,
+  pitch: $enumDecodeNullable(_$VoicePitchEnumMap, json['pitch']),
+  context: json['context'] as String?,
+  regionCode: json['region_code'] as String?,
+  model: json['model'] as String?,
+);
 
 Map<String, dynamic> _$CreateVoiceRequestToJson(CreateVoiceRequest instance) =>
     <String, dynamic>{
       'type': _$VoiceTypeEnumMap[instance.type]!,
       'prompted': ?instance.prompted?.toJson(),
       'replicated': ?instance.replicated?.toJson(),
+      'sample_audio': ?instance.sampleAudio?.toJson(),
       'store': ?instance.store,
       'display_name': ?instance.displayName,
       'description': ?instance.description,
@@ -495,6 +516,9 @@ GenerationConfig _$GenerationConfigFromJson(Map<String, dynamic> json) =>
           : AudioTranscriptionConfig.fromJson(
               json['audio_transcription_config'] as Map<String, dynamic>,
             ),
+      labels: (json['labels'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String),
+      ),
     );
 
 Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
@@ -513,6 +537,7 @@ Map<String, dynamic> _$GenerationConfigToJson(GenerationConfig instance) =>
       'enable_affective_dialog': ?instance.enableAffectiveDialog,
       'translation_config': ?instance.translationConfig,
       'audio_transcription_config': ?instance.audioTranscriptionConfig,
+      'labels': ?instance.labels,
     };
 
 const _$ModalityEnumMap = {
@@ -1237,6 +1262,9 @@ LiveClientSetup _$LiveClientSetupFromJson(
   historyConfig: json['history_config'] == null
       ? null
       : HistoryConfig.fromJson(json['history_config'] as Map<String, dynamic>),
+  labels: (json['labels'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as String),
+  ),
 );
 
 Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
@@ -1255,6 +1283,7 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'avatar_config': ?instance.avatarConfig,
       'safety_settings': ?instance.safetySettings,
       'history_config': ?instance.historyConfig,
+      'labels': ?instance.labels,
     };
 
 ActivityStart _$ActivityStartFromJson(Map<String, dynamic> json) =>
