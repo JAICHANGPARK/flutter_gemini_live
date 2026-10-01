@@ -78,24 +78,28 @@ void main() {
       );
     });
 
-    test('buildSetupMessage rejects transcription language codes', () {
+    test('buildSetupMessage supports transcription language codes and translation config', () {
+      final msg = LiveService.buildSetupMessage(
+        LiveConnectParameters(
+          model: 'models/gemini-live-2.5-flash-preview',
+          callbacks: LiveCallbacks(),
+          inputAudioTranscription: AudioTranscriptionConfig(
+            languageCodes: ['ko-KR'],
+          ),
+          outputAudioTranscription: AudioTranscriptionConfig(
+            languageCodes: ['en-US'],
+          ),
+          translationConfig: TranslationConfig(
+            targetLanguageCode: 'ko',
+          ),
+        ),
+      );
+
+      expect(msg.setup?.inputAudioTranscription?.languageCodes, ['ko-KR']);
+      expect(msg.setup?.outputAudioTranscription?.languageCodes, ['en-US']);
       expect(
-        () => LiveService.buildSetupMessage(
-          LiveConnectParameters(
-            model: 'models/gemini-live-2.5-flash-preview',
-            callbacks: LiveCallbacks(),
-            inputAudioTranscription: AudioTranscriptionConfig(
-              languageCodes: ['ko-KR'],
-            ),
-          ),
-        ),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (error) => error.message,
-            'message',
-            'languageCodes parameter is not supported in Gemini API.',
-          ),
-        ),
+        msg.setup?.generationConfig?.translationConfig?.targetLanguageCode,
+        'ko',
       );
     });
 

@@ -1,6 +1,7 @@
 // ignore_for_file: constant_identifier_names
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:json_annotation/json_annotation.dart';
 
@@ -460,6 +461,65 @@ enum MediaProcessing {
   STATIC,
   @JsonValue('AGENTIC')
   AGENTIC,
+}
+
+/// Musical scale of generated music.
+@JsonEnum(alwaysCreate: true)
+enum Scale {
+  @JsonValue('SCALE_UNSPECIFIED')
+  SCALE_UNSPECIFIED,
+  @JsonValue('C_MAJOR_A_MINOR')
+  C_MAJOR_A_MINOR,
+  @JsonValue('D_FLAT_MAJOR_B_FLAT_MINOR')
+  D_FLAT_MAJOR_B_FLAT_MINOR,
+  @JsonValue('D_MAJOR_B_MINOR')
+  D_MAJOR_B_MINOR,
+  @JsonValue('E_FLAT_MAJOR_C_MINOR')
+  E_FLAT_MAJOR_C_MINOR,
+  @JsonValue('E_MAJOR_D_FLAT_MINOR')
+  E_MAJOR_D_FLAT_MINOR,
+  @JsonValue('F_MAJOR_D_MINOR')
+  F_MAJOR_D_MINOR,
+  @JsonValue('G_FLAT_MAJOR_E_FLAT_MINOR')
+  G_FLAT_MAJOR_E_FLAT_MINOR,
+  @JsonValue('G_MAJOR_E_MINOR')
+  G_MAJOR_E_MINOR,
+  @JsonValue('A_FLAT_MAJOR_F_MINOR')
+  A_FLAT_MAJOR_F_MINOR,
+  @JsonValue('A_MAJOR_G_FLAT_MINOR')
+  A_MAJOR_G_FLAT_MINOR,
+  @JsonValue('B_FLAT_MAJOR_G_MINOR')
+  B_FLAT_MAJOR_G_MINOR,
+  @JsonValue('B_MAJOR_A_FLAT_MINOR')
+  B_MAJOR_A_FLAT_MINOR,
+}
+
+/// The mode of music generation.
+@JsonEnum(alwaysCreate: true)
+enum MusicGenerationMode {
+  @JsonValue('MUSIC_GENERATION_MODE_UNSPECIFIED')
+  MUSIC_GENERATION_MODE_UNSPECIFIED,
+  @JsonValue('QUALITY')
+  QUALITY,
+  @JsonValue('DIVERSITY')
+  DIVERSITY,
+  @JsonValue('VOCALIZATION')
+  VOCALIZATION,
+}
+
+/// Playback control signal for music generation.
+@JsonEnum(alwaysCreate: true)
+enum LiveMusicPlaybackControl {
+  @JsonValue('PLAYBACK_CONTROL_UNSPECIFIED')
+  PLAYBACK_CONTROL_UNSPECIFIED,
+  @JsonValue('PLAY')
+  PLAY,
+  @JsonValue('PAUSE')
+  PAUSE,
+  @JsonValue('STOP')
+  STOP,
+  @JsonValue('RESET_CONTEXT')
+  RESET_CONTEXT,
 }
 
 // ============================================================================
@@ -2415,8 +2475,16 @@ class AuthToken {
     this.uses,
   });
 
-  factory AuthToken.fromJson(Map<String, dynamic> json) =>
-      _$AuthTokenFromJson(json);
+  factory AuthToken.fromJson(Map<String, dynamic> json) {
+    final parsed = _$AuthTokenFromJson(json);
+    return AuthToken(
+      name: parsed.name,
+      expireTime: parsed.expireTime ?? json['expireTime'] as String?,
+      newSessionExpireTime: parsed.newSessionExpireTime ??
+          json['newSessionExpireTime'] as String?,
+      uses: parsed.uses,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$AuthTokenToJson(this);
 }
@@ -2468,4 +2536,240 @@ class CreateAuthTokenConfig {
       _$CreateAuthTokenConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$CreateAuthTokenConfigToJson(this);
+}
+
+// ============================================================================
+// Live Music Models (Lyria Realtime)
+// ============================================================================
+
+/// Maps a prompt to a relative weight to steer music generation.
+@JsonSerializable(includeIfNull: false)
+class WeightedPrompt {
+  /// Text prompt describing musical styles, instruments, mood, etc.
+  final String? text;
+
+  /// Relative weight of the prompt. Weights will be normalized by the server.
+  final double? weight;
+
+  WeightedPrompt({this.text, this.weight});
+
+  factory WeightedPrompt.fromJson(Map<String, dynamic> json) =>
+      _$WeightedPromptFromJson(json);
+
+  Map<String, dynamic> toJson() => _$WeightedPromptToJson(this);
+}
+
+/// Configuration options for realtime music generation.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicGenerationConfig {
+  /// Controls variance in audio generation [0.0, 3.0]. Higher values produce higher variance.
+  final double? temperature;
+
+  /// Top-K sampling parameter [1, 1000].
+  final int? topK;
+
+  /// Random seed for reproducible generation.
+  final int? seed;
+
+  /// Controls prompt adherence [0.0, 6.0]. Higher guidance follows more closely.
+  final double? guidance;
+
+  /// Beats per minute [60, 200].
+  final int? bpm;
+
+  /// Density of sounds [0.0, 1.0].
+  final double? density;
+
+  /// Brightness of the music [0.0, 1.0].
+  final double? brightness;
+
+  /// Musical scale of the generated music.
+  final Scale? scale;
+
+  /// Whether output should mute bass.
+  final bool? muteBass;
+
+  /// Whether output should mute drums.
+  final bool? muteDrums;
+
+  /// Whether output should contain only bass and drums.
+  final bool? onlyBassAndDrums;
+
+  /// Generation mode (QUALITY, DIVERSITY, VOCALIZATION).
+  final MusicGenerationMode? musicGenerationMode;
+
+  LiveMusicGenerationConfig({
+    this.temperature,
+    this.topK,
+    this.seed,
+    this.guidance,
+    this.bpm,
+    this.density,
+    this.brightness,
+    this.scale,
+    this.muteBass,
+    this.muteDrums,
+    this.onlyBassAndDrums,
+    this.musicGenerationMode,
+  });
+
+  factory LiveMusicGenerationConfig.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicGenerationConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicGenerationConfigToJson(this);
+}
+
+/// Setup message sent on initial connection to the music stream.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicClientSetup {
+  /// The model resource name, e.g. `models/lyria-realtime-exp`.
+  final String? model;
+
+  LiveMusicClientSetup({this.model});
+
+  factory LiveMusicClientSetup.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicClientSetupFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicClientSetupToJson(this);
+}
+
+/// User input to steer the music stream.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicClientContent {
+  /// Weighted prompts used to guide music generation.
+  final List<WeightedPrompt>? weightedPrompts;
+
+  LiveMusicClientContent({this.weightedPrompts});
+
+  factory LiveMusicClientContent.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicClientContentFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicClientContentToJson(this);
+}
+
+/// Messages sent from the client over the Live Music WebSocket.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicClientMessage {
+  final LiveMusicClientSetup? setup;
+  final LiveMusicClientContent? clientContent;
+  final LiveMusicGenerationConfig? musicGenerationConfig;
+  final LiveMusicPlaybackControl? playbackControl;
+
+  LiveMusicClientMessage({
+    this.setup,
+    this.clientContent,
+    this.musicGenerationConfig,
+    this.playbackControl,
+  });
+
+  factory LiveMusicClientMessage.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicClientMessageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicClientMessageToJson(this);
+}
+
+/// Confirmation message sent from the server once setup is complete.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicServerSetupComplete {
+  const LiveMusicServerSetupComplete();
+
+  factory LiveMusicServerSetupComplete.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicServerSetupCompleteFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicServerSetupCompleteToJson(this);
+}
+
+/// Prompts and configuration used to generate an audio chunk.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicSourceMetadata {
+  final LiveMusicClientContent? clientContent;
+  final LiveMusicGenerationConfig? musicGenerationConfig;
+
+  LiveMusicSourceMetadata({this.clientContent, this.musicGenerationConfig});
+
+  factory LiveMusicSourceMetadata.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicSourceMetadataFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicSourceMetadataToJson(this);
+}
+
+/// A chunk of generated audio from the music model.
+@JsonSerializable(includeIfNull: false)
+class AudioChunk {
+  /// Base64-encoded raw audio bytes.
+  final String? data;
+
+  /// MIME type of the audio chunk.
+  final String? mimeType;
+
+  /// Metadata about prompts and config used to generate this chunk.
+  final LiveMusicSourceMetadata? sourceMetadata;
+
+  AudioChunk({this.data, this.mimeType, this.sourceMetadata});
+
+  /// Decoded raw audio bytes, or null if [data] is null.
+  Uint8List? get bytes => data != null ? base64Decode(data!) : null;
+
+  factory AudioChunk.fromJson(Map<String, dynamic> json) =>
+      _$AudioChunkFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AudioChunkToJson(this);
+}
+
+/// Server content payload containing generated audio chunks.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicServerContent {
+  final List<AudioChunk>? audioChunks;
+
+  LiveMusicServerContent({this.audioChunks});
+
+  factory LiveMusicServerContent.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicServerContentFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicServerContentToJson(this);
+}
+
+/// Information about a prompt filtered by safety filters.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicFilteredPrompt {
+  final String? text;
+  final String? filteredReason;
+
+  LiveMusicFilteredPrompt({this.text, this.filteredReason});
+
+  factory LiveMusicFilteredPrompt.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicFilteredPromptFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicFilteredPromptToJson(this);
+}
+
+/// Response message received from the Live Music WebSocket server.
+@JsonSerializable(includeIfNull: false)
+class LiveMusicServerMessage {
+  final LiveMusicServerSetupComplete? setupComplete;
+  final LiveMusicServerContent? serverContent;
+  final LiveMusicFilteredPrompt? filteredPrompt;
+
+  LiveMusicServerMessage({
+    this.setupComplete,
+    this.serverContent,
+    this.filteredPrompt,
+  });
+
+  /// Returns the first audio chunk in [serverContent], if present.
+  AudioChunk? get audioChunk {
+    final chunks = serverContent?.audioChunks;
+    if (chunks != null && chunks.isNotEmpty) {
+      return chunks.first;
+    }
+    return null;
+  }
+
+  /// Returns raw audio bytes of the first audio chunk, if present.
+  Uint8List? get audioBytes => audioChunk?.bytes;
+
+  factory LiveMusicServerMessage.fromJson(Map<String, dynamic> json) =>
+      _$LiveMusicServerMessageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$LiveMusicServerMessageToJson(this);
 }

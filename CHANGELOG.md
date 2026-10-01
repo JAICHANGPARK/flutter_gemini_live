@@ -1,3 +1,20 @@
+## 2026.10.4
+
+### Added (Upstream Parity with js-genai & python-genai)
+- **Live Music API (`ai.live.music` / `LiveMusicService`)**:
+  - Full bidirectional WebSocket streaming client for Gemini Realtime Music generation (`models/lyria-realtime-exp`) via `BidiGenerateMusic`.
+  - Accessible via `genAI.live.music` or `liveService.music`.
+  - Added session controls: `setWeightedPrompts()`, `setMusicGenerationConfig()`, `play()`, `pause()`, `stop()`, `resetContext()`.
+  - Added full models and enums: `Scale`, `MusicGenerationMode`, `LiveMusicPlaybackControl`, `WeightedPrompt`, `LiveMusicGenerationConfig`, `LiveMusicClientMessage`, `LiveMusicServerMessage`, `AudioChunk` (with `bytes` helper getter), `LiveMusicFilteredPrompt`.
+- **Ephemeral Authentication Tokens Service (`genAI.authTokens` / `AuthTokensService`)**:
+  - Implemented `AuthTokensService` for issuing secure, short-lived client-side session tokens (`POST /v1alpha/authTokens`).
+  - Supports `liveConnectConstraints` (locking model and `GenerationConfig`) and automated `fieldMask` generation with `lockAdditionalFields`.
+  - Handles dual camelCase/snake_case JSON mapping for `AuthToken` responses.
+- **Top-level `translationConfig` on `LiveConnectParameters`**:
+  - Directly pass `TranslationConfig` on `LiveConnectParameters` for seamless realtime bidirectional translation without nesting in `GenerationConfig`.
+- **Audio Transcription `languageCodes` Support**:
+  - Removed outdated restriction prohibiting `languageCodes` in `AudioTranscriptionConfig`, aligning with upstream Gemini API support for transcription languages.
+
 ## 2026.10.3
 
 ### Changed & Improved (Design & Aesthetics)

@@ -15,6 +15,7 @@ import './platform/runtime_info_stub.dart'
     as runtime_info;
 
 import 'model/models.dart';
+import 'music_service.dart';
 
 typedef WebSocketConnector =
     Future<WebSocketChannel> Function(Uri uri, Map<String, dynamic> headers);
@@ -66,6 +67,9 @@ class LiveConnectParameters {
   /// User-defined metadata labels for tracking or billing categorization.
   final Map<String, String>? labels;
 
+  /// Optional translation configuration for realtime bidirectional translation.
+  final TranslationConfig? translationConfig;
+
   LiveConnectParameters({
     required this.model,
     required this.callbacks,
@@ -83,6 +87,7 @@ class LiveConnectParameters {
     this.safetySettings,
     this.historyConfig,
     this.labels,
+    this.translationConfig,
   });
 }
 
@@ -98,12 +103,6 @@ class LiveService {
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
 
-  static UnsupportedError _unsupportedAudioTranscriptionLanguageCodesError() {
-    return UnsupportedError(
-      'languageCodes parameter is not supported in Gemini API.',
-    );
-  }
-
   static UnsupportedError _unsupportedSafetyMethodError() {
     return UnsupportedError(
       'SafetySetting.method parameter is not supported in Gemini API.',
@@ -118,6 +117,9 @@ class LiveService {
   /// disabled. Set to `print` to restore the previous verbose behavior.
   final void Function(String message)? logger;
 
+  /// Service for generating realtime music streams (Lyria Live).
+  late final LiveMusicService music;
+
   LiveService({
     required this.apiKey,
     this.apiVersion = 'v1beta',
@@ -127,16 +129,33 @@ class LiveService {
     String Function()? dartVersionProvider,
   }) : _connector = connector ?? ws_connector.connect,
        _setupTimeout = setupTimeout,
-       _dartVersionProvider = dartVersionProvider ?? dartVersion;
+       _dartVersionProvider = dartVersionProvider ?? dartVersion {
+    music = LiveMusicService(
+      apiKey: apiKey,
+      apiVersion: 'v1alpha',
+      logger: logger,
+      connector: _connector,
+      setupTimeout: _setupTimeout,
+      dartVersionProvider: _dartVersionProvider,
+    );
+  }
 
   /// Returns the current Dart version
   static String dartVersion() {
     return runtime_info.dartVersion();
   }
 
-  static GenerationConfig _normalizeGenerationConfig(GenerationConfig? config) {
+  static GenerationConfig _normalizeGenerationConfig(
+    GenerationConfig? config, [
+    TranslationConfig? fallbackTranslationConfig,
+  ]) {
+    final effectiveTranslationConfig =
+        config?.translationConfig ?? fallbackTranslationConfig;
     final responseModalities = config?.responseModalities;
-    if (responseModalities != null && responseModalities.isNotEmpty) {
+    if (responseModalities != null &&
+        responseModalities.isNotEmpty &&
+        (config?.translationConfig != null ||
+            fallbackTranslationConfig == null)) {
       return config!;
     }
 
@@ -145,13 +164,16 @@ class LiveService {
       topK: config?.topK,
       topP: config?.topP,
       maxOutputTokens: config?.maxOutputTokens,
-      responseModalities: const [Modality.AUDIO],
+      responseModalities: (responseModalities != null &&
+              responseModalities.isNotEmpty)
+          ? responseModalities
+          : const [Modality.AUDIO],
       mediaResolution: config?.mediaResolution,
       seed: config?.seed,
       speechConfig: config?.speechConfig,
       thinkingConfig: config?.thinkingConfig,
       enableAffectiveDialog: config?.enableAffectiveDialog,
-      translationConfig: config?.translationConfig,
+      translationConfig: effectiveTranslationConfig,
       audioTranscriptionConfig: config?.audioTranscriptionConfig,
       labels: config?.labels,
     );
@@ -168,14 +190,6 @@ class LiveService {
       throw UnsupportedError(
         'explicitVadSignal parameter is not supported in Gemini API.',
       );
-    }
-
-    if (params.inputAudioTranscription?.languageCodes != null) {
-      throw _unsupportedAudioTranscriptionLanguageCodesError();
-    }
-
-    if (params.outputAudioTranscription?.languageCodes != null) {
-      throw _unsupportedAudioTranscriptionLanguageCodesError();
     }
 
     if ((params.safetySettings ?? const <SafetySetting>[]).any(
@@ -207,7 +221,10 @@ class LiveService {
     return LiveClientMessage(
       setup: LiveClientSetup(
         model: modelName,
-        generationConfig: _normalizeGenerationConfig(params.config),
+        generationConfig: _normalizeGenerationConfig(
+          params.config,
+          params.translationConfig,
+        ),
         systemInstruction: params.systemInstruction,
         tools: params.tools,
         realtimeInputConfig: params.realtimeInputConfig,

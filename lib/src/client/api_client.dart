@@ -47,11 +47,16 @@ class ApiClient {
   ///
   /// It combines the [baseUrl] (or a default), [apiVersion], the resource [path],
   /// and attaches the [apiKey] as a query parameter for authentication.
-  Uri _buildUri(String path, [Map<String, String>? queryParams]) {
+  Uri _buildUri(
+    String path, [
+    Map<String, String>? queryParams,
+    String? customApiVersion,
+  ]) {
     // Use the provided baseUrl or fall back to the default Google API endpoint.
     final effectiveBaseUrl =
         baseUrl ?? 'https://generativelanguage.googleapis.com';
-    final baseUri = Uri.parse('$effectiveBaseUrl/$apiVersion/$path');
+    final effectiveApiVersion = customApiVersion ?? apiVersion;
+    final baseUri = Uri.parse('$effectiveBaseUrl/$effectiveApiVersion/$path');
     final query = Map<String, String>.from(baseUri.queryParameters);
     query['key'] = apiKey;
     if (queryParams != null) {
@@ -64,13 +69,15 @@ class ApiClient {
   ///
   /// - [path]: The specific API resource path (e.g., 'voices').
   /// - [queryParams]: Optional query parameters to append.
+  /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>].
   Future<Map<String, dynamic>> get(
     String path, [
     Map<String, String>? queryParams,
+    String? apiVersion,
   ]) async {
-    final uri = _buildUri(path, queryParams);
+    final uri = _buildUri(path, queryParams, apiVersion);
     final response = await _httpClient.get(
       uri,
       headers: {'Accept': 'application/json'},
@@ -90,15 +97,17 @@ class ApiClient {
   ///
   /// - [path]: The specific API resource path (e.g., 'models/gemini-pro:generateContent').
   /// - [body]: The request payload, which will be JSON-encoded.
+  /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>] on success.
   ///
   /// Throws an [Exception] if the API returns a non-successful status code (not 2xx).
   Future<Map<String, dynamic>> post(
     String path,
-    Map<String, dynamic> body,
-  ) async {
-    final uri = _buildUri(path);
+    Map<String, dynamic> body, {
+    String? apiVersion,
+  }) async {
+    final uri = _buildUri(path, null, apiVersion);
     final response = await _httpClient.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -117,10 +126,14 @@ class ApiClient {
   /// Sends a DELETE request to the specified API [path].
   ///
   /// - [path]: The specific API resource path (e.g., 'voices/voice_123').
+  /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>].
-  Future<Map<String, dynamic>> delete(String path) async {
-    final uri = _buildUri(path);
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    String? apiVersion,
+  }) async {
+    final uri = _buildUri(path, null, apiVersion);
     final response = await _httpClient.delete(
       uri,
       headers: {'Accept': 'application/json'},

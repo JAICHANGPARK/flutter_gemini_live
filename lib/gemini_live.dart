@@ -16,3 +16,5 @@ export 'src/utils/audio_utils.dart';
 export 'src/utils/live_session_controller.dart';
 export 'src/widgets/live_waveform.dart';
 export 'src/widgets/live_caption_bubble.dart';
+export 'src/music_service.dart';
+export 'src/auth_tokens_service.dart';

@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import 'auth_tokens_service.dart';
 import 'client/api_client.dart';
 import 'live_service.dart';
 import 'voices_service.dart';
@@ -14,6 +15,17 @@ export 'live_service.dart'
         LiveSession,
         LiveService,
         TimeoutException;
+
+// Re-export realtime music (Lyria Live) classes.
+export 'music_service.dart'
+    show
+        LiveMusicCallbacks,
+        LiveMusicConnectParameters,
+        LiveMusicSession,
+        LiveMusicService;
+
+// Re-export ephemeral auth tokens service.
+export 'auth_tokens_service.dart' show AuthTokensService;
 
 // Re-export all model classes (e.g., Content, Part, GenerateContentResponse).
 // This provides a single, convenient import for all data structures
@@ -67,6 +79,11 @@ class GoogleGenAI {
   /// This is marked as `late` because it is initialized in the constructor.
   late final GeminiVoicesService voices;
 
+  /// Provides access to ephemeral token generation for Live API connections.
+  ///
+  /// This is marked as `late` because it is initialized in the constructor.
+  late final AuthTokensService authTokens;
+
   /// An optional logger function to receive WebSocket traffic and connection logs.
   ///
   /// For example, pass `print` to log all WebSocket messages to the console,
@@ -96,6 +113,9 @@ class GoogleGenAI {
 
     // Initialize the VoicesService for custom and system voice operations.
     voices = GeminiVoicesService.fromApiClient(_apiClient);
+
+    // Initialize the AuthTokensService for ephemeral token generation.
+    authTokens = AuthTokensService(_apiClient);
   }
 
   /// Releases any resources held by the client.

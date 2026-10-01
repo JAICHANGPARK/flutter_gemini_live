@@ -1668,3 +1668,236 @@ Map<String, dynamic> _$CreateAuthTokenConfigToJson(
   'live_connect_constraints': ?instance.liveConnectConstraints,
   'lock_additional_fields': ?instance.lockAdditionalFields,
 };
+
+WeightedPrompt _$WeightedPromptFromJson(Map<String, dynamic> json) =>
+    WeightedPrompt(
+      text: json['text'] as String?,
+      weight: (json['weight'] as num?)?.toDouble(),
+    );
+
+Map<String, dynamic> _$WeightedPromptToJson(WeightedPrompt instance) =>
+    <String, dynamic>{'text': ?instance.text, 'weight': ?instance.weight};
+
+LiveMusicGenerationConfig _$LiveMusicGenerationConfigFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicGenerationConfig(
+  temperature: (json['temperature'] as num?)?.toDouble(),
+  topK: (json['topK'] as num?)?.toInt(),
+  seed: (json['seed'] as num?)?.toInt(),
+  guidance: (json['guidance'] as num?)?.toDouble(),
+  bpm: (json['bpm'] as num?)?.toInt(),
+  density: (json['density'] as num?)?.toDouble(),
+  brightness: (json['brightness'] as num?)?.toDouble(),
+  scale: $enumDecodeNullable(_$ScaleEnumMap, json['scale']),
+  muteBass: json['muteBass'] as bool?,
+  muteDrums: json['muteDrums'] as bool?,
+  onlyBassAndDrums: json['onlyBassAndDrums'] as bool?,
+  musicGenerationMode: $enumDecodeNullable(
+    _$MusicGenerationModeEnumMap,
+    json['musicGenerationMode'],
+  ),
+);
+
+Map<String, dynamic> _$LiveMusicGenerationConfigToJson(
+  LiveMusicGenerationConfig instance,
+) => <String, dynamic>{
+  'temperature': ?instance.temperature,
+  'topK': ?instance.topK,
+  'seed': ?instance.seed,
+  'guidance': ?instance.guidance,
+  'bpm': ?instance.bpm,
+  'density': ?instance.density,
+  'brightness': ?instance.brightness,
+  'scale': ?_$ScaleEnumMap[instance.scale],
+  'muteBass': ?instance.muteBass,
+  'muteDrums': ?instance.muteDrums,
+  'onlyBassAndDrums': ?instance.onlyBassAndDrums,
+  'musicGenerationMode':
+      ?_$MusicGenerationModeEnumMap[instance.musicGenerationMode],
+};
+
+const _$ScaleEnumMap = {
+  Scale.SCALE_UNSPECIFIED: 'SCALE_UNSPECIFIED',
+  Scale.C_MAJOR_A_MINOR: 'C_MAJOR_A_MINOR',
+  Scale.D_FLAT_MAJOR_B_FLAT_MINOR: 'D_FLAT_MAJOR_B_FLAT_MINOR',
+  Scale.D_MAJOR_B_MINOR: 'D_MAJOR_B_MINOR',
+  Scale.E_FLAT_MAJOR_C_MINOR: 'E_FLAT_MAJOR_C_MINOR',
+  Scale.E_MAJOR_D_FLAT_MINOR: 'E_MAJOR_D_FLAT_MINOR',
+  Scale.F_MAJOR_D_MINOR: 'F_MAJOR_D_MINOR',
+  Scale.G_FLAT_MAJOR_E_FLAT_MINOR: 'G_FLAT_MAJOR_E_FLAT_MINOR',
+  Scale.G_MAJOR_E_MINOR: 'G_MAJOR_E_MINOR',
+  Scale.A_FLAT_MAJOR_F_MINOR: 'A_FLAT_MAJOR_F_MINOR',
+  Scale.A_MAJOR_G_FLAT_MINOR: 'A_MAJOR_G_FLAT_MINOR',
+  Scale.B_FLAT_MAJOR_G_MINOR: 'B_FLAT_MAJOR_G_MINOR',
+  Scale.B_MAJOR_A_FLAT_MINOR: 'B_MAJOR_A_FLAT_MINOR',
+};
+
+const _$MusicGenerationModeEnumMap = {
+  MusicGenerationMode.MUSIC_GENERATION_MODE_UNSPECIFIED:
+      'MUSIC_GENERATION_MODE_UNSPECIFIED',
+  MusicGenerationMode.QUALITY: 'QUALITY',
+  MusicGenerationMode.DIVERSITY: 'DIVERSITY',
+  MusicGenerationMode.VOCALIZATION: 'VOCALIZATION',
+};
+
+LiveMusicClientSetup _$LiveMusicClientSetupFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicClientSetup(model: json['model'] as String?);
+
+Map<String, dynamic> _$LiveMusicClientSetupToJson(
+  LiveMusicClientSetup instance,
+) => <String, dynamic>{'model': ?instance.model};
+
+LiveMusicClientContent _$LiveMusicClientContentFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicClientContent(
+  weightedPrompts: (json['weightedPrompts'] as List<dynamic>?)
+      ?.map((e) => WeightedPrompt.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$LiveMusicClientContentToJson(
+  LiveMusicClientContent instance,
+) => <String, dynamic>{'weightedPrompts': ?instance.weightedPrompts};
+
+LiveMusicClientMessage _$LiveMusicClientMessageFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicClientMessage(
+  setup: json['setup'] == null
+      ? null
+      : LiveMusicClientSetup.fromJson(json['setup'] as Map<String, dynamic>),
+  clientContent: json['clientContent'] == null
+      ? null
+      : LiveMusicClientContent.fromJson(
+          json['clientContent'] as Map<String, dynamic>,
+        ),
+  musicGenerationConfig: json['musicGenerationConfig'] == null
+      ? null
+      : LiveMusicGenerationConfig.fromJson(
+          json['musicGenerationConfig'] as Map<String, dynamic>,
+        ),
+  playbackControl: $enumDecodeNullable(
+    _$LiveMusicPlaybackControlEnumMap,
+    json['playbackControl'],
+  ),
+);
+
+Map<String, dynamic> _$LiveMusicClientMessageToJson(
+  LiveMusicClientMessage instance,
+) => <String, dynamic>{
+  'setup': ?instance.setup,
+  'clientContent': ?instance.clientContent,
+  'musicGenerationConfig': ?instance.musicGenerationConfig,
+  'playbackControl':
+      ?_$LiveMusicPlaybackControlEnumMap[instance.playbackControl],
+};
+
+const _$LiveMusicPlaybackControlEnumMap = {
+  LiveMusicPlaybackControl.PLAYBACK_CONTROL_UNSPECIFIED:
+      'PLAYBACK_CONTROL_UNSPECIFIED',
+  LiveMusicPlaybackControl.PLAY: 'PLAY',
+  LiveMusicPlaybackControl.PAUSE: 'PAUSE',
+  LiveMusicPlaybackControl.STOP: 'STOP',
+  LiveMusicPlaybackControl.RESET_CONTEXT: 'RESET_CONTEXT',
+};
+
+LiveMusicServerSetupComplete _$LiveMusicServerSetupCompleteFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicServerSetupComplete();
+
+Map<String, dynamic> _$LiveMusicServerSetupCompleteToJson(
+  LiveMusicServerSetupComplete instance,
+) => <String, dynamic>{};
+
+LiveMusicSourceMetadata _$LiveMusicSourceMetadataFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicSourceMetadata(
+  clientContent: json['clientContent'] == null
+      ? null
+      : LiveMusicClientContent.fromJson(
+          json['clientContent'] as Map<String, dynamic>,
+        ),
+  musicGenerationConfig: json['musicGenerationConfig'] == null
+      ? null
+      : LiveMusicGenerationConfig.fromJson(
+          json['musicGenerationConfig'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$LiveMusicSourceMetadataToJson(
+  LiveMusicSourceMetadata instance,
+) => <String, dynamic>{
+  'clientContent': ?instance.clientContent,
+  'musicGenerationConfig': ?instance.musicGenerationConfig,
+};
+
+AudioChunk _$AudioChunkFromJson(Map<String, dynamic> json) => AudioChunk(
+  data: json['data'] as String?,
+  mimeType: json['mimeType'] as String?,
+  sourceMetadata: json['sourceMetadata'] == null
+      ? null
+      : LiveMusicSourceMetadata.fromJson(
+          json['sourceMetadata'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$AudioChunkToJson(AudioChunk instance) =>
+    <String, dynamic>{
+      'data': ?instance.data,
+      'mimeType': ?instance.mimeType,
+      'sourceMetadata': ?instance.sourceMetadata,
+    };
+
+LiveMusicServerContent _$LiveMusicServerContentFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicServerContent(
+  audioChunks: (json['audioChunks'] as List<dynamic>?)
+      ?.map((e) => AudioChunk.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$LiveMusicServerContentToJson(
+  LiveMusicServerContent instance,
+) => <String, dynamic>{'audioChunks': ?instance.audioChunks};
+
+LiveMusicFilteredPrompt _$LiveMusicFilteredPromptFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicFilteredPrompt(
+  text: json['text'] as String?,
+  filteredReason: json['filteredReason'] as String?,
+);
+
+Map<String, dynamic> _$LiveMusicFilteredPromptToJson(
+  LiveMusicFilteredPrompt instance,
+) => <String, dynamic>{
+  'text': ?instance.text,
+  'filteredReason': ?instance.filteredReason,
+};
+
+LiveMusicServerMessage _$LiveMusicServerMessageFromJson(
+  Map<String, dynamic> json,
+) => LiveMusicServerMessage(
+  setupComplete: json['setupComplete'] == null
+      ? null
+      : LiveMusicServerSetupComplete.fromJson(
+          json['setupComplete'] as Map<String, dynamic>,
+        ),
+  serverContent: json['serverContent'] == null
+      ? null
+      : LiveMusicServerContent.fromJson(
+          json['serverContent'] as Map<String, dynamic>,
+        ),
+  filteredPrompt: json['filteredPrompt'] == null
+      ? null
+      : LiveMusicFilteredPrompt.fromJson(
+          json['filteredPrompt'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$LiveMusicServerMessageToJson(
+  LiveMusicServerMessage instance,
+) => <String, dynamic>{
+  'setupComplete': ?instance.setupComplete,
+  'serverContent': ?instance.serverContent,
+  'filteredPrompt': ?instance.filteredPrompt,
+};

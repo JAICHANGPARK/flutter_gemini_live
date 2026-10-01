@@ -1317,6 +1317,84 @@ void main() {
     final deserializedSetup = LiveClientSetup.fromJson(setupJson);
     expect(deserializedSetup.labels, labels);
   });
+
+  test('Live Music models comprehensive round-trip serialization', () {
+    final clientMsg = LiveMusicClientMessage(
+      setup: LiveMusicClientSetup(model: 'models/lyria-realtime-exp'),
+      clientContent: LiveMusicClientContent(
+        weightedPrompts: [
+          WeightedPrompt(text: 'ambient jazz', weight: 0.9),
+        ],
+      ),
+      musicGenerationConfig: LiveMusicGenerationConfig(
+        bpm: 110,
+        guidance: 3.5,
+        density: 0.7,
+        brightness: 0.6,
+        muteBass: true,
+        muteDrums: false,
+        onlyBassAndDrums: false,
+        musicGenerationMode: MusicGenerationMode.DIVERSITY,
+      ),
+      playbackControl: LiveMusicPlaybackControl.PLAY,
+    );
+
+    final clientJson = normalizeJson(clientMsg.toJson());
+    expect(clientJson['setup']['model'], 'models/lyria-realtime-exp');
+    expect(clientJson['playbackControl'], 'PLAY');
+    expect(clientJson['musicGenerationConfig']['bpm'], 110);
+    expect(clientJson['musicGenerationConfig']['muteBass'], true);
+
+    final roundTripClient = LiveMusicClientMessage.fromJson(clientJson);
+    expect(roundTripClient.setup?.model, 'models/lyria-realtime-exp');
+    expect(roundTripClient.playbackControl, LiveMusicPlaybackControl.PLAY);
+    expect(
+      roundTripClient.musicGenerationConfig?.musicGenerationMode,
+      MusicGenerationMode.DIVERSITY,
+    );
+
+    const setupComplete = LiveMusicServerSetupComplete();
+    expect(setupComplete.toJson(), isEmpty);
+    final setupCompleteFromJson =
+        LiveMusicServerSetupComplete.fromJson(<String, dynamic>{});
+    expect(setupCompleteFromJson.toJson(), isEmpty);
+
+    final filteredPrompt = LiveMusicFilteredPrompt(
+      text: 'filtered input',
+      filteredReason: 'SAFETY',
+    );
+    final filteredJson = normalizeJson(filteredPrompt.toJson());
+    expect(filteredJson['text'], 'filtered input');
+    expect(filteredJson['filteredReason'], 'SAFETY');
+    final roundTripFiltered = LiveMusicFilteredPrompt.fromJson(filteredJson);
+    expect(roundTripFiltered.text, 'filtered input');
+    expect(roundTripFiltered.filteredReason, 'SAFETY');
+
+    final serverMsg = LiveMusicServerMessage(
+      setupComplete: setupComplete,
+      serverContent: LiveMusicServerContent(
+        audioChunks: [
+          AudioChunk(
+            data: 'AQID',
+            mimeType: 'audio/pcm',
+            sourceMetadata: LiveMusicSourceMetadata(
+              clientContent: LiveMusicClientContent(
+                weightedPrompts: [WeightedPrompt(text: 'piano', weight: 1.0)],
+              ),
+              musicGenerationConfig: LiveMusicGenerationConfig(bpm: 80),
+            ),
+          ),
+        ],
+      ),
+      filteredPrompt: filteredPrompt,
+    );
+    final serverJson = normalizeJson(serverMsg.toJson());
+    final roundTripServer = LiveMusicServerMessage.fromJson(serverJson);
+    expect(roundTripServer.setupComplete, isNotNull);
+    expect(roundTripServer.audioChunk?.mimeType, 'audio/pcm');
+    expect(roundTripServer.audioBytes, [1, 2, 3]);
+    expect(roundTripServer.filteredPrompt?.text, 'filtered input');
+  });
 }
 
 Map<String, dynamic> normalizeJson(Map<String, dynamic> json) =>
