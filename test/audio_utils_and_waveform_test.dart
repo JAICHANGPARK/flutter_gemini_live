@@ -169,5 +169,23 @@ void main() {
 
       expect(dismissed, isTrue);
     });
+
+    testWidgets('respects showSpeakerTag: false and enableBlur: false', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: GeminiLiveCaptionBubble(
+              text: 'Clean subtitle without tag',
+              showSpeakerTag: false,
+              enableBlur: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Clean subtitle without tag'), findsOneWidget);
+      expect(find.text('Gemini'), findsNothing);
+      expect(find.text('You'), findsNothing);
+    });
   });
 }

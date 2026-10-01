@@ -86,52 +86,94 @@ class _GeminiLiveMicButtonState extends State<GeminiLiveMicButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final activeBg = widget.activeColor ?? theme.colorScheme.error;
-    final inactiveBg = widget.inactiveColor ?? theme.colorScheme.primary;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final activeBg = widget.activeColor ??
+        (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626)); // Clean recording red
+    final inactiveBg = widget.inactiveColor ??
+        (isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5)); // Clean neutral surface
+
+    final activeFg = Colors.white;
+    final inactiveFg = isDark ? Colors.white : const Color(0xFF18181B);
 
     return Tooltip(
       message: widget.tooltip ?? (widget.isRecording ? 'Stop listening' : 'Start speaking'),
       child: GestureDetector(
         onLongPressStart: widget.onLongPressStart != null ? (_) => widget.onLongPressStart!() : null,
         onLongPressEnd: widget.onLongPressEnd != null ? (_) => widget.onLongPressEnd!() : null,
-        child: AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            final glowRadius = widget.isRecording ? 6.0 + (_pulseController.value * 10.0) : 0.0;
-            final glowOpacity = widget.isRecording ? 0.3 + (_pulseController.value * 0.3) : 0.0;
+        child: SizedBox(
+          width: widget.size * 1.4,
+          height: widget.size * 1.4,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Clean acoustic expanding ring (native audio ripple)
+              if (widget.isRecording)
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, _) {
+                    final rippleScale = 1.0 + (_pulseController.value * 0.35);
+                    final rippleOpacity = (1.0 - _pulseController.value).clamp(0.0, 0.4);
 
-            return Container(
-              width: widget.size,
-              height: widget.size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.isRecording ? activeBg : inactiveBg,
-                boxShadow: [
-                  if (widget.isRecording)
+                    return Transform.scale(
+                      scale: rippleScale,
+                      child: Container(
+                        width: widget.size,
+                        height: widget.size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: activeBg.withValues(alpha: rippleOpacity),
+                            width: 2.0,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              // Main button core
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.isRecording ? activeBg : inactiveBg,
+                  border: Border.all(
+                    color: widget.isRecording
+                        ? Colors.transparent
+                        : (isDark
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : Colors.black.withValues(alpha: 0.08)),
+                    width: 0.5,
+                  ),
+                  boxShadow: [
                     BoxShadow(
-                      color: activeBg.withValues(alpha: glowOpacity),
-                      blurRadius: glowRadius,
-                      spreadRadius: glowRadius / 2,
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                      blurRadius: 10.0,
+                      offset: const Offset(0, 3),
                     ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: widget.onPressed,
-                  child: Center(
-                    child: Icon(
-                      widget.isRecording ? Icons.mic : Icons.mic_none,
-                      color: Colors.white,
-                      size: widget.iconSize,
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: widget.onPressed,
+                    child: Center(
+                      child: Icon(
+                        widget.isRecording ? Icons.mic : Icons.mic_none,
+                        color: widget.isRecording ? activeFg : inactiveFg,
+                        size: widget.iconSize,
+                      ),
                     ),
                   ),
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );

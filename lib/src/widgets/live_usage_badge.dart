@@ -51,8 +51,8 @@ class GeminiLiveUsageBadge extends StatelessWidget {
         final bg = backgroundColor ??
             (isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06));
-        final fg = foregroundColor ?? (isDark ? Colors.white70 : Colors.black87);
+                : Colors.black.withValues(alpha: 0.05));
+        final fg = foregroundColor ?? (isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1F2937));
 
         final tokenText = tracker.formatTokens();
         final costText = tracker.formatCost();
@@ -68,17 +68,20 @@ class GeminiLiveUsageBadge extends StatelessWidget {
                 color: bg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? Colors.white12 : Colors.black12,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.black.withValues(alpha: 0.08),
+                  width: 0.5,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (showIcon) ...[
-                    const Icon(
+                    Icon(
                       Icons.toll_rounded,
-                      size: 14,
-                      color: Colors.amberAccent,
+                      size: 13,
+                      color: fg.withValues(alpha: 0.65),
                     ),
                     const SizedBox(width: 5),
                   ],
@@ -88,6 +91,7 @@ class GeminiLiveUsageBadge extends StatelessWidget {
                       color: fg,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
                     ),
                   ),
                   if (!compact && tracker.totalTokens > 0) ...[
@@ -96,7 +100,7 @@ class GeminiLiveUsageBadge extends StatelessWidget {
                       width: 3,
                       height: 3,
                       decoration: BoxDecoration(
-                        color: fg.withValues(alpha: 0.4),
+                        color: fg.withValues(alpha: 0.35),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -104,9 +108,10 @@ class GeminiLiveUsageBadge extends StatelessWidget {
                     Text(
                       costText,
                       style: TextStyle(
-                        color: isDark ? Colors.cyanAccent : Colors.teal,
+                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.1,
                       ),
                     ),
                   ],
@@ -145,8 +150,14 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
         final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: isDark ? const Color(0xFF18181B) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isDark ? Colors.white12 : Colors.black12,
+              width: 0.5,
+            ),
+          ),
           titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
           actionsPadding: const EdgeInsets.all(12),
@@ -155,15 +166,21 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.15),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.analytics_rounded, color: Colors.amberAccent, size: 22),
+                child: Icon(
+                  Icons.analytics_outlined,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
                 'Gemini Live 사용량 및 비용',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.2),
               ),
             ],
           ),
@@ -177,13 +194,12 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
-                          : [Colors.blue.shade50, Colors.white],
-                    ),
+                    color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.06),
+                      width: 0.5,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -192,18 +208,20 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark ? Colors.white60 : Colors.black54,
+                          letterSpacing: -0.1,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         tracker.formatTokens(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.cyanAccent,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                          color: isDark ? Colors.white : const Color(0xFF18181B),
                         ),
                       ),
-                      const Divider(height: 20, color: Colors.white12),
+                      Divider(height: 20, color: isDark ? Colors.white12 : Colors.black12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
@@ -216,7 +234,7 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                             label: 'Free Tier (무료)',
                             value: '\$0.00 (무료)',
                             isDark: isDark,
-                            highlightColor: Colors.greenAccent,
+                            highlightColor: const Color(0xFF10B981),
                           ),
                         ],
                       ),
@@ -233,9 +251,12 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : Colors.grey.shade50,
+                    color: isDark ? const Color(0xFF202023) : const Color(0xFFFAFAFA),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                      width: 0.5,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -252,7 +273,7 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                         _buildSubMetricRow('└ 이미지 입력 (Image In)', tracker.imageInputTokens, isDark),
                       if (tracker.textInputTokens > 0)
                         _buildSubMetricRow('└ 텍스트/시스템 입력 (Text In)', tracker.textInputTokens, isDark),
-                      const Divider(height: 14, color: Colors.white10),
+                      Divider(height: 14, color: isDark ? Colors.white10 : Colors.black12),
                       _buildMetricRow(
                         label: '응답 생성 토큰 (Response)',
                         count: tracker.responseTokens,
@@ -263,7 +284,7 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                       if (tracker.textOutputTokens > 0)
                         _buildSubMetricRow('└ 텍스트 출력 (Text Out)', tracker.textOutputTokens, isDark),
                       if (tracker.cachedTokens > 0) ...[
-                        const Divider(height: 14, color: Colors.white10),
+                        Divider(height: 14, color: isDark ? Colors.white10 : Colors.black12),
                         _buildMetricRow(
                           label: '캐시된 토큰 (Cached)',
                           count: tracker.cachedTokens,
@@ -278,13 +299,17 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
+                    color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                      width: 0.5,
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline, size: 14, color: Colors.white60),
+                      Icon(Icons.info_outline, size: 14, color: isDark ? Colors.white60 : Colors.black45),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(

@@ -35,6 +35,15 @@ class GeminiLiveStatusBadge extends StatelessWidget {
   /// Optional custom label to display instead of the default text.
   final String? customLabel;
 
+  /// Optional background color override.
+  final Color? backgroundColor;
+
+  /// Optional text color override.
+  final Color? textColor;
+
+  /// Border radius of the status capsule. Defaults to 20.0.
+  final double borderRadius;
+
   /// Padding around the badge content.
   final EdgeInsetsGeometry padding;
 
@@ -44,7 +53,10 @@ class GeminiLiveStatusBadge extends StatelessWidget {
     this.interactionStatus,
     this.showLabel = true,
     this.customLabel,
-    this.padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+    this.backgroundColor,
+    this.textColor,
+    this.borderRadius = 20.0,
+    this.padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
   });
 
   /// Convenient factory constructor determining [state] from boolean connection flags
@@ -56,8 +68,11 @@ class GeminiLiveStatusBadge extends StatelessWidget {
     InteractionStatus? interactionStatus,
     bool showLabel = true,
     String? customLabel,
+    Color? backgroundColor,
+    Color? textColor,
+    double borderRadius = 20.0,
     EdgeInsetsGeometry padding =
-        const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+        const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
   }) {
     final state = !isConnected
         ? (isConnecting
@@ -72,6 +87,9 @@ class GeminiLiveStatusBadge extends StatelessWidget {
       interactionStatus: interactionStatus,
       showLabel: showLabel,
       customLabel: customLabel,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
+      borderRadius: borderRadius,
       padding: padding,
     );
   }
@@ -79,18 +97,18 @@ class GeminiLiveStatusBadge extends StatelessWidget {
   Color _getStatusColor(BuildContext context) {
     if (interactionStatus == InteractionStatus.IN_PROGRESS ||
         state == GeminiLiveSessionState.inProgress) {
-      return Colors.blueAccent;
+      return const Color(0xFF3B82F6); // Refined calm electric blue
     }
 
     switch (state) {
       case GeminiLiveSessionState.connected:
-        return Colors.green;
+        return const Color(0xFF10B981); // Emerald green
       case GeminiLiveSessionState.connecting:
-        return Colors.amber.shade700;
+        return const Color(0xFFF59E0B); // Amber
       case GeminiLiveSessionState.inProgress:
-        return Colors.blueAccent;
+        return const Color(0xFF3B82F6); // Electric blue
       case GeminiLiveSessionState.disconnected:
-        return Colors.grey;
+        return const Color(0xFF9CA3AF); // Muted neutral slate
     }
   }
 
@@ -121,14 +139,27 @@ class GeminiLiveStatusBadge extends StatelessWidget {
         state == GeminiLiveSessionState.inProgress ||
         interactionStatus == InteractionStatus.IN_PROGRESS;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final defaultBg = backgroundColor ??
+        (isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.05));
+
+    final effectiveTextColor = textColor ??
+        (isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1F2937));
+
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: statusColor.withAlpha(30),
-        borderRadius: BorderRadius.circular(16.0),
+        color: defaultBg,
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: statusColor.withAlpha(100),
-          width: 1.0,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.black.withValues(alpha: 0.08),
+          width: 0.5,
         ),
       ),
       child: Row(
@@ -139,13 +170,14 @@ class GeminiLiveStatusBadge extends StatelessWidget {
             isPulsing: isAnimated,
           ),
           if (showLabel) ...[
-            const SizedBox(width: 6.0),
+            const SizedBox(width: 7.0),
             Text(
               _getStatusText(),
               style: TextStyle(
                 fontSize: 12.0,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.1,
+                color: effectiveTextColor,
               ),
             ),
           ],
@@ -200,24 +232,44 @@ class _PulseDotState extends State<_PulseDot>
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.isPulsing) {
+      return Container(
+        width: 7.0,
+        height: 7.0,
+        decoration: BoxDecoration(
+          color: widget.color,
+          shape: BoxShape.circle,
+        ),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final scale = widget.isPulsing ? 0.8 + (_controller.value * 0.4) : 1.0;
-        final opacity =
-            widget.isPulsing ? 0.5 + (_controller.value * 0.5) : 1.0;
+        final haloScale = 1.0 + (_controller.value * 0.9);
+        final haloOpacity = (1.0 - _controller.value).clamp(0.0, 0.45);
 
-        return Transform.scale(
-          scale: scale,
-          child: Opacity(
-            opacity: opacity,
-            child: child,
-          ),
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(
+              scale: haloScale,
+              child: Container(
+                width: 7.0,
+                height: 7.0,
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: haloOpacity),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            child!,
+          ],
         );
       },
       child: Container(
-        width: 8.0,
-        height: 8.0,
+        width: 7.0,
+        height: 7.0,
         decoration: BoxDecoration(
           color: widget.color,
           shape: BoxShape.circle,

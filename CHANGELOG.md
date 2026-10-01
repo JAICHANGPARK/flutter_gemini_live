@@ -1,3 +1,23 @@
+## 2026.10.3
+
+### Changed & Improved (Design & Aesthetics)
+- **Native Non-AI UI Overhaul across all Pre-built Widgets**:
+  - **`GeminiLiveCaptionBubble`**:
+    - Replaced garish neon-colored badges with sleek, native frosted glass (`enableBlur: true` with `BackdropFilter` and `ImageFilter.blur`).
+    - Added subtle neutral speaker chips (`showSpeakerTag: true/false`), elegant subtitle typography, and smooth breathing indicator dot (`_PulsingDot` 900ms ease-in-out).
+  - **`GeminiLiveWaveform`**:
+    - Replaced mechanical rectangular bars with organic capsule pills (`borderRadius` defaulting to `barWidth / 2`).
+    - Added `enableIdleBreathing: true` with organic sinusoidal micro-motion when idle, mimicking professional native audio recording equipment.
+  - **`GeminiLiveStatusBadge`**:
+    - Swapped out raw color-outline boxes for refined neutral surface containers with 0.5px borders.
+    - Upgraded pulse dot to a modern halo ripple ring effect (`_PulseDot`) and softened semantic palette.
+  - **`GeminiLiveMicButton`**:
+    - Replaced generic BoxShadow blur glow with crisp, expanding concentric acoustic ripple rings and neutral dark/light tactile surface layers.
+  - **`GeminiLiveVoiceIndicator`**:
+    - Upgraded from simple single sine to organic dual-harmonic motion with bell-curve center envelopes and pill capsules.
+  - **`GeminiLiveUsageBadge` & `GeminiLiveUsageDetailsDialog`**:
+    - Removed arcade-like neon cyan/amber accents in favor of clean, professional SaaS observability dark/light surface aesthetics.
+
 ## 2026.10.2
 
 ### Added

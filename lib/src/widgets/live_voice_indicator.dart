@@ -67,23 +67,39 @@ class _GeminiLiveVoiceIndicatorState extends State<GeminiLiveVoiceIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final barColor = widget.color ?? Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final barColor = widget.color ??
+        (isDark
+            ? Colors.white.withValues(alpha: 0.9)
+            : theme.colorScheme.onSurface.withValues(alpha: 0.85));
 
     return SizedBox(
       height: widget.height,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
+          final half = widget.barCount / 2.0;
+
           return Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: List.generate(widget.barCount, (index) {
-              final phase = (index / widget.barCount) * 2 * math.pi;
-              final t = widget.isSpeaking
-                  ? (math.sin((_controller.value * 2 * math.pi) + phase) + 1) / 2
-                  : 0.15;
+              // Bell envelope from center
+              final distFromCenter = (index + 0.5 - half).abs() / half;
+              final bellWeight = (1.0 - 0.35 * distFromCenter).clamp(0.4, 1.0);
 
-              final minHeight = widget.height * 0.2;
+              // Organic dual-harmonic audio motion
+              final phase1 = (index / widget.barCount) * 2 * math.pi;
+              final phase2 = (index / widget.barCount) * 4 * math.pi;
+              final wave = (math.sin((_controller.value * 2 * math.pi) + phase1) * 0.7) +
+                  (math.cos((_controller.value * 2 * math.pi) + phase2) * 0.3);
+
+              final t = widget.isSpeaking
+                  ? (((wave + 1) / 2) * bellWeight).clamp(0.12, 1.0)
+                  : 0.18;
+
+              final minHeight = widget.height * 0.18;
               final currentHeight =
                   minHeight + (widget.height - minHeight) * t;
 
@@ -92,8 +108,10 @@ class _GeminiLiveVoiceIndicatorState extends State<GeminiLiveVoiceIndicator>
                 width: 3.5,
                 height: currentHeight,
                 decoration: BoxDecoration(
-                  color: barColor,
-                  borderRadius: BorderRadius.circular(2.0),
+                  color: barColor.withValues(
+                    alpha: widget.isSpeaking ? 1.0 : 0.45,
+                  ),
+                  borderRadius: BorderRadius.circular(1.75), // Smooth pill capsule
                 ),
               );
             }),

@@ -44,8 +44,12 @@ class GeminiLiveWaveform extends StatefulWidget {
   /// Optional gradient applied vertically across each bar.
   final Gradient? gradient;
 
-  /// Corner radius of the bars. Defaults to 2.0.
-  final double borderRadius;
+  /// Corner radius of the bars. If null, automatically uses pill capsule radius (`barWidth / 2`).
+  final double? borderRadius;
+
+  /// Whether bars gently breathe with subtle organic motion when audio is silent.
+  /// Defaults to `true` for a natural, native audio hardware aesthetic.
+  final bool enableIdleBreathing;
 
   const GeminiLiveWaveform({
     super.key,
@@ -60,7 +64,8 @@ class GeminiLiveWaveform extends StatefulWidget {
     this.minBarHeight = 4.0,
     this.color,
     this.gradient,
-    this.borderRadius = 2.0,
+    this.borderRadius,
+    this.enableIdleBreathing = true,
   });
 
   @override
@@ -183,7 +188,9 @@ class _GeminiLiveWaveformState extends State<GeminiLiveWaveform>
           minBarHeight: widget.minBarHeight,
           color: effectiveColor,
           gradient: widget.gradient,
-          borderRadius: widget.borderRadius,
+          borderRadius: widget.borderRadius ?? (widget.barWidth / 2.0),
+          phase: widget.enableIdleBreathing ? _ticker.value * 2 * math.pi : 0.0,
+          enableIdleBreathing: widget.enableIdleBreathing,
         ),
       ),
     );
@@ -200,6 +207,8 @@ class _WaveformPainter extends CustomPainter {
   final Color color;
   final Gradient? gradient;
   final double borderRadius;
+  final double phase;
+  final bool enableIdleBreathing;
 
   _WaveformPainter({
     required this.amplitude,
@@ -211,6 +220,8 @@ class _WaveformPainter extends CustomPainter {
     required this.color,
     this.gradient,
     required this.borderRadius,
+    this.phase = 0.0,
+    this.enableIdleBreathing = true,
   });
 
   @override
@@ -226,8 +237,17 @@ class _WaveformPainter extends CustomPainter {
 
     for (int i = 0; i < barCount; i++) {
       final weight = i < weights.length ? weights[i] : 1.0;
-      final scaledAmp = (amplitude * weight).clamp(0.0, 1.0);
-      final barHeight = minBarHeight + (maxAvailableHeight - minBarHeight) * scaledAmp;
+
+      // Subtle organic breathing motion when amplitude is idle
+      double idleOffset = 0.0;
+      if (enableIdleBreathing && amplitude < 0.08) {
+        final idleWeight = (1.0 - amplitude / 0.08).clamp(0.0, 1.0);
+        idleOffset = math.sin(phase + (i * 0.7)) * 0.08 * idleWeight;
+      }
+
+      final scaledAmp = (amplitude * weight + idleOffset).clamp(0.0, 1.0);
+      final barHeight = (minBarHeight + (maxAvailableHeight - minBarHeight) * scaledAmp)
+          .clamp(minBarHeight, maxAvailableHeight);
 
       final left = startX + i * (barWidth + spacing);
       final top = centerY - (barHeight / 2.0);
@@ -247,6 +267,7 @@ class _WaveformPainter extends CustomPainter {
     return oldDelegate.amplitude != amplitude ||
         oldDelegate.color != color ||
         oldDelegate.barCount != barCount ||
-        oldDelegate.gradient != gradient;
+        oldDelegate.gradient != gradient ||
+        oldDelegate.phase != phase;
   }
 }
