@@ -1,3 +1,20 @@
+## 2026.10.2
+
+### Added
+- **GeminiLiveSessionController (`LiveSessionController`)**:
+  - All-in-one Flutter `ChangeNotifier` state manager for handling Live API WebSocket connections, lifecycle (`disconnected`, `connecting`, `connected`, `error`), message streams, and errors.
+  - Integrated real-time transcript timeline tracking (`LiveTranscriptItem`) for user input, interim speech, and model output with speaker attribution and style metadata.
+  - Seamless barge-in interruption handling via `onInterrupted` callback.
+  - Built-in token usage tracking integration (`TokenUsageTracker`) and audio stream helpers (`feedAudioPcm`, `sendText`).
+- **GeminiLiveWaveform Widget**:
+  - Real-time animated audio visualizer supporting continuous amplitude stream/normalized levels or raw 16-bit PCM byte streams.
+  - Configurable bar count, wave style (`bars` vs `sine`), animated idle breathing, and gradient styling.
+- **GeminiLiveCaptionBubble Widget**:
+  - Live subtitle/caption bubble widget for streaming speech-to-text transcripts with animated streaming dot indicator.
+  - Displays speaker badge, emotional/style tone indicators, and auto-dismiss after inactivity.
+- **GeminiLiveAudioUtils**:
+  - Production-grade PCM audio analysis helper: RMS amplitude, peak amplitude, decibels (dBFS), and logarithmic visual scaling for audio meters.
+
 ## 2026.10.1
 
 ### Added

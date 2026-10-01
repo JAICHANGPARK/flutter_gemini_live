@@ -116,6 +116,32 @@ GeminiLiveVoiceIndicator(
   barCount: 5,
   color: Colors.blueAccent,
 )
+
+// 4. Real-time Audio Waveform Visualizer
+GeminiLiveWaveform(
+  pcmStream: audioPcmStream, // or amplitude / amplitudeStream
+  barCount: 24,
+  style: WaveformStyle.bars,
+  color: Colors.deepPurpleAccent,
+)
+
+// 5. Streaming Caption & Subtitle Bubble
+GeminiLiveCaptionBubble(
+  text: currentTranscript,
+  speaker: 'Gemini',
+  style: 'whispering',
+  isStreaming: isGenerating,
+)
+
+// 6. High-level Session Controller
+final controller = GeminiLiveSessionController(service: liveService);
+await controller.connect(
+  LiveConnectParameters(
+    model: LiveModels.gemini25Flash,
+    config: LiveClientConfig(responseModalities: [Modality.audio]),
+  ),
+);
+controller.feedAudioPcm(pcm16BitBytes);
 ```
 
 ---

@@ -116,6 +116,32 @@ GeminiLiveVoiceIndicator(
   barCount: 5,
   color: Colors.blueAccent,
 )
+
+// 4. 실시간 오디오 파형 시각화기 (진폭 또는 PCM 16-bit 스트림 직접 연동)
+GeminiLiveWaveform(
+  pcmStream: audioPcmStream, // 또는 amplitude / amplitudeStream
+  barCount: 24,
+  style: WaveformStyle.bars,
+  color: Colors.deepPurpleAccent,
+)
+
+// 5. 실시간 자막/캡션 말풍선 위젯 (화자 및 스타일 톤 표시, 자동 닫힘 지원)
+GeminiLiveCaptionBubble(
+  text: currentTranscript,
+  speaker: 'Gemini',
+  style: 'whispering',
+  isStreaming: isGenerating,
+)
+
+// 6. 통합 세션 컨트롤러 (연결 상태, 자막 타임라인, 토큰 추적, 오디오 피딩 한 번에 관리)
+final controller = GeminiLiveSessionController(service: liveService);
+await controller.connect(
+  LiveConnectParameters(
+    model: LiveModels.gemini25Flash,
+    config: LiveClientConfig(responseModalities: [Modality.audio]),
+  ),
+);
+controller.feedAudioPcm(pcm16BitBytes);
 ```
 
 ---

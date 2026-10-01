@@ -12,3 +12,7 @@ export 'src/widgets/live_voice_indicator.dart';
 export 'src/utils/token_usage_tracker.dart';
 export 'src/widgets/live_usage_badge.dart';
 export 'src/voices_service.dart';
+export 'src/utils/audio_utils.dart';
+export 'src/utils/live_session_controller.dart';
+export 'src/widgets/live_waveform.dart';
+export 'src/widgets/live_caption_bubble.dart';
