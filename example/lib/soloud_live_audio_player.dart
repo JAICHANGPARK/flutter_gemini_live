@@ -9,7 +9,13 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 /// Handles Gemini Live's 24kHz 16-bit linear PCM audio stream chunks directly,
 /// enabling real-time playback with minimal latency and instant interruption flush.
 class SoloudLiveAudioPlayer {
-  SoloudLiveAudioPlayer();
+  final int sampleRate;
+  final Channels channels;
+
+  SoloudLiveAudioPlayer({
+    this.sampleRate = 24000,
+    this.channels = Channels.mono,
+  });
 
   AudioSource? _currentSource;
   SoundHandle? _currentHandle;
@@ -68,8 +74,8 @@ class SoloudLiveAudioPlayer {
 
       try {
         _currentSource = SoLoud.instance.setBufferStream(
-          sampleRate: 24000,
-          channels: Channels.mono,
+          sampleRate: sampleRate,
+          channels: channels,
           format: BufferType.s16le,
           bufferingType: BufferingType.released,
           bufferingTimeNeeds: 0.12, // 120ms initial buffer for jitter-free playback

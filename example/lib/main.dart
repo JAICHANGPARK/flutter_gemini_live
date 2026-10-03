@@ -6,6 +6,7 @@ import 'chat_page.dart';
 import 'function_calling_demo.dart';
 import 'live_api_demo.dart';
 import 'live_media_subtitle_page.dart';
+import 'live_music_studio_page.dart';
 import 'live_smart_notetaker_page.dart';
 import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
@@ -122,6 +123,16 @@ class _HomePageState extends State<HomePage> {
             icon: Icons.auto_awesome_rounded,
             color: const Color(0xFF14532D),
             page: const LiveVisionCallPage(),
+          ),
+          const SizedBox(height: 12),
+          _buildDemoCard(
+            context: context,
+            title: '🎵 Live Music Studio (Lyria 실시간 음원 생성)',
+            subtitle:
+                'BidiGenerateMusic 양방향 스트리밍 · 가중치 프롬프트 실시간 제어 · BPM/스케일/스템 믹싱 & 실시간 PCM 오디오 재생',
+            icon: Icons.music_note_rounded,
+            color: Colors.purple.shade800,
+            page: const LiveMusicStudioPage(),
           ),
           const SizedBox(height: 16),
           _buildHeader('Basic Examples'),
