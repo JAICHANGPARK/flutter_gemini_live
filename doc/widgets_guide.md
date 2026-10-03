@@ -10,7 +10,13 @@ These widgets are **lightweight, dependency-free**, and designed to integrate se
 1. [GeminiLiveStatusBadge](#1-geminilivestatusbadge)
 2. [GeminiLiveMicButton](#2-geminilivemicbutton)
 3. [GeminiLiveVoiceIndicator](#3-geminilivevoiceindicator)
-4. [Complete End-to-End Chat & Voice Screen Example](#4-complete-end-to-end-chat--voice-screen-example)
+4. [GeminiLiveCaptionBubble](#4-geminilivecaptionbubble)
+5. [GeminiLiveWaveform](#5-geminilivewaveform)
+6. [GeminiLiveUsageBadge](#6-geminiliveusagebadge)
+7. [Audio Utilities](#7-audio-utilities)
+8. [Complete End-to-End Chat & Voice Screen Example](#8-complete-end-to-end-chat--voice-screen-example)
+
+> AI coding assistants: the [`gemini-live-widgets`](../skills/gemini-live-widgets/SKILL.md) agent skill covers the same widgets plus wiring recipes for `GeminiLiveSessionController`, low-level `LiveSession`, the firebase_ai-compatible layer, and plain `firebase_ai`.
 
 ---
 
@@ -36,7 +42,10 @@ const GeminiLiveStatusBadge({
   InteractionStatus? interactionStatus,
   bool showLabel = true,
   String? customLabel,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+  Color? backgroundColor,
+  Color? textColor,
+  double borderRadius = 20.0,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
 })
 ```
 
@@ -50,7 +59,10 @@ GeminiLiveStatusBadge.fromFlags({
   InteractionStatus? interactionStatus,
   bool showLabel = true,
   String? customLabel,
-  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+  Color? backgroundColor,
+  Color? textColor,
+  double borderRadius = 20.0,
+  EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
 })
 ```
 
@@ -92,13 +104,16 @@ An animated microphone action button for push-to-talk or tap-to-toggle voice inp
 | Property | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `isRecording` | `bool` | *(required)* | Whether voice recording/streaming is currently active. |
-| `onPressed` | `VoidCallback?` | *(required)* | Callback triggered when the button is tapped. When `null`, the button is disabled. |
-| `size` | `double` | `48.0` | Outer diameter of the button in logical pixels. |
-| `iconSize` | `double` | `24.0` | Size of the microphone icon inside the button. |
-| `activeColor` | `Color?` | `Colors.redAccent` | Background color when `isRecording == true`. |
-| `inactiveColor` | `Color?` | `Theme.primary` / `Colors.blueAccent` | Background color when `isRecording == false`. |
-| `iconColor` | `Color?` | `Colors.white` | Color of the microphone icon. |
-| `tooltip` | `String?` | Auto | Accessibility tooltip text. |
+| `onPressed` | `VoidCallback?` | `null` | Callback triggered when the button is tapped. |
+| `onLongPressStart` | `VoidCallback?` | `null` | Push-to-talk: called when a long press starts. |
+| `onLongPressEnd` | `VoidCallback?` | `null` | Push-to-talk: called when the long press ends. |
+| `size` | `double` | `56.0` | Outer diameter of the button in logical pixels. |
+| `iconSize` | `double` | `28.0` | Size of the microphone icon inside the button. |
+| `activeColor` | `Color?` | Red (light/dark preset) | Background color when `isRecording == true`. |
+| `inactiveColor` | `Color?` | Neutral surface (light/dark preset) | Background color when `isRecording == false`. |
+| `tooltip` | `String?` | `null` | Accessibility tooltip text. |
+
+The button does not record audio. Start and stop your recorder (for example the `record` package) in the callbacks.
 
 ### Usage Example
 
@@ -128,10 +143,10 @@ A lightweight, rhythmically animated waveform audio visualizer. When speaking or
 
 | Property | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `isSpeaking` | `bool` | `true` | When true, bars animate actively. When false, bars rest at minimal baseline height. |
-| `barCount` | `int` | `5` | Number of vertical equalizer bars (typically 3 to 7). |
+| `isSpeaking` | `bool` | *(required)* | When true, bars animate actively. When false, bars rest at minimal baseline height. |
+| `barCount` | `int` | `4` | Number of vertical equalizer bars (typically 3 to 7). |
 | `height` | `double` | `24.0` | Maximum peak height of the waveform bars. |
-| `color` | `Color?` | `Theme.primary` / `Colors.blueAccent` | Fill color for the equalizer bars. |
+| `color` | `Color?` | `onSurface` (light) / white (dark) | Fill color for the equalizer bars. |
 
 ### Usage Example
 
@@ -154,7 +169,145 @@ Row(
 
 ---
 
-## 4. Complete End-to-End Chat & Voice Screen Example
+## 4. GeminiLiveCaptionBubble
+
+A frosted glass subtitle bubble for live transcripts. It fades in when `text` becomes non-empty, shows a speaker tag and an optional style chip, pulses a dot while streaming, and fades out after `autoDismissDuration`.
+
+### Properties
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `text` | `String` | *(required)* | Transcript text. Empty or whitespace text fades the bubble out. |
+| `role` | `String` | `'model'` | `'user'` or `'model'`. Pass `'user'` for user transcripts. |
+| `speaker` | `String?` | `null` | Name shown in the speaker tag, e.g. `'You'` or `'Gemini'`. |
+| `style` | `String?` | `null` | Vocal style chip, e.g. `'whispering'`. |
+| `isStreaming` | `bool` | `false` | Shows a pulsing dot and pauses auto-dismiss while `true`. |
+| `showSpeakerTag` | `bool` | `true` | Shows the role/speaker pill. |
+| `enableBlur` | `bool` | `true` | `BackdropFilter` frosted glass. Turn off in long lists and on Flutter Web. |
+| `autoDismissDuration` | `Duration?` | `6 seconds` | Fade-out delay after the last text change. `null` keeps the bubble visible. |
+| `maxWidth` | `double` | `480.0` | Maximum bubble width. |
+| `backgroundColor` | `Color?` | iOS-style surface (light/dark preset) | Bubble background. |
+| `textColor` | `Color?` | Light/dark preset | Text color. |
+| `borderRadius` | `double` | `16.0` | Corner radius. |
+| `padding` | `EdgeInsetsGeometry` | `EdgeInsets.symmetric(horizontal: 16, vertical: 12)` | Inner padding. |
+| `onDismissed` | `VoidCallback?` | `null` | Called after the auto-dismiss fade-out. |
+
+### Usage Example
+
+```dart
+// Live subtitle bound to GeminiLiveSessionController
+if (controller.latestTranscript case final text?)
+  GeminiLiveCaptionBubble(
+    text: text,
+    role: controller.latestTranscriptRole ?? 'model',
+    speaker: controller.latestTranscriptRole == 'user' ? 'You' : 'Gemini',
+    isStreaming: controller.isModelSpeaking,
+  )
+
+// Transcript history: many bubbles, so no blur and no auto-dismiss
+for (final item in controller.transcripts)
+  GeminiLiveCaptionBubble(
+    text: item.text,
+    role: item.role,
+    isStreaming: item.isStreaming,
+    enableBlur: false,
+    autoDismissDuration: null,
+  )
+```
+
+---
+
+## 5. GeminiLiveWaveform
+
+An audio level visualizer with pill-shaped bars, a bell-shaped bar profile, smooth attack/decay, and optional idle breathing. It accepts a fixed amplitude, an amplitude stream, or raw PCM audio.
+
+### Properties
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `amplitude` | `double?` | `null` | Normalized level `0.0`–`1.0` that you compute yourself. |
+| `amplitudeStream` | `Stream<double>?` | `null` | Normalized levels. Takes priority over `audioStream`. |
+| `audioStream` | `Stream<Uint8List>?` | `null` | Raw 16-bit PCM little-endian chunks. RMS is computed per chunk. |
+| `barCount` | `int` | `7` | Number of bars. |
+| `width` | `double` | `120.0` | Total width. Fit it to `barCount * (barWidth + spacing)`. |
+| `height` | `double` | `36.0` | Total height. |
+| `barWidth` | `double` | `4.0` | Width of each bar. |
+| `spacing` | `double` | `3.0` | Gap between bars. |
+| `minBarHeight` | `double` | `4.0` | Bar height when silent. |
+| `color` | `Color?` | `colorScheme.primary` | Bar color. |
+| `gradient` | `Gradient?` | `null` | Vertical gradient applied to each bar. |
+| `borderRadius` | `double?` | `barWidth / 2` | Bar corner radius (pill by default). |
+| `enableIdleBreathing` | `bool` | `true` | Subtle motion while silent. |
+
+Create the stream once (for example in `initState`) and pass the same instance on every build. A new stream instance makes the widget resubscribe. Single-subscription streams such as the `record` microphone stream must be converted with `asBroadcastStream()` if they are also sent to the session.
+
+### Usage Example
+
+```dart
+// Model audio from the controller (already a broadcast stream)
+GeminiLiveWaveform(
+  audioStream: controller.incomingAudioStream,
+  barCount: 24,
+  width: 200,
+  height: 48,
+)
+
+// Microphone level you compute yourself
+GeminiLiveWaveform(
+  amplitudeStream: micLevelController.stream, // StreamController<double>.broadcast()
+  gradient: const LinearGradient(colors: [Colors.teal, Colors.blue]),
+)
+```
+
+---
+
+## 6. GeminiLiveUsageBadge
+
+A token usage and cost badge bound to a `GeminiTokenUsageTracker`. It rebuilds on every usage update and opens `GeminiLiveUsageDetailsDialog` (per-modality breakdown) on tap.
+
+### Properties
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `tracker` | `GeminiTokenUsageTracker` | *(required)* | Usage source, e.g. `controller.tokenTracker`. |
+| `compact` | `bool` | `false` | Hides cost details. |
+| `showIcon` | `bool` | `true` | Shows the token icon. |
+| `onTap` | `VoidCallback?` | `null` | Custom tap handler. Default opens the details dialog. |
+| `backgroundColor` | `Color?` | Light/dark preset | Badge background. |
+| `foregroundColor` | `Color?` | Light/dark preset | Text and icon color. |
+| `padding` | `EdgeInsetsGeometry` | `EdgeInsets.symmetric(horizontal: 10, vertical: 5)` | Inner padding. |
+
+### Usage Example
+
+```dart
+AppBar(
+  actions: [
+    GeminiLiveUsageBadge(tracker: controller.tokenTracker, compact: true),
+  ],
+)
+
+// Low-level LiveSession: feed the tracker yourself
+final tracker = GeminiTokenUsageTracker(model: 'gemini-3.8-live');
+// in LiveCallbacks.onMessage: tracker.recordMessage(message);
+```
+
+---
+
+## 7. Audio Utilities
+
+Helpers for 16-bit PCM little-endian buffers, useful for custom meters and recordings.
+
+| API | Returns |
+| :--- | :--- |
+| `GeminiLiveAudioUtils.calculateRms(bytes)` | RMS amplitude `0.0`–`1.0` |
+| `GeminiLiveAudioUtils.calculatePeak(bytes)` | Peak amplitude `0.0`–`1.0` |
+| `GeminiLiveAudioUtils.calculateDecibels(bytes, minDb: -96.0)` | dBFS between `minDb` and `0.0` |
+| `GeminiLiveAudioUtils.toVisualScale(amplitude, factor: 2.0)` | Log-scaled `0.0`–`1.0` for meters |
+| `addWavHeader(pcm, sampleRate: 24000)` | WAV file bytes |
+
+---
+
+## 8. Complete End-to-End Chat & Voice Screen Example
 
 Below is a complete, standalone Flutter widget demonstrating all 3 widgets working together with a `LiveSession`:
 
