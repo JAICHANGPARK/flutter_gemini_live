@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'app_translations.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Interactive Prompt DJ MIDI Box inspired by Google AI Studio's Prompt DJ.
@@ -602,6 +603,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
+
+              const LanguageSelectorButton(compact: true),
+
               const SizedBox(width: 4),
 
               IconButton(

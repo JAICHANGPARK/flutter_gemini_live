@@ -6,6 +6,7 @@ import 'package:gemini_live/gemini_live.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'app_translations.dart';
 import 'dj_midi_box_page.dart';
 import 'pro_dj_console_page.dart';
 import 'soloud_live_audio_player.dart';
@@ -540,6 +541,8 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
             ),
           ),
+          const SizedBox(width: 6),
+          const LanguageSelectorButton(compact: true),
           const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.settings),

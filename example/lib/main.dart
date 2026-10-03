@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'app_translations.dart';
 import 'chat_page.dart';
 import 'function_calling_demo.dart';
 import 'live_api_demo.dart';
@@ -17,6 +18,7 @@ import 'realtime_media_demo.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiKeyStore.load();
+  await AppLanguageController.instance.init();
   runApp(const MyApp());
 }
 
@@ -25,14 +27,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Gemini Live API',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
+    return ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: AppLanguageController.instance.t.appTitle,
+          locale: AppLanguageController.instance.currentLocale,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+            useMaterial3: true,
+          ),
+          home: const HomePage(),
+        );
+      },
     );
   }
 }
@@ -53,12 +61,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openDemoPage(BuildContext context, Widget page) {
+    final t = AppLanguageController.instance.t;
     if (!ApiKeyStore.hasApiKey) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Gemini API 키가 설정되지 않았습니다. Settings에서 먼저 입력하세요.'),
+          content: Text(t.apiKeyMissingWarning),
           action: SnackBarAction(
-            label: 'Settings',
+            label: t.openSettingsButton,
             onPressed: _openApiKeySettings,
           ),
         ),
@@ -71,27 +80,31 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLanguageController.instance.t;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gemini Live API Examples'),
+        title: Text(t.appTitle),
         centerTitle: true,
         actions: [
+          const LanguageSelectorButton(),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.settings),
-            tooltip: 'API Key Settings',
+            tooltip: t.settingsTooltip,
             onPressed: _openApiKeySettings,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildHeader('Featured Services'),
+          _buildHeader(t.featuredServices),
           _buildDemoCard(
             context: context,
-            title: '🌐 Live Translation (양방향 대면 번역)',
-            subtitle:
-                '실시간 음성 대 음성 통역 · 테이블 대면 플립 뷰 (180도 회전 자막) · gemini-3.5-live-translate-preview',
+            title: t.liveTranslationTitle,
+            subtitle: t.liveTranslationSubtitle,
             icon: Icons.translate_rounded,
             color: Colors.teal.shade700,
             page: const LiveTranslationPage(),
@@ -99,9 +112,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '🎬 Live Media Subtitles (유튜브/미디어 실시간 번역 자막)',
-            subtitle:
-                'YouTube 영상 링크 재생 · 시스템/마이크 오디오 실시간 번역 자막 HUD · gemini-3.8-live',
+            title: t.liveMediaSubtitleTitle,
+            subtitle: t.liveMediaSubtitleSubtitle,
             icon: Icons.subtitles_rounded,
             color: Colors.indigo.shade700,
             page: const LiveMediaSubtitlePage(),
@@ -109,9 +121,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '📝 Live AI Smart NoteTaker (실시간 강의/회의 통번역 노트)',
-            subtitle:
-                '실시간 음성 전사(STT) · 동시 번역 · 마크다운 실시간 구조화 노트 및 액션 아이템 추출',
+            title: t.liveSmartNoteTitle,
+            subtitle: t.liveSmartNoteSubtitle,
             icon: Icons.edit_note_rounded,
             color: Colors.amber.shade900,
             page: const LiveSmartNotePage(),
@@ -119,9 +130,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '✨ Live Vision Agent',
-            subtitle:
-                'Universal real-time camera viewfinder & mic streaming with low-latency flutter_soloud audio response',
+            title: t.liveVisionAgentTitle,
+            subtitle: t.liveVisionAgentSubtitle,
             icon: Icons.auto_awesome_rounded,
             color: const Color(0xFF14532D),
             page: const LiveVisionCallPage(),
@@ -129,9 +139,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '🎵 Live Music Studio (Lyria 실시간 음원 생성)',
-            subtitle:
-                'BidiGenerateMusic 양방향 스트리밍 · 가중치 프롬프트 실시간 제어 · BPM/스케일/스템 믹싱 & 실시간 PCM 오디오 재생',
+            title: t.liveMusicStudioTitle,
+            subtitle: t.liveMusicStudioSubtitle,
             icon: Icons.music_note_rounded,
             color: Colors.purple.shade800,
             page: const LiveMusicStudioPage(),
@@ -139,9 +148,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '🎧 Pro DJ Console (프로 DJ 콘솔)',
-            subtitle:
-                '플래그십 DJ 하드웨어 콘솔 UI · 듀얼 조그 휠 회전 · 3밴드 EQ 노브 & 듀얼 스테레오 VU 미터 · 8구 RGB 핫 큐 패드 & 크로스페이더',
+            title: t.proDjConsoleTitle,
+            subtitle: t.proDjConsoleSubtitle,
             icon: Icons.album_rounded,
             color: const Color(0xFFC2185B),
             page: const ProDjConsolePage(),
@@ -149,30 +157,28 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '🎛️ DJ MIDI Box (AI Studio Prompt DJ 스타일)',
-            subtitle:
-                '16구 로터리 다이얼 그리드 · 네온 헤일로 링 & 아크 게이지 · 원터치 토글 및 실시간 드래그 회전 · Lyria 실시간 음원 믹싱',
+            title: t.djMidiBoxTitle,
+            subtitle: t.djMidiBoxSubtitle,
             icon: Icons.grid_view_rounded,
             color: const Color(0xFF7C3AED),
             page: const DjMidiBoxPage(),
           ),
           const SizedBox(height: 16),
-          _buildHeader('Basic Examples'),
+          _buildHeader(t.basicExamples),
           _buildDemoCard(
             context: context,
-            title: 'Chat Interface',
-            subtitle: 'Basic chat with text, image, and audio input',
+            title: t.chatInterfaceTitle,
+            subtitle: t.chatInterfaceSubtitle,
             icon: Icons.chat,
             color: Colors.blue,
             page: const ChatPage(),
           ),
           const SizedBox(height: 16),
-          _buildHeader('New Features'),
+          _buildHeader(t.newFeatures),
           _buildDemoCard(
             context: context,
-            title: 'Live API Features',
-            subtitle:
-                'Demo of all new features: VAD, transcription, session resumption, etc.',
+            title: t.liveApiFeaturesTitle,
+            subtitle: t.liveApiFeaturesSubtitle,
             icon: Icons.auto_awesome,
             color: Colors.purple,
             page: const LiveAPIDemoPage(),
@@ -180,8 +186,8 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: 'Function Calling',
-            subtitle: 'Tool calling with weather/time/fx/search/reminder',
+            title: t.functionCallingTitle,
+            subtitle: t.functionCallingSubtitle,
             icon: Icons.functions,
             color: Colors.green,
             page: const FunctionCallingDemoPage(),
@@ -189,35 +195,34 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: 'Realtime Media',
-            subtitle:
-                'Realtime camera preview, microphone streaming, and activity detection',
+            title: t.realtimeMediaTitle,
+            subtitle: t.realtimeMediaSubtitle,
             icon: Icons.videocam,
             color: Colors.orange,
             page: const RealtimeMediaDemoPage(),
           ),
           const SizedBox(height: 24),
-          _buildHeader('Setup'),
+          _buildHeader(t.setupHeader),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'API Key Configuration',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Text(
+                    t.apiKeyConfigTitle,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text('Status:'),
+                      Text(t.statusLabel),
                       const SizedBox(width: 8),
                       Chip(
                         label: Text(
                           ApiKeyStore.hasApiKey
-                              ? 'Configured (${ApiKeyStore.maskedApiKey})'
-                              : 'Not configured',
+                              ? t.configuredStatus(ApiKeyStore.maskedApiKey)
+                              : t.notConfiguredStatus,
                         ),
                         backgroundColor: ApiKeyStore.hasApiKey
                             ? Colors.green.shade50
@@ -227,26 +232,26 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'API 키를 앱 화면의 Settings 메뉴에서 입력/수정할 수 있습니다.',
+                    t.apiKeySettingsHelp,
                     style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Get your API key from: https://aistudio.google.com/app/apikey',
+                    '${t.getApiKeyLink}: https://aistudio.google.com/app/apikey',
                     style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: _openApiKeySettings,
                     icon: const Icon(Icons.settings),
-                    label: const Text('Open Settings'),
+                    label: Text(t.openSettingsButton),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-          _buildHeader('New Features Included'),
+          _buildHeader(t.capabilitiesHeader),
           _buildFeatureChip('interactionStatus (IN_PROGRESS / IDLE)'),
           _buildFeatureChip('AudioTranscriptionConfigMode (SMART / VERBATIM)'),
           _buildFeatureChip('GeminiLiveStatusBadge (Widget)'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import 'api_key_store.dart';
+import 'app_translations.dart';
 
 /// Modal dialog allowing users to view and update Gemini API Key, Live Model, and Audio Device.
 class AppSettingsDialog extends StatefulWidget {
@@ -103,225 +104,238 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.tune_rounded, color: Colors.blueAccent),
-          SizedBox(width: 8),
-          Text('Live API Settings', style: TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) {
+        final t = AppLanguageController.instance.t;
+
+        return AlertDialog(
+          title: Row(
             children: [
-              // 1. API Key Field
-              const Text(
-                'Gemini API Key',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _keyController,
-                obscureText: _obscureKey,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: 'AIzaSy...',
-                  isDense: true,
-                  prefixIcon: const Icon(Icons.key_rounded, size: 20),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureKey ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => _obscureKey = !_obscureKey),
-                  ),
+              const Icon(Icons.tune_rounded, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  t.settingsDialogTitle,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Google AI Studio에서 발급받은 API 키를 입력하세요.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 18),
-
-              // 2. Model Selection
-              const Text(
-                'Gemini Live Model',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedModel,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                  prefixIcon: Icon(Icons.psychology_rounded, size: 20),
-                ),
-                items: [
-                  ...ApiKeyStore.availableModels.map((model) {
-                    final isRecommended = model == ApiKeyStore.defaultModel;
-                    return DropdownMenuItem<String>(
-                      value: model,
-                      child: Text(
-                        isRecommended ? '$model (Recommended)' : model,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isRecommended ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }),
-                  const DropdownMenuItem<String>(
-                    value: 'custom',
-                    child: Text('Custom model (직접 입력)', style: TextStyle(fontSize: 13)),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val == null) return;
-                  setState(() {
-                    _selectedModel = val;
-                    _isCustomModel = val == 'custom';
-                  });
-                },
-              ),
-
-              if (_isCustomModel) ...[
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _customModelController,
-                  decoration: const InputDecoration(
-                    labelText: 'Custom Model Name',
-                    hintText: 'e.g. gemini-2.0-flash-exp',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 18),
-
-              // 3. Voice (음성) Selection
-              const Text(
-                'Gemini Voice (AI 음성)',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: ApiKeyStore.availableVoices.any((v) => v['name'] == _selectedVoice)
-                    ? _selectedVoice
-                    : ApiKeyStore.defaultVoice,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                  prefixIcon: Icon(Icons.record_voice_over_rounded, size: 20),
-                ),
-                items: ApiKeyStore.availableVoices.map((voice) {
-                  final name = voice['name']!;
-                  final desc = voice['desc']!;
-                  final isDefault = name == ApiKeyStore.defaultVoice;
-                  return DropdownMenuItem<String>(
-                    value: name,
-                    child: Text(
-                      isDefault ? '$name -- $desc (Default)' : '$name -- $desc',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isDefault ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val == null) return;
-                  setState(() {
-                    _selectedVoice = val;
-                  });
-                },
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Gemini Live 답변 시 재생될 모델의 목소리를 선택하세요.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              const SizedBox(height: 18),
-
-              // 4. Audio Input Device (Microphone) Selection
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Microphone (오디오 입력 장치)',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
-                  if (_isLoadingDevices)
-                    const SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedAudioDeviceId.isEmpty ||
-                        !_audioDevices.any((d) => d.id == _selectedAudioDeviceId)
-                    ? ''
-                    : _selectedAudioDeviceId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                  prefixIcon: Icon(Icons.mic_rounded, size: 20),
-                ),
-                items: [
-                  const DropdownMenuItem<String>(
-                    value: '',
-                    child: Text('기본 마이크 (System Default)', style: TextStyle(fontSize: 13)),
-                  ),
-                  ..._audioDevices.map((dev) {
-                    final label = dev.label.isNotEmpty ? dev.label : 'Device ${dev.id}';
-                    return DropdownMenuItem<String>(
-                      value: dev.id,
-                      child: Text(
-                        label,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    );
-                  }),
-                ],
-                onChanged: (val) {
-                  setState(() {
-                    _selectedAudioDeviceId = val ?? '';
-                  });
-                },
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'macOS에서 다른 오디오 입력 장치로 잡혀 음성이 안 들릴 경우 원하는 마이크를 직접 지정하세요.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
+              const LanguageSelectorButton(compact: true),
             ],
           ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton.icon(
-          onPressed: _save,
-          icon: const Icon(Icons.check_rounded, size: 18),
-          label: const Text('Save Settings'),
-        ),
-      ],
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. API Key Field
+                  Text(
+                    t.apiKeyLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _keyController,
+                    obscureText: _obscureKey,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      hintText: 'AIzaSy...',
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.key_rounded, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureKey ? Icons.visibility_off : Icons.visibility,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => _obscureKey = !_obscureKey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.apiKeyFieldHint,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 2. Model Selection
+                  Text(
+                    t.liveModelLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedModel,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      prefixIcon: Icon(Icons.psychology_rounded, size: 20),
+                    ),
+                    items: [
+                      ...ApiKeyStore.availableModels.map((model) {
+                        final isRecommended = model == ApiKeyStore.defaultModel;
+                        return DropdownMenuItem<String>(
+                          value: model,
+                          child: Text(
+                            isRecommended ? '$model (Recommended)' : model,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isRecommended ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }),
+                      DropdownMenuItem<String>(
+                        value: 'custom',
+                        child: Text(t.customModelOption, style: const TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setState(() {
+                        _selectedModel = val;
+                        _isCustomModel = val == 'custom';
+                      });
+                    },
+                  ),
+
+                  if (_isCustomModel) ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _customModelController,
+                      decoration: const InputDecoration(
+                        labelText: 'Custom Model Name',
+                        hintText: 'e.g. gemini-2.0-flash-exp',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+
+                  // 3. Voice (음성) Selection
+                  Text(
+                    t.voiceLabel,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: ApiKeyStore.availableVoices.any((v) => v['name'] == _selectedVoice)
+                        ? _selectedVoice
+                        : ApiKeyStore.defaultVoice,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      prefixIcon: Icon(Icons.record_voice_over_rounded, size: 20),
+                    ),
+                    items: ApiKeyStore.availableVoices.map((voice) {
+                      final name = voice['name']!;
+                      final desc = voice['desc']!;
+                      final isDefault = name == ApiKeyStore.defaultVoice;
+                      return DropdownMenuItem<String>(
+                        value: name,
+                        child: Text(
+                          isDefault ? '$name -- $desc (Default)' : '$name -- $desc',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isDefault ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setState(() {
+                        _selectedVoice = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.voiceSelectionDesc,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // 4. Audio Input Device (Microphone) Selection
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        t.audioDeviceLabel,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                      if (_isLoadingDevices)
+                        const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedAudioDeviceId.isEmpty ||
+                            !_audioDevices.any((d) => d.id == _selectedAudioDeviceId)
+                        ? ''
+                        : _selectedAudioDeviceId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      prefixIcon: Icon(Icons.mic_rounded, size: 20),
+                    ),
+                    items: [
+                      DropdownMenuItem<String>(
+                        value: '',
+                        child: Text(t.defaultDeviceLabel, style: const TextStyle(fontSize: 13)),
+                      ),
+                      ..._audioDevices.map((dev) {
+                        final label = dev.label.isNotEmpty ? dev.label : 'Device ${dev.id}';
+                        return DropdownMenuItem<String>(
+                          value: dev.id,
+                          child: Text(
+                            label,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedAudioDeviceId = val ?? '';
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.audioDeviceDesc,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(t.cancelButton),
+            ),
+            FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: Text(t.saveButton),
+            ),
+          ],
+        );
+      },
     );
   }
 }

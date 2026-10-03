@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'app_translations.dart';
 import 'dj_midi_box_page.dart';
 import 'soloud_live_audio_player.dart';
 
@@ -507,6 +508,7 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
               );
             },
           ),
+          const LanguageSelectorButton(compact: true),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white70),
             onPressed: () => AppSettingsDialog.show(context),
