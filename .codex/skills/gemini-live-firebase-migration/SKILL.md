@@ -104,6 +104,44 @@ session.rawSession.sendAudioStreamEnd();           // core-only features
 
 4. **Subscribe to `receive()` before sending anything.** gemini_live buffers responses that arrive before the first listener; firebase_ai drops them. Code that calls `receive()` late will silently lose messages on firebase_ai.
 5. `presencePenalty` / `frequencyPenalty` will now reach the server (gemini_live ignores them). Re-check output quality if they are set.
+6. **Audit gemini_live-only features** with the inventory below. Code on the core API (`package:gemini_live/gemini_live.dart`) must first go through Workflow C; whatever has no compat equivalent appears in this table.
+
+### 🚫 gemini_live-only features firebase_ai cannot replace
+
+`firebase_ai` 4.x Live exposes only: `LiveGenerationConfig` (speech voice/language, transcription on/off, `realtimeInputConfig`, `contextWindowCompression`, sampling params, `mediaResolution`, `responseModalities`), `systemInstruction`, `tools` (function declarations, Google Search, code execution, URL context, Google Maps, all without options), session resumption, and the `send*` / `receive` methods. Everything below is **lost** when moving to firebase_ai.
+
+Search for them first:
+
+```bash
+grep -rnE "thinkingConfig|enableAffectiveDialog|proactivity|ProactivityConfig|translationConfig|TranslationConfig|explicitVadSignal|historyConfig|avatarConfig|safetySettings|seed:|labels:|languageCodes|customVocabulary|languageHints|AudioTranscriptionConfigMode|replicatedVoiceConfig|promptedVoiceConfig|VoiceConfig\.fromVoiceId|transparent:|Behavior\.NON_BLOCKING|FunctionResponseScheduling|willContinue|partialArgs|computerUse|mcpServers|fileSearch|excludeDomains|timeRangeFilter|groundingTypes|usageMetadata|tokenTracker|GeminiLiveUsageBadge|groundingMetadata|urlContextMetadata|turnCompleteReason|generationComplete|waitingForInput|interimInputTranscription|interactionStatus|voiceActivity|sendAudioStreamEnd|authTokens|AuthTokensService|live\.music|LiveMusic|voices\.|GeminiVoicesService|GeminiLiveSessionController|rawSession|rawMessage|apiVersion" lib
+```
+
+| Feature | gemini_live API | firebase_ai 4.x | Action when migrating |
+| :--- | :--- | :--- | :--- |
+| **Thinking** | `GenerationConfig.thinkingConfig` | Not in Live (only `generateContent`) | Remove; model default applies. Tell the user reasoning depth may change. |
+| **Affective dialog** | `enableAffectiveDialog` | None | Remove. |
+| **Proactive audio** | `ProactivityConfig` (`proactivity:`) | None | Remove; the model answers every turn. |
+| **Speech translation** | `TranslationConfig`, `gemini-3.5-live-translate-preview` | None | Not migratable. Keep this feature on gemini_live, or prompt a regular Live model to translate (lower quality, no translate model). |
+| **Explicit VAD signals** | `explicitVadSignal`, `VoiceActivityDetectionSignal`, `VoiceActivity` messages | None | Remove; derive "user speaking" from your own mic level or use `sendStart/StopActivityRealtime` with manual VAD. |
+| **Transcription options** | `AudioTranscriptionConfig(languageCodes:, customVocabulary:, languageHints:, mode:)` | `AudioTranscriptionConfig()` has no options | Drop the options; transcription stays on with defaults. Custom vocabulary is lost. |
+| **Custom / cloned voices** | `VoiceConfig.fromVoiceId`, `replicatedVoiceConfig`, `promptedVoiceConfig`, `GeminiVoicesService` | `SpeechConfig(voiceName:)` prebuilt voices only | Pick the closest prebuilt voice. Voice management APIs are lost. |
+| **Async (non-blocking) tools** | `FunctionDeclaration(behavior: Behavior.NON_BLOCKING)`, `FunctionResponse(scheduling:, willContinue:)` | None; tool calls block the turn | Make tools fast or return a placeholder result; scheduling semantics are lost. |
+| **Streamed function args** | `FunctionCall.partialArgs` | None | Wait for the complete `FunctionCall.args`. |
+| **Extra tools / tool options** | `computerUse`, `mcpServers`, `fileSearch`, `enterpriseWebSearch`, Exa / Parallel search, `GoogleSearch(excludeDomains:, timeRangeFilter:)`, `GoogleMaps(groundingTypes:)` | Plain `googleSearch()` / `googleMaps()` / `urlContext()` / `codeExecution()` | Drop options; replace other tools with your own function declarations. |
+| **Usage / cost tracking** | `usageMetadata`, `GeminiTokenUsageTracker`, `session.tokenTracker`, `GeminiLiveUsageBadge` | Not exposed for Live | Remove the badge and cost UI, or estimate cost server-side. |
+| **Grounding / URL metadata** | `serverContent.groundingMetadata`, `urlContextMetadata` | Not exposed for Live | Remove source citations UI. |
+| **Turn details** | `turnCompleteReason`, `generationComplete`, `waitingForInput`, `interimInputTranscription`, `interactionStatus`, `Transcription.languageCode`, `goAway.reason` | Only `turnComplete`, `interrupted`, transcription text/finished, `timeLeft` | Rewrite logic on `turnComplete` / `interrupted`. |
+| **Audio stream end** | `sendAudioStreamEnd()` | None | Remove; stop sending audio, or use `sendStopActivityRealtime()` with manual VAD. |
+| **Setup extras** | `historyConfig`, `avatarConfig`, `safetySettings`, `seed`, `labels`, `SessionResumptionConfig(transparent:)`, `apiVersion` | None | Remove. |
+| **Ephemeral tokens** | `genAI.authTokens` / `AuthTokensService` | Replaced by Firebase App Check | Delete token minting; set up App Check (`firebase_app_check`). |
+| **Live Music (Lyria RealTime)** | `genAI.live.music`, `LiveMusicSession` | None | Not migratable. Keep gemini_live for music, or drop the feature. |
+| **Session controller** | `GeminiLiveSessionController` | None | Rebuild state (connection, transcripts, interruption) in your own `ChangeNotifier` around `firebase_ai`'s `LiveSession`. |
+| **Model IDs** | `LiveModels.*` constants, e.g. `gemini-3.8-live` | Plain strings | Use string IDs and confirm each model is available through Firebase AI Logic before switching. |
+
+**Can stay:** the UI widgets take plain values, so they keep working with firebase_ai if `gemini_live` stays as a UI-only dependency:
+`GeminiLiveMicButton(isRecording:)`, `GeminiLiveVoiceIndicator(isSpeaking:)`, `GeminiLiveCaptionBubble(text:, role:)`, `GeminiLiveWaveform(amplitude:/amplitudeStream:/audioStream:)`, `GeminiLiveStatusBadge(state:)` (map your own state to `GeminiLiveSessionState`), and `GeminiLiveAudioUtils` / `addWavHeader()`. Import `package:gemini_live/gemini_live.dart` with a prefix next to `firebase_ai`. Only `GeminiLiveUsageBadge` needs usage data firebase_ai does not provide.
+
+**Report to the user before editing:** list every hit from the search above with its action, and call out the ones that remove product features (translation, Live Music, usage/cost UI, custom voices, async tools). Those need the user's decision, not a silent deletion.
 
 ---
 

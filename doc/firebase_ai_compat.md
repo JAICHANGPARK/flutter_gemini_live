@@ -111,6 +111,30 @@ Checklist:
 4. **Core API code** (`GoogleGenAI`, `genAI.live.connect`,
    `GeminiLiveSessionController`) is not part of the firebase_ai API and must
    be rewritten. Only code written against the compat layer is portable.
+5. **Features firebase_ai cannot replace** are lost. Decide what to do with
+   each before switching:
+
+| gemini_live feature | On firebase_ai 4.x Live |
+| :--- | :--- |
+| Speech translation (`TranslationConfig`, translate model) | Not available |
+| Live Music / Lyria RealTime (`genAI.live.music`) | Not available |
+| Usage and cost (`usageMetadata`, `tokenTracker`, `GeminiLiveUsageBadge`) | Not exposed |
+| Thinking (`thinkingConfig`), affective dialog, proactive audio | Not available |
+| Transcription options (`languageCodes`, `customVocabulary`, `mode`) | Transcription on/off only |
+| Custom and cloned voices, voices API | Prebuilt `voiceName` only |
+| Async tools (`Behavior.NON_BLOCKING`, `scheduling`, `willContinue`), streamed `partialArgs` | Blocking tool calls only |
+| Tool options and extra tools (`excludeDomains`, `groundingTypes`, `computerUse`, `mcpServers`, `fileSearch`, ...) | Plain Search / Maps / URL context / code execution |
+| Grounding metadata, `turnCompleteReason`, `waitingForInput`, `interactionStatus`, VAD signals | Not exposed |
+| `sendAudioStreamEnd`, `historyConfig`, `avatarConfig`, `safetySettings`, `seed`, `labels` | Not available |
+| Ephemeral tokens (`genAI.authTokens`) | Use Firebase App Check instead |
+| `GeminiLiveSessionController` | Write your own state holder |
+
+   The UI widgets (`GeminiLiveMicButton`, `GeminiLiveVoiceIndicator`,
+   `GeminiLiveCaptionBubble`, `GeminiLiveWaveform`, `GeminiLiveStatusBadge`)
+   take plain values and keep working next to firebase_ai if `gemini_live`
+   stays as a UI dependency. The
+   [`gemini-live-firebase-migration`](../skills/gemini-live-firebase-migration/SKILL.md)
+   agent skill has the search command and the action for each feature.
 
 ## gemini_live-only extras
 
