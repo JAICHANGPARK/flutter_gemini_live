@@ -270,19 +270,14 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
     if (chunk != null && chunk.data != null) {
       final bytes = chunk.bytes;
       if (bytes != null && bytes.isNotEmpty) {
+        // Drop in-flight server chunks if user paused or stopped
+        if (!_isPlaying) return;
+
         _audioPlayer.appendPcmBytes(bytes);
         setState(() {
           _receivedChunksCount++;
           _totalBytesReceived += bytes.length;
         });
-        if (!_isPlaying) {
-          setState(() {
-            _isPlaying = true;
-            _statusText = 'Streaming Audio';
-            _statusColor = Colors.greenAccent.shade700;
-          });
-          _visualizerAnim.repeat(reverse: true);
-        }
       }
     }
   }
@@ -307,6 +302,7 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
     if (_session == null) return;
     _log('⏸️ Sending PAUSE signal');
     _session!.pause();
+    _audioPlayer.clear();
     setState(() {
       _isPlaying = false;
       _statusText = 'Paused';

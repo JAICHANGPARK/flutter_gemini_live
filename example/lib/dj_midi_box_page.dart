@@ -256,6 +256,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     if (chunk != null && chunk.data != null) {
       final bytes = chunk.bytes;
       if (bytes != null && bytes.isNotEmpty) {
+        // Drop in-flight chunks if user has paused or stopped playback
+        if (!_isPlaying) return;
+
         _audioPlayer.appendPcmBytes(bytes);
 
         final rms = GeminiLiveAudioUtils.calculateRms(bytes);
@@ -264,9 +267,6 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         if (mounted) {
           setState(() {
             _rmsLevel = visualScale.clamp(0.0, 1.0);
-            if (!_isPlaying) {
-              _isPlaying = true;
-            }
           });
         }
       }
@@ -281,6 +281,7 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
     if (_isPlaying) {
       _session?.pause();
+      _audioPlayer.clear();
       setState(() {
         _isPlaying = false;
         _rmsLevel = 0.0;

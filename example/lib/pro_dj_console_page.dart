@@ -273,6 +273,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     if (chunk != null && chunk.data != null) {
       final bytes = chunk.bytes;
       if (bytes != null && bytes.isNotEmpty) {
+        // Discard in-flight server chunks if user paused or stopped
+        if (!_isPlaying) return;
+
         _audioPlayer.appendPcmBytes(bytes);
 
         // Calculate RMS for DJ VU meters & Jog display
@@ -284,10 +287,6 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
           setState(() {
             _currentRmsL = visualScale.clamp(0.0, 1.0);
             _currentRmsR = (visualScale + randSkew).clamp(0.0, 1.0);
-            if (!_isPlaying) {
-              _isPlaying = true;
-              _jogAnimController.repeat();
-            }
           });
         }
       }
@@ -306,7 +305,12 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     if (_session == null) return;
     _log('⏸ [PAUSE] Pausing stream playback...');
     _session!.pause();
-    setState(() => _isPlaying = false);
+    _audioPlayer.clear();
+    setState(() {
+      _isPlaying = false;
+      _currentRmsL = 0.0;
+      _currentRmsR = 0.0;
+    });
     _jogAnimController.stop();
   }
 
@@ -314,6 +318,7 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     if (_session == null) return;
     _log('⏹ [CUE/STOP] Stopping stream...');
     _session!.stop();
+    _audioPlayer.clear();
     setState(() {
       _isPlaying = false;
       _currentRmsL = 0.0;
