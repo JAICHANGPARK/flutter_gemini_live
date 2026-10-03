@@ -10,6 +10,7 @@
 
 - Google의 Gemini 모델과 실시간, 멀티모달 대화를 가능하게 해주는 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live)용 Flutter 패키지입니다.
 - **Firebase 의존성 Zero**: Firebase / Firebase AI Logic 설치 없이 직접 WebSocket으로 연동됩니다.
+- **Firebase AI Logic 호환**: `firebase_ai`의 Live API와 같은 모양의 호환 레이어를 선택적으로 제공합니다. import만 바꾸면 두 패키지 사이를 오갈 수 있습니다. [Firebase AI Logic 호환](#firebase-ai-logic-호환) 참고.
 - 최신 Gemini Live, 번역, Lyria 음악 모델을 지원합니다. [Supported Models](#supported-models)를 참고하세요.
 - 모델 사양에 따라 `TEXT`, `AUDIO`, `VIDEO` 응답 모다리티를 지원합니다.
 
@@ -28,16 +29,29 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+**🔄 Firebase AI Logic 마이그레이션 스킬** — `firebase_ai`와 `gemini_live` 사이에서 Live 코드를 양방향으로 옮길 때 사용합니다 ([마이그레이션 가이드](#마이그레이션-가이드-migration) 참고):
+
+| 어시스턴트 / 에코시스템 | 마이그레이션 스킬 경로 |
+|---|---|
+| **공통 Skills 디렉토리** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
+
 **🔗 스킬 직접 가져오기** — pub.dev 패키지에는 숨김 폴더(`.claude/`, `.gemini/` 등)가 포함되지 않으므로 아래 링크를 사용하세요:
 - **Raw Markdown (에이전트용)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **Firebase 마이그레이션 스킬** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
 - **`flutter pub get` 후 로컬 사본**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)
 for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
-  mkdir -p "$d/skills/flutter-gemini-live"
-  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
-    -o "$d/skills/flutter-gemini-live/SKILL.md"
+  for s in flutter-gemini-live gemini-live-firebase-migration; do
+    mkdir -p "$d/skills/$s"
+    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
+      -o "$d/skills/$s/SKILL.md"
+  done
 done
 ```
 
@@ -197,6 +211,72 @@ Future<void> startVoiceChat() async {
 
 > **🔐 API 키 보안:** 운영 앱에 Gemini API 키를 그대로 넣지 마세요. 백엔드에서 `genAI.authTokens.create(...)`로 수명이 짧은 **에페메럴 토큰**을 발급하고, 클라이언트는 그 토큰으로 연결하세요. [에페메럴 토큰 가이드](doc/advanced_configuration.md)와 [`examples/ephemeral_token.dart`](examples/ephemeral_token.dart)를 참고하세요.
 
+## Firebase AI Logic 호환
+
+`package:gemini_live/compat/firebase_ai.dart`는 **[`firebase_ai`](https://pub.dev/packages/firebase_ai) 4.x의 Live API**와 클래스 이름, 생성자, 메서드, 기본값이 같습니다. `FirebaseAI.googleAI()`, `liveGenerativeModel`, `LiveGenerationConfig`, `LiveSession.send*`, `receive()`, tool call, 세션 재개를 모두 지원합니다. Firebase 프로젝트 없이 gemini_live 엔진 위에서 동작합니다. 기존 `gemini_live` 코어 API는 그대로이고, 호환 레이어는 별도 진입점입니다.
+
+```dart
+import 'package:gemini_live/compat/firebase_ai.dart';
+
+FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+
+final model = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  liveGenerationConfig: LiveGenerationConfig(
+    responseModalities: [ResponseModalities.audio],
+    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    outputAudioTranscription: AudioTranscriptionConfig(),
+  ),
+);
+final session = await model.connect();
+
+session.receive().listen((response) async {
+  final message = response.message;
+  if (message is LiveServerContent) {
+    for (final part in message.modelTurn?.parts ?? const <Part>[]) {
+      if (part is InlineDataPart) playPcm(part.bytes);
+    }
+  } else if (message is LiveServerToolCall) {
+    for (final call in message.functionCalls ?? const <FunctionCall>[]) {
+      await session.sendToolResponse([
+        FunctionResponse(call.name, await runTool(call), id: call.id),
+      ]);
+    }
+  }
+});
+
+await session.sendAudioRealtime(InlineDataPart('audio/pcm;rate=16000', chunk));
+
+// gemini_live 전용 기능 (firebase_ai는 Live 사용량 메타데이터를 제공하지 않음):
+print(session.tokenTracker.formatCost());
+```
+
+Live API만 지원합니다. `vertexAI()`, `generativeModel` 같은 Live 외 API는 없으며, 사용하면 컴파일 에러가 납니다.
+
+## 마이그레이션 가이드 (Migration)
+
+**firebase_ai → gemini_live** (두 군데만 수정, `FirebaseAI.googleAI()` 이후 코드는 그대로):
+
+```diff
+- import 'package:firebase_core/firebase_core.dart';
+- import 'package:firebase_ai/firebase_ai.dart';
++ import 'package:gemini_live/compat/firebase_ai.dart';
+
+- await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
++ FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+```
+
+- Firebase App Check가 더 이상 키를 보호하지 않습니다. 운영 앱에서는 [에페메럴 토큰](doc/advanced_configuration.md)을 쓰세요. `auth_tokens/...` 토큰은 자동으로 `v1alpha`를 사용합니다.
+- `FirebaseAI.vertexAI()`는 `googleAI()`로 바꿔야 합니다.
+
+**gemini_live → firebase_ai** (위 두 군데를 반대로 수정):
+
+- 컴파일러가 알려주는 gemini_live 전용 기능을 제거합니다: `FirebaseAI.initialize`, `googleAI(apiKey:)`, `session.tokenTracker`, `session.rawSession`, `response.rawMessage`.
+- 전송 전에 `receive()`를 먼저 구독하세요. gemini_live는 구독 전 응답을 보관하지만 firebase_ai는 버립니다.
+- 호환 레이어로 작성한 코드만 이식됩니다. 코어 API(`GoogleGenAI`, `GeminiLiveSessionController`)로 작성한 코드는 다시 작성해야 합니다.
+
+전체 API 표, 동작 차이, 두 패키지를 한 앱에서 같이 쓰는 방법은 [Firebase AI 호환 가이드](doc/firebase_ai_compat.md)에 있습니다. 양방향 호환은 [`tool/check_firebase_ai_compat.sh`](tool/check_firebase_ai_compat.sh)로 검증합니다. 같은 샘플을 두 패키지에서 모두 컴파일합니다.
+
 ## 상세 문서 & 가이드 (Documentation)
 
 상세한 가이드와 API 명세는 [`doc/`](doc/) 디렉토리에 모듈별로 정리되어 있습니다:
@@ -205,6 +285,7 @@ Future<void> startVoiceChat() async {
 - **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
 - **[UI 위젯 가이드 & 명세서](doc/widgets_guide.md)**: `GeminiLiveSessionController`와 모든 내장 UI 위젯 상세 사용법 및 전체 화면 예제
 - **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법
+- **[Firebase AI 호환 & 마이그레이션 가이드](doc/firebase_ai_compat.md)**: firebase_ai 호환 Live API, 양방향 마이그레이션 체크리스트, 동작 차이
 - **[에러 코드 & 트러블슈팅 명세서](doc/error_codes_specification.md)**: 발생 가능한 에러 코드, 종료 코드, `TurnCompleteReason` Enum, 트러블슈팅 가이드
 - **[실행 가능한 예제 모음](examples/README.md)**: 기본 대화, 툴 호출, 카메라/오디오 스트리밍, Google Maps 그라운딩 CLI 예제
 

@@ -10,6 +10,7 @@
 
 - 用于 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
 - **零 Firebase 依赖**：无须安装 Firebase 或 Firebase AI Logic，直接通过 WebSocket 建立连接。
+- **兼容 Firebase AI Logic**：可选的兼容层，与 `firebase_ai` 的 Live API 形式一致，只需替换 import 即可在两个包之间迁移。参见 [Firebase AI Logic 兼容](#firebase-ai-logic-兼容)。
 - 支持最新的 Gemini Live、翻译和 Lyria 音乐模型。参见 [Supported Models](#supported-models)。
 - 支持 `TEXT`、`AUDIO` 和 `VIDEO` 响应模态。
 
@@ -29,16 +30,29 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+**🔄 Firebase AI Logic 迁移技能** — 用于在 `firebase_ai` 与 `gemini_live` 之间双向迁移 Live 代码（参见[迁移指南](#迁移指南-migration)）：
+
+| 助手 / 生态系统 | 迁移技能路径 |
+|---|---|
+| **通用 Skills 目录** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
+
 **🔗 直接获取 Skill** — pub.dev 软件包不包含隐藏文件夹（`.claude/`、`.gemini/` 等），请使用以下链接：
 - **Raw Markdown（供智能体使用）**：https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **Firebase 迁移技能** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
 - **`flutter pub get` 后的本地副本**：`<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)
 for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
-  mkdir -p "$d/skills/flutter-gemini-live"
-  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
-    -o "$d/skills/flutter-gemini-live/SKILL.md"
+  for s in flutter-gemini-live gemini-live-firebase-migration; do
+    mkdir -p "$d/skills/$s"
+    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
+      -o "$d/skills/$s/SKILL.md"
+  done
 done
 ```
 
@@ -198,6 +212,72 @@ Future<void> startVoiceChat() async {
 
 > **🔐 API 密钥安全：** 请勿在生产应用中直接内置 Gemini API 密钥。请在后端使用 `genAI.authTokens.create(...)` 签发短期有效的**临时令牌**，客户端使用该令牌连接。参见 [临时令牌指南](doc/advanced_configuration.md) 和 [`examples/ephemeral_token.dart`](examples/ephemeral_token.dart)。
 
+## Firebase AI Logic 兼容
+
+`package:gemini_live/compat/firebase_ai.dart` 与 **[`firebase_ai`](https://pub.dev/packages/firebase_ai) 4.x 的 Live API** 拥有相同的类名、构造函数、方法和默认值，完整支持 `FirebaseAI.googleAI()`、`liveGenerativeModel`、`LiveGenerationConfig`、`LiveSession.send*`、`receive()`、工具调用和会话恢复。它运行在 gemini_live 引擎之上，无需 Firebase 项目。现有的 `gemini_live` 核心 API 保持不变，兼容层是一个独立的入口。
+
+```dart
+import 'package:gemini_live/compat/firebase_ai.dart';
+
+FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+
+final model = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  liveGenerationConfig: LiveGenerationConfig(
+    responseModalities: [ResponseModalities.audio],
+    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    outputAudioTranscription: AudioTranscriptionConfig(),
+  ),
+);
+final session = await model.connect();
+
+session.receive().listen((response) async {
+  final message = response.message;
+  if (message is LiveServerContent) {
+    for (final part in message.modelTurn?.parts ?? const <Part>[]) {
+      if (part is InlineDataPart) playPcm(part.bytes);
+    }
+  } else if (message is LiveServerToolCall) {
+    for (final call in message.functionCalls ?? const <FunctionCall>[]) {
+      await session.sendToolResponse([
+        FunctionResponse(call.name, await runTool(call), id: call.id),
+      ]);
+    }
+  }
+});
+
+await session.sendAudioRealtime(InlineDataPart('audio/pcm;rate=16000', chunk));
+
+// gemini_live 独有功能（firebase_ai 不提供 Live 用量元数据）：
+print(session.tokenTracker.formatCost());
+```
+
+仅支持 Live API。`vertexAI()`、`generativeModel` 等非 Live API 未提供，使用时会产生编译错误。
+
+## 迁移指南 (Migration)
+
+**firebase_ai → gemini_live**（只需修改两处，`FirebaseAI.googleAI()` 之后的代码保持不变）：
+
+```diff
+- import 'package:firebase_core/firebase_core.dart';
+- import 'package:firebase_ai/firebase_ai.dart';
++ import 'package:gemini_live/compat/firebase_ai.dart';
+
+- await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
++ FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+```
+
+- Firebase App Check 将不再保护密钥。生产环境请使用[临时令牌](doc/advanced_configuration.md)。`auth_tokens/...` 令牌会自动使用 `v1alpha`。
+- `FirebaseAI.vertexAI()` 需要改为 `googleAI()`。
+
+**gemini_live → firebase_ai**（将上面两处反向修改）：
+
+- 删除编译器提示的 gemini_live 独有功能：`FirebaseAI.initialize`、`googleAI(apiKey:)`、`session.tokenTracker`、`session.rawSession`、`response.rawMessage`。
+- 请在发送之前先订阅 `receive()`。gemini_live 会保留订阅前收到的响应，而 firebase_ai 会丢弃它们。
+- 只有使用兼容层编写的代码可以迁移。使用核心 API（`GoogleGenAI`、`GeminiLiveSessionController`）编写的代码需要重写。
+
+完整的 API 对照表、行为差异以及在同一应用中同时使用两个包的方法，请参阅 [Firebase AI 兼容指南](doc/firebase_ai_compat.md)。双向兼容性由 [`tool/check_firebase_ai_compat.sh`](tool/check_firebase_ai_compat.sh) 验证，它会用两个包分别编译同一个示例。
+
 ## 文档与指南 (Documentation)
 
 更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
@@ -206,6 +286,7 @@ Future<void> startVoiceChat() async {
 - **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
 - **[组件指南](doc/widgets_guide.md)**：`GeminiLiveSessionController` 及所有内置组件的用法与页面示例
 - **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
+- **[Firebase AI 兼容与迁移指南](doc/firebase_ai_compat.md)**：与 `firebase_ai` 兼容的 Live API（`package:gemini_live/compat/firebase_ai.dart`）、双向迁移清单及行为差异
 - **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
 - **[可运行示例集](examples/README.md)**：包含基础对话、工具调用、摄像头/音频流传输与 Google Maps 接地 CLI 脚本
 

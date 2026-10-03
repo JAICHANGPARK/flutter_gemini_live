@@ -23,6 +23,7 @@ lib/
     ├── live_service.dart         # WebSocket LiveService & LiveSession
     ├── music_service.dart        # Realtime Music (Lyria Live) client & models
     ├── auth_tokens_service.dart  # Ephemeral client tokens service
+    ├── compat/firebase_ai/       # firebase_ai-compatible Live API (exported via lib/compat/firebase_ai.dart)
     ├── voices_service.dart       # Available voices discovery service
     ├── client/                   # REST ApiClient & headers
     ├── model/                    # Request/response data models & enums
@@ -51,3 +52,8 @@ A dedicated Agent Skill is maintained for this package at:
 - Root: [`SKILL.md`](SKILL.md)
 
 Refer to this skill whenever generating code, implementing UI features, adding tools/grounding, or handling Live API errors.
+
+For migrations between `firebase_ai` and `gemini_live` (either direction), use the migration skill:
+- [`skills/gemini-live-firebase-migration/SKILL.md`](skills/gemini-live-firebase-migration/SKILL.md) (mirrored under `.claude/`, `.gemini/`, `.codex/`, `.agents/skills/`)
+- Reference guide: [`doc/firebase_ai_compat.md`](doc/firebase_ai_compat.md)
+- Two-way compile check: `tool/check_firebase_ai_compat.sh`

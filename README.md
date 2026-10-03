@@ -10,6 +10,7 @@
 
 - A Flutter package for the [Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - **Zero Firebase Dependency**: Direct WebSocket connection without Firebase or Firebase AI Logic.
+- **Firebase AI Logic compatible**: Optional drop-in layer that mirrors the `firebase_ai` Live API, so code moves between the two packages by swapping imports. See [Firebase AI Logic Compatibility](#firebase-ai-logic-compatibility).
 - Supports the latest Gemini Live, translation, and Lyria music models. See [Supported Models](#supported-models).
 - Supports `TEXT`, `AUDIO`, and `VIDEO` response modalities.
 
@@ -29,16 +30,29 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+**🔄 Firebase AI Logic migration skill** — for moving Live code between `firebase_ai` and `gemini_live` in either direction (see [Migration](#migration)):
+
+| Assistant / Ecosystem | Migration Skill Path |
+|---|---|
+| **Common Skills Directory** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
+
 **🔗 Fetch the skill directly** — hidden folders (`.claude/`, `.gemini/`, …) are not shipped in the pub.dev package, so use these links:
 - **Raw Markdown (for agents)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **Firebase migration skill** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
 - **Local copy after `flutter pub get`**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)
 for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
-  mkdir -p "$d/skills/flutter-gemini-live"
-  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
-    -o "$d/skills/flutter-gemini-live/SKILL.md"
+  for s in flutter-gemini-live gemini-live-firebase-migration; do
+    mkdir -p "$d/skills/$s"
+    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
+      -o "$d/skills/$s/SKILL.md"
+  done
 done
 ```
 
@@ -200,6 +214,72 @@ For a complete screen with captions, waveform, and barge-in handling, see the [A
 
 > **🔐 API key security:** Do not ship a raw Gemini API key in a production app. Mint short-lived **ephemeral tokens** on your backend with `genAI.authTokens.create(...)` and connect the client with that token. See [Ephemeral Tokens](doc/advanced_configuration.md) and [`examples/ephemeral_token.dart`](examples/ephemeral_token.dart).
 
+## Firebase AI Logic Compatibility
+
+`package:gemini_live/compat/firebase_ai.dart` mirrors the **Live API of [`firebase_ai`](https://pub.dev/packages/firebase_ai) 4.x**: same class names, constructors, methods and defaults (`FirebaseAI.googleAI()`, `liveGenerativeModel`, `LiveGenerationConfig`, `LiveSession.send*`, `receive()`, tool calls, session resumption). It runs on the gemini_live engine with no Firebase project. The core `gemini_live` API is unchanged; this is a separate entry point.
+
+```dart
+import 'package:gemini_live/compat/firebase_ai.dart';
+
+FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+
+final model = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  liveGenerationConfig: LiveGenerationConfig(
+    responseModalities: [ResponseModalities.audio],
+    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    outputAudioTranscription: AudioTranscriptionConfig(),
+  ),
+);
+final session = await model.connect();
+
+session.receive().listen((response) async {
+  final message = response.message;
+  if (message is LiveServerContent) {
+    for (final part in message.modelTurn?.parts ?? const <Part>[]) {
+      if (part is InlineDataPart) playPcm(part.bytes);
+    }
+  } else if (message is LiveServerToolCall) {
+    for (final call in message.functionCalls ?? const <FunctionCall>[]) {
+      await session.sendToolResponse([
+        FunctionResponse(call.name, await runTool(call), id: call.id),
+      ]);
+    }
+  }
+});
+
+await session.sendAudioRealtime(InlineDataPart('audio/pcm;rate=16000', chunk));
+
+// gemini_live-only extra (firebase_ai has no Live usage metadata):
+print(session.tokenTracker.formatCost());
+```
+
+Only the Live API is covered. `vertexAI()`, `generativeModel` and other non-Live APIs are not provided and fail at compile time.
+
+## Migration
+
+**firebase_ai → gemini_live** (two edits; everything after `FirebaseAI.googleAI()` stays the same):
+
+```diff
+- import 'package:firebase_core/firebase_core.dart';
+- import 'package:firebase_ai/firebase_ai.dart';
++ import 'package:gemini_live/compat/firebase_ai.dart';
+
+- await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
++ FirebaseAI.initialize(apiKey: 'YOUR_KEY_OR_EPHEMERAL_TOKEN');
+```
+
+- Firebase App Check no longer protects the key. Use [ephemeral tokens](doc/advanced_configuration.md) in production; `auth_tokens/...` tokens select `v1alpha` automatically.
+- `FirebaseAI.vertexAI()` must become `googleAI()`.
+
+**gemini_live → firebase_ai** (reverse the two edits):
+
+- Remove the gemini_live-only extras the compiler flags: `FirebaseAI.initialize`, `googleAI(apiKey:)`, `session.tokenTracker`, `session.rawSession`, `response.rawMessage`.
+- Subscribe to `receive()` before sending. gemini_live buffers early responses; firebase_ai drops them.
+- Only code written against the compat layer is portable. Code using the core API (`GoogleGenAI`, `GeminiLiveSessionController`) must be rewritten.
+
+The [Firebase AI compatibility guide](doc/firebase_ai_compat.md) has the full API table, behavior differences, and how to use both packages in one app. Two-way compatibility is checked by [`tool/check_firebase_ai_compat.sh`](tool/check_firebase_ai_compat.sh), which compiles the same sample against both packages.
+
 ## Documentation & Guides
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
@@ -208,6 +288,7 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 - **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
 - **[Widgets Guide & UI Specification](doc/widgets_guide.md)**: Detailed specification and interactive code examples for `GeminiLiveSessionController` and every pre-built widget.
 - **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
+- **[Firebase AI Compatibility & Migration](doc/firebase_ai_compat.md)**: firebase_ai-compatible Live API, two-way migration checklists, and behavior differences.
 - **[Error Codes & Specifications](doc/error_codes_specification.md)**: Complete error codes, close codes, `TurnCompleteReason` enums, and troubleshooting strategies.
 - **[Runnable Examples](examples/README.md)**: Dedicated CLI scripts for basic usage, function calling, audio/video streaming, and Google Maps grounding.
 
