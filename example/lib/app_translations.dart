@@ -120,6 +120,45 @@ class AppTranslations {
     }
   }
 
+  String get viewModeAuto {
+    switch (language) {
+      case AppLanguage.ko:
+        return '자동 반응형';
+      case AppLanguage.ja:
+        return '自動レイアウト';
+      case AppLanguage.zh:
+        return '自适应布局';
+      case AppLanguage.en:
+        return 'Auto Layout';
+    }
+  }
+
+  String get viewModeList {
+    switch (language) {
+      case AppLanguage.ko:
+        return '리스트 뷰';
+      case AppLanguage.ja:
+        return 'リスト表示';
+      case AppLanguage.zh:
+        return '列表视图';
+      case AppLanguage.en:
+        return 'List View';
+    }
+  }
+
+  String get viewModeGrid {
+    switch (language) {
+      case AppLanguage.ko:
+        return '그리드 뷰';
+      case AppLanguage.ja:
+        return 'グリッド表示';
+      case AppLanguage.zh:
+        return '网格视图';
+      case AppLanguage.en:
+        return 'Grid View';
+    }
+  }
+
   String get featuredServices {
     switch (language) {
       case AppLanguage.ko:
