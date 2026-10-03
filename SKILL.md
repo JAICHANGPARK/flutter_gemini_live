@@ -27,6 +27,7 @@ Platform permissions required for microphone input:
 ## ⛔ Do NOT
 
 - Do **not** add `firebase_ai`, `firebase_core`, or `google_generative_ai` for Live features. `gemini_live` replaces them.
+  - When code is written against (or must stay portable to) `firebase_ai`, use the firebase_ai-compatible Live API in `package:gemini_live/compat/firebase_ai.dart` instead, and follow the `gemini-live-firebase-migration` skill for migrations in either direction.
 - Do **not** invent model IDs. Use only the IDs listed below.
 - Do **not** use `gemini-omni-*` (video generation), `*-tts` (text-to-speech), or `lyria-3*` models with `genAI.live.connect` / `genAI.live.music.connect`. They are Interactions API models, not Live models. The matching `LiveModels` / `LiveMusicModels` constants are deprecated.
 - Do **not** ship a raw API key in a production client. Mint an ephemeral token on a backend (see *Ephemeral Client Auth Tokens*).

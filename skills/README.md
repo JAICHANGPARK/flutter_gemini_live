@@ -33,7 +33,7 @@ claude "Implement a live voice chat screen with frosted glass captions and audio
 Copy the skill folder to your user-level Claude skills directory:
 ```bash
 mkdir -p ~/.claude/skills
-cp -r skills/flutter-gemini-live ~/.claude/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.claude/skills/
 ```
 
 ---
@@ -50,7 +50,7 @@ agy "Build a real-time Gemini 3.8 Live audio streaming session with barge-in int
 Copy the skill to your global Antigravity/Gemini configuration directory:
 ```bash
 mkdir -p ~/.gemini/skills
-cp -r skills/flutter-gemini-live ~/.gemini/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.gemini/skills/
 ```
 
 ---
@@ -69,8 +69,8 @@ codex "Add Live Music generation using models/lyria-realtime-exp and weighted pr
 Copy the skill to your global agents directory:
 ```bash
 mkdir -p ~/.codex/skills ~/.agents/skills
-cp -r skills/flutter-gemini-live ~/.codex/skills/
-cp -r skills/flutter-gemini-live ~/.agents/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.codex/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.agents/skills/
 ```
 
 ---
@@ -84,3 +84,19 @@ cp -r skills/flutter-gemini-live ~/.agents/skills/
 - **Live Music Streaming**: `genAI.live.music.connect(...)`, steerable weighted prompts, BPM, and key scale control.
 - **Ephemeral Authentication Tokens**: Minting client tokens (`AuthTokensService`) with strict parameter locks and `v1alpha` connectivity.
 - **Advanced Features**: Realtime bidirectional translation (`translationConfig`), transcription with multi-language `languageCodes` and `customVocabulary`, Google Maps grounding, and session resumption.
+
+---
+
+## 🔄 Firebase AI Logic Migration Skill
+
+[`gemini-live-firebase-migration`](gemini-live-firebase-migration/SKILL.md) is a second skill, mirrored to the same agent paths (`.claude/`, `.gemini/`, `.codex/`, `.agents/skills/gemini-live-firebase-migration/`). It guides agents through:
+
+- **firebase_ai → gemini_live**: swapping to `package:gemini_live/compat/firebase_ai.dart`, replacing `Firebase.initializeApp()`, ephemeral tokens instead of App Check, Vertex AI and non-Live API handling.
+- **gemini_live → firebase_ai**: removing gemini_live-only extras (`tokenTracker`, `rawSession`, `rawMessage`) and the `receive()` ordering rule.
+- **Core API → compat API**: a full mapping from `GoogleGenAI` / `genAI.live.connect` / `LiveCallbacks` to the portable firebase_ai-style API.
+- Behavior differences and a two-way compile check.
+
+Example prompt:
+```bash
+claude "Migrate our Live voice screen from firebase_ai to gemini_live"
+```
