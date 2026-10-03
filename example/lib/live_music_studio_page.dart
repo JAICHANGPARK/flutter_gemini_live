@@ -616,27 +616,6 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      DropdownMenuItem(
-                        value: LiveMusicModels.lyria35,
-                        child: Text(
-                          'lyria-3.5 (Latest Preview)',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: LiveMusicModels.lyria3ClipPreview,
-                        child: Text(
-                          'lyria-3-clip-preview',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: LiveMusicModels.lyria3ProPreview,
-                        child: Text(
-                          'lyria-3-pro-preview',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
                     ],
                     onChanged: _isConnected
                         ? null

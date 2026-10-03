@@ -1249,12 +1249,8 @@ void main() {
     );
 
     expect(
-      LiveModels.gemini38FlashTts,
-      'gemini-3.8-flash-tts',
-    );
-    expect(
-      LiveModels.gemini38FlashLiteTts,
-      'gemini-3.8-flash-lite-tts',
+      LiveModels.gemini35LiveTranslatePreview,
+      'gemini-3.5-live-translate-preview',
     );
 
     final setup = LiveService.buildSetupMessage(
@@ -1397,14 +1393,28 @@ void main() {
   });
 
   group('js-genai 2.27.0 Live sync features (LiveModels, LiveMusicModels, SpeechAnnotation)', () {
-    test('LiveModels and LiveMusicModels contain expected 2.27.0 model identifiers', () {
-      expect(LiveModels.geminiOmni11Flash, 'gemini-omni-1.1-flash');
-      expect(LiveModels.geminiOmniFlashPreview, 'gemini-omni-flash-preview');
-      expect(LiveModels.gemini31FlashTtsPreview, 'gemini-3.1-flash-tts-preview');
-
+    test('LiveMusicModels defines the Realtime Music model identifier', () {
       expect(LiveMusicModels.lyriaRealtimeExp, 'models/lyria-realtime-exp');
+    });
+
+    // Interactions-only models that were misfiled as Live models. Kept as
+    // deprecated aliases until removal; values must stay stable meanwhile.
+    test('deprecated non-Live model identifiers keep their values', () {
+      // ignore: deprecated_member_use_from_same_package
+      expect(LiveModels.geminiOmni11Flash, 'gemini-omni-1.1-flash');
+      // ignore: deprecated_member_use_from_same_package
+      expect(LiveModels.geminiOmniFlashPreview, 'gemini-omni-flash-preview');
+      // ignore: deprecated_member_use_from_same_package
+      expect(LiveModels.gemini38FlashTts, 'gemini-3.8-flash-tts');
+      // ignore: deprecated_member_use_from_same_package
+      expect(LiveModels.gemini38FlashLiteTts, 'gemini-3.8-flash-lite-tts');
+      // ignore: deprecated_member_use_from_same_package
+      expect(LiveModels.gemini31FlashTtsPreview, 'gemini-3.1-flash-tts-preview');
+      // ignore: deprecated_member_use_from_same_package
       expect(LiveMusicModels.lyria35, 'models/lyria-3.5');
+      // ignore: deprecated_member_use_from_same_package
       expect(LiveMusicModels.lyria3ClipPreview, 'models/lyria-3-clip-preview');
+      // ignore: deprecated_member_use_from_same_package
       expect(LiveMusicModels.lyria3ProPreview, 'models/lyria-3-pro-preview');
     });
 
