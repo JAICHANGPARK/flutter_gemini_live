@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_tokens_service.dart';
 import 'client/api_client.dart';
 import 'live_service.dart';
+import 'music_service.dart';
 import 'voices_service.dart';
 
 // Re-export key classes from the live service module.
@@ -83,6 +84,9 @@ class GoogleGenAI {
   ///
   /// This is marked as `late` because it is initialized in the constructor.
   late final AuthTokensService authTokens;
+
+  /// Provides access to the Realtime Music generation (Lyria Live) service.
+  LiveMusicService get music => live.music;
 
   /// An optional logger function to receive WebSocket traffic and connection logs.
   ///

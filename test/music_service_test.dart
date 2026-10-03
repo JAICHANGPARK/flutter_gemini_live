@@ -128,6 +128,11 @@ void main() {
       expect(msg.audioChunk?.mimeType, 'audio/pcm');
       expect(msg.audioBytes, rawBytes);
     });
+
+    test('LiveMusicConnectParameters defaults to LiveMusicModels.lyriaRealtimeExp', () {
+      final params = LiveMusicConnectParameters(callbacks: LiveMusicCallbacks());
+      expect(params.model, LiveMusicModels.lyriaRealtimeExp);
+    });
   });
 
   group('LiveMusicService & LiveMusicSession', () {

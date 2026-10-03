@@ -57,6 +57,30 @@ abstract final class LiveModels {
 
   /// Gemini 3.8 Flash Lite TTS model for high-efficiency text-to-speech generation.
   static const String gemini38FlashLiteTts = 'gemini-3.8-flash-lite-tts';
+
+  /// Gemini 3.1 Flash TTS preview model.
+  static const String gemini31FlashTtsPreview = 'gemini-3.1-flash-tts-preview';
+
+  /// Next-generation Gemini Omni 1.1 Flash Live model for low-latency multimodal voice and reasoning.
+  static const String geminiOmni11Flash = 'gemini-omni-1.1-flash';
+
+  /// Gemini Omni Flash preview Live model.
+  static const String geminiOmniFlashPreview = 'gemini-omni-flash-preview';
+}
+
+/// Well-known model identifiers supported by the Realtime Music (Lyria Live) API.
+abstract final class LiveMusicModels {
+  /// Default experimental Realtime Music generation model.
+  static const String lyriaRealtimeExp = 'models/lyria-realtime-exp';
+
+  /// Next-generation Lyria 3.5 Realtime Music generation model.
+  static const String lyria35 = 'models/lyria-3.5';
+
+  /// Lyria 3 Clip preview model for short generation clips.
+  static const String lyria3ClipPreview = 'models/lyria-3-clip-preview';
+
+  /// Lyria 3 Pro preview model for professional composition.
+  static const String lyria3ProPreview = 'models/lyria-3-pro-preview';
 }
 
 // ============================================================================
@@ -543,6 +567,38 @@ class SpeechMetadata {
       _$SpeechMetadataFromJson(json);
 
   Map<String, dynamic> toJson() => _$SpeechMetadataToJson(this);
+}
+
+/// Speech annotation for text content indicating speaker and style segment boundaries.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SpeechAnnotation {
+  /// Start of segment of the response that is attributed to this source, measured in bytes.
+  final int? startIndex;
+
+  /// End of the attributed segment, exclusive, measured in bytes.
+  final int? endIndex;
+
+  /// The speaker to associate with this turn.
+  final String? speaker;
+
+  /// Style instruction for the speech synthesis.
+  final String? style;
+
+  /// Fixed type discriminator, defaults to "speech_metadata".
+  final String type;
+
+  SpeechAnnotation({
+    this.startIndex,
+    this.endIndex,
+    this.speaker,
+    this.style,
+    this.type = 'speech_metadata',
+  });
+
+  factory SpeechAnnotation.fromJson(Map<String, dynamic> json) =>
+      _$SpeechAnnotationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SpeechAnnotationToJson(this);
 }
 
 /// A single multimodal part within a content turn.

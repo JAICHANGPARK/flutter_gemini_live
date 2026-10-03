@@ -1395,6 +1395,43 @@ void main() {
     expect(roundTripServer.audioBytes, [1, 2, 3]);
     expect(roundTripServer.filteredPrompt?.text, 'filtered input');
   });
+
+  group('js-genai 2.27.0 Live sync features (LiveModels, LiveMusicModels, SpeechAnnotation)', () {
+    test('LiveModels and LiveMusicModels contain expected 2.27.0 model identifiers', () {
+      expect(LiveModels.geminiOmni11Flash, 'gemini-omni-1.1-flash');
+      expect(LiveModels.geminiOmniFlashPreview, 'gemini-omni-flash-preview');
+      expect(LiveModels.gemini31FlashTtsPreview, 'gemini-3.1-flash-tts-preview');
+
+      expect(LiveMusicModels.lyriaRealtimeExp, 'models/lyria-realtime-exp');
+      expect(LiveMusicModels.lyria35, 'models/lyria-3.5');
+      expect(LiveMusicModels.lyria3ClipPreview, 'models/lyria-3-clip-preview');
+      expect(LiveMusicModels.lyria3ProPreview, 'models/lyria-3-pro-preview');
+    });
+
+    test('SpeechAnnotation round-trips correctly', () {
+      final annotation = SpeechAnnotation(
+        startIndex: 0,
+        endIndex: 25,
+        speaker: 'speaker_1',
+        style: 'whispering, slow',
+        type: 'speech_metadata',
+      );
+
+      final json = normalizeJson(annotation.toJson());
+      expect(json['start_index'], 0);
+      expect(json['end_index'], 25);
+      expect(json['speaker'], 'speaker_1');
+      expect(json['style'], 'whispering, slow');
+      expect(json['type'], 'speech_metadata');
+
+      final decoded = SpeechAnnotation.fromJson(json);
+      expect(decoded.startIndex, 0);
+      expect(decoded.endIndex, 25);
+      expect(decoded.speaker, 'speaker_1');
+      expect(decoded.style, 'whispering, slow');
+      expect(decoded.type, 'speech_metadata');
+    });
+  });
 }
 
 Map<String, dynamic> normalizeJson(Map<String, dynamic> json) =>

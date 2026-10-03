@@ -15,6 +15,24 @@ SpeechMetadata _$SpeechMetadataFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SpeechMetadataToJson(SpeechMetadata instance) =>
     <String, dynamic>{'speaker': ?instance.speaker, 'style': ?instance.style};
 
+SpeechAnnotation _$SpeechAnnotationFromJson(Map<String, dynamic> json) =>
+    SpeechAnnotation(
+      startIndex: (json['start_index'] as num?)?.toInt(),
+      endIndex: (json['end_index'] as num?)?.toInt(),
+      speaker: json['speaker'] as String?,
+      style: json['style'] as String?,
+      type: json['type'] as String? ?? 'speech_metadata',
+    );
+
+Map<String, dynamic> _$SpeechAnnotationToJson(SpeechAnnotation instance) =>
+    <String, dynamic>{
+      'start_index': ?instance.startIndex,
+      'end_index': ?instance.endIndex,
+      'speaker': ?instance.speaker,
+      'style': ?instance.style,
+      'type': instance.type,
+    };
+
 Part _$PartFromJson(Map<String, dynamic> json) => Part(
   mediaResolution: json['mediaResolution'] == null
       ? null

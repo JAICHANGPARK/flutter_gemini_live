@@ -48,14 +48,14 @@ class LiveMusicCallbacks {
 
 /// Parameters for establishing a Realtime Music generation session.
 class LiveMusicConnectParameters {
-  /// The model resource name. Defaults to `'models/lyria-realtime-exp'`.
+  /// The model resource name. Defaults to [LiveMusicModels.lyriaRealtimeExp].
   final String model;
 
   /// Event callbacks.
   final LiveMusicCallbacks callbacks;
 
   LiveMusicConnectParameters({
-    this.model = 'models/lyria-realtime-exp',
+    this.model = LiveMusicModels.lyriaRealtimeExp,
     required this.callbacks,
   });
 }
@@ -148,7 +148,7 @@ class LiveMusicSession {
 
 /// Service for connecting to Gemini Realtime Music generation (Lyria Live).
 class LiveMusicService {
-  static const _sdkVersion = '2.25.0';
+  static const _sdkVersion = '2.27.0';
 
   final String apiKey;
   final String apiVersion;
