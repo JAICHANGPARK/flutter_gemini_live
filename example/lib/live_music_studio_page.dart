@@ -51,15 +51,21 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
 
   // Generation Config State
   int _bpm = 120;
+  int? _lastAppliedBpm;
   Scale? _selectedScale;
+  Scale? _lastAppliedScale;
+  bool _autoResetOnTempoScaleChange = true;
   MusicGenerationMode _mode = MusicGenerationMode.QUALITY;
-  double _temperature = 1.0;
-  double _guidance = 3.0;
+  double _temperature = 1.1; // Official Lyria default
+  double _guidance = 4.0; // Official Lyria default
   double _density = 0.5;
   double _brightness = 0.5;
   bool _muteBass = false;
   bool _muteDrums = false;
   bool _onlyBassAndDrums = false;
+
+  // Prompt DJ Crossfader value [0.0 = Prompt A 100%, 1.0 = Prompt B 100%]
+  double _crossfaderValue = 0.5;
 
   // Visualizer animation
   late final AnimationController _visualizerAnim;
@@ -68,7 +74,7 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
   @override
   void initState() {
     super.initState();
-    _audioPlayer = SoloudLiveAudioPlayer(sampleRate: 48000);
+    _audioPlayer = SoloudLiveAudioPlayer(sampleRate: 48000, channels: 2);
     _audioPlayer.init();
 
     _visualizerAnim = AnimationController(
@@ -76,9 +82,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
       duration: const Duration(milliseconds: 100),
     )..addListener(_updateVisualizer);
 
-    // Initial default prompts
-    _addPrompt('Deep cyberpunk synthesizer, 80s arpeggiated bassline', 1.0);
-    _addPrompt('Driving cinematic electro drums', 0.7);
+    // Initial default prompts from official Google Prompt DJ guide
+    _addPrompt('Minimal techno with deep bass, sparse percussion, and atmospheric synths', 1.0);
+    _addPrompt('Shimmering hi-hats and acid 303 bass', 0.8);
   }
 
   @override
@@ -376,10 +382,53 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
 
     _log('⚙️ Updating musicGenerationConfig (BPM: $_bpm, Mode: ${_mode.name})...');
     _session!.setMusicGenerationConfig(config);
+
+    final bpmOrScaleChanged = (_lastAppliedBpm != null && _bpm != _lastAppliedBpm) ||
+        (_lastAppliedScale != _selectedScale);
+    _lastAppliedBpm = _bpm;
+    _lastAppliedScale = _selectedScale;
+
+    // Per official Google Lyria documentation: updating BPM or Scale requires reset_context()
+    if (bpmOrScaleChanged && _autoResetOnTempoScaleChange) {
+      _session!.resetContext();
+      _log('🔄 Auto-reset context triggered for new BPM ($_bpm) or Scale');
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Music generation configuration updated.'),
-        duration: Duration(seconds: 1),
+      SnackBar(
+        content: Text(bpmOrScaleChanged && _autoResetOnTempoScaleChange
+            ? 'Applied config & auto-reset context for new tempo/scale.'
+            : 'Music generation configuration updated.'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _applyCrossfader(double value) {
+    if (_promptControllers.length < 2) return;
+    setState(() {
+      _crossfaderValue = value;
+      // Linear crossfade: value = 0.0 -> A=1.0, B=0.0; value = 1.0 -> A=0.0, B=1.0
+      _promptWeights[0] = ((1.0 - value) * 1.0).clamp(0.05, 1.0);
+      _promptWeights[1] = (value * 1.0).clamp(0.05, 1.0);
+    });
+
+    if (_isConnected) {
+      _sendWeightedPrompts();
+    }
+  }
+
+  void _addTagToPrompt(String tag) {
+    setState(() {
+      _addPrompt(tag, 0.8);
+    });
+    if (_isConnected) {
+      _sendWeightedPrompts();
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Added tag "$tag" to steerable prompts.'),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -783,34 +832,182 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
             ),
             const SizedBox(height: 8),
 
-            // Quick Presets
+            // Quick Presets matching official Google Lyria guide
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _presetChip('Cyberpunk', [
-                    const MapEntry('Synthwave retro arpeggio 80s', 1.0),
-                    const MapEntry('Aggressive analog bass & punchy drums', 0.8),
+                  _presetChip('Minimal Techno', [
+                    const MapEntry(
+                      'Minimal techno with deep bass, sparse percussion, and atmospheric synths',
+                      1.0,
+                    ),
+                    const MapEntry('Shimmering hi-hats and acid 303 bass', 0.8),
                   ], bpm: 128, mode: MusicGenerationMode.QUALITY),
                   const SizedBox(width: 8),
-                  _presetChip('Lo-Fi Jazz', [
-                    const MapEntry('Chill lo-fi vinyl warmth piano', 1.0),
-                    const MapEntry('Mellow jazz saxophone chords', 0.6),
+                  _presetChip('Lo-Fi Study Beat', [
+                    const MapEntry(
+                      'Lo-fi hip hop beat with dusty vinyl crackle',
+                      1.0,
+                    ),
+                    const MapEntry(
+                      'Mellow Rhodes piano chords & warm upright bassline',
+                      0.8,
+                    ),
                   ], bpm: 82, scale: Scale.C_MAJOR_A_MINOR, mode: MusicGenerationMode.QUALITY),
                   const SizedBox(width: 8),
-                  _presetChip('Cinematic Drone', [
-                    const MapEntry('Ethereal ambient orchestra drone', 1.0),
-                    const MapEntry('Deep sub bass rumble', 0.7),
-                  ], bpm: 70, mode: MusicGenerationMode.DIVERSITY),
+                  _presetChip('Cyberpunk 110', [
+                    const MapEntry(
+                      'Dark, cinematic cyberpunk synthwave in D minor',
+                      1.0,
+                    ),
+                    const MapEntry(
+                      'Heavy distorted 303 bass & analog synths',
+                      0.8,
+                    ),
+                  ], bpm: 110, scale: Scale.D_MAJOR_B_MINOR, mode: MusicGenerationMode.QUALITY),
                   const SizedBox(width: 8),
-                  _presetChip('Techno 135', [
-                    const MapEntry('Dark acid techno 303 bassline', 1.0),
-                    const MapEntry('Hard four-on-the-floor kick', 0.9),
-                  ], bpm: 135, mode: MusicGenerationMode.QUALITY),
+                  _presetChip('Ambient Drone', [
+                    const MapEntry(
+                      'Ambient synth pads with ethereal strings',
+                      1.0,
+                    ),
+                    const MapEntry('Subtle reverberant piano', 0.7),
+                  ], bpm: 72, mode: MusicGenerationMode.DIVERSITY),
+                  const SizedBox(width: 8),
+                  _presetChip('Afrobeat Groove', [
+                    const MapEntry(
+                      'Afrobeat rhythm & brass section',
+                      1.0,
+                    ),
+                    const MapEntry(
+                      'Funky bassline and percussion groove',
+                      0.7,
+                    ),
+                  ], bpm: 118, mode: MusicGenerationMode.QUALITY),
                 ],
               ),
             ),
             const SizedBox(height: 12),
+
+            // Prompt DJ Crossfader (A <-> B)
+            if (_promptControllers.length >= 2) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF222733),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.purple.withAlpha(80)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.tune, color: Colors.purpleAccent, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'Prompt DJ Crossfader (A ⟷ B)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'A: ${(1.0 - _crossfaderValue).toStringAsFixed(2)} · B: ${_crossfaderValue.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.purpleAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 4,
+                        activeTrackColor: Colors.purpleAccent,
+                        inactiveTrackColor: Colors.cyanAccent,
+                        thumbColor: Colors.white,
+                      ),
+                      child: Slider(
+                        value: _crossfaderValue,
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: _applyCrossfader,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Prompt DJ Tag Bank (Keyword Palette)
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 12),
+              title: const Row(
+                children: [
+                  Icon(Icons.library_music_rounded, color: Colors.cyanAccent, size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    'Prompt DJ Tag Bank (Official Guide Vocabularies)',
+                    style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              children: [
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    // Genres
+                    _tagChip('Minimal Techno', Colors.indigo),
+                    _tagChip('Deep House', Colors.indigo),
+                    _tagChip('Synthpop', Colors.indigo),
+                    _tagChip('Lo-Fi Hip Hop', Colors.indigo),
+                    _tagChip('Afrobeat', Colors.indigo),
+                    _tagChip('Bossa Nova', Colors.indigo),
+                    _tagChip('Acid Jazz', Colors.indigo),
+                    _tagChip('Drum & Bass', Colors.indigo),
+                    // Synths & Keys
+                    _tagChip('Moog Oscillations', Colors.deepPurple),
+                    _tagChip('303 Acid Bass', Colors.deepPurple),
+                    _tagChip('Rhodes Piano', Colors.deepPurple),
+                    _tagChip('Mellotron', Colors.deepPurple),
+                    _tagChip('Synth Pads', Colors.deepPurple),
+                    _tagChip('Dirty Synths', Colors.deepPurple),
+                    // Drums & Bass
+                    _tagChip('TR-909 Drum Machine', Colors.teal),
+                    _tagChip('808 Hip Hop Beat', Colors.teal),
+                    _tagChip('Funk Drums', Colors.teal),
+                    _tagChip('Boomy Bass', Colors.teal),
+                    _tagChip('Tabla', Colors.teal),
+                    // Acoustic & Textures
+                    _tagChip('Alto Saxophone', Colors.orange),
+                    _tagChip('Warm Acoustic Guitar', Colors.orange),
+                    _tagChip('Cello', Colors.orange),
+                    _tagChip('Harmonica', Colors.orange),
+                    _tagChip('Dusty vinyl crackle', Colors.blueGrey),
+                    _tagChip('Distorted 303 bassline', Colors.blueGrey),
+                    _tagChip('Atmospheric synths', Colors.blueGrey),
+                    _tagChip('Subtle sub bass', Colors.blueGrey),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
 
             // Dynamic Prompt Rows
             ...List.generate(_promptControllers.length, (index) {
@@ -917,6 +1114,16 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
         scale: scale,
         mode: mode,
       ),
+    );
+  }
+
+  Widget _tagChip(String label, Color color) {
+    return ActionChip(
+      backgroundColor: color.withAlpha(50),
+      side: BorderSide(color: color.withAlpha(120)),
+      avatar: Icon(Icons.add, size: 14, color: color),
+      label: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500)),
+      onPressed: () => _addTagToPrompt(label),
     );
   }
 
@@ -1079,7 +1286,24 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // Auto-reset context on BPM/Scale change (Google Lyria docs best practice)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _autoResetOnTempoScaleChange,
+              title: const Text(
+                'Auto-reset Context on BPM/Scale change',
+                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'Lyria docs: BPM/Scale changes require resetContext() for new tempo/key adoption.',
+                style: TextStyle(color: Colors.white54, fontSize: 11),
+              ),
+              activeThumbColor: Colors.purpleAccent,
+              onChanged: (val) => setState(() => _autoResetOnTempoScaleChange = val),
+            ),
+            const SizedBox(height: 12),
 
             SizedBox(
               width: double.infinity,
