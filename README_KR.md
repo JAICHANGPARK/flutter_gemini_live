@@ -67,7 +67,7 @@ void main() async {
 
 상세한 가이드와 API 명세는 [`doc/`](doc/) 디렉토리에 모듈별로 정리되어 있습니다:
 
-- **[AI Agent Skill 가이드](SKILL.md)**: AI 코딩 어시스턴트(Antigravity, Cursor, Windsurf, Claude Code 등)가 이 패키지를 정확히 연동하도록 돕는 프롬프트 & 스킬 명세서
+- **[AI Agent Skill 가이드](SKILL.md)** ([skills/](skills/README.md)): Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 등 모든 AI 코딩 어시스턴트를 위한 멀티 에이전트 스킬 명세서
 - **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
 - **[UI 위젯 가이드 & 명세서](doc/widgets_guide.md)**: `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator` 등 내장 UI 위젯 상세 사용법 및 전체 화면 예제
 - **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법

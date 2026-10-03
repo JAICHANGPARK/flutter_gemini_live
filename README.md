@@ -67,7 +67,7 @@ void main() async {
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
 
-- **[AI Agent Skill Guide](SKILL.md)**: Agent instructions & prompt rules for AI coding assistants (Antigravity, Cursor, Windsurf, Claude Code, etc.) to integrate this package.
+- **[AI Agent Skill Guide](SKILL.md)** ([skills/](skills/README.md)): Agent instructions for Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor, and Copilot.
 - **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
 - **[Widgets Guide & UI Specification](doc/widgets_guide.md)**: Detailed specification and interactive code examples for `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, and `GeminiLiveVoiceIndicator`.
 - **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
