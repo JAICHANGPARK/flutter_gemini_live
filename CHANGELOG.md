@@ -1,3 +1,28 @@
+## 2026.10.5
+
+### Added
+- `LiveModels.gemini35LiveTranslatePreview` (`gemini-3.5-live-translate-preview`) for speech-to-speech translation.
+- `SpeechAnnotation` model and serialization for voice synthesis metadata (js-genai 2.27.0 sync).
+- `GoogleGenAI.music` getter that exposes the Realtime Music service directly.
+- Live/music service SDK version header bumped to js-genai `2.27.0`.
+
+### Deprecated
+- Model constants that were misfiled as Live models during the js-genai 2.27.0 sync. Upstream added them to the **Interactions** `Model` enum, not the Live API. They will be removed in a future release.
+  - `LiveModels.geminiOmni11Flash`, `LiveModels.geminiOmniFlashPreview` (Gemini Omni is a video generation model).
+  - `LiveModels.gemini38FlashTts`, `LiveModels.gemini38FlashLiteTts`, `LiveModels.gemini31FlashTtsPreview` (TTS models).
+  - `LiveMusicModels.lyria35`, `LiveMusicModels.lyria3ClipPreview`, `LiveMusicModels.lyria3ProPreview` (not Realtime Music models; use `LiveMusicModels.lyriaRealtimeExp`).
+
+### Example App
+- Live Music Studio demo for Lyria RealTime, with Prompt DJ crossfader, tag bank, and auto-reset context.
+- Pioneer-style Pro DJ Console and AI Studio Prompt DJ 4x4 rotary MIDI Box demos.
+- Web Audio API real-time PCM streamer for Flutter Web playback.
+- Removed non-realtime Lyria 3.x models from the Live Music Studio model picker.
+
+### Documentation
+- README (EN/KR/JP/ZH): AI Agents guide, Supported Models tables, Voice Quick Start (mic + playback + platform permissions), API key security note, and fixed widget snippets that did not compile.
+- Agent Skills synchronized across Claude Code, Gemini CLI / Antigravity, Codex, and the open Agent Skills paths. Fixed snippets that did not compile, added mic/playback wiring, setup, and "Do NOT" guardrails.
+- `doc/advanced_configuration.md`: fixed the function calling example.
+
 ## 2026.10.4
 
 ### Added (Upstream Parity with js-genai & python-genai)
