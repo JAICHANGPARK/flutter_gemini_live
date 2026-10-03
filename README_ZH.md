@@ -10,7 +10,7 @@
 
 - 用于 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
 - **零 Firebase 依赖**：无须安装 Firebase 或 Firebase AI Logic，直接通过 WebSocket 建立连接。
-- 支持最新的 Gemini Live 模型（`gemini-3.8-live`，`gemini-3.8-live-extended-thinking`，`gemini-3.1-flash-live-preview`，`gemini-2.5-flash-native-audio-preview-12-2025`）。
+- 支持最新的 Gemini Live、翻译和 Lyria 音乐模型。参见 [Supported Models](#supported-models)。
 - 支持 `TEXT`、`AUDIO` 和 `VIDEO` 响应模态。
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
@@ -36,6 +36,32 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 4. **即时清空打断音频缓冲**：检测到 `serverContent.interrupted == true` 或 `controller.isInterrupted` 时，必须立即清空本地音频播放缓冲，防止啸叫回音。
 5. **音频格式规范**：麦克风输入为线性 PCM 16-bit 16,000 Hz 单声道，Live 响应输出为 24,000 Hz 单声道（音乐生成为 48,000 Hz 立体声）。
 6. **推荐模型**：通用对话首选 `gemini-3.8-live`，深度推理对话首选 `gemini-3.8-live-extended-thinking`。
+7. **音频输入输出需自行接入**：`GeminiLiveSessionController` 不负责录音和播放。请将麦克风 PCM 发送到 `sendRealtimeAudio()`，并播放 `incomingAudioStream`（例如 `record` + `flutter_soloud`）。
+
+## Supported Models
+
+可直接使用模型 ID 字符串，或使用 `LiveModels` / `LiveMusicModels` 中对应的常量。
+
+### Live API (`genAI.live.connect`)
+
+| 模型 ID | 常量 | 用途 | 状态 |
+|---|---|---|---|
+| `gemini-3.8-live` | `LiveModels.gemini38Live` | **默认。** 低延迟语音与多模态对话 | Stable |
+| `gemini-3.8-live-extended-thinking` | `LiveModels.gemini38LiveExtendedThinking` | 需要深度推理的语音对话（`thinkingConfig`） | Stable |
+| `gemini-3.5-live-translate-preview` | `LiveModels.gemini35LiveTranslatePreview` | 实时语音翻译（`TranslationConfig`） | Preview |
+| `gemini-3.1-flash-live-preview` | `LiveModels.gemini31FlashLivePreview` | 上一代 | Preview |
+| `gemini-2.5-flash-native-audio-preview-12-2025` | `LiveModels.gemini25FlashNativeAudioPreview` | 原生音频输出 | Preview |
+
+### Live Music (`genAI.live.music.connect`)
+
+| 模型 ID | 常量 | 用途 | 状态 |
+|---|---|---|---|
+| `models/lyria-realtime-exp` | `LiveMusicModels.lyriaRealtimeExp` | **默认。** 实时音乐生成 | Experimental |
+
+> - `thinkingConfig` 只能传给 `gemini-3.8-live-extended-thinking`，传给 `gemini-3.8-live` 会报错。
+> - `gemini-3.8-live` 默认以非阻塞方式（`Behavior.NON_BLOCKING`）执行工具调用。
+> - Live 输出音频为 16-bit PCM 24 kHz 单声道，Lyria 输出为 16-bit PCM 48 kHz 立体声。
+> - 模型可用性可能会变化，最新状态请查看 [Gemini API 模型页面](https://ai.google.dev/gemini-api/docs/models)。
 
 ## 安装 (Installation)
 
@@ -85,12 +111,87 @@ void main() async {
 }
 ```
 
+## 语音对话快速入门 (Voice Quick Start)
+
+大多数 Live 应用都是语音应用。`GeminiLiveSessionController` 只负责收发音频数据，**不会**录制麦克风或播放声音。输入请接入 [`record`](https://pub.dev/packages/record)，输出请接入 [`flutter_soloud`](https://pub.dev/packages/flutter_soloud)：
+
+```bash
+flutter pub add gemini_live record flutter_soloud
+```
+
+为各平台添加麦克风权限：
+
+| 平台 | 设置 |
+|---|---|
+| Android | `AndroidManifest.xml`：`android.permission.RECORD_AUDIO`、`android.permission.INTERNET` |
+| iOS | `Info.plist`：`NSMicrophoneUsageDescription` |
+| macOS | Entitlements：`com.apple.security.device.audio-input`、`com.apple.security.network.client` |
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
+import 'package:gemini_live/gemini_live.dart';
+import 'package:record/record.dart';
+
+final genAI = GoogleGenAI(apiKey: 'YOUR_GEMINI_API_KEY');
+final controller = GeminiLiveSessionController(liveService: genAI.live);
+final recorder = AudioRecorder();
+
+Future<void> startVoiceChat() async {
+  if (!await recorder.hasPermission()) return;
+
+  await controller.connect(
+    LiveConnectParameters(
+      model: 'gemini-3.8-live',
+      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      outputAudioTranscription: AudioTranscriptionConfig(),
+      callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
+    ),
+  );
+
+  // Speaker: model audio is 16-bit PCM, 24 kHz, mono.
+  await SoLoud.instance.init();
+  final speaker = SoLoud.instance.setBufferStream(
+    sampleRate: 24000,
+    channels: Channels.mono,
+    format: BufferType.s16le,
+    bufferingType: BufferingType.released,
+  );
+  SoLoud.instance.play(speaker);
+  controller.incomingAudioStream.listen(
+    (pcm) => SoLoud.instance.addAudioDataStream(speaker, pcm),
+  );
+
+  // Barge-in: drop queued model audio when the user interrupts.
+  controller.addListener(() {
+    if (controller.isInterrupted) SoLoud.instance.resetBufferStream(speaker);
+  });
+
+  // Mic: send 16-bit PCM, 16 kHz, mono.
+  final mic = await recorder.startStream(
+    const RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      sampleRate: 16000,
+      numChannels: 1,
+      echoCancel: true,
+      noiseSuppress: true,
+    ),
+  );
+  mic.listen(controller.sendRealtimeAudio);
+}
+```
+
+包含字幕、波形和 Barge-in 处理的完整页面示例，请参阅 [Agent Skill 快速入门](skills/flutter-gemini-live/SKILL.md) 和 [示例应用](example/lib/)。
+
+> **🔐 API 密钥安全：** 请勿在生产应用中直接内置 Gemini API 密钥。请在后端使用 `genAI.authTokens.create(...)` 签发短期有效的**临时令牌**，客户端使用该令牌连接。参见 [临时令牌指南](doc/advanced_configuration.md) 和 [`examples/ephemeral_token.dart`](examples/ephemeral_token.dart)。
+
 ## 文档与指南 (Documentation)
 
 更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
 
 - **[AI Agent Skill 指南](SKILL.md)** ([skills/](skills/README.md))：支持 Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 等所有 AI 助手的多 Agent 技能规范
 - **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
+- **[组件指南](doc/widgets_guide.md)**：`GeminiLiveSessionController` 及所有内置组件的用法与页面示例
 - **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
 - **[错误代码与规范](doc/error_codes_specification.md)**：包含完整错误代码、关闭代码、`TurnCompleteReason` 枚举及故障排除指南
 - **[可运行示例集](examples/README.md)**：包含基础对话、工具调用、摄像头/音频流传输与 Google Maps 接地 CLI 脚本
@@ -103,7 +204,11 @@ void main() async {
 * **会话恢复**：通过会话句柄无缝恢复断开的连接。
 * **Google Maps 与搜索接地**：位置与路线感知的智能接地响应。
 * **语音活动检测 (VAD)**：支持自动与手动 VAD。
-* **内置 UI 组件**：轻量、无第三方依赖、即插即用的 Material 3 组件。
+* **内置 Flutter 组件与控制器**：`GeminiLiveSessionController`、`GeminiLiveWaveform`、`GeminiLiveCaptionBubble`、`GeminiLiveMicButton`、`GeminiLiveStatusBadge`、`GeminiLiveUsageBadge`、`GeminiLiveVoiceIndicator`。
+* **实时语音翻译**：Speech-to-Speech 实时翻译（`TranslationConfig`）。
+* **Live Music (Lyria Realtime)**：通过 `genAI.live.music` 实时生成并调控音乐。
+* **临时认证令牌**：通过 `genAI.authTokens` 签发短期客户端令牌，避免在设备上存放 API 密钥。
+* **Token 用量追踪**：使用 `GeminiTokenUsageTracker` 统计每个会话的 Token 用量。
 
 ---
 
@@ -118,6 +223,7 @@ await controller.connect(
   LiveConnectParameters(
     model: 'gemini-3.8-live',
     config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+    callbacks: LiveCallbacks(),
   ),
 );
 
@@ -140,14 +246,14 @@ GeminiLiveCaptionBubble(
 
 // 4. 同心声学涟漪麦克风按钮
 GeminiLiveMicButton(
-  isRecording: controller.isUserSpeaking,
-  isConnected: controller.isConnected,
+  isRecording: controller.isConnected,
   onPressed: () => toggleLiveSession(),
 )
 
 // 5. 连接状态徽标 (脉冲光晕环指示器)
-GeminiLiveStatusBadge(
-  state: controller.isConnected ? LiveStatusState.connected : LiveStatusState.disconnected,
+GeminiLiveStatusBadge.fromFlags(
+  isConnected: controller.isConnected,
+  isConnecting: isConnecting,
 )
 
 // 6. 实时 Token 用量监控徽标

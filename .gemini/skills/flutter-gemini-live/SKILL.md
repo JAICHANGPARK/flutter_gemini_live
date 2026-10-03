@@ -28,6 +28,7 @@ Platform permissions required for microphone input:
 
 - Do **not** add `firebase_ai`, `firebase_core`, or `google_generative_ai` for Live features. `gemini_live` replaces them.
 - Do **not** invent model IDs. Use only the IDs listed below.
+- Do **not** use `gemini-omni-*` (video generation), `*-tts` (text-to-speech), or `lyria-3*` models with `genAI.live.connect` / `genAI.live.music.connect`. They are Interactions API models, not Live models. The matching `LiveModels` / `LiveMusicModels` constants are deprecated.
 - Do **not** ship a raw API key in a production client. Mint an ephemeral token on a backend (see *Ephemeral Client Auth Tokens*).
 - Do **not** assume `GeminiLiveSessionController` captures the microphone or plays audio. It only streams data; you wire up `record` (input) and a PCM player (output) yourself.
 - Do **not** send audio in any format other than 16-bit PCM, 16 kHz, mono.
@@ -41,7 +42,7 @@ Platform permissions required for microphone input:
    - `gemini-3.8-live` (**Default Stable**): Low-latency voice/multimodal dialogue, default async non-blocking tools.
    - `gemini-3.8-live-extended-thinking` (**Stable Reasoning**): High-reasoning voice/multimodal interactions with background thinking thoughts.
    - `models/lyria-realtime-exp`: Bidirectional Realtime Music generation via `genAI.live.music`.
-   - `gemini-3.5-live-translate-preview`: Speech-to-speech translation (use with `TranslationConfig`).
+   - `gemini-3.5-live-translate-preview` (`LiveModels.gemini35LiveTranslatePreview`): Speech-to-speech translation (use with `TranslationConfig`).
    - `gemini-3.1-flash-live-preview` & `gemini-2.5-flash-native-audio-preview-12-2025`: Preview models.
 3. **Response Modalities**: `Modality.TEXT`, `Modality.AUDIO`, and `Modality.VIDEO`.
 4. **Audio Standards**:

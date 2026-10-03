@@ -23,7 +23,8 @@ This guide details advanced capabilities of the `gemini_live` package, with comp
 Define function declarations for tools and handle execution responses.
 
 ```dart
-final session = await genAI.live.connect(
+late final LiveSession session;
+session = await genAI.live.connect(
   LiveConnectParameters(
     model: 'gemini-3.1-flash-live-preview',
     tools: [
@@ -32,13 +33,14 @@ final session = await genAI.live.connect(
           FunctionDeclaration(
             name: 'get_current_weather',
             description: 'Get the current weather for a location',
-            parameters: Schema(
-              type: Type.OBJECT,
-              properties: {
-                'location': Schema(type: Type.STRING, description: 'City name'),
+            // `parameters` is a plain JSON Schema map (OpenAPI subset).
+            parameters: {
+              'type': 'OBJECT',
+              'properties': {
+                'location': {'type': 'STRING', 'description': 'City name'},
               },
-              required: ['location'],
-            ),
+              'required': ['location'],
+            },
           ),
         ],
       ),
@@ -46,13 +48,13 @@ final session = await genAI.live.connect(
     callbacks: LiveCallbacks(
       onMessage: (message) async {
         if (message.toolCall != null) {
-          for (final call in message.toolCall!.functionCalls) {
+          for (final call in message.toolCall!.functionCalls ?? const <FunctionCall>[]) {
             if (call.name == 'get_current_weather') {
-              final location = call.args['location'];
+              final location = call.args?['location'];
               // Perform tool execution...
               session.sendFunctionResponse(
-                id: call.id,
-                name: call.name,
+                id: call.id!,
+                name: call.name!,
                 response: {'temperature': '22°C', 'condition': 'Sunny'},
               );
             }

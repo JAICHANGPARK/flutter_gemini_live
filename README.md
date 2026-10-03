@@ -10,7 +10,7 @@
 
 - A Flutter package for the [Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - **Zero Firebase Dependency**: Direct WebSocket connection without Firebase or Firebase AI Logic.
-- Supports latest Gemini Live models (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025`).
+- Supports the latest Gemini Live, translation, and Lyria music models. See [Supported Models](#supported-models).
 - Supports `TEXT`, `AUDIO`, and `VIDEO` response modalities.
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
@@ -38,6 +38,32 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
    - Mic Input: Linear PCM 16-bit, 16,000 Hz mono.
    - Live Output: Linear PCM 16-bit, 24,000 Hz mono (Music: 48,000 Hz stereo).
 6. **Models**: Default to `gemini-3.8-live` (low-latency) or `gemini-3.8-live-extended-thinking` (deep reasoning).
+7. **Audio I/O is yours**: `GeminiLiveSessionController` does not record or play audio. Stream mic PCM into `sendRealtimeAudio()` and play `incomingAudioStream` (e.g. `record` + `flutter_soloud`).
+
+## Supported Models
+
+Use the model ID string, or the matching constant from `LiveModels` / `LiveMusicModels`.
+
+### Live API (`genAI.live.connect`)
+
+| Model ID | Constant | Use for | Status |
+|---|---|---|---|
+| `gemini-3.8-live` | `LiveModels.gemini38Live` | **Default.** Low-latency voice & multimodal dialogue | Stable |
+| `gemini-3.8-live-extended-thinking` | `LiveModels.gemini38LiveExtendedThinking` | Voice with deeper reasoning (`thinkingConfig`) | Stable |
+| `gemini-3.5-live-translate-preview` | `LiveModels.gemini35LiveTranslatePreview` | Speech-to-speech translation (`TranslationConfig`) | Preview |
+| `gemini-3.1-flash-live-preview` | `LiveModels.gemini31FlashLivePreview` | Previous generation | Preview |
+| `gemini-2.5-flash-native-audio-preview-12-2025` | `LiveModels.gemini25FlashNativeAudioPreview` | Native audio output | Preview |
+
+### Live Music (`genAI.live.music.connect`)
+
+| Model ID | Constant | Use for | Status |
+|---|---|---|---|
+| `models/lyria-realtime-exp` | `LiveMusicModels.lyriaRealtimeExp` | **Default.** Real-time music generation | Experimental |
+
+> - Pass `thinkingConfig` only to `gemini-3.8-live-extended-thinking`. `gemini-3.8-live` rejects it.
+> - `gemini-3.8-live` runs tool calls as non-blocking by default (`Behavior.NON_BLOCKING`).
+> - Live output audio is 16-bit PCM 24 kHz mono. Lyria output is 16-bit PCM 48 kHz stereo.
+> - Model availability changes over time. Check the [Gemini API models page](https://ai.google.dev/gemini-api/docs/models) for the latest status.
 
 ## Installation
 
@@ -87,13 +113,87 @@ void main() async {
 }
 ```
 
+## Voice Quick Start
+
+Most Live apps are voice apps. `GeminiLiveSessionController` streams audio, but it does **not** record the microphone or play sound. Connect it to [`record`](https://pub.dev/packages/record) (input) and [`flutter_soloud`](https://pub.dev/packages/flutter_soloud) (output):
+
+```bash
+flutter pub add gemini_live record flutter_soloud
+```
+
+Add the microphone permission for each platform:
+
+| Platform | Setting |
+|---|---|
+| Android | `AndroidManifest.xml`: `android.permission.RECORD_AUDIO`, `android.permission.INTERNET` |
+| iOS | `Info.plist`: `NSMicrophoneUsageDescription` |
+| macOS | Entitlements: `com.apple.security.device.audio-input`, `com.apple.security.network.client` |
+
+```dart
+import 'package:flutter/foundation.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
+import 'package:gemini_live/gemini_live.dart';
+import 'package:record/record.dart';
+
+final genAI = GoogleGenAI(apiKey: 'YOUR_GEMINI_API_KEY');
+final controller = GeminiLiveSessionController(liveService: genAI.live);
+final recorder = AudioRecorder();
+
+Future<void> startVoiceChat() async {
+  if (!await recorder.hasPermission()) return;
+
+  await controller.connect(
+    LiveConnectParameters(
+      model: 'gemini-3.8-live',
+      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      outputAudioTranscription: AudioTranscriptionConfig(),
+      callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
+    ),
+  );
+
+  // Speaker: model audio is 16-bit PCM, 24 kHz, mono.
+  await SoLoud.instance.init();
+  final speaker = SoLoud.instance.setBufferStream(
+    sampleRate: 24000,
+    channels: Channels.mono,
+    format: BufferType.s16le,
+    bufferingType: BufferingType.released,
+  );
+  SoLoud.instance.play(speaker);
+  controller.incomingAudioStream.listen(
+    (pcm) => SoLoud.instance.addAudioDataStream(speaker, pcm),
+  );
+
+  // Barge-in: drop queued model audio when the user interrupts.
+  controller.addListener(() {
+    if (controller.isInterrupted) SoLoud.instance.resetBufferStream(speaker);
+  });
+
+  // Mic: send 16-bit PCM, 16 kHz, mono.
+  final mic = await recorder.startStream(
+    const RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      sampleRate: 16000,
+      numChannels: 1,
+      echoCancel: true,
+      noiseSuppress: true,
+    ),
+  );
+  mic.listen(controller.sendRealtimeAudio);
+}
+```
+
+For a complete screen with captions, waveform, and barge-in handling, see the [Agent Skill quickstart](skills/flutter-gemini-live/SKILL.md) and the [example app](example/lib/).
+
+> **🔐 API key security:** Do not ship a raw Gemini API key in a production app. Mint short-lived **ephemeral tokens** on your backend with `genAI.authTokens.create(...)` and connect the client with that token. See [Ephemeral Tokens](doc/advanced_configuration.md) and [`examples/ephemeral_token.dart`](examples/ephemeral_token.dart).
+
 ## Documentation & Guides
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
 
 - **[AI Agent Skill Guide](SKILL.md)** ([skills/](skills/README.md)): Agent instructions for Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor, and Copilot.
 - **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
-- **[Widgets Guide & UI Specification](doc/widgets_guide.md)**: Detailed specification and interactive code examples for `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, and `GeminiLiveVoiceIndicator`.
+- **[Widgets Guide & UI Specification](doc/widgets_guide.md)**: Detailed specification and interactive code examples for `GeminiLiveSessionController` and every pre-built widget.
 - **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.
 - **[Error Codes & Specifications](doc/error_codes_specification.md)**: Complete error codes, close codes, `TurnCompleteReason` enums, and troubleshooting strategies.
 - **[Runnable Examples](examples/README.md)**: Dedicated CLI scripts for basic usage, function calling, audio/video streaming, and Google Maps grounding.
@@ -107,7 +207,10 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 * **Google Maps & Search Grounding**: Location and routing-aware responses.
 * **Voice Activity Detection**: Automatic and manual VAD.
 * **Live Speech Translation**: Real-time speech-to-speech translation (`TranslationConfig`).
-* **Pre-built Flutter Widgets**: Drop-in UI widgets (`GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator`) for seamless app integration.
+* **Pre-built Flutter Widgets & Controller**: `GeminiLiveSessionController`, `GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveUsageBadge`, `GeminiLiveVoiceIndicator`.
+* **Live Music (Lyria Realtime)**: Steerable real-time music generation via `genAI.live.music`.
+* **Ephemeral Auth Tokens**: Short-lived client tokens via `genAI.authTokens` to keep API keys off devices.
+* **Token Usage Tracking**: Per-session token accounting with `GeminiTokenUsageTracker`.
 
 | Demo 1: Chihuahua vs muffin | Demo 2: Labradoodle vs fried chicken |
 | :---: | :---: |
@@ -127,6 +230,7 @@ await controller.connect(
   LiveConnectParameters(
     model: 'gemini-3.8-live',
     config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+    callbacks: LiveCallbacks(),
   ),
 );
 
@@ -149,14 +253,14 @@ GeminiLiveCaptionBubble(
 
 // 4. Concentric Ripple Microphone Button
 GeminiLiveMicButton(
-  isRecording: controller.isUserSpeaking,
-  isConnected: controller.isConnected,
+  isRecording: controller.isConnected,
   onPressed: () => toggleLiveSession(),
 )
 
 // 5. Connection Status Badge with Halo Pulse
-GeminiLiveStatusBadge(
-  state: controller.isConnected ? LiveStatusState.connected : LiveStatusState.disconnected,
+GeminiLiveStatusBadge.fromFlags(
+  isConnected: controller.isConnected,
+  isConnecting: isConnecting,
 )
 
 // 6. Real-time Token Usage & Observability Badge
