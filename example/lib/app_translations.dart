@@ -159,6 +159,45 @@ class AppTranslations {
     }
   }
 
+  String get viewModeFoldable {
+    switch (language) {
+      case AppLanguage.ko:
+        return '폴더블 / 2화면 뷰';
+      case AppLanguage.ja:
+        return '折りたたみ / 2画面';
+      case AppLanguage.zh:
+        return '折叠屏 / 双屏视图';
+      case AppLanguage.en:
+        return 'Foldable / Dual-Screen';
+    }
+  }
+
+  String get foldableDetected {
+    switch (language) {
+      case AppLanguage.ko:
+        return '폴더블 / 듀얼스크린 감지됨';
+      case AppLanguage.ja:
+        return '折りたたみ/2画面デバイスを検出';
+      case AppLanguage.zh:
+        return '检测到折叠屏 / 双屏设备';
+      case AppLanguage.en:
+        return 'Foldable / Dual-Screen Active';
+    }
+  }
+
+  String get tabletopMode {
+    switch (language) {
+      case AppLanguage.ko:
+        return '테이블탑 / 플렉스 모드';
+      case AppLanguage.ja:
+        return 'テーブルトップ / フレックスモード';
+      case AppLanguage.zh:
+        return '立式交互 / 悬停折叠模式';
+      case AppLanguage.en:
+        return 'Tabletop / Flex Mode';
+    }
+  }
+
   String get featuredServices {
     switch (language) {
       case AppLanguage.ko:

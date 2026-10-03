@@ -12,6 +12,7 @@ import 'live_smart_notetaker_page.dart';
 import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
 import 'dj_midi_box_page.dart';
+import 'foldable_utils.dart';
 import 'pro_dj_console_page.dart';
 import 'realtime_media_demo.dart';
 
@@ -52,7 +53,8 @@ class MyApp extends StatelessWidget {
 enum HomeViewMode {
   auto,
   list,
-  grid;
+  grid,
+  foldable;
 
   IconData get icon {
     switch (this) {
@@ -62,6 +64,8 @@ enum HomeViewMode {
         return Icons.view_agenda_rounded;
       case HomeViewMode.grid:
         return Icons.grid_view_rounded;
+      case HomeViewMode.foldable:
+        return Icons.devices_fold_rounded;
     }
   }
 
@@ -73,6 +77,8 @@ enum HomeViewMode {
         return t.viewModeList;
       case HomeViewMode.grid:
         return t.viewModeGrid;
+      case HomeViewMode.foldable:
+        return t.viewModeFoldable;
     }
   }
 }
@@ -165,12 +171,119 @@ class _HomePageState extends State<HomePage> {
                 tooltip: t.settingsTooltip,
                 onPressed: _openApiKeySettings,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
+              Builder(
+                builder: (context) {
+                  final foldableInfo = FoldableLayoutInfo.of(context);
+                  if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Tooltip(
+                      message: foldableInfo.isTabletop
+                          ? t.tabletopMode
+                          : t.foldableDetected,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              foldableInfo.isTabletop
+                                  ? Icons.laptop_chromebook_rounded
+                                  : Icons.devices_fold_rounded,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              foldableInfo.isTabletop
+                                  ? 'FLEX'
+                                  : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
             ],
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
+              final foldableInfo = FoldableLayoutInfo.of(context);
+              final isFoldable = _viewMode == HomeViewMode.foldable ||
+                  (_viewMode == HomeViewMode.auto &&
+                      (foldableInfo.hasHinge ||
+                          (foldableInfo.isFoldableOrWide && width >= 640)));
+
+              // Dual-pane layout for foldable devices (Surface Duo, Galaxy Fold, Wide)
+              if (isFoldable) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: FoldableTwoPane(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      startPane: ListView(
+                        children: [
+                          _buildHeader(t.featuredServices),
+                          _buildSectionGrid(
+                            isGrid: width >= 1100,
+                            maxWidth: width / 2,
+                            children: _buildFeaturedCards(context, t),
+                          ),
+                        ],
+                      ),
+                      endPane: ListView(
+                        children: [
+                          _buildHeader(t.basicExamples),
+                          _buildSectionGrid(
+                            isGrid: false,
+                            maxWidth: width / 2,
+                            children: _buildBasicCards(context, t),
+                          ),
+                          const SizedBox(height: 18),
+                          _buildHeader(t.newFeatures),
+                          _buildSectionGrid(
+                            isGrid: width >= 1100,
+                            maxWidth: width / 2,
+                            children: _buildNewFeatureCards(context, t),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildHeader(t.setupHeader),
+                          _buildApiKeyCard(t),
+                          const SizedBox(height: 16),
+                          _buildHeader(t.capabilitiesHeader),
+                          _buildCapabilitiesWrap(),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
               final isGrid = _viewMode == HomeViewMode.grid ||
                   (_viewMode == HomeViewMode.auto && width >= 660);
 
@@ -184,190 +297,28 @@ class _HomePageState extends State<HomePage> {
                       _buildSectionGrid(
                         isGrid: isGrid,
                         maxWidth: width,
-                        children: [
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveTranslationTitle,
-                            subtitle: t.liveTranslationSubtitle,
-                            icon: Icons.translate_rounded,
-                            color: Colors.teal.shade700,
-                            page: const LiveTranslationPage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveMediaSubtitleTitle,
-                            subtitle: t.liveMediaSubtitleSubtitle,
-                            icon: Icons.subtitles_rounded,
-                            color: Colors.indigo.shade700,
-                            page: const LiveMediaSubtitlePage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveSmartNoteTitle,
-                            subtitle: t.liveSmartNoteSubtitle,
-                            icon: Icons.edit_note_rounded,
-                            color: Colors.amber.shade900,
-                            page: const LiveSmartNotePage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveVisionAgentTitle,
-                            subtitle: t.liveVisionAgentSubtitle,
-                            icon: Icons.auto_awesome_rounded,
-                            color: const Color(0xFF14532D),
-                            page: const LiveVisionCallPage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveMusicStudioTitle,
-                            subtitle: t.liveMusicStudioSubtitle,
-                            icon: Icons.music_note_rounded,
-                            color: Colors.purple.shade800,
-                            page: const LiveMusicStudioPage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.proDjConsoleTitle,
-                            subtitle: t.proDjConsoleSubtitle,
-                            icon: Icons.album_rounded,
-                            color: const Color(0xFFC2185B),
-                            page: const ProDjConsolePage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.djMidiBoxTitle,
-                            subtitle: t.djMidiBoxSubtitle,
-                            icon: Icons.grid_view_rounded,
-                            color: const Color(0xFF7C3AED),
-                            page: const DjMidiBoxPage(),
-                          ),
-                        ],
+                        children: _buildFeaturedCards(context, t),
                       ),
                       const SizedBox(height: 20),
                       _buildHeader(t.basicExamples),
                       _buildSectionGrid(
                         isGrid: isGrid,
                         maxWidth: width,
-                        children: [
-                          _buildDemoCard(
-                            context: context,
-                            title: t.chatInterfaceTitle,
-                            subtitle: t.chatInterfaceSubtitle,
-                            icon: Icons.chat,
-                            color: Colors.blue,
-                            page: const ChatPage(),
-                          ),
-                        ],
+                        children: _buildBasicCards(context, t),
                       ),
                       const SizedBox(height: 20),
                       _buildHeader(t.newFeatures),
                       _buildSectionGrid(
                         isGrid: isGrid,
                         maxWidth: width,
-                        children: [
-                          _buildDemoCard(
-                            context: context,
-                            title: t.liveApiFeaturesTitle,
-                            subtitle: t.liveApiFeaturesSubtitle,
-                            icon: Icons.auto_awesome,
-                            color: Colors.purple,
-                            page: const LiveAPIDemoPage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.functionCallingTitle,
-                            subtitle: t.functionCallingSubtitle,
-                            icon: Icons.functions,
-                            color: Colors.green,
-                            page: const FunctionCallingDemoPage(),
-                          ),
-                          _buildDemoCard(
-                            context: context,
-                            title: t.realtimeMediaTitle,
-                            subtitle: t.realtimeMediaSubtitle,
-                            icon: Icons.videocam,
-                            color: Colors.orange,
-                            page: const RealtimeMediaDemoPage(),
-                          ),
-                        ],
+                        children: _buildNewFeatureCards(context, t),
                       ),
                       const SizedBox(height: 24),
                       _buildHeader(t.setupHeader),
-                      Card(
-                        elevation: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                t.apiKeyConfigTitle,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text(t.statusLabel),
-                                  const SizedBox(width: 8),
-                                  Chip(
-                                    label: Text(
-                                      ApiKeyStore.hasApiKey
-                                          ? t.configuredStatus(ApiKeyStore.maskedApiKey)
-                                          : t.notConfiguredStatus,
-                                    ),
-                                    backgroundColor: ApiKeyStore.hasApiKey
-                                        ? Colors.green.shade50
-                                        : Colors.orange.shade50,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                t.apiKeySettingsHelp,
-                                style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${t.getApiKeyLink}: https://aistudio.google.com/app/apikey',
-                                style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
-                              ),
-                              const SizedBox(height: 12),
-                              FilledButton.icon(
-                                onPressed: _openApiKeySettings,
-                                icon: const Icon(Icons.settings),
-                                label: Text(t.openSettingsButton),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      _buildApiKeyCard(t),
                       const SizedBox(height: 16),
                       _buildHeader(t.capabilitiesHeader),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          _buildFeatureChip('interactionStatus (IN_PROGRESS / IDLE)'),
-                          _buildFeatureChip('AudioTranscriptionConfigMode (SMART / VERBATIM)'),
-                          _buildFeatureChip('GeminiLiveStatusBadge (Widget)'),
-                          _buildFeatureChip('GeminiLiveMicButton (Widget)'),
-                          _buildFeatureChip('GeminiLiveVoiceIndicator (Widget)'),
-                          _buildFeatureChip('toolCall / LiveServerToolCall'),
-                          _buildFeatureChip('toolCallCancellation'),
-                          _buildFeatureChip('goAway / LiveServerGoAway'),
-                          _buildFeatureChip('sessionResumptionUpdate'),
-                          _buildFeatureChip('voiceActivityDetection'),
-                          _buildFeatureChip('realtimeInputConfig'),
-                          _buildFeatureChip('audioTranscription'),
-                          _buildFeatureChip('contextWindowCompression'),
-                          _buildFeatureChip('proactivityConfig'),
-                          _buildFeatureChip('mediaChunks'),
-                          _buildFeatureChip('activityStart/End'),
-                          _buildFeatureChip('sendClientContent()'),
-                          _buildFeatureChip('sendToolResponse()'),
-                          _buildFeatureChip('sendRealtimeInput()'),
-                        ],
-                      ),
+                      _buildCapabilitiesWrap(),
                     ],
                   ),
                 ),
@@ -376,6 +327,188 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    );
+  }
+
+  List<Widget> _buildFeaturedCards(BuildContext context, AppTranslations t) {
+    return [
+      _buildDemoCard(
+        context: context,
+        title: t.liveTranslationTitle,
+        subtitle: t.liveTranslationSubtitle,
+        icon: Icons.translate_rounded,
+        color: Colors.teal.shade700,
+        page: const LiveTranslationPage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.liveMediaSubtitleTitle,
+        subtitle: t.liveMediaSubtitleSubtitle,
+        icon: Icons.subtitles_rounded,
+        color: Colors.indigo.shade700,
+        page: const LiveMediaSubtitlePage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.liveSmartNoteTitle,
+        subtitle: t.liveSmartNoteSubtitle,
+        icon: Icons.edit_note_rounded,
+        color: Colors.amber.shade900,
+        page: const LiveSmartNotePage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.liveVisionAgentTitle,
+        subtitle: t.liveVisionAgentSubtitle,
+        icon: Icons.auto_awesome_rounded,
+        color: const Color(0xFF14532D),
+        page: const LiveVisionCallPage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.liveMusicStudioTitle,
+        subtitle: t.liveMusicStudioSubtitle,
+        icon: Icons.music_note_rounded,
+        color: Colors.purple.shade800,
+        page: const LiveMusicStudioPage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.proDjConsoleTitle,
+        subtitle: t.proDjConsoleSubtitle,
+        icon: Icons.album_rounded,
+        color: const Color(0xFFC2185B),
+        page: const ProDjConsolePage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.djMidiBoxTitle,
+        subtitle: t.djMidiBoxSubtitle,
+        icon: Icons.grid_view_rounded,
+        color: const Color(0xFF7C3AED),
+        page: const DjMidiBoxPage(),
+      ),
+    ];
+  }
+
+  List<Widget> _buildBasicCards(BuildContext context, AppTranslations t) {
+    return [
+      _buildDemoCard(
+        context: context,
+        title: t.chatInterfaceTitle,
+        subtitle: t.chatInterfaceSubtitle,
+        icon: Icons.chat,
+        color: Colors.blue,
+        page: const ChatPage(),
+      ),
+    ];
+  }
+
+  List<Widget> _buildNewFeatureCards(BuildContext context, AppTranslations t) {
+    return [
+      _buildDemoCard(
+        context: context,
+        title: t.liveApiFeaturesTitle,
+        subtitle: t.liveApiFeaturesSubtitle,
+        icon: Icons.auto_awesome,
+        color: Colors.purple,
+        page: const LiveAPIDemoPage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.functionCallingTitle,
+        subtitle: t.functionCallingSubtitle,
+        icon: Icons.functions,
+        color: Colors.green,
+        page: const FunctionCallingDemoPage(),
+      ),
+      _buildDemoCard(
+        context: context,
+        title: t.realtimeMediaTitle,
+        subtitle: t.realtimeMediaSubtitle,
+        icon: Icons.videocam,
+        color: Colors.orange,
+        page: const RealtimeMediaDemoPage(),
+      ),
+    ];
+  }
+
+  Widget _buildApiKeyCard(AppTranslations t) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              t.apiKeyConfigTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(t.statusLabel),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text(
+                    ApiKeyStore.hasApiKey
+                        ? t.configuredStatus(ApiKeyStore.maskedApiKey)
+                        : t.notConfiguredStatus,
+                  ),
+                  backgroundColor: ApiKeyStore.hasApiKey
+                      ? Colors.green.shade50
+                      : Colors.orange.shade50,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              t.apiKeySettingsHelp,
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${t.getApiKeyLink}: https://aistudio.google.com/app/apikey',
+              style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _openApiKeySettings,
+              icon: const Icon(Icons.settings),
+              label: Text(t.openSettingsButton),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCapabilitiesWrap() {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        _buildFeatureChip('interactionStatus (IN_PROGRESS / IDLE)'),
+        _buildFeatureChip('AudioTranscriptionConfigMode (SMART / VERBATIM)'),
+        _buildFeatureChip('GeminiLiveStatusBadge (Widget)'),
+        _buildFeatureChip('GeminiLiveMicButton (Widget)'),
+        _buildFeatureChip('GeminiLiveVoiceIndicator (Widget)'),
+        _buildFeatureChip('toolCall / LiveServerToolCall'),
+        _buildFeatureChip('toolCallCancellation'),
+        _buildFeatureChip('goAway / LiveServerGoAway'),
+        _buildFeatureChip('sessionResumptionUpdate'),
+        _buildFeatureChip('voiceActivityDetection'),
+        _buildFeatureChip('realtimeInputConfig'),
+        _buildFeatureChip('audioTranscription'),
+        _buildFeatureChip('contextWindowCompression'),
+        _buildFeatureChip('proactivityConfig'),
+        _buildFeatureChip('mediaChunks'),
+        _buildFeatureChip('activityStart/End'),
+        _buildFeatureChip('sendClientContent()'),
+        _buildFeatureChip('sendToolResponse()'),
+        _buildFeatureChip('sendRealtimeInput()'),
+      ],
     );
   }
 

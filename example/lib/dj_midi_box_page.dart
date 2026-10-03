@@ -5,6 +5,7 @@ import 'package:gemini_live/gemini_live.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'app_translations.dart';
+import 'foldable_utils.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Interactive Prompt DJ MIDI Box inspired by Google AI Studio's Prompt DJ.
@@ -449,48 +450,206 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Top Minimal App Bar
-              _buildTopHeader(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final foldableInfo = FoldableLayoutInfo.of(context);
 
-              // 4x4 Rotary Knobs Grid
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 680),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          mainAxisSpacing: 18,
-                          crossAxisSpacing: 18,
-                          childAspectRatio: 0.82,
+              // 1. Tabletop / Flex Mode (Foldable device half-opened on a table)
+              if (foldableInfo.isTabletop) {
+                return Column(
+                  children: [
+                    // Upright Top Screen: Header + Glowing Audio Reactive Visualizer
+                    _buildTopHeader(),
+                    Expanded(
+                      flex: 4,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _pulseAnim,
+                              builder: (context, child) {
+                                final pulseScale = 1.0 + (_isPlaying ? _rmsLevel * 0.45 : 0.0);
+                                return Transform.scale(
+                                  scale: pulseScale,
+                                  child: Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          const Color(0xFFA855F7).withValues(alpha: 0.6),
+                                          const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                      border: Border.all(
+                                        color: _isPlaying
+                                            ? const Color(0xFFA855F7)
+                                            : Colors.white24,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        _isPlaying ? Icons.graphic_eq : Icons.music_note,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              _isPlaying
+                                  ? 'PLAYING · $_bpm BPM'
+                                  : 'READY · TAP DIALS TO PLAY',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
                         ),
-                        itemCount: _knobs.length,
-                        itemBuilder: (context, index) {
-                          final knob = _knobs[index];
-                          return _MidiKnobWidget(
-                            data: knob,
-                            rmsLevel: _isPlaying ? _rmsLevel : 0.0,
-                            onChanged: (newVal) => _onKnobChanged(index, newVal),
-                            onTap: () => _onKnobTapped(index),
-                            onLongPress: () => _onKnobLongPressed(index),
-                          );
-                        },
+                      ),
+                    ),
+
+                    // Physical Hinge Crease
+                    Container(height: 4, color: Colors.white10),
+
+                    // Flat Bottom Screen: 4x4 Grid + Bottom Transport Controls
+                    Expanded(
+                      flex: 6,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            _buildKnobGrid(
+                              knobIndices: List.generate(_knobs.length, (i) => i),
+                              crossAxisCount: 4,
+                              maxWidth: 680,
+                            ),
+                            _buildBottomControls(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // 2. Dual-Screen Book Mode (Surface Duo / 2 physical screens)
+              if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
+                return Column(
+                  children: [
+                    _buildTopHeader(),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Left Screen: Pads 1-8
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: _buildKnobGrid(
+                                knobIndices: List.generate(8, (i) => i),
+                                crossAxisCount: 2,
+                                maxWidth: 360,
+                              ),
+                            ),
+                          ),
+
+                          // Hinge Spine Spacer
+                          SizedBox(
+                            width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                            child: Center(
+                              child: Container(width: 2, color: Colors.white24),
+                            ),
+                          ),
+
+                          // Right Screen: Pads 9-16 + Controls
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Column(
+                                children: [
+                                  _buildKnobGrid(
+                                    knobIndices: List.generate(8, (i) => i + 8),
+                                    crossAxisCount: 2,
+                                    maxWidth: 360,
+                                  ),
+                                  _buildBottomControls(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // 3. Standard & Responsive Layout
+              final crossAxisCount = width < 420 ? 2 : (width < 600 ? 3 : 4);
+
+              return Column(
+                children: [
+                  _buildTopHeader(),
+                  Expanded(
+                    child: Center(
+                      child: _buildKnobGrid(
+                        knobIndices: List.generate(_knobs.length, (i) => i),
+                        crossAxisCount: crossAxisCount,
+                        maxWidth: 680,
                       ),
                     ),
                   ),
-                ),
-              ),
-
-              // Bottom Floating Play/Pause Button
-              _buildBottomControls(),
-            ],
+                  _buildBottomControls(),
+                ],
+              );
+            },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKnobGrid({
+    required List<int> knobIndices,
+    required int crossAxisCount,
+    double maxWidth = 680,
+  }) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const BouncingScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 18,
+            crossAxisSpacing: 18,
+            childAspectRatio: 0.82,
+          ),
+          itemCount: knobIndices.length,
+          itemBuilder: (context, i) {
+            final index = knobIndices[i];
+            final knob = _knobs[index];
+            return _MidiKnobWidget(
+              data: knob,
+              rmsLevel: _isPlaying ? _rmsLevel : 0.0,
+              onChanged: (newVal) => _onKnobChanged(index, newVal),
+              onTap: () => _onKnobTapped(index),
+              onLongPress: () => _onKnobLongPressed(index),
+            );
+          },
         ),
       ),
     );

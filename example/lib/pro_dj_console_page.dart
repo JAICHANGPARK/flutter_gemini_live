@@ -6,6 +6,7 @@ import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'app_translations.dart';
 import 'dj_midi_box_page.dart';
+import 'foldable_utils.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Professional DJ Console for Google Gemini Live (Lyria RealTime)
@@ -514,67 +515,218 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
             onPressed: () => AppSettingsDialog.show(context),
             tooltip: 'Settings',
           ),
+          Builder(
+            builder: (context) {
+              final foldableInfo = FoldableLayoutInfo.of(context);
+              if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(right: 8, left: 2),
+                child: Tooltip(
+                  message: foldableInfo.isTabletop
+                      ? 'Tabletop / Flex Mode'
+                      : (foldableInfo.isDualScreen
+                          ? 'Duo Dual-Screen Active'
+                          : 'Foldable Active'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.cyanAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.cyanAccent.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          foldableInfo.isTabletop
+                              ? Icons.laptop_chromebook_rounded
+                              : Icons.devices_fold_rounded,
+                          size: 13,
+                          color: Colors.cyanAccent,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          foldableInfo.isTabletop
+                              ? 'FLEX DJ'
+                              : (foldableInfo.isDualScreen ? 'DUO DJ' : 'FOLD DJ'),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.cyanAccent,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. CDJ Master LCD Display Header
-              _buildMasterLcdDisplay(),
-              const SizedBox(height: 14),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final foldableInfo = FoldableLayoutInfo.of(context);
 
-              // 2. Hardware Console Body: Deck A + DJM Mixer + Deck B
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 900;
-                  if (isWide) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left: CDJ Deck A
-                        Expanded(flex: 5, child: _buildCdjDeck(isDeckA: true)),
-                        const SizedBox(width: 12),
-                        // Center: DJM Mixer Section
-                        Expanded(flex: 4, child: _buildDjmCenterMixer()),
-                        const SizedBox(width: 12),
-                        // Right: CDJ Deck B
-                        Expanded(flex: 5, child: _buildCdjDeck(isDeckA: false)),
-                      ],
-                    );
-                  } else {
-                    // Mobile / Narrow Stack Layout
-                    return Column(
-                      children: [
-                        _buildCdjDeck(isDeckA: true),
-                        const SizedBox(height: 12),
-                        _buildDjmCenterMixer(),
-                        const SizedBox(height: 12),
-                        _buildCdjDeck(isDeckA: false),
-                      ],
-                    );
-                  }
-                },
+            // 1. Tabletop / Flex Mode (Galaxy Z Fold half-folded at 90° on a desk)
+            if (foldableInfo.isTabletop) {
+              return Column(
+                children: [
+                  // Top Screen (Upright Master LCD Display & Diagnostics)
+                  Expanded(
+                    flex: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
+                      child: Column(
+                        children: [
+                          _buildMasterLcdDisplay(),
+                          const SizedBox(height: 6),
+                          Expanded(child: _buildConsoleLogs()),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Physical Fold Line / Crease Divider
+                  Container(
+                    height: 4,
+                    color: const Color(0xFF1E2638),
+                  ),
+
+                  // Bottom Screen (Tactile DJ Console flat on desk)
+                  Expanded(
+                    flex: 6,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                      child: Column(
+                        children: [
+                          _buildHardwareConsoleBody(
+                            isWide: constraints.maxWidth >= 600,
+                          ),
+                          const SizedBox(height: 10),
+                          _buildPerformancePadsSection(),
+                          const SizedBox(height: 10),
+                          _buildMasterTransportBar(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            // 2. Dual-Screen Book Mode (Surface Duo / 2 physical screens)
+            if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Screen: Master LCD + CDJ Deck A + Pads
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          _buildMasterLcdDisplay(),
+                          const SizedBox(height: 12),
+                          _buildCdjDeck(isDeckA: true),
+                          const SizedBox(height: 12),
+                          _buildPerformancePadsSection(),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Center Hinge Spacer (Avoids physical hinge gap)
+                  SizedBox(
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    child: Center(
+                      child: Container(
+                        width: 2,
+                        color: Colors.white24,
+                      ),
+                    ),
+                  ),
+
+                  // Right Screen: DJM Mixer + CDJ Deck B + Transport + Logs
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          _buildDjmCenterMixer(),
+                          const SizedBox(height: 12),
+                          _buildCdjDeck(isDeckA: false),
+                          const SizedBox(height: 12),
+                          _buildMasterTransportBar(),
+                          const SizedBox(height: 12),
+                          _buildConsoleLogs(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            // 3. Standard & Foldable Wide (Galaxy Z Fold unfolded or tablet/desktop)
+            final isWide = constraints.maxWidth >= 720 || foldableInfo.isFoldableOrWide;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildMasterLcdDisplay(),
+                  const SizedBox(height: 14),
+                  _buildHardwareConsoleBody(isWide: isWide),
+                  const SizedBox(height: 14),
+                  _buildPerformancePadsSection(),
+                  const SizedBox(height: 14),
+                  _buildMasterTransportBar(),
+                  const SizedBox(height: 14),
+                  _buildConsoleLogs(),
+                ],
               ),
-              const SizedBox(height: 14),
-
-              // 3. 8-RGB Performance Pads (Hot Cues / Drops)
-              _buildPerformancePadsSection(),
-              const SizedBox(height: 14),
-
-              // 4. Hardware Master Transport Controls (CUE / PLAY / STOP)
-              _buildMasterTransportBar(),
-              const SizedBox(height: 14),
-
-              // 5. Console System Logs
-              _buildConsoleLogs(),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _buildHardwareConsoleBody({required bool isWide}) {
+    if (isWide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left: CDJ Deck A
+          Expanded(flex: 5, child: _buildCdjDeck(isDeckA: true)),
+          const SizedBox(width: 12),
+          // Center: DJM Mixer Section
+          Expanded(flex: 4, child: _buildDjmCenterMixer()),
+          const SizedBox(width: 12),
+          // Right: CDJ Deck B
+          Expanded(flex: 5, child: _buildCdjDeck(isDeckA: false)),
+        ],
+      );
+    } else {
+      // Mobile / Narrow Stack Layout
+      return Column(
+        children: [
+          _buildCdjDeck(isDeckA: true),
+          const SizedBox(height: 12),
+          _buildDjmCenterMixer(),
+          const SizedBox(height: 12),
+          _buildCdjDeck(isDeckA: false),
+        ],
+      );
+    }
   }
 
   // ==========================================================================
