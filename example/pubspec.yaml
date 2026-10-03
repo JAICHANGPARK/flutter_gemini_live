@@ -35,6 +35,7 @@ dependencies:
   camera_desktop: ^1.1.2
   http: ^1.6.0
   image: ^4.9.2
+  web: ^1.1.1
 
 
 dev_dependencies:
