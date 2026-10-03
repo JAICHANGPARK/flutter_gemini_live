@@ -39,15 +39,26 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 | **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
 | **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
 
+**🎨 위젯 스킬** — 내장 UI 위젯의 파라미터, 세션 연결 방법, UI 패턴을 다룹니다 ([내장 UI 위젯](#내장-ui-위젯-pre-built-ui-widgets) 참고):
+
+| 어시스턴트 / 에코시스템 | 위젯 스킬 경로 |
+|---|---|
+| **공통 Skills 디렉토리** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
+| **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
+| **Agent Skills** | [`.agents/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-widgets/SKILL.md) |
+
 **🔗 스킬 직접 가져오기** — pub.dev 패키지에는 숨김 폴더(`.claude/`, `.gemini/` 등)가 포함되지 않으므로 아래 링크를 사용하세요:
 - **Raw Markdown (에이전트용)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **위젯 스킬** (`gemini-live-widgets`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-widgets/SKILL.md
 - **Firebase 마이그레이션 스킬** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
 - **`flutter pub get` 후 로컬 사본**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)
 for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
-  for s in flutter-gemini-live gemini-live-firebase-migration; do
+  for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
     mkdir -p "$d/skills/$s"
     curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
       -o "$d/skills/$s/SKILL.md"

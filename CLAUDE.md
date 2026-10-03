@@ -53,6 +53,8 @@ A dedicated Agent Skill is maintained for this package at:
 
 Refer to this skill whenever generating code, implementing UI features, adding tools/grounding, or handling Live API errors.
 
+For the pre-built widgets (parameters, wiring, UI patterns), use [`skills/gemini-live-widgets/SKILL.md`](skills/gemini-live-widgets/SKILL.md).
+
 For migrations between `firebase_ai` and `gemini_live` (either direction), use the migration skill:
 - [`skills/gemini-live-firebase-migration/SKILL.md`](skills/gemini-live-firebase-migration/SKILL.md) (mirrored under `.claude/`, `.gemini/`, `.codex/`, `.agents/skills/`)
 - Reference guide: [`doc/firebase_ai_compat.md`](doc/firebase_ai_compat.md)

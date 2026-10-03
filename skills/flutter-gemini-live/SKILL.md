@@ -211,6 +211,7 @@ class _LiveChatWidgetState extends State<LiveChatWidget> {
               if (_controller.latestTranscript != null)
                 GeminiLiveCaptionBubble(
                   text: _controller.latestTranscript!,
+                  role: _controller.latestTranscriptRole ?? 'model',
                   speaker: _controller.latestTranscriptRole == 'user' ? 'You' : 'Gemini',
                   isStreaming: _controller.isModelSpeaking,
                 ),
@@ -501,6 +502,8 @@ LiveConnectParameters(
 ---
 
 ## 🎨 Pre-Built Flutter Widgets & Helpers
+
+Full parameter tables, wiring for every session API (controller, low-level `LiveSession`, firebase_ai compat layer, plain `firebase_ai`), and UI patterns live in the `gemini-live-widgets` skill.
 
 | Component | Class | Description |
 |---|---|---|

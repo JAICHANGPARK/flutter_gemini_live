@@ -33,7 +33,7 @@ claude "Implement a live voice chat screen with frosted glass captions and audio
 Copy the skill folder to your user-level Claude skills directory:
 ```bash
 mkdir -p ~/.claude/skills
-cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.claude/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-widgets skills/gemini-live-firebase-migration ~/.claude/skills/
 ```
 
 ---
@@ -50,7 +50,7 @@ agy "Build a real-time Gemini 3.8 Live audio streaming session with barge-in int
 Copy the skill to your global Antigravity/Gemini configuration directory:
 ```bash
 mkdir -p ~/.gemini/skills
-cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.gemini/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-widgets skills/gemini-live-firebase-migration ~/.gemini/skills/
 ```
 
 ---
@@ -69,8 +69,8 @@ codex "Add Live Music generation using models/lyria-realtime-exp and weighted pr
 Copy the skill to your global agents directory:
 ```bash
 mkdir -p ~/.codex/skills ~/.agents/skills
-cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.codex/skills/
-cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.agents/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-widgets skills/gemini-live-firebase-migration ~/.codex/skills/
+cp -r skills/flutter-gemini-live skills/gemini-live-widgets skills/gemini-live-firebase-migration ~/.agents/skills/
 ```
 
 ---
@@ -84,6 +84,21 @@ cp -r skills/flutter-gemini-live skills/gemini-live-firebase-migration ~/.agents
 - **Live Music Streaming**: `genAI.live.music.connect(...)`, steerable weighted prompts, BPM, and key scale control.
 - **Ephemeral Authentication Tokens**: Minting client tokens (`AuthTokensService`) with strict parameter locks and `v1alpha` connectivity.
 - **Advanced Features**: Realtime bidirectional translation (`translationConfig`), transcription with multi-language `languageCodes` and `customVocabulary`, Google Maps grounding, and session resumption.
+
+---
+
+## 🎨 Widgets Skill
+
+[`gemini-live-widgets`](gemini-live-widgets/SKILL.md) covers the pre-built widgets in depth, mirrored to the same agent paths:
+
+- Parameter tables with defaults for `GeminiLiveStatusBadge`, `GeminiLiveMicButton`, `GeminiLiveVoiceIndicator`, `GeminiLiveCaptionBubble`, `GeminiLiveWaveform`, `GeminiLiveUsageBadge`, and `GeminiLiveAudioUtils`.
+- Wiring recipes for `GeminiLiveSessionController`, a low-level `LiveSession`, the firebase_ai-compatible layer, and plain `firebase_ai`.
+- Patterns: mic level meters, barge-in, push-to-talk, transcript lists, localization, theming, and common pitfalls.
+
+Example prompt:
+```bash
+claude "Add a waveform and captions to our live voice screen"
+```
 
 ---
 
