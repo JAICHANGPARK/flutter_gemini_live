@@ -10,7 +10,8 @@ import 'live_music_studio_page.dart';
 import 'live_smart_notetaker_page.dart';
 import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
-import 'pioneer_dj_console_page.dart';
+import 'dj_midi_box_page.dart';
+import 'pro_dj_console_page.dart';
 import 'realtime_media_demo.dart';
 
 Future<void> main() async {
@@ -138,12 +139,22 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildDemoCard(
             context: context,
-            title: '🎧 Pioneer Pro DJ Console (CDJ-3000 / DJM-900 스타일)',
+            title: '🎧 Pro DJ Console (프로 DJ 콘솔)',
             subtitle:
-                'Pioneer 플래그십 DJ 하드웨어 콘솔 UI · 듀얼 조그 휠 회전 · 3밴드 EQ 노브 & 듀얼 스테레오 VU 미터 · 8구 RGB 핫 큐 패드 & 크로스페이더',
+                '플래그십 DJ 하드웨어 콘솔 UI · 듀얼 조그 휠 회전 · 3밴드 EQ 노브 & 듀얼 스테레오 VU 미터 · 8구 RGB 핫 큐 패드 & 크로스페이더',
             icon: Icons.album_rounded,
             color: const Color(0xFFC2185B),
-            page: const PioneerDjConsolePage(),
+            page: const ProDjConsolePage(),
+          ),
+          const SizedBox(height: 12),
+          _buildDemoCard(
+            context: context,
+            title: '🎛️ DJ MIDI Box (AI Studio Prompt DJ 스타일)',
+            subtitle:
+                '16구 로터리 다이얼 그리드 · 네온 헤일로 링 & 아크 게이지 · 원터치 토글 및 실시간 드래그 회전 · Lyria 실시간 음원 믹싱',
+            icon: Icons.grid_view_rounded,
+            color: const Color(0xFF7C3AED),
+            page: const DjMidiBoxPage(),
           ),
           const SizedBox(height: 16),
           _buildHeader('Basic Examples'),

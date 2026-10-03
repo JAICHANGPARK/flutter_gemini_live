@@ -6,7 +6,8 @@ import 'package:gemini_live/gemini_live.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
-import 'pioneer_dj_console_page.dart';
+import 'dj_midi_box_page.dart';
+import 'pro_dj_console_page.dart';
 import 'soloud_live_audio_player.dart';
 
 /// Interactive Real-time Music Studio powered by Google's Lyria Live models.
@@ -511,7 +512,25 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           FilledButton.tonalIcon(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PioneerDjConsolePage()),
+                MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
+              );
+            },
+            icon: const Icon(Icons.grid_view_rounded, size: 16, color: Color(0xFFA855F7)),
+            label: const Text(
+              'MIDI BOX',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF261840),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+            ),
+          ),
+          const SizedBox(width: 6),
+          FilledButton.tonalIcon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProDjConsolePage()),
               );
             },
             icon: const Icon(Icons.album_rounded, size: 16, color: Color(0xFF00E5FF)),
@@ -525,7 +544,7 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
