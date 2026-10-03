@@ -734,6 +734,21 @@ class AppTranslations {
   }
 }
 
+/// Inherited widget for reactive language propagation down the widget tree.
+class AppLanguageScope extends InheritedNotifier<AppLanguageController> {
+  const AppLanguageScope({
+    super.key,
+    required AppLanguageController controller,
+    required super.child,
+  }) : super(notifier: controller);
+
+  static AppLanguageController of(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<AppLanguageScope>();
+    return scope?.notifier ?? AppLanguageController.instance;
+  }
+}
+
 /// Material 3 language switcher widget suitable for [AppBar.actions].
 class LanguageSelectorButton extends StatelessWidget {
   final bool compact;
@@ -752,47 +767,7 @@ class LanguageSelectorButton extends StatelessWidget {
 
         return PopupMenuButton<AppLanguage>(
           tooltip: AppTranslations.current.languageTooltip,
-          icon: compact
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.language_rounded, size: 20),
-                    const SizedBox(width: 4),
-                    Text(
-                      current.code.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                )
-              : Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.language_rounded, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${current.flag} ${current.name}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.arrow_drop_down, size: 16),
-                    ],
-                  ),
-                ),
+          initialValue: current,
           onSelected: (AppLanguage newLang) {
             AppLanguageController.instance.setLanguage(newLang);
           },
@@ -827,6 +802,50 @@ class LanguageSelectorButton extends StatelessWidget {
               );
             }).toList();
           },
+          child: compact
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.language_rounded, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        current.code.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.language_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${current.flag} ${current.name}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_drop_down, size: 16),
+                    ],
+                  ),
+                ),
         );
       },
     );

@@ -30,15 +30,19 @@ class MyApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: AppLanguageController.instance,
       builder: (context, _) {
-        return MaterialApp(
-          title: AppLanguageController.instance.t.appTitle,
-          locale: AppLanguageController.instance.currentLocale,
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-            useMaterial3: true,
+        return AppLanguageScope(
+          controller: AppLanguageController.instance,
+          child: MaterialApp(
+            key: ValueKey(AppLanguageController.instance.currentLanguage),
+            title: AppLanguageController.instance.t.appTitle,
+            locale: AppLanguageController.instance.currentLocale,
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+              useMaterial3: true,
+            ),
+            home: const HomePage(),
           ),
-          home: const HomePage(),
         );
       },
     );
@@ -80,23 +84,26 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = AppLanguageController.instance.t;
+    return ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) {
+        final t = AppLanguageController.instance.t;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.appTitle),
-        centerTitle: true,
-        actions: [
-          const LanguageSelectorButton(),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: t.settingsTooltip,
-            onPressed: _openApiKeySettings,
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(t.appTitle),
+            centerTitle: true,
+            actions: [
+              const LanguageSelectorButton(),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: t.settingsTooltip,
+                onPressed: _openApiKeySettings,
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -273,6 +280,8 @@ class _HomePageState extends State<HomePage> {
           _buildFeatureChip('sendRealtimeInput()'),
         ],
       ),
+    );
+      },
     );
   }
 
