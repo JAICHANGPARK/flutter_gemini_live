@@ -15,9 +15,30 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
+## 🤖 AI 에이전트 및 코딩 어시스턴트 가이드 (AI Agents Guide)
+
+AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, **GitHub Copilot** 등)를 사용하는 개발자 및 AI 에이전트는 코드 작성 전에 패키지 전용 스킬 명세서를 먼저 참조하십시오:
+
+| 어시스턴트 / 에코시스템 | 전용 스킬 탐색 경로 | 프로젝트 가이드 |
+|---|---|---|
+| **루트 표준** | [`SKILL.md`](SKILL.md) | - |
+| **공통 Skills 디렉토리** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
+| **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+### 📌 AI 에이전트 핵심 구현 수칙
+1. **Firebase 의존성 배제**: 실시간 스트리밍 시 `firebase_core`나 `firebase_vertexai`를 추가하지 않고 `GoogleGenAI`의 WebSocket 엔드포인트를 직접 사용합니다.
+2. **권장 UI 상태 관리**: Flutter UI 개발 시 저수준 `LiveSession` 대신 생명주기 및 사용자 발화 중단(Barge-in)을 자동 처리하는 `GeminiLiveSessionController` (`ChangeNotifier`)를 우선적으로 활용합니다.
+3. **내장 Material 3 위젯 우선 사용**: 패키지 내장 위젯(`GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveVoiceIndicator`, `GeminiLiveUsageBadge`)을 사용하여 완성도 높은 UI를 구성합니다.
+4. **Barge-in 오디오 버퍼 즉시 플러시**: `serverContent.interrupted == true` 또는 `controller.isInterrupted`가 감지되면 즉시 로컬 재생 오디오 버퍼를 비워 하울링을 방지합니다.
+5. **오디오 포맷 규격**: 마이크 입력은 리니어 PCM 16-bit, 16,000 Hz 모노이며, 라이브 모델 출력은 리니어 PCM 16-bit, 24,000 Hz 모노(음악은 48,000 Hz 스테레오)입니다.
+6. **추천 모델**: 기본 대화는 `gemini-3.8-live`, 심층 추론은 `gemini-3.8-live-extended-thinking`을 기본값으로 사용합니다.
+
 ## 설치하기 (Installation)
 
-Flutter 프로젝트에 패키지를 추가합니다:
+Add the package to your Flutter project:
 
 ```bash
 flutter pub add gemini_live
@@ -43,7 +64,7 @@ void main() async {
   // 2. Live API 연결
   final session = await genAI.live.connect(
     LiveConnectParameters(
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
         onOpen: () => print('Live 세션 연결 완료!'),
@@ -97,51 +118,54 @@ void main() async {
 Flutter 개발자가 즉시 연동하여 사용할 수 있도록 가볍고 의존성 없는 핵심 UI 위젯을 기본 제공합니다:
 
 ```dart
-// 1. 실시간 세션 상태 배지 (InteractionStatus 및 연결 상태 연동)
-GeminiLiveStatusBadge.fromFlags(
-  isConnected: isConnected,
-  isConnecting: isConnecting,
-  interactionStatus: sessionStatus, // IN_PROGRESS / IDLE
-)
-
-// 2. 펄스 애니메이션 마이크 버튼
-GeminiLiveMicButton(
-  isRecording: isRecording,
-  onPressed: toggleVoice,
-)
-
-// 3. 음성 파형 애니메이션 바 (음성 발화/스트리밍 시 실시간 애니메이션)
-GeminiLiveVoiceIndicator(
-  isSpeaking: isSpeaking,
-  barCount: 5,
-  color: Colors.blueAccent,
-)
-
-// 4. 실시간 오디오 파형 시각화기 (진폭 또는 PCM 16-bit 스트림 직접 연동)
-GeminiLiveWaveform(
-  pcmStream: audioPcmStream, // 또는 amplitude / amplitudeStream
-  barCount: 24,
-  style: WaveformStyle.bars,
-  color: Colors.deepPurpleAccent,
-)
-
-// 5. 실시간 자막/캡션 말풍선 위젯 (화자 및 스타일 톤 표시, 자동 닫힘 지원)
-GeminiLiveCaptionBubble(
-  text: currentTranscript,
-  speaker: 'Gemini',
-  style: 'whispering',
-  isStreaming: isGenerating,
-)
-
-// 6. 통합 세션 컨트롤러 (연결 상태, 자막 타임라인, 토큰 추적, 오디오 피딩 한 번에 관리)
-final controller = GeminiLiveSessionController(service: liveService);
+// 1. 고수준 실시간 세션 컨트롤러 (ChangeNotifier 기반)
+final controller = GeminiLiveSessionController(liveService: genAI.live);
 await controller.connect(
   LiveConnectParameters(
-    model: LiveModels.gemini25Flash,
-    config: LiveClientConfig(responseModalities: [Modality.audio]),
+    model: 'gemini-3.8-live',
+    config: GenerationConfig(responseModalities: [Modality.AUDIO]),
   ),
 );
-controller.feedAudioPcm(pcm16BitBytes);
+
+// 2. 실시간 오디오 파형 시각화기 (캡슐 알약 형태 바 & 유휴 브리딩 모션)
+GeminiLiveWaveform(
+  audioStream: controller.incomingAudioStream, // 또는 amplitudeStream
+  barCount: 28,
+  height: 64,
+  color: Theme.of(context).colorScheme.primary,
+  enableIdleBreathing: true,
+)
+
+// 3. 프로스티드 글래스 실시간 자막 버블 (BackdropFilter 블러 & 화자 칩)
+GeminiLiveCaptionBubble(
+  text: controller.latestTranscript ?? '',
+  speaker: controller.latestTranscriptRole == 'user' ? '나' : 'Gemini',
+  isStreaming: controller.isModelSpeaking,
+  enableBlur: true,
+)
+
+// 4. 동심원 음향 리플 마이크 버튼 (M3 햅틱 터치)
+GeminiLiveMicButton(
+  isRecording: controller.isUserSpeaking,
+  isConnected: controller.isConnected,
+  onPressed: () => toggleLiveSession(),
+)
+
+// 5. 연결 상태 배지 (펄스 헤일로 링 인디케이터)
+GeminiLiveStatusBadge(
+  state: controller.isConnected ? LiveStatusState.connected : LiveStatusState.disconnected,
+)
+
+// 6. 실시간 토큰 사용량 & 상세 모달 다이얼로그 배지
+GeminiLiveUsageBadge(
+  tracker: controller.tokenTracker,
+)
+
+// 7. 듀얼 하모닉 음성 활동 시각화기
+GeminiLiveVoiceIndicator(
+  isSpeaking: controller.isModelSpeaking,
+  barCount: 5,
+)
 ```
 
 ---

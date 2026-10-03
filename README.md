@@ -15,6 +15,30 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
+## 🤖 AI Agents & Coding Assistants Guide
+
+If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, or **GitHub Copilot**):
+👉 **Read the official package skill specification first:**
+
+| Assistant / Ecosystem | Native Skill Discovery Path | Project Instructions |
+|---|---|---|
+| **Root Universal** | [`SKILL.md`](SKILL.md) | - |
+| **Common Skills Directory** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
+| **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+### 📌 Core Agent Rules & Invariants
+1. **Zero Firebase**: Never import `firebase_core` or `firebase_vertexai` for live streaming. Connect directly via `GoogleGenAI` WebSocket endpoints.
+2. **State Management**: For Flutter UI apps, prefer `GeminiLiveSessionController` (`ChangeNotifier`) to handle connection state, transcripts, audio streams, and interruptions.
+3. **Pre-built Material 3 Widgets**: Use built-in widgets (`GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveVoiceIndicator`, `GeminiLiveUsageBadge`).
+4. **Barge-in Interruption**: Always clear/stop local audio playback buffers immediately when `serverContent.interrupted == true` or `controller.isInterrupted` is true.
+5. **Audio Formats**:
+   - Mic Input: Linear PCM 16-bit, 16,000 Hz mono.
+   - Live Output: Linear PCM 16-bit, 24,000 Hz mono (Music: 48,000 Hz stereo).
+6. **Models**: Default to `gemini-3.8-live` (low-latency) or `gemini-3.8-live-extended-thinking` (deep reasoning).
+
 ## Installation
 
 Add the package to your Flutter project:
@@ -43,7 +67,7 @@ void main() async {
   // 2. Connect to the Live API
   final session = await genAI.live.connect(
     LiveConnectParameters(
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
         onOpen: () => print('Live Session Connected!'),
@@ -97,51 +121,54 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 The package ships with ready-to-use Flutter Material widgets to accelerate building Live conversational interfaces:
 
 ```dart
-// 1. Status Badge with live interaction tracking
-GeminiLiveStatusBadge.fromFlags(
-  isConnected: isConnected,
-  isConnecting: isConnecting,
-  interactionStatus: sessionStatus, // IN_PROGRESS / IDLE
-)
-
-// 2. Animated Mic Button with pulse ripples
-GeminiLiveMicButton(
-  isRecording: isRecording,
-  onPressed: toggleVoice,
-)
-
-// 3. Dancing Voice Waveform Bars
-GeminiLiveVoiceIndicator(
-  isSpeaking: isSpeaking,
-  barCount: 5,
-  color: Colors.blueAccent,
-)
-
-// 4. Real-time Audio Waveform Visualizer
-GeminiLiveWaveform(
-  pcmStream: audioPcmStream, // or amplitude / amplitudeStream
-  barCount: 24,
-  style: WaveformStyle.bars,
-  color: Colors.deepPurpleAccent,
-)
-
-// 5. Streaming Caption & Subtitle Bubble
-GeminiLiveCaptionBubble(
-  text: currentTranscript,
-  speaker: 'Gemini',
-  style: 'whispering',
-  isStreaming: isGenerating,
-)
-
-// 6. High-level Session Controller
-final controller = GeminiLiveSessionController(service: liveService);
+// 1. Reactive Live Session Controller (ChangeNotifier)
+final controller = GeminiLiveSessionController(liveService: genAI.live);
 await controller.connect(
   LiveConnectParameters(
-    model: LiveModels.gemini25Flash,
-    config: LiveClientConfig(responseModalities: [Modality.audio]),
+    model: 'gemini-3.8-live',
+    config: GenerationConfig(responseModalities: [Modality.AUDIO]),
   ),
 );
-controller.feedAudioPcm(pcm16BitBytes);
+
+// 2. Real-time Audio Waveform Visualizer (Capsule bars & idle breathing)
+GeminiLiveWaveform(
+  audioStream: controller.incomingAudioStream, // or amplitudeStream
+  barCount: 28,
+  height: 64,
+  color: Theme.of(context).colorScheme.primary,
+  enableIdleBreathing: true,
+)
+
+// 3. Frosted-Glass Live Caption Bubble (BackdropFilter blur & speaker chips)
+GeminiLiveCaptionBubble(
+  text: controller.latestTranscript ?? '',
+  speaker: controller.latestTranscriptRole == 'user' ? 'You' : 'Gemini',
+  isStreaming: controller.isModelSpeaking,
+  enableBlur: true,
+)
+
+// 4. Concentric Ripple Microphone Button
+GeminiLiveMicButton(
+  isRecording: controller.isUserSpeaking,
+  isConnected: controller.isConnected,
+  onPressed: () => toggleLiveSession(),
+)
+
+// 5. Connection Status Badge with Halo Pulse
+GeminiLiveStatusBadge(
+  state: controller.isConnected ? LiveStatusState.connected : LiveStatusState.disconnected,
+)
+
+// 6. Real-time Token Usage & Observability Badge
+GeminiLiveUsageBadge(
+  tracker: controller.tokenTracker,
+)
+
+// 7. Dual-Harmonic Voice Indicator
+GeminiLiveVoiceIndicator(
+  isSpeaking: controller.isModelSpeaking,
+  barCount: 5,
+)
 ```
 
 ---

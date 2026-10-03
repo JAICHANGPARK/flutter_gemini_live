@@ -15,6 +15,27 @@
 
 https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
+## 🤖 AI エージェント & コーディングアシスタントガイド (AI Agents Guide)
+
+AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, **GitHub Copilot** など）をご利用の場合、コード生成前にパッケージ公式の Skill 仕様を必ず参照してください：
+
+| アシスタント / エコシステム | 専用 Skill 探索パス | プロジェクトガイド |
+|---|---|---|
+| **ルート共通** | [`SKILL.md`](SKILL.md) | - |
+| **共通 Skills ディレクトリ** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
+| **Agent Skills オープン標準** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+### 📌 AI エージェント実装ルール
+1. **Firebase 依存の排除**: リアルタイムストリーミングには `firebase_core` や `firebase_vertexai` を使用せず、`GoogleGenAI` の WebSocket エンドポイントに直接接続します。
+2. **推奨 UI 状態管理**: Flutter UI アプリでは、接続ライフサイクルや割り込み（Barge-in）を自動処理する `GeminiLiveSessionController` (`ChangeNotifier`) を優先的に使用します。
+3. **組み込み Material 3 ウィジェット**: パッケージ標準のウィジェット（`GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveVoiceIndicator`, `GeminiLiveUsageBadge`）を活用します。
+4. **Barge-in バッファの即時破棄**: `serverContent.interrupted == true` または `controller.isInterrupted` が検知された場合、ハウリングを防ぐため直ちにローカル再生バッファをクリアします。
+5. **音声フォーマット**: マイク入力は Linear PCM 16-bit, 16,000 Hz モノラル、出力は 24,000 Hz モノラル（音楽は 48,000 Hz ステレオ）です。
+6. **推奨モデル**: 通常対話は `gemini-3.8-live`、高度な推論対話は `gemini-3.8-live-extended-thinking` を指定します。
+
 ## インストール (Installation)
 
 Flutter プロジェクトにパッケージを追加します：
@@ -43,7 +64,7 @@ void main() async {
   // 2. Live API 接続
   final session = await genAI.live.connect(
     LiveConnectParameters(
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
       config: GenerationConfig(responseModalities: [Modality.TEXT]),
       callbacks: LiveCallbacks(
         onOpen: () => print('Live セッション接続完了!'),
@@ -81,7 +102,64 @@ void main() async {
 * **セッション再開**: 切断された接続をセッションハンドルで復元。
 * **Google Maps & 検索グラウンディング**: 位置やルートを認識した応答。
 * **音声アクティビティ検出 (VAD)**: 自動および手動 VAD。
-* **リアルタイム音声翻訳**: 音声から音声へのリアルタイム翻訳 (`TranslationConfig`)。
+* **組み込み UI ウィジェット**: 軽量で依存性のない即時利用可能な Material 3 ウィジェット。
+
+---
+
+## 組み込み UI ウィジェット (Pre-built UI Widgets)
+
+Flutter アプリですぐに利用可能な軽量・高機能な Material 3 ウィジェットが同梱されています：
+
+```dart
+// 1. 高水準セッションコントローラー (ChangeNotifier)
+final controller = GeminiLiveSessionController(liveService: genAI.live);
+await controller.connect(
+  LiveConnectParameters(
+    model: 'gemini-3.8-live',
+    config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+  ),
+);
+
+// 2. リアルタイム音声波形ビジュアライザー (カプセルバー & ブリージング動作)
+GeminiLiveWaveform(
+  audioStream: controller.incomingAudioStream,
+  barCount: 28,
+  height: 64,
+  color: Theme.of(context).colorScheme.primary,
+  enableIdleBreathing: true,
+)
+
+// 3. すりガラス字幕バブル (BackdropFilter ブラー & 話者チップ)
+GeminiLiveCaptionBubble(
+  text: controller.latestTranscript ?? '',
+  speaker: controller.latestTranscriptRole == 'user' ? 'あなた' : 'Gemini',
+  isStreaming: controller.isModelSpeaking,
+  enableBlur: true,
+)
+
+// 4. 同心円音響リップルマイクボタン
+GeminiLiveMicButton(
+  isRecording: controller.isUserSpeaking,
+  isConnected: controller.isConnected,
+  onPressed: () => toggleLiveSession(),
+)
+
+// 5. 接続状態バッジ (パルスヘイローインジケーター)
+GeminiLiveStatusBadge(
+  state: controller.isConnected ? LiveStatusState.connected : LiveStatusState.disconnected,
+)
+
+// 6. リアルタイムトークン使用量バッジ
+GeminiLiveUsageBadge(
+  tracker: controller.tokenTracker,
+)
+
+// 7. デュアルハーモニック音声インジケーター
+GeminiLiveVoiceIndicator(
+  isSpeaking: controller.isModelSpeaking,
+  barCount: 5,
+)
+```
 
 ---
 
