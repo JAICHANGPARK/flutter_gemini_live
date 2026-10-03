@@ -11,6 +11,7 @@ import 'package:record/record.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'foldable_utils.dart';
 import 'live_api_defaults.dart';
 import 'live_audio_player.dart';
 import 'soloud_live_audio_player.dart';
@@ -891,7 +892,189 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   Widget build(BuildContext context) {
     // Deep forest green background theme matching the user's screenshot
     const themeBgColor = Color(0xFF091E14);
+    final foldableInfo = FoldableLayoutInfo.of(context);
 
+    // 1. Tabletop / Flex Mode (Foldable device half-opened on desk)
+    if (foldableInfo.isTabletop) {
+      return Scaffold(
+        backgroundColor: themeBgColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              // Top Upright Screen: Central Camera Viewfinder
+              Expanded(
+                flex: 5,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: _buildCameraViewfinder(),
+                ),
+              ),
+
+              // Physical Crease Divider
+              Container(
+                height: 3,
+                color: Colors.greenAccent.withValues(alpha: 0.3),
+              ),
+
+              // Bottom Flat Screen: Live Subtitle, Transcript history, and Controls
+              Expanded(
+                flex: 4,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _chatHistory.isEmpty
+                          ? const Center(
+                              child: Text(
+                                '실시간 대화와 Vision AI 분석이 여기에 표시됩니다.',
+                                style: TextStyle(color: Colors.white54, fontSize: 13),
+                              ),
+                            )
+                          : ListView.builder(
+                              reverse: true,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              itemCount: _chatHistory.length,
+                              itemBuilder: (context, index) {
+                                final item = _chatHistory[_chatHistory.length - 1 - index];
+                                return Align(
+                                  alignment: item.isUser
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: item.isUser
+                                          ? const Color(0xFF1B4D36)
+                                          : const Color(0xFF143323),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      item.text,
+                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    _buildBottomControlBar(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 2. Dual-Screen Book Mode (Surface Duo or Galaxy Fold unfolded wide side-by-side)
+    if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
+      return Scaffold(
+        backgroundColor: themeBgColor,
+        body: SafeArea(
+          child: Row(
+            children: [
+              // Left Screen: Header + Camera Viewfinder
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: _buildCameraViewfinder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Center Hinge Spacer
+              SizedBox(
+                width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                child: Center(
+                  child: Container(
+                    width: 2,
+                    color: Colors.greenAccent.withValues(alpha: 0.2),
+                  ),
+                ),
+              ),
+
+              // Right Screen: Transcript History & Controls
+              Expanded(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    const Row(
+                      children: [
+                        SizedBox(width: 16),
+                        Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Vision AI Live Transcript',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white12, height: 16),
+                    Expanded(
+                      child: _chatHistory.isEmpty
+                          ? const Center(
+                              child: Text(
+                                '대화가 시작되면 실시간 자막이 여기에 표시됩니다.',
+                                style: TextStyle(color: Colors.white38),
+                              ),
+                            )
+                          : ListView.builder(
+                              reverse: true,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              itemCount: _chatHistory.length,
+                              itemBuilder: (context, index) {
+                                final item = _chatHistory[_chatHistory.length - 1 - index];
+                                return Align(
+                                  alignment: item.isUser
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: item.isUser
+                                          ? const Color(0xFF1B4D36)
+                                          : const Color(0xFF143323),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      item.text,
+                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    _buildBottomControlBar(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. Standard Layout
     return Scaffold(
       backgroundColor: themeBgColor,
       body: SafeArea(

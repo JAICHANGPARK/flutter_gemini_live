@@ -10,6 +10,7 @@ import 'package:record/record.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'foldable_utils.dart';
 import 'live_api_defaults.dart';
 
 /// Target languages for meeting / lecture translation.
@@ -566,6 +567,49 @@ Your mission:
 
   @override
   Widget build(BuildContext context) {
+    final foldableInfo = FoldableLayoutInfo.of(context);
+
+    Widget foldablePill() {
+      if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
+        return const SizedBox.shrink();
+      }
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: foldableInfo.isTabletop
+              ? Colors.deepOrangeAccent.withValues(alpha: 0.2)
+              : Colors.amberAccent.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              foldableInfo.isTabletop
+                  ? Icons.laptop_chromebook_rounded
+                  : (foldableInfo.isDualScreen ? Icons.splitscreen_rounded : Icons.developer_board_rounded),
+              size: 13,
+              color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              foldableInfo.isTabletop ? 'TABLETOP' : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
@@ -586,6 +630,7 @@ Your mission:
         backgroundColor: const Color(0xFF131B2E),
         foregroundColor: Colors.white,
         actions: [
+          foldablePill(),
           // Target Language Selector
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -640,8 +685,32 @@ Your mission:
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final isWide = constraints.maxWidth >= 850;
-                if (isWide) {
+                // Tabletop / Flex mode: Top half timeline, bottom half notes board
+                if (foldableInfo.isTabletop) {
+                  return Column(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: _buildLiveTimelinePanel(),
+                      ),
+                      Container(
+                        height: 3,
+                        color: Colors.amberAccent.withValues(alpha: 0.6),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: _buildSmartNotesBoard(),
+                      ),
+                    ],
+                  );
+                }
+
+                // Dual-Screen (Book mode) or Foldable unfolded or Wide screen
+                final isTwoPane = (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
+                    foldableInfo.isFoldableOrWide ||
+                    constraints.maxWidth >= 780;
+
+                if (isTwoPane) {
                   return Row(
                     children: [
                       // Left: Live Speech Stream & Audio Waveform (40%)
@@ -649,7 +718,13 @@ Your mission:
                         flex: 4,
                         child: _buildLiveTimelinePanel(),
                       ),
-                      const VerticalDivider(color: Colors.white12, width: 1),
+                      if (foldableInfo.isDualScreen)
+                        SizedBox(
+                          width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                          child: Container(color: Colors.black),
+                        )
+                      else
+                        const VerticalDivider(color: Colors.white12, width: 1),
                       // Right: Smart Note Board & Markdown Canvas (60%)
                       Expanded(
                         flex: 6,

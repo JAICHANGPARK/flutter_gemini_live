@@ -9,6 +9,7 @@ import 'package:record/record.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'foldable_utils.dart';
 import 'live_audio_player.dart';
 import 'soloud_live_audio_player.dart';
 
@@ -471,6 +472,58 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
               }
             },
           ),
+          Builder(
+            builder: (context) {
+              final foldableInfo = FoldableLayoutInfo.of(context);
+              if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(right: 8, left: 2),
+                child: Tooltip(
+                  message: foldableInfo.isTabletop
+                      ? '테이블탑 / 플렉스 모드'
+                      : (foldableInfo.isDualScreen
+                          ? '듀얼스크린 감지됨'
+                          : '폴더블 와이드 감지됨'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          foldableInfo.isTabletop
+                              ? Icons.laptop_chromebook_rounded
+                              : Icons.devices_fold_rounded,
+                          size: 13,
+                          color: Colors.amber.shade900,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          foldableInfo.isTabletop
+                              ? 'FLEX'
+                              : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: Column(
@@ -773,98 +826,50 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     );
   }
 
-  /// 🔄 양방향 대면 분할 뷰 (테이블 맞은편 상대방을 위한 180도 회전 뷰)
+  /// 🔄 양방향 대면 분할 뷰 (폴더블 듀얼스크린 북모드 및 테이블 맞은편 180도 회전 뷰)
   Widget _buildDualFlipLayout(Map<String, String> myLang, Map<String, String> targetLang) {
-    // 상대방(외국인)에게 보여줄 번역문 메시지 목록 (모델 출력 위주)
     final partnerMessages = _history.where((m) => !m.isUser).toList();
-    // 내게 보여줄 원문 및 번역문 전체 목록
     final myMessages = _history;
+    final foldableInfo = FoldableLayoutInfo.of(context);
 
+    // 1. 폴더블 듀얼스크린 북모드 (Surface Duo 또는 갤럭시 폴드 펼친 좌우 화면)
+    if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 왼쪽 화면: 내 언어 & 통역 기록
+          Expanded(
+            child: _buildMyPanel(myLang, targetLang, myMessages),
+          ),
+
+          // 중앙 힌지 여백 (하드웨어 베젤 가림 방지)
+          SizedBox(
+            width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+            child: Center(
+              child: Container(
+                width: 2,
+                color: Colors.grey.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+
+          // 오른쪽 화면: 상대방 언어 & 실시간 번역문 (정방향)
+          Expanded(
+            child: _buildPartnerPanel(targetLang, partnerMessages, rotate180: false),
+          ),
+        ],
+      );
+    }
+
+    // 2. 테이블탑 / 상하 대면 플립 모드 (테이블 맞은편 상대방을 위한 180도 회전 뷰)
     return Column(
       children: [
         // 상단 절반: 맞은편 상대방 화면 (180도 회전!)
         Expanded(
-          child: Container(
-            color: Colors.amber.shade50.withValues(alpha: 0.35),
-            child: Transform.rotate(
-              angle: math.pi, // 180도 회전! 상대방이 똑바로 볼 수 있음
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Text(targetLang['flag'] ?? '🌐', style: const TextStyle(fontSize: 18)),
-                        const SizedBox(width: 8),
-                        Text(
-                          'For Partner: ${targetLang['name']}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Colors.amber.shade900,
-                          ),
-                        ),
-                        const Spacer(),
-                        const Icon(Icons.person_pin_rounded, size: 18, color: Colors.amber),
-                      ],
-                    ),
-                    const Divider(height: 12),
-                    Expanded(
-                      child: partnerMessages.isEmpty
-                          ? Center(
-                              child: Text(
-                                _isConnected
-                                  ? 'Listening...\nTranslations (${targetLang['name']}) will appear here for your partner.'
-                                  : 'Waiting for session to start.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              controller: _partnerScrollController,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              itemCount: partnerMessages.length,
-                              itemBuilder: (context, idx) {
-                                final msg = partnerMessages[idx];
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    msg.text,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          child: _buildPartnerPanel(targetLang, partnerMessages, rotate180: true),
         ),
 
-        // 중앙 분할선 (테이블 중앙 구분바)
+        // 중앙 분할선 (테이블 중앙 구분바 및 힌지 라인)
         Container(
           height: 28,
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -900,51 +905,150 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
         // 하단 절반: 내 화면 (정방향 및 통역 기록)
         Expanded(
-          child: Container(
-            color: Colors.blue.shade50.withValues(alpha: 0.25),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Text(myLang['flag'] ?? '🇰🇷', style: const TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Text(
-                      '내 화면 (${myLang['name']} 발화 및 통역 기록)',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+          child: _buildMyPanel(myLang, targetLang, myMessages),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPartnerPanel(
+    Map<String, String> targetLang,
+    List<LiveTranslationMessage> partnerMessages, {
+    required bool rotate180,
+  }) {
+    final content = Container(
+      color: Colors.amber.shade50.withValues(alpha: 0.35),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(targetLang['flag'] ?? '🌐', style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                'For Partner: ${targetLang['name']}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.amber.shade900,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.person_pin_rounded, size: 18, color: Colors.amber),
+            ],
+          ),
+          const Divider(height: 12),
+          Expanded(
+            child: partnerMessages.isEmpty
+                ? Center(
+                    child: Text(
+                      _isConnected
+                          ? 'Listening...\nTranslations (${targetLang['name']}) will appear here for your partner.'
+                          : 'Waiting for session to start.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Colors.blueAccent,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const Spacer(),
-                    const Icon(Icons.person_rounded, size: 18, color: Colors.blueAccent),
-                  ],
-                ),
-                const Divider(height: 12),
-                Expanded(
-                  child: myMessages.isEmpty
-                      ? Center(
-                          child: Text(
-                            _isConnected
-                                ? '마이크로 ${myLang['name']}로 말씀하세요.\n내 음성과 상대방 번역 내용(${targetLang['name']})이 실시간으로 기록됩니다.'
-                                : '하단 통역 시작 버튼을 누르면 실시간 통역이 시작됩니다.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
+                  )
+                : ListView.builder(
+                    controller: _partnerScrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: partnerMessages.length,
+                    itemBuilder: (context, idx) {
+                      final msg = partnerMessages[idx];
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
                             ),
+                          ],
+                        ),
+                        child: Text(
+                          msg.text,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: myMessages.length,
-                          itemBuilder: (context, idx) {
-                            final msg = myMessages[idx];
-                            return Align(
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+
+    if (rotate180) {
+      return Transform.rotate(
+        angle: math.pi,
+        child: content,
+      );
+    }
+    return content;
+  }
+
+  Widget _buildMyPanel(
+    Map<String, String> myLang,
+    Map<String, String> targetLang,
+    List<LiveTranslationMessage> myMessages,
+  ) {
+    return Container(
+      color: Colors.blue.shade50.withValues(alpha: 0.25),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(myLang['flag'] ?? '🇰🇷', style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                '내 화면 (${myLang['name']} 발화 및 통역 기록)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.person_rounded, size: 18, color: Colors.blueAccent),
+            ],
+          ),
+          const Divider(height: 12),
+          Expanded(
+            child: myMessages.isEmpty
+                ? Center(
+                    child: Text(
+                      _isConnected
+                          ? '마이크로 ${myLang['name']}로 말씀하세요.\n내 음성과 상대방 번역 내용(${targetLang['name']})이 실시간으로 기록됩니다.'
+                          : '하단 통역 시작 버튼을 누르면 실시간 통역이 시작됩니다.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: myMessages.length,
+                    itemBuilder: (context, idx) {
+                      final msg = myMessages[idx];
+                      return Align(
                               alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
@@ -988,9 +1092,6 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                 ),
               ],
             ),
-          ),
-        ),
-      ],
     );
   }
 

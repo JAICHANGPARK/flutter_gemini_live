@@ -8,6 +8,7 @@ import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'app_translations.dart';
 import 'dj_midi_box_page.dart';
+import 'foldable_utils.dart';
 import 'pro_dj_console_page.dart';
 import 'soloud_live_audio_player.dart';
 
@@ -472,6 +473,48 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final darkSurface = const Color(0xFF13151A);
+    final foldableInfo = FoldableLayoutInfo.of(context);
+
+    Widget foldablePill() {
+      if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
+        return const SizedBox.shrink();
+      }
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: foldableInfo.isTabletop
+              ? Colors.deepOrangeAccent.withValues(alpha: 0.2)
+              : Colors.purpleAccent.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              foldableInfo.isTabletop
+                  ? Icons.laptop_chromebook_rounded
+                  : (foldableInfo.isDualScreen ? Icons.splitscreen_rounded : Icons.developer_board_rounded),
+              size: 13,
+              color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              foldableInfo.isTabletop ? 'TABLETOP' : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: darkSurface,
@@ -506,6 +549,7 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           ],
         ),
         actions: [
+          foldablePill(),
           FilledButton.tonalIcon(
             onPressed: () {
               Navigator.of(context).push(
@@ -551,32 +595,114 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 1. Connection & Model Control Card
-          _buildConnectionCard(theme),
-          const SizedBox(height: 16),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // 1. Tabletop / Flex mode (Foldable resting on flat surface)
+          // Top Screen (Upright): Connection Card & Realtime Visualizer HUD
+          // Bottom Screen (Flat): Transport Controls, Steerable Prompts, Config, Diagnostics
+          if (foldableInfo.isTabletop) {
+            return Column(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      _buildConnectionCard(theme),
+                      const SizedBox(height: 12),
+                      _buildVisualizerCard(theme),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 3,
+                  color: Colors.purpleAccent.withValues(alpha: 0.6),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      _buildTransportControls(theme),
+                      const SizedBox(height: 12),
+                      _buildPromptsSection(theme),
+                      const SizedBox(height: 12),
+                      _buildGenerationConfigSection(theme),
+                      const SizedBox(height: 12),
+                      _buildDiagnosticsPanel(theme),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
 
-          // 2. Realtime Visualizer & Stream Status HUD
-          _buildVisualizerCard(theme),
-          const SizedBox(height: 16),
+          // 2. Dual-Screen Book Mode (Surface Duo) or Foldable Unfolded or Wide Screen
+          final isTwoPane = (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
+              foldableInfo.isFoldableOrWide ||
+              constraints.maxWidth >= 850;
 
-          // 3. Transport Controls (Play, Pause, Stop, Reset)
-          _buildTransportControls(theme),
-          const SizedBox(height: 16),
+          if (isTwoPane) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left pane: Monitor, Visualizer, Transport, Diagnostics
+                Expanded(
+                  flex: 5,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildConnectionCard(theme),
+                      const SizedBox(height: 16),
+                      _buildVisualizerCard(theme),
+                      const SizedBox(height: 16),
+                      _buildTransportControls(theme),
+                      const SizedBox(height: 16),
+                      _buildDiagnosticsPanel(theme),
+                    ],
+                  ),
+                ),
+                if (foldableInfo.isDualScreen)
+                  SizedBox(
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    child: Container(color: Colors.black),
+                  )
+                else
+                  const VerticalDivider(color: Colors.white12, width: 1),
+                // Right pane: Prompts & Music Config
+                Expanded(
+                  flex: 5,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildPromptsSection(theme),
+                      const SizedBox(height: 16),
+                      _buildGenerationConfigSection(theme),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }
 
-          // 4. Steerable Weighted Prompts Section
-          _buildPromptsSection(theme),
-          const SizedBox(height: 16),
-
-          // 5. Music Generation Parameters (BPM, Scale, Stems)
-          _buildGenerationConfigSection(theme),
-          const SizedBox(height: 16),
-
-          // 6. Diagnostics & Log Panel
-          _buildDiagnosticsPanel(theme),
-        ],
+          // 3. Default single-screen mobile portrait
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildConnectionCard(theme),
+              const SizedBox(height: 16),
+              _buildVisualizerCard(theme),
+              const SizedBox(height: 16),
+              _buildTransportControls(theme),
+              const SizedBox(height: 16),
+              _buildPromptsSection(theme),
+              const SizedBox(height: 16),
+              _buildGenerationConfigSection(theme),
+              const SizedBox(height: 16),
+              _buildDiagnosticsPanel(theme),
+            ],
+          );
+        },
       ),
     );
   }
