@@ -21,12 +21,25 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 
 | 어시스턴트 / 에코시스템 | 전용 스킬 탐색 경로 | 프로젝트 가이드 |
 |---|---|---|
-| **루트 표준** | [`SKILL.md`](SKILL.md) | - |
-| **공통 Skills 디렉토리** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
-| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
-| **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+| **루트 표준** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | - |
+| **공통 Skills 디렉토리** | [`skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
+| **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+**🔗 스킬 직접 가져오기** — pub.dev 패키지에는 숨김 폴더(`.claude/`, `.gemini/` 등)가 포함되지 않으므로 아래 링크를 사용하세요:
+- **Raw Markdown (에이전트용)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **`flutter pub get` 후 로컬 사본**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
+
+```bash
+# Install as a global skill (keep only the agents you use)
+for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
+  mkdir -p "$d/skills/flutter-gemini-live"
+  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
+    -o "$d/skills/flutter-gemini-live/SKILL.md"
+done
+```
 
 ### 📌 AI 에이전트 핵심 구현 수칙
 1. **Firebase 의존성 배제**: 실시간 스트리밍 시 `firebase_core`나 `firebase_vertexai`를 추가하지 않고 `GoogleGenAI`의 WebSocket 엔드포인트를 직접 사용합니다.
@@ -188,7 +201,7 @@ Future<void> startVoiceChat() async {
 
 상세한 가이드와 API 명세는 [`doc/`](doc/) 디렉토리에 모듈별로 정리되어 있습니다:
 
-- **[AI Agent Skill 가이드](SKILL.md)** ([skills/](skills/README.md)): Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 등 모든 AI 코딩 어시스턴트를 위한 멀티 에이전트 스킬 명세서
+- **[AI Agent Skill 가이드](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md)** ([skills/](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md)): Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 등 모든 AI 코딩 어시스턴트를 위한 멀티 에이전트 스킬 명세서
 - **[API Reference 명세서](doc/api_reference.md)**: `GoogleGenAI`, `LiveSession`, `LiveServerMessage` 등 전체 클래스 및 메서드 명세
 - **[UI 위젯 가이드 & 명세서](doc/widgets_guide.md)**: `GeminiLiveSessionController`와 모든 내장 UI 위젯 상세 사용법 및 전체 화면 예제
 - **[고급 기능 설정 가이드](doc/advanced_configuration.md)**: Function Calling, VAD, 세션 재개, 오디오 전사, 실시간 텍스트/음성 번역, 그라운딩, 에페메럴 토큰 사용법

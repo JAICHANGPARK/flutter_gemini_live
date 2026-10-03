@@ -22,12 +22,25 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
 
 | Assistant / Ecosystem | Native Skill Discovery Path | Project Instructions |
 |---|---|---|
-| **Root Universal** | [`SKILL.md`](SKILL.md) | - |
-| **Common Skills Directory** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
-| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
-| **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+| **Root Universal** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | - |
+| **Common Skills Directory** | [`skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
+| **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+**🔗 Fetch the skill directly** — hidden folders (`.claude/`, `.gemini/`, …) are not shipped in the pub.dev package, so use these links:
+- **Raw Markdown (for agents)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **Local copy after `flutter pub get`**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
+
+```bash
+# Install as a global skill (keep only the agents you use)
+for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
+  mkdir -p "$d/skills/flutter-gemini-live"
+  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
+    -o "$d/skills/flutter-gemini-live/SKILL.md"
+done
+```
 
 ### 📌 Core Agent Rules & Invariants
 1. **Zero Firebase**: Never import `firebase_core` or `firebase_vertexai` for live streaming. Connect directly via `GoogleGenAI` WebSocket endpoints.
@@ -191,7 +204,7 @@ For a complete screen with captions, waveform, and barge-in handling, see the [A
 
 For deep dives and complete references, see the modular guides in the [`doc/`](doc/) directory:
 
-- **[AI Agent Skill Guide](SKILL.md)** ([skills/](skills/README.md)): Agent instructions for Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor, and Copilot.
+- **[AI Agent Skill Guide](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md)** ([skills/](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md)): Agent instructions for Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor, and Copilot.
 - **[API Reference](doc/api_reference.md)**: Complete class & method documentation for `GoogleGenAI`, `LiveSession`, `LiveServerMessage`, etc.
 - **[Widgets Guide & UI Specification](doc/widgets_guide.md)**: Detailed specification and interactive code examples for `GeminiLiveSessionController` and every pre-built widget.
 - **[Advanced Configuration Guide](doc/advanced_configuration.md)**: Guides for Function Calling, VAD, Session Resumption, Audio Transcription, Translation, Grounding, and Ephemeral Tokens.

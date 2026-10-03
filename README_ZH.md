@@ -22,12 +22,25 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 | 助手 / 生态系统 | 原生 Skill 探索路径 | 项目指南 |
 |---|---|---|
-| **根目录通用** | [`SKILL.md`](SKILL.md) | - |
-| **通用 Skills 目录** | [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](skills/README.md) |
-| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](CLAUDE.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](GEMINI.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](CODEX.md) |
-| **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md) | - |
+| **根目录通用** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | - |
+| **通用 Skills 目录** | [`skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md) |
+| **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CLAUDE.md) |
+| **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
+| **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
+| **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
+
+**🔗 直接获取 Skill** — pub.dev 软件包不包含隐藏文件夹（`.claude/`、`.gemini/` 等），请使用以下链接：
+- **Raw Markdown（供智能体使用）**：https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
+- **`flutter pub get` 后的本地副本**：`<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
+
+```bash
+# Install as a global skill (keep only the agents you use)
+for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
+  mkdir -p "$d/skills/flutter-gemini-live"
+  curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md \
+    -o "$d/skills/flutter-gemini-live/SKILL.md"
+done
+```
 
 ### 📌 AI 智能体核心规范
 1. **零 Firebase 依赖**：实时流式传输切勿引入 `firebase_core` 或 `firebase_vertexai`，直接使用 `GoogleGenAI` 的 WebSocket 接口。
@@ -189,7 +202,7 @@ Future<void> startVoiceChat() async {
 
 更详细的指南与 API 参考已按模块整理至 [`doc/`](doc/) 目录：
 
-- **[AI Agent Skill 指南](SKILL.md)** ([skills/](skills/README.md))：支持 Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 等所有 AI 助手的多 Agent 技能规范
+- **[AI Agent Skill 指南](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md)** ([skills/](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md))：支持 Claude Code, Gemini CLI / Antigravity, OpenAI Codex, Cursor 等所有 AI 助手的多 Agent 技能规范
 - **[API 参考指南](doc/api_reference.md)**：包含 `GoogleGenAI`、`LiveSession`、`LiveServerMessage` 等完整类与方法说明
 - **[组件指南](doc/widgets_guide.md)**：`GeminiLiveSessionController` 及所有内置组件的用法与页面示例
 - **[高级配置指南](doc/advanced_configuration.md)**：包含 Function Calling、VAD、会话恢复、音频转写、实时翻译、接地与临时令牌使用说明
