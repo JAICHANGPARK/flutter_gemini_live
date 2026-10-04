@@ -58,14 +58,13 @@ class GeminiLiveChatView extends StatefulWidget {
   final GenerationConfig? config;
 
   /// System instructions defining model persona and behavior.
-  /// If null and [systemPrompt] is not provided, defaults to [defaultSystemInstruction].
-  final Content? systemInstruction;
+  ///
+  /// Following the official Google GenAI SDK pattern (such as `@google/genai`),
+  /// this accepts either a plain [String] or a structured [Content] object.
+  /// If null, defaults to [defaultSystemInstruction].
+  final Object? systemInstruction;
 
-  /// Convenient string-based system prompt for persona and behavior.
-  /// If provided, this is converted into a [Content] object unless [systemInstruction] is specified.
-  final String? systemPrompt;
-
-  /// Default system instruction applied when neither [systemInstruction] nor [systemPrompt] is provided.
+  /// Default system instruction applied when [systemInstruction] is omitted or null.
   static final Content defaultSystemInstruction = Content(
     role: 'system',
     parts: [
@@ -131,7 +130,6 @@ class GeminiLiveChatView extends StatefulWidget {
     this.model = LiveModels.gemini38Live,
     this.config,
     this.systemInstruction,
-    this.systemPrompt,
     this.tools,
     this.controller,
     this.autoConnect = true,
@@ -147,9 +145,15 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showStatusBadge = true,
     this.showWaveform = true,
     this.inputHint = 'Ask Gemini Live...',
-  }) : assert(
+  })  : assert(
           apiKey != null || controller != null,
           'Either apiKey or controller must be provided to GeminiLiveChatView.',
+        ),
+        assert(
+          systemInstruction == null ||
+              systemInstruction is String ||
+              systemInstruction is Content,
+          'systemInstruction must be either a String or a Content instance.',
         );
 
   @override
@@ -215,13 +219,18 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
 
   Future<void> _connectSession() async {
     try {
-      final effectiveSystemInstruction = widget.systemInstruction ??
-          (widget.systemPrompt != null
-              ? Content(
-                  role: 'system',
-                  parts: [Part(text: widget.systemPrompt!)],
-                )
-              : GeminiLiveChatView.defaultSystemInstruction);
+      final Content effectiveSystemInstruction;
+      final rawInstruction = widget.systemInstruction;
+      if (rawInstruction is String) {
+        effectiveSystemInstruction = Content(
+          role: 'system',
+          parts: [Part(text: rawInstruction)],
+        );
+      } else if (rawInstruction is Content) {
+        effectiveSystemInstruction = rawInstruction;
+      } else {
+        effectiveSystemInstruction = GeminiLiveChatView.defaultSystemInstruction;
+      }
 
       await _controller.connect(
         LiveConnectParameters(

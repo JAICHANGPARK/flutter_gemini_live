@@ -122,17 +122,30 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('supports systemPrompt and defaultSystemInstruction fallback',
+    testWidgets(
+        'supports systemInstruction as String, Content, and default fallback',
         (tester) async {
-      // 1. With string systemPrompt
-      const viewWithPrompt = GeminiLiveChatView(
+      // 1. With string systemInstruction (like JS SDK)
+      const viewWithString = GeminiLiveChatView(
         apiKey: 'dummy_api_key',
-        systemPrompt: 'Custom prompt text',
+        systemInstruction: 'Custom string prompt',
         autoConnect: false,
       );
-      expect(viewWithPrompt.systemPrompt, 'Custom prompt text');
+      expect(viewWithString.systemInstruction, 'Custom string prompt');
 
-      // 2. Default instruction check
+      // 2. With Content systemInstruction
+      final customContent = Content(
+        role: 'system',
+        parts: [Part(text: 'Structured prompt')],
+      );
+      final viewWithContent = GeminiLiveChatView(
+        apiKey: 'dummy_api_key',
+        systemInstruction: customContent,
+        autoConnect: false,
+      );
+      expect(viewWithContent.systemInstruction, customContent);
+
+      // 3. Default instruction check
       expect(
         GeminiLiveChatView.defaultSystemInstruction.parts!.first.text,
         contains('You are a helpful, friendly, and concise'),
