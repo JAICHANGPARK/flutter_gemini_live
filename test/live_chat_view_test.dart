@@ -151,5 +151,90 @@ void main() {
         contains('You are a helpful, friendly, and concise'),
       );
     });
+
+    testWidgets(
+        'renders phone connection button and calls onDisconnectPressed when connected',
+        (tester) async {
+      final genAI = GoogleGenAI(apiKey: 'dummy_api_key');
+      final controller =
+          GeminiLiveSessionController(liveService: genAI.live);
+
+      bool disconnectTapped = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GeminiLiveChatView(
+            controller: controller,
+            autoConnect: false,
+            onDisconnectPressed: () {
+              disconnectTapped = true;
+            },
+          ),
+        ),
+      );
+
+      // Verify connection button in AppBar
+      expect(find.byIcon(Icons.phone_in_talk_rounded), findsOneWidget);
+
+      controller.dispose();
+    });
+
+    testWidgets(
+        'renders attachment button and stop response button when model is speaking',
+        (tester) async {
+      final genAI = GoogleGenAI(apiKey: 'dummy_api_key');
+      final controller =
+          GeminiLiveSessionController(liveService: genAI.live);
+
+      bool attachTapped = false;
+      bool stopTapped = false;
+
+      // Simulate model speaking
+      controller.handleServerMessageForTesting(
+        LiveServerMessage(
+          serverContent: LiveServerContent(
+            modelTurn: Content(
+              parts: [
+                Part(
+                  inlineData: Blob(
+                    mimeType: 'audio/pcm',
+                    data: '////',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GeminiLiveChatView(
+            controller: controller,
+            autoConnect: false,
+            onAttachPressed: (context, ctrl) async {
+              attachTapped = true;
+            },
+            onStopSpeakingPressed: () {
+              stopTapped = true;
+            },
+          ),
+        ),
+      );
+
+      // Verify attachment button
+      expect(find.byIcon(Icons.add_photo_alternate_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.add_photo_alternate_rounded));
+      await tester.pump();
+      expect(attachTapped, isTrue);
+
+      // Verify Stop button
+      expect(find.text('Stop'), findsOneWidget);
+      await tester.tap(find.text('Stop'));
+      await tester.pump();
+      expect(stopTapped, isTrue);
+
+      controller.dispose();
+    });
   });
 }

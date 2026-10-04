@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../google_genai.dart';
@@ -108,6 +109,23 @@ class GeminiLiveChatView extends StatefulWidget {
   final Widget Function(BuildContext context, bool isModelSpeaking)?
       streamingIndicatorBuilder;
 
+  /// Callback when the user taps the image / attachment button.
+  /// If null, default attachment button is omitted unless custom builder provides it.
+  final Future<void> Function(BuildContext context, GeminiLiveSessionController controller)?
+      onAttachPressed;
+
+  /// Optional callback invoked when the user taps the connect call button in the AppBar.
+  final VoidCallback? onConnectPressed;
+
+  /// Optional callback invoked when the user taps the disconnect call button in the AppBar.
+  final VoidCallback? onDisconnectPressed;
+
+  /// Optional callback invoked when the user taps the stop response button.
+  final VoidCallback? onStopSpeakingPressed;
+
+  /// Whether to show the phone connect/disconnect action button in the AppBar. Defaults to `true`.
+  final bool showConnectionButton;
+
   /// Background color or surface styling for the chat view.
   final Color? backgroundColor;
 
@@ -140,6 +158,11 @@ class GeminiLiveChatView extends StatefulWidget {
     this.headerBuilder,
     this.emptyBuilder,
     this.streamingIndicatorBuilder,
+    this.onAttachPressed,
+    this.onConnectPressed,
+    this.onDisconnectPressed,
+    this.onStopSpeakingPressed,
+    this.showConnectionButton = true,
     this.backgroundColor,
     this.title = 'Gemini Live',
     this.showStatusBadge = true,
@@ -166,6 +189,24 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isRecordingMic = false;
+  Uint8List? _attachedImageBytes;
+  String? _attachedImageMimeType;
+
+  /// Attaches an image to the pending turn message.
+  void attachImage(Uint8List bytes, {String mimeType = 'image/jpeg'}) {
+    setState(() {
+      _attachedImageBytes = bytes;
+      _attachedImageMimeType = mimeType;
+    });
+  }
+
+  /// Clears the attached image preview.
+  void clearAttachedImage() {
+    setState(() {
+      _attachedImageBytes = null;
+      _attachedImageMimeType = null;
+    });
+  }
 
   @override
   void initState() {
@@ -254,9 +295,42 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
 
   void _sendMessage() {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    final hasImage = _attachedImageBytes != null && _attachedImageBytes!.isNotEmpty;
+    if (text.isEmpty && !hasImage) return;
+
+    final imageBytes = _attachedImageBytes;
+    final imageMime = _attachedImageMimeType ?? 'image/jpeg';
+
     _textController.clear();
-    _controller.sendRealtimeText(text);
+    setState(() {
+      _attachedImageBytes = null;
+      _attachedImageMimeType = null;
+    });
+
+    if (hasImage) {
+      _controller.sendRealtimeTurn(
+        text: text.isNotEmpty ? text : null,
+        imageBytes: imageBytes,
+        imageMimeType: imageMime,
+      );
+    } else {
+      _controller.sendRealtimeText(text);
+    }
+  }
+
+  void _handleToggleConnection() {
+    if (_controller.isConnected || _controller.state == LiveSessionState.connecting) {
+      widget.onDisconnectPressed?.call();
+      _controller.disconnect();
+    } else {
+      widget.onConnectPressed?.call();
+      _connectSession();
+    }
+  }
+
+  void _handleStopSpeaking() {
+    widget.onStopSpeakingPressed?.call();
+    _controller.stopModelSpeaking();
   }
 
   @override
@@ -303,16 +377,35 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
   }
 
   PreferredSizeWidget _buildDefaultAppBar(BuildContext context) {
+    final isConnected = _controller.isConnected;
+    final isConnecting = _controller.state == LiveSessionState.connecting;
+
     return AppBar(
       title: Text(widget.title),
       actions: [
         if (widget.showStatusBadge)
           Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: GeminiLiveStatusBadge(
               state: _mapSessionState(_controller.state),
             ),
           ),
+        if (widget.showConnectionButton)
+          IconButton(
+            tooltip: isConnected || isConnecting
+                ? 'Disconnect Gemini Live'
+                : 'Connect Gemini Live',
+            icon: Icon(
+              isConnected || isConnecting
+                  ? Icons.call_end_rounded
+                  : Icons.phone_in_talk_rounded,
+              color: isConnected || isConnecting
+                  ? const Color(0xFFEF4444)
+                  : const Color(0xFF10B981),
+            ),
+            onPressed: _handleToggleConnection,
+          ),
+        const SizedBox(width: 8.0),
       ],
     );
   }
@@ -485,14 +578,27 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
           crossAxisAlignment:
               isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Text(
-              item.text,
-              style: TextStyle(
-                color: isUser ? userFg : modelFg,
-                fontSize: 14.5,
-                height: 1.35,
+            if (item.imageBytes != null && item.imageBytes!.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10.0),
+                child: Image.memory(
+                  item.imageBytes!,
+                  width: 180.0,
+                  height: 140.0,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
+              if (item.text.isNotEmpty) const SizedBox(height: 8.0),
+            ],
+            if (item.text.isNotEmpty)
+              Text(
+                item.text,
+                style: TextStyle(
+                  color: isUser ? userFg : modelFg,
+                  fontSize: 14.5,
+                  height: 1.35,
+                ),
+              ),
             if (item.isStreaming) ...[
               const SizedBox(height: 4.0),
               SizedBox(
@@ -527,12 +633,40 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
             ),
           ),
           const SizedBox(width: 8.0),
-          Text(
-            'Gemini Live responding...',
-            style: TextStyle(
-              fontSize: 12.0,
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              'Gemini Live responding...',
+              style: TextStyle(
+                fontSize: 12.0,
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(12.0),
+            onTap: _handleStopSpeaking,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.stop_circle_rounded,
+                    size: 16.0,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 4.0),
+                  Text(
+                    'Stop',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -555,52 +689,105 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
           ),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Push-to-Talk / Mic Button Toggle
-          GeminiLiveMicButton(
-            isRecording: _isRecordingMic,
-            size: 42.0,
-            iconSize: 20.0,
-            onPressed: () {
-              setState(() {
-                _isRecordingMic = !_isRecordingMic;
-              });
-              if (!_isRecordingMic) {
-                _controller.stopUserSpeaking();
-              }
-            },
-          ),
-          const SizedBox(width: 8.0),
-
-          // Text Field
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
-              decoration: InputDecoration(
-                hintText: widget.inputHint,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14.0,
-                  vertical: 10.0,
-                ),
-                filled: true,
-                fillColor: isDark ? Colors.grey.shade800 : Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24.0),
-                  borderSide: BorderSide.none,
-                ),
+          // Attached image thumbnail preview chip
+          if (_attachedImageBytes != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8.0),
+              alignment: Alignment.centerLeft,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.memory(
+                      _attachedImageBytes!,
+                      width: 64.0,
+                      height: 64.0,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 2.0,
+                    right: 2.0,
+                    child: GestureDetector(
+                      onTap: clearAttachedImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(2.0),
+                        decoration: const BoxDecoration(
+                          color: Colors.black87,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 14.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 8.0),
+          Row(
+            children: [
+              // Push-to-Talk / Mic Button Toggle
+              GeminiLiveMicButton(
+                isRecording: _isRecordingMic,
+                size: 42.0,
+                iconSize: 20.0,
+                onPressed: () {
+                  setState(() {
+                    _isRecordingMic = !_isRecordingMic;
+                  });
+                  if (!_isRecordingMic) {
+                    _controller.stopUserSpeaking();
+                  }
+                },
+              ),
+              const SizedBox(width: 6.0),
 
-          // Send Icon Button
-          IconButton.filled(
-            icon: const Icon(Icons.send_rounded, size: 18.0),
-            onPressed: _sendMessage,
+              // Attachment action button (if onAttachPressed provided)
+              if (widget.onAttachPressed != null) ...[
+                IconButton(
+                  tooltip: 'Attach Image / Photo',
+                  icon: const Icon(Icons.add_photo_alternate_rounded),
+                  onPressed: () => widget.onAttachPressed!(context, _controller),
+                ),
+                const SizedBox(width: 4.0),
+              ],
+
+              // Text Field
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  decoration: InputDecoration(
+                    hintText: widget.inputHint,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14.0,
+                      vertical: 10.0,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey.shade800 : Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24.0),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8.0),
+
+              // Send Icon Button
+              IconButton.filled(
+                icon: const Icon(Icons.send_rounded, size: 18.0),
+                onPressed: _sendMessage,
+              ),
+            ],
           ),
         ],
       ),

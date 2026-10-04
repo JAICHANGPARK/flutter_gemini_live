@@ -37,6 +37,12 @@ class LiveTranscriptItem {
   /// Optional vocal style instruction.
   final String? style;
 
+  /// Optional image attachment bytes for multimodal user turns.
+  final Uint8List? imageBytes;
+
+  /// Optional MIME type for attached image (e.g. `'image/jpeg'`).
+  final String? imageMimeType;
+
   /// Timestamp when this segment was created.
   final DateTime timestamp;
 
@@ -49,6 +55,8 @@ class LiveTranscriptItem {
     required this.text,
     this.speaker,
     this.style,
+    this.imageBytes,
+    this.imageMimeType,
     required this.timestamp,
     this.isStreaming = false,
   });
@@ -59,6 +67,8 @@ class LiveTranscriptItem {
     String? text,
     String? speaker,
     String? style,
+    Uint8List? imageBytes,
+    String? imageMimeType,
     DateTime? timestamp,
     bool? isStreaming,
   }) {
@@ -67,6 +77,8 @@ class LiveTranscriptItem {
       text: text ?? this.text,
       speaker: speaker ?? this.speaker,
       style: style ?? this.style,
+      imageBytes: imageBytes ?? this.imageBytes,
+      imageMimeType: imageMimeType ?? this.imageMimeType,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
     );
@@ -312,6 +324,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
     required String text,
     String? speaker,
     String? style,
+    Uint8List? imageBytes,
+    String? imageMimeType,
     required bool isStreaming,
   }) {
     _latestTranscript = text;
@@ -325,6 +339,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
         text: last.text + text,
         speaker: speaker ?? last.speaker,
         style: style ?? last.style,
+        imageBytes: imageBytes ?? last.imageBytes,
+        imageMimeType: imageMimeType ?? last.imageMimeType,
         isStreaming: isStreaming,
       );
     } else {
@@ -334,6 +350,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
           text: text,
           speaker: speaker,
           style: style,
+          imageBytes: imageBytes,
+          imageMimeType: imageMimeType,
           timestamp: DateTime.now(),
           isStreaming: isStreaming,
         ),
@@ -386,6 +404,16 @@ class GeminiLiveSessionController extends ChangeNotifier {
     }
   }
 
+  /// Immediately interrupts and stops model AI audio speaking and generation.
+  void stopModelSpeaking() {
+    if (_isModelSpeaking) {
+      _isModelSpeaking = false;
+      _isInterrupted = true;
+      _finalizeStreamingTranscripts();
+      notifyListeners();
+    }
+  }
+
   /// Sends a real-time text message to the model turn.
   void sendRealtimeText(String text, {bool turnComplete = true}) {
     if (_session == null || !isConnected) return;
@@ -401,6 +429,61 @@ class GeminiLiveSessionController extends ChangeNotifier {
         Content(
           role: 'user',
           parts: [Part(text: text)],
+        ),
+      ],
+      turnComplete: turnComplete,
+    );
+  }
+
+  /// Sends a complete multimodal user turn combining optional [imageBytes] and [text].
+  ///
+  /// This transmits both the image (camera snapshot or gallery file) and user text
+  /// within a single [Content] turn.
+  void sendRealtimeTurn({
+    String? text,
+    Uint8List? imageBytes,
+    String imageMimeType = 'image/jpeg',
+    List<Part>? additionalParts,
+    bool turnComplete = true,
+  }) {
+    if (_session == null || !isConnected) return;
+
+    final parts = <Part>[];
+
+    if (imageBytes != null && imageBytes.isNotEmpty) {
+      parts.add(
+        Part(
+          inlineData: Blob(
+            mimeType: imageMimeType,
+            data: base64Encode(imageBytes),
+          ),
+        ),
+      );
+    }
+
+    if (text != null && text.isNotEmpty) {
+      parts.add(Part(text: text));
+    }
+
+    if (additionalParts != null) {
+      parts.addAll(additionalParts);
+    }
+
+    if (parts.isEmpty) return;
+
+    _appendOrUpdateTranscript(
+      role: 'user',
+      text: text ?? '',
+      imageBytes: imageBytes,
+      imageMimeType: imageMimeType,
+      isStreaming: !turnComplete,
+    );
+
+    _session!.sendClientContent(
+      turns: [
+        Content(
+          role: 'user',
+          parts: parts,
         ),
       ],
       turnComplete: turnComplete,
