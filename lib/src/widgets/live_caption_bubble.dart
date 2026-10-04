@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// A floating caption and subtitle bubble widget for Gemini Live conversations.
@@ -143,8 +144,13 @@ class _GeminiLiveCaptionBubbleState extends State<GeminiLiveCaptionBubble>
     }
 
     final isModel = widget.role.toLowerCase() == 'model';
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    Brightness? brightness;
+    try {
+      brightness = Theme.of(context).brightness;
+    } catch (_) {
+      brightness = CupertinoTheme.maybeBrightnessOf(context);
+    }
+    final isDark = brightness == Brightness.dark;
 
     final defaultBg = widget.backgroundColor ??
         (isDark

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// An animated audio visualizer indicator for Gemini Live sessions.
@@ -67,12 +68,22 @@ class _GeminiLiveVoiceIndicatorState extends State<GeminiLiveVoiceIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    Brightness? brightness;
+    Color? surfaceColor;
+    try {
+      final theme = Theme.of(context);
+      brightness = theme.brightness;
+      surfaceColor = theme.colorScheme.onSurface;
+    } catch (_) {
+      brightness = CupertinoTheme.maybeBrightnessOf(context);
+      surfaceColor = CupertinoColors.label.resolveFrom(context);
+    }
+
+    final isDark = brightness == Brightness.dark;
     final barColor = widget.color ??
         (isDark
             ? Colors.white.withValues(alpha: 0.9)
-            : theme.colorScheme.onSurface.withValues(alpha: 0.85));
+            : surfaceColor.withValues(alpha: 0.85));
 
     return SizedBox(
       height: widget.height,

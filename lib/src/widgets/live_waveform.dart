@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../utils/audio_utils.dart';
 
@@ -173,7 +174,18 @@ class _GeminiLiveWaveformState extends State<GeminiLiveWaveform>
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = widget.color ?? Theme.of(context).colorScheme.primary;
+    Color? themePrimary;
+    try {
+      themePrimary = Theme.of(context).colorScheme.primary;
+    } catch (_) {
+      try {
+        themePrimary = CupertinoTheme.of(context).primaryColor;
+      } catch (_) {
+        themePrimary = const Color(0xFF007AFF);
+      }
+    }
+
+    final effectiveColor = widget.color ?? themePrimary;
 
     return SizedBox(
       width: widget.width,
