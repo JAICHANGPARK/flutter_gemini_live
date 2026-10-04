@@ -20,6 +20,16 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, **GitHub Copilot** など）をご利用の場合、コード生成前にパッケージ公式の Skill 仕様を必ず参照してください：
 
+### 利用可能な専用スキル (Available Skills)
+
+| スキル (Skill) | 説明 (Description) | プロンプト例 (Example prompt) |
+|---|---|---|
+| [`flutter-gemini-live`](skills/flutter-gemini-live/SKILL.md) | Firebase を使わずに Google Gemini Live API を直接使用して Flutter でリアルタイム・マルチモーダル・ストリーミングアプリを構築（低遅延音声対話、カメラ映像ストリーミング、Function Calling、音声文字起こし、リアルタイム翻訳、Lyria 音楽生成など） | *Gemini Live の音声通話画面、カメラストリーミング、ツール呼び出し機能を実装してください* |
+| [`gemini-live-widgets`](skills/gemini-live-widgets/SKILL.md) | ビルトイン Flutter Material 3 & Cupertino UI コンポーネント：マイクボタン、32バンド FFT 波形ビジュアライザ、すりガラス字幕バブル、ステータスピル、トークン監視バッジ、および `GeminiLiveSessionController` 連携ガイド | *Gemini Live の通話画面にリアルタイム音声波形ビューとアニメーション付きマイクボタンを追加してください* |
+| [`gemini-live-firebase-migration`](skills/gemini-live-firebase-migration/SKILL.md) | `firebase_ai` (Firebase AI Logic) と `gemini_live` 間の 1:1 双方向移行。`package:gemini_live/compat/firebase_ai.dart` を使用して既存コードを変更せずに Firebase 依存を完全排除 | *既存の firebase_ai LiveSession コードを gemini_live に移行して Firebase 依存を削除してください* |
+
+### エージェントの互換性とスキル探索パス (Agent Compatibility)
+
 | アシスタント / エコシステム | 専用 Skill 探索パス | プロジェクトガイド |
 |---|---|---|
 | **ルート共通 / AGENTS.md** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | [`AGENTS.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/AGENTS.md) |
@@ -30,36 +40,6 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 | **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills オープン標準** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
-
-**🔄 Firebase AI Logic 移行スキル** — `firebase_ai` と `gemini_live` の間で Live コードを双方向に移行するときに使用します（[移行ガイド](#移行ガイド-migration) を参照）：
-
-| アシスタント / エコシステム | 移行スキルのパス |
-|---|---|
-| **共通 Skills / Hermes** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
-
-**🎨 ウィジェットスキル** — 組み込み UI ウィジェットのパラメータ、セッションとの接続方法、UI パターンを扱います（[組み込み UI ウィジェット](#組み込み-ui-ウィジェット-pre-built-ui-widgets) を参照）：
-
-| アシスタント / エコシステム | ウィジェットスキルのパス |
-|---|---|
-| **共通 Skills / Hermes** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-widgets/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-widgets/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-widgets/SKILL.md) |
-
-**🔗 Skill を直接取得** — pub.dev パッケージには隠しフォルダ（`.claude/`、`.gemini/` など）が含まれないため、以下のリンクを使用してください：
-- **Raw Markdown（エージェント用）**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
-- **ウィジェットスキル** (`gemini-live-widgets`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-widgets/SKILL.md
-- **Firebase 移行スキル** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
-- **`flutter pub get` 後のローカルコピー**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)

@@ -20,6 +20,16 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 
 AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, **GitHub Copilot** 등)를 사용하는 개발자 및 AI 에이전트는 코드 작성 전에 패키지 전용 스킬 명세서를 먼저 참조하십시오:
 
+### 제공되는 전용 스킬 (Available Skills)
+
+| 스킬 (Skill) | 설명 (Description) | 예시 프롬프트 (Example prompt) |
+|---|---|---|
+| [`flutter-gemini-live`](skills/flutter-gemini-live/SKILL.md) | Firebase 없이 Google Gemini Live API를 사용하여 Flutter에서 실시간 멀티모달 스트리밍 앱 구축 (저지연 음성 대화, 카메라 비디오 스트리밍, 함수 호출, 오디오 전사, 실시간 통역, Lyria 음악 생성 등) | *Gemini Live 음성 대화 화면과 카메라 스트리밍 및 도구 호출 기능을 구현해줘* |
+| [`gemini-live-widgets`](skills/gemini-live-widgets/SKILL.md) | 사전 제작된 Flutter Material 3 & Cupertino UI 위젯: 마이크 토글 버튼, 32밴드 FFT 파형 비주얼라이저, 반투명 자막 버블, 상태 알약, 토큰 모니터 및 `GeminiLiveSessionController` 연동 가이드 | *Gemini Live 통화 화면에 실시간 오디오 파형 뷰와 반응형 마이크 버튼을 추가해줘* |
+| [`gemini-live-firebase-migration`](skills/gemini-live-firebase-migration/SKILL.md) | `firebase_ai` (Firebase AI Logic)와 `gemini_live` 간의 1:1 양방향 마이그레이션. `package:gemini_live/compat/firebase_ai.dart`를 통해 기존 코드 수정 없이 Firebase 종속성 제거 | *기존 firebase_ai LiveSession 코드를 gemini_live로 마이그레이션해서 Firebase를 제거해줘* |
+
+### 에이전트 호환성 및 스킬 탐색 경로 (Agent Compatibility)
+
 | 어시스턴트 / 에코시스템 | 전용 스킬 탐색 경로 | 프로젝트 가이드 |
 |---|---|---|
 | **루트 표준 / AGENTS.md** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | [`AGENTS.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/AGENTS.md) |
@@ -30,36 +40,6 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 | **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
-
-**🔄 Firebase AI Logic 마이그레이션 스킬** — `firebase_ai`와 `gemini_live` 사이에서 Live 코드를 양방향으로 옮길 때 사용합니다 ([마이그레이션 가이드](#마이그레이션-가이드-migration) 참고):
-
-| 어시스턴트 / 에코시스템 | 마이그레이션 스킬 경로 |
-|---|---|
-| **공통 Skills / Hermes** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
-
-**🎨 위젯 스킬** — 내장 UI 위젯의 파라미터, 세션 연결 방법, UI 패턴을 다룹니다 ([내장 UI 위젯](#내장-ui-위젯-pre-built-ui-widgets) 참고):
-
-| 어시스턴트 / 에코시스템 | 위젯 스킬 경로 |
-|---|---|
-| **공통 Skills / Hermes** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-widgets/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-widgets/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-widgets/SKILL.md) |
-
-**🔗 스킬 직접 가져오기** — pub.dev 패키지에는 숨김 폴더(`.claude/`, `.gemini/` 등)가 포함되지 않으므로 아래 링크를 사용하세요:
-- **Raw Markdown (에이전트용)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
-- **위젯 스킬** (`gemini-live-widgets`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-widgets/SKILL.md
-- **Firebase 마이그레이션 스킬** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
-- **`flutter pub get` 후 로컬 사본**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)

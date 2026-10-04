@@ -21,6 +21,16 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 如果您使用的是 AI 编程助手（**Claude Code**、**Gemini CLI / Antigravity**、**OpenAI Codex**、**Cursor**、**Windsurf**、**GitHub Copilot** 等）：
 在编写代码前，请务必首先查阅软件包官方 Skill 规范：
 
+### 可用技能 (Available Skills)
+
+| 技能 (Skill) | 描述 (Description) | 提示词示例 (Example prompt) |
+|---|---|---|
+| [`flutter-gemini-live`](skills/flutter-gemini-live/SKILL.md) | 在 Flutter 中无需 Firebase 直接连接 Google Gemini Live API 构建低延迟多模态流式应用（低延迟语音通话、摄像头视频流、工具函数调用、音频转录、实时翻译、Lyria 音乐生成等） | *构建一个包含摄像头实时画面流与函数调用的低延迟 Gemini Live 语音通话界面* |
+| [`gemini-live-widgets`](skills/gemini-live-widgets/SKILL.md) | 开箱即用的 Flutter Material 3 与 Cupertino UI 组件：麦克风波纹按钮、32 段 FFT 频谱波形图、磨砂玻璃字幕气泡、状态胶囊、Token 用量监控及 `GeminiLiveSessionController` 状态绑定指南 | *在我的 Gemini Live 通话页面中添加实时音频波形图和动态麦克风按钮* |
+| [`gemini-live-firebase-migration`](skills/gemini-live-firebase-migration/SKILL.md) | `firebase_ai` (Firebase AI Logic) 与 `gemini_live` 之间的 1:1 双向无缝迁移。使用 `package:gemini_live/compat/firebase_ai.dart` 无需改动业务逻辑即可完全移除 Firebase 依赖 | *将现有的 firebase_ai LiveSession 代码迁移到 gemini_live 并移除 Firebase 依赖* |
+
+### 智能体兼容性与技能发现路径 (Agent Compatibility)
+
 | 助手 / 生态系统 | 原生 Skill 探索路径 | 项目指南 |
 |---|---|---|
 | **根目录通用 / AGENTS.md** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | [`AGENTS.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/AGENTS.md) |
@@ -31,36 +41,6 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 | **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
-
-**🔄 Firebase AI Logic 迁移技能** — 用于在 `firebase_ai` 与 `gemini_live` 之间双向迁移 Live 代码（参见[迁移指南](#迁移指南-migration)）：
-
-| 助手 / 生态系统 | 迁移技能路径 |
-|---|---|
-| **通用 Skills / Hermes** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
-
-**🎨 组件技能** — 内置 UI 组件的参数、会话接入方式和 UI 模式（参见[内置 UI 组件](#内置-ui-组件-pre-built-ui-widgets)）：
-
-| 助手 / 生态系统 | 组件技能路径 |
-|---|---|
-| **通用 Skills / Hermes** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-widgets/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-widgets/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-widgets/SKILL.md) |
-
-**🔗 直接获取 Skill** — pub.dev 软件包不包含隐藏文件夹（`.claude/`、`.gemini/` 等），请使用以下链接：
-- **Raw Markdown（供智能体使用）**：https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
-- **组件技能** (`gemini-live-widgets`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-widgets/SKILL.md
-- **Firebase 迁移技能** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
-- **`flutter pub get` 后的本地副本**：`<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)

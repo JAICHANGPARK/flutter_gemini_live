@@ -21,6 +21,16 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex**, **Cursor**, **Windsurf**, or **GitHub Copilot**):
 👉 **Read the official package skill specification first:**
 
+### Available Skills
+
+| Skill | Description | Example prompt |
+|---|---|---|
+| [`flutter-gemini-live`](skills/flutter-gemini-live/SKILL.md) | Build real-time, multimodal streaming applications in Flutter using Google Gemini Live API without Firebase. Covers low-latency voice chat, video camera streaming, function calling, audio transcription, live translation, and Lyria real-time music generation. | *Build a low-latency Gemini Live voice chat screen with camera streaming and function calling* |
+| [`gemini-live-widgets`](skills/gemini-live-widgets/SKILL.md) | Pre-built Flutter Material 3 & Cupertino UI components: mic buttons, FFT spectrum waveforms, frosted glass captions, status pills, and token usage monitors with `GeminiLiveSessionController` wiring. | *Add an animated microphone button and real-time audio waveform visualizer to my Gemini Live call view* |
+| [`gemini-live-firebase-migration`](skills/gemini-live-firebase-migration/SKILL.md) | 1:1 bidirectional migration between `firebase_ai` (Firebase AI Logic) and `gemini_live`. Drop Firebase dependencies without changing your Live session code using `package:gemini_live/compat/firebase_ai.dart`. | *Migrate my existing firebase_ai LiveSession code to gemini_live to remove Firebase dependencies* |
+
+### Agent Compatibility & Discovery Paths
+
 | Assistant / Ecosystem | Native Skill Discovery Path | Project Instructions |
 |---|---|---|
 | **Root Universal / AGENTS.md** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | [`AGENTS.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/AGENTS.md) |
@@ -31,36 +41,6 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
 | **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
-
-**🔄 Firebase AI Logic migration skill** — for moving Live code between `firebase_ai` and `gemini_live` in either direction (see [Migration](#migration)):
-
-| Assistant / Ecosystem | Migration Skill Path |
-|---|---|
-| **Common Skills / Hermes** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-firebase-migration/SKILL.md) |
-
-**🎨 Widgets skill** — parameters, wiring and UI patterns for the pre-built widgets (see [Pre-built UI Widgets](#pre-built-ui-widgets)):
-
-| Assistant / Ecosystem | Widgets Skill Path |
-|---|---|
-| **Common Skills / Hermes** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
-| **Hermes Agent** | [`.hermes/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-widgets/SKILL.md) |
-| **Pi Agent** | [`.pi/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-widgets/SKILL.md) |
-| **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
-| **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
-| **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
-| **Agent Skills** | [`.agents/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/gemini-live-widgets/SKILL.md) |
-
-**🔗 Fetch the skill directly** — hidden folders (`.claude/`, `.gemini/`, …) are not shipped in the pub.dev package, so use these links:
-- **Raw Markdown (for agents)**: https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/flutter-gemini-live/SKILL.md
-- **Widgets skill** (`gemini-live-widgets`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-widgets/SKILL.md
-- **Firebase migration skill** (`gemini-live-firebase-migration`): https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/gemini-live-firebase-migration/SKILL.md
-- **Local copy after `flutter pub get`**: `<PUB_CACHE>/hosted/pub.dev/gemini_live-<version>/skills/flutter-gemini-live/SKILL.md`
 
 ```bash
 # Install as a global skill (keep only the agents you use)
