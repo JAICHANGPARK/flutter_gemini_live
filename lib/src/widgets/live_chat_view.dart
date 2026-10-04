@@ -58,7 +58,24 @@ class GeminiLiveChatView extends StatefulWidget {
   final GenerationConfig? config;
 
   /// System instructions defining model persona and behavior.
+  /// If null and [systemPrompt] is not provided, defaults to [defaultSystemInstruction].
   final Content? systemInstruction;
+
+  /// Convenient string-based system prompt for persona and behavior.
+  /// If provided, this is converted into a [Content] object unless [systemInstruction] is specified.
+  final String? systemPrompt;
+
+  /// Default system instruction applied when neither [systemInstruction] nor [systemPrompt] is provided.
+  static final Content defaultSystemInstruction = Content(
+    role: 'system',
+    parts: [
+      Part(
+        text:
+            'You are a helpful, friendly, and concise real-time voice and multimodal AI assistant. '
+            'Keep your responses conversational, natural, and direct.',
+      ),
+    ],
+  );
 
   /// Optional tools available to the model (Google Search, function calling).
   final List<Tool>? tools;
@@ -114,6 +131,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.model = LiveModels.gemini38Live,
     this.config,
     this.systemInstruction,
+    this.systemPrompt,
     this.tools,
     this.controller,
     this.autoConnect = true,
@@ -197,11 +215,19 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
 
   Future<void> _connectSession() async {
     try {
+      final effectiveSystemInstruction = widget.systemInstruction ??
+          (widget.systemPrompt != null
+              ? Content(
+                  role: 'system',
+                  parts: [Part(text: widget.systemPrompt!)],
+                )
+              : GeminiLiveChatView.defaultSystemInstruction);
+
       await _controller.connect(
         LiveConnectParameters(
           model: widget.model,
           config: widget.config,
-          systemInstruction: widget.systemInstruction,
+          systemInstruction: effectiveSystemInstruction,
           tools: widget.tools,
           callbacks: LiveCallbacks(
             onError: (err, st) {

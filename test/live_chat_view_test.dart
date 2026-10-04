@@ -121,5 +121,22 @@ void main() {
 
       controller.dispose();
     });
+
+    testWidgets('supports systemPrompt and defaultSystemInstruction fallback',
+        (tester) async {
+      // 1. With string systemPrompt
+      const viewWithPrompt = GeminiLiveChatView(
+        apiKey: 'dummy_api_key',
+        systemPrompt: 'Custom prompt text',
+        autoConnect: false,
+      );
+      expect(viewWithPrompt.systemPrompt, 'Custom prompt text');
+
+      // 2. Default instruction check
+      expect(
+        GeminiLiveChatView.defaultSystemInstruction.parts!.first.text,
+        contains('You are a helpful, friendly, and concise'),
+      );
+    });
   });
 }
