@@ -43,14 +43,11 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
 | **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
 ```bash
-# Install as a global skill (keep only the agents you use)
-for d in ~/.claude ~/.gemini ~/.codex ~/.agents ~/.hermes ~/.pi; do
-  for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
-    mkdir -p "$d/skills/$s"
-    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
-      -o "$d/skills/$s/SKILL.md"
-  done
-done
+# Quick install for all active agents (auto-detects ~/.claude, ~/.gemini, ~/.codex, etc.)
+curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
+
+# Or install for specific agent(s) only:
+# curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash -s -- claude gemini
 ```
 
 ### 📌 Core Agent Rules & Invariants

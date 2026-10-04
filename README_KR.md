@@ -42,14 +42,11 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 | **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
 ```bash
-# Install as a global skill (keep only the agents you use)
-for d in ~/.claude ~/.gemini ~/.codex ~/.agents ~/.hermes ~/.pi; do
-  for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
-    mkdir -p "$d/skills/$s"
-    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
-      -o "$d/skills/$s/SKILL.md"
-  done
-done
+# 사용 중인 모든 에이전트 자동 감지 및 빠른 설치 (~/.claude, ~/.gemini, ~/.codex 등)
+curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
+
+# 또는 특정 에이전트만 지정하여 설치:
+# curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash -s -- claude gemini
 ```
 
 ### 📌 AI 에이전트 핵심 구현 수칙

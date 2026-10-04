@@ -43,14 +43,11 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 | **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
 ```bash
-# Install as a global skill (keep only the agents you use)
-for d in ~/.claude ~/.gemini ~/.codex ~/.agents ~/.hermes ~/.pi; do
-  for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
-    mkdir -p "$d/skills/$s"
-    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
-      -o "$d/skills/$s/SKILL.md"
-  done
-done
+# 自动检测正在使用的智能体并一键安装 (~/.claude, ~/.gemini, ~/.codex 等)
+curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
+
+# 或仅指定特定目标进行安装：
+# curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash -s -- claude gemini
 ```
 
 ### 📌 AI 智能体核心规范

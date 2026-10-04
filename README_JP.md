@@ -42,14 +42,11 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 | **Agent Skills オープン標準** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
 ```bash
-# Install as a global skill (keep only the agents you use)
-for d in ~/.claude ~/.gemini ~/.codex ~/.agents ~/.hermes ~/.pi; do
-  for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
-    mkdir -p "$d/skills/$s"
-    curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \
-      -o "$d/skills/$s/SKILL.md"
-  done
-done
+# アクティブなエージェントを自動検出して一括インストール (~/.claude, ~/.gemini, ~/.codex など)
+curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
+
+# または特定のターゲットのみを指定してインストール:
+# curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash -s -- claude gemini
 ```
 
 ### 📌 AI エージェント実装ルール
