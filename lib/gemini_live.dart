@@ -23,5 +23,6 @@ export 'src/widgets/live_barge_in_banner.dart';
 export 'src/widgets/live_control_bar.dart';
 export 'src/widgets/live_voice_selector.dart';
 export 'src/widgets/live_vision_overlay.dart';
+export 'src/widgets/live_chat_view.dart';
 export 'src/music_service.dart';
 export 'src/auth_tokens_service.dart';

@@ -454,6 +454,11 @@ class GeminiLiveSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Injects a server message for unit and widget testing purposes.
+  void handleServerMessageForTesting(LiveServerMessage message) {
+    _handleServerMessage(message);
+  }
+
   void _setState(LiveSessionState newState) {
     if (_state != newState) {
       _state = newState;

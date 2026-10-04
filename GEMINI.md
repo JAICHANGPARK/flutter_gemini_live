@@ -32,13 +32,21 @@ lib/
     │   ├── audio_utils.dart             # RMS, peak, dBFS, visual scaling
     │   ├── token_usage_tracker.dart     # Token accounting tracker
     │   └── wav_header.dart              # Audio header utility
-    └── widgets/                  # Pre-built Material 3 UI widgets
+    └── widgets/                  # Pre-built Material 3 & Cupertino UI widgets
+        ├── live_chat_view.dart          # High-level pluggable full-screen chat UI
         ├── live_caption_bubble.dart     # Frosted glass subtitle bubble
         ├── live_mic_button.dart         # Concentric ripple mic toggle
         ├── live_status_badge.dart       # Connection status pill
         ├── live_usage_badge.dart        # Token usage monitor
         ├── live_voice_indicator.dart    # Dual-harmonic wave visualizer
-        └── live_waveform.dart           # Real-time audio waveform visualizer
+        ├── live_waveform.dart           # Real-time audio waveform visualizer
+        ├── live_barge_in_banner.dart    # Interruption notification banner
+        ├── live_control_bar.dart        # Floating call interaction control bar
+        ├── live_vision_overlay.dart     # Computer vision viewfinder HUD overlay
+        ├── live_voice_selector.dart     # Voice persona bottom sheet selector
+        ├── cupertino_live_mic_button.dart    # iOS native mic button
+        ├── cupertino_live_status_badge.dart  # iOS native status badge
+        └── cupertino_live_usage_badge.dart   # iOS native token usage badge
 ```
 
 ---
