@@ -153,22 +153,17 @@ void main() {
     });
 
     testWidgets(
-        'renders phone connection button and calls onDisconnectPressed when connected',
+        'renders phone connection button in AppBar',
         (tester) async {
       final genAI = GoogleGenAI(apiKey: 'dummy_api_key');
       final controller =
           GeminiLiveSessionController(liveService: genAI.live);
-
-      bool disconnectTapped = false;
 
       await tester.pumpWidget(
         MaterialApp(
           home: GeminiLiveChatView(
             controller: controller,
             autoConnect: false,
-            onDisconnectPressed: () {
-              disconnectTapped = true;
-            },
           ),
         ),
       );
