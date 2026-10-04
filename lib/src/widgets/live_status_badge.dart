@@ -59,7 +59,7 @@ class GeminiLiveStatusBadge extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
   });
 
-  /// Convenient factory constructor determining [state] from boolean connection flags
+  /// Creates a status badge determining [state] from boolean connection flags
   /// and optional [interactionStatus].
   factory GeminiLiveStatusBadge.fromFlags({
     Key? key,

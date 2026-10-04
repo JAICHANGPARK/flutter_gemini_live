@@ -2632,25 +2632,25 @@ class WeightedPrompt {
 /// Configuration options for realtime music generation.
 @JsonSerializable(includeIfNull: false)
 class LiveMusicGenerationConfig {
-  /// Controls variance in audio generation [0.0, 3.0]. Higher values produce higher variance.
+  /// Controls variance in audio generation from 0.0 to 3.0. Higher values produce higher variance.
   final double? temperature;
 
-  /// Top-K sampling parameter [1, 1000].
+  /// Top-K sampling parameter from 1 to 1000.
   final int? topK;
 
   /// Random seed for reproducible generation.
   final int? seed;
 
-  /// Controls prompt adherence [0.0, 6.0]. Higher guidance follows more closely.
+  /// Controls prompt adherence from 0.0 to 6.0. Higher guidance follows more closely.
   final double? guidance;
 
-  /// Beats per minute [60, 200].
+  /// Beats per minute between 60 and 200.
   final int? bpm;
 
-  /// Density of sounds [0.0, 1.0].
+  /// Density of sounds from 0.0 to 1.0.
   final double? density;
 
-  /// Brightness of the music [0.0, 1.0].
+  /// Brightness of the music from 0.0 to 1.0.
   final double? brightness;
 
   /// Musical scale of the generated music.

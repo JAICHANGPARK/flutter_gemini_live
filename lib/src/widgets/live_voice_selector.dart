@@ -218,8 +218,13 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
 
 /// Description of a prebuilt Gemini Live voice.
 class GeminiVoiceOption {
+  /// The official name of the voice persona (e.g. "Puck", "Charon").
   final String name;
+
+  /// The characteristic tonal style and persona description.
   final String tone;
+
+  /// The perceived vocal pitch or gender profile.
   final String gender;
 
   const GeminiVoiceOption({

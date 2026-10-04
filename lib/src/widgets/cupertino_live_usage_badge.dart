@@ -134,6 +134,7 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
 
 /// An iOS / Cupertino-styled modal dialog presenting token usage breakdowns.
 class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
+  /// The usage tracker providing real-time metrics.
   final GeminiTokenUsageTracker tracker;
 
   const CupertinoGeminiLiveUsageDetailsDialog({
