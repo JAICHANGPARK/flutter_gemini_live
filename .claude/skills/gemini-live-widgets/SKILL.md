@@ -141,6 +141,27 @@ Input rules: if both streams are given, `amplitudeStream` wins and `audioStream`
 
 `GeminiLiveUsageDetailsDialog(tracker:)` can also be shown directly with `showDialog`.
 
+### 🍎 iOS / Cupertino Widgets (for iOS apps & HIG compliance)
+
+For apps built with `CupertinoApp` or seeking Apple Human Interface Guidelines styling, the package ships dedicated Cupertino counterparts:
+
+| Widget | Counterpart for | Highlights |
+| :--- | :--- | :--- |
+| **`CupertinoGeminiLiveStatusBadge`** | `GeminiLiveStatusBadge` | iOS translucent capsule background, `CupertinoColors` resolution, dynamic dark/light surface. Factory: `.fromFlags(...)`. |
+| **`CupertinoGeminiLiveMicButton`** | `GeminiLiveMicButton` | iOS spring scale-down press animation (`AnimatedScale`), `HapticFeedback` light/medium impact, translucent red ripple aura. |
+| **`CupertinoGeminiLiveUsageBadge`** | `GeminiLiveUsageBadge` | iOS-styled token status pill opening `CupertinoAlertDialog` with compact modal metrics breakdown. |
+
+*Note: `GeminiLiveCaptionBubble`, `GeminiLiveWaveform`, and `GeminiLiveVoiceIndicator` are designed to work seamlessly in both `MaterialApp` and `CupertinoApp` by automatically adapting their brightness and primary tint.*
+
+### 🚀 Advanced Multimodal & Call Interaction Widgets
+
+| Widget | Class | Highlights |
+| :--- | :--- | :--- |
+| **Barge-In Banner** | `GeminiLiveBargeInBanner` | Slides & fades in when user interrupts the model (`isInterrupted: controller.isInterrupted`). Reassures the user that AI is listening. |
+| **Call Control Bar** | `GeminiLiveControlBar` | All-in-one floating call pill with Mic Mute, Video Toggle, Camera Flip, and Hang Up End Call buttons. |
+| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.show(context, currentVoice:)`) for switching official voices (Puck, Charon, Kore, Fenrir, Aoede, etc.) with tone tags. |
+| **Vision Overlay** | `GeminiLiveVisionOverlay` | Wraps any camera preview with Project Astra style radar scanlines, corner HUD target reticles, and in-flight analysis indicator. |
+
 ### `GeminiLiveAudioUtils` and `addWavHeader`
 
 All take 16-bit PCM LE bytes:
