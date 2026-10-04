@@ -32,14 +32,34 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
   bool _isConnected = false;
   bool _isPlaying = false;
 
+  // Side console panel state
+  bool _showSidePanel = true;
+  final TextEditingController _customPromptController = TextEditingController(
+    text: 'Energetic futuristic dance track with heavy punchy kicks and sparkling synth arpeggios',
+  );
+  double _customPromptWeight = 0.85;
+  bool _customPromptActive = false;
+
   // Music parameters
   int _bpm = 120;
-  final MusicGenerationMode _mode = MusicGenerationMode.QUALITY;
+  MusicGenerationMode _mode = MusicGenerationMode.QUALITY;
   Scale? _selectedScale;
+  double _guidance = 4.0;
+  double _density = 0.5;
+  double _brightness = 0.5;
+  final double _temperature = 1.1;
+  bool _muteBass = false;
+  bool _muteDrums = false;
+
+  // Real-time log entries
+  final List<_MidiLogEntry> _logs = [];
+  final ScrollController _logScrollController = ScrollController();
+  int _chunkCounter = 0;
 
   // Real-time audio RMS for beat pulse
   double _rmsLevel = 0.0;
   late final AnimationController _pulseAnim;
+  Timer? _knobDebounceTimer;
 
   // 16 Dial Pads matching the reference DJ MIDI Box
   late final List<_MidiKnobData> _knobs;
@@ -138,7 +158,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       // Row 4
       _MidiKnobData(
         title: 'K Pop',
-        prompt: 'Catchy modern energetic K-Pop upbeat synth hook and polished drum production',
+        prompt:
+            'High-energy K-Pop dance idol track with infectious bright synth brass hook, punchy sidechained dance-pop 808 bass, crisp percussion claps, and glossy modern Korean pop production',
         color: const Color(0xFFEC4899), // Hot Pink
         weight: 0.0,
       ),
@@ -165,10 +186,30 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
   @override
   void dispose() {
+    _knobDebounceTimer?.cancel();
+    _customPromptController.dispose();
+    _logScrollController.dispose();
     _pulseAnim.dispose();
     _session?.close();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _addLog(String text, {Color? color}) {
+    if (!mounted) return;
+    setState(() {
+      _logs.add(_MidiLogEntry(text, color: color));
+      if (_logs.length > 250) {
+        _logs.removeAt(0);
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_logScrollController.hasClients) {
+        _logScrollController.jumpTo(
+          _logScrollController.position.maxScrollExtent,
+        );
+      }
+    });
   }
 
   // ==========================================================================
@@ -182,6 +223,7 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     }
 
     setState(() => _isConnecting = true);
+    _addLog('🔌 Connecting to Lyria RealTime WebSocket...', color: const Color(0xFF38BDF8));
 
     try {
       final musicService = LiveMusicService(
@@ -195,12 +237,14 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           callbacks: LiveMusicCallbacks(
             onOpen: () {
               debugPrint('[MidiBox] WebSocket connection opened');
+              _addLog('✅ WebSocket opened: Connected to Google Lyria!', color: const Color(0xFF34D399));
             },
             onMessage: (message) {
               _handleServerMessage(message);
             },
             onError: (err, st) {
               debugPrint('[MidiBox] Error: $err');
+              _addLog('❌ WebSocket Error: $err', color: const Color(0xFFEF4444));
               if (mounted) {
                 setState(() {
                   _isConnected = false;
@@ -210,6 +254,7 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             },
             onClose: (code, reason) {
               debugPrint('[MidiBox] Closed: $code ($reason)');
+              _addLog('⚠️ WebSocket closed ($code: $reason)', color: const Color(0xFFF59E0B));
               if (mounted) {
                 setState(() {
                   _isConnected = false;
@@ -246,6 +291,7 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     } catch (e) {
       if (mounted) {
         setState(() => _isConnecting = false);
+        _addLog('❌ Connection failed: $e', color: const Color(0xFFEF4444));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Connection failed: $e'), backgroundColor: Colors.red),
         );
@@ -254,22 +300,53 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
   }
 
   void _handleServerMessage(LiveMusicServerMessage message) {
-    final chunk = message.audioChunk;
-    if (chunk != null && chunk.data != null) {
-      final bytes = chunk.bytes;
-      if (bytes != null && bytes.isNotEmpty) {
-        // Drop in-flight chunks if user has paused or stopped playback
-        if (!_isPlaying) return;
+    if (message.filteredPrompt != null) {
+      _addLog(
+        '⚠️ Filtered prompt: ${message.filteredPrompt?.text} (Reason: ${message.filteredPrompt?.filteredReason})',
+        color: const Color(0xFFEF4444),
+      );
+    }
 
-        _audioPlayer.appendPcmBytes(bytes);
+    final chunks = message.serverContent?.audioChunks;
+    if (chunks != null && chunks.isNotEmpty) {
+      if (!_isPlaying) return;
+      var totalBytes = 0;
+      for (final chunk in chunks) {
+        final bytes = chunk.bytes;
+        if (bytes != null && bytes.isNotEmpty) {
+          totalBytes += bytes.length;
+          _audioPlayer.appendPcmBytes(bytes);
+          final rms = GeminiLiveAudioUtils.calculateRms(bytes);
+          final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
 
-        final rms = GeminiLiveAudioUtils.calculateRms(bytes);
-        final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
+          if (mounted) {
+            setState(() {
+              _rmsLevel = visualScale.clamp(0.0, 1.0);
+            });
+          }
+        }
+      }
+      _chunkCounter++;
+      if (_chunkCounter % 16 == 0) {
+        _addLog(
+          '🔊 Stream playing: +$totalBytes bytes (48kHz Stereo PCM)',
+          color: const Color(0xFF10B981),
+        );
+      }
+    } else {
+      final chunk = message.audioChunk;
+      if (chunk != null && chunk.data != null) {
+        final bytes = chunk.bytes;
+        if (bytes != null && bytes.isNotEmpty && _isPlaying) {
+          _audioPlayer.appendPcmBytes(bytes);
+          final rms = GeminiLiveAudioUtils.calculateRms(bytes);
+          final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
 
-        if (mounted) {
-          setState(() {
-            _rmsLevel = visualScale.clamp(0.0, 1.0);
-          });
+          if (mounted) {
+            setState(() {
+              _rmsLevel = visualScale.clamp(0.0, 1.0);
+            });
+          }
         }
       }
     }
@@ -288,34 +365,54 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         _isPlaying = false;
         _rmsLevel = 0.0;
       });
+      _addLog('⏸️ Playback paused', color: Colors.white70);
     } else {
       _session?.play();
       setState(() => _isPlaying = true);
+      _addLog('▶️ Playback started', color: const Color(0xFFA855F7));
     }
   }
 
   void _sendWeightedPrompts() {
     if (_session == null) return;
 
-    // Filter knobs with weight > 0
-    final active = _knobs.where((k) => k.weight > 0.01).toList();
+    final List<WeightedPrompt> prompts = [];
 
-    final List<WeightedPrompt> prompts;
-    if (active.isEmpty) {
+    // 1. Injected custom text prompt (if active and not empty)
+    final customText = _customPromptController.text.trim();
+    if (_customPromptActive && customText.isNotEmpty && _customPromptWeight > 0.01) {
+      prompts.add(
+        WeightedPrompt(
+          text: customText,
+          weight: _customPromptWeight,
+        ),
+      );
+    }
+
+    // 2. Rotary Dial Prompts
+    final active = _knobs.where((k) => k.weight > 0.01).toList();
+    for (final k in active) {
+      prompts.add(WeightedPrompt(text: k.prompt, weight: k.weight));
+    }
+
+    if (prompts.isEmpty) {
       // Lyria requires at least one prompt
-      prompts = [
+      prompts.add(
         WeightedPrompt(
           text: 'Ambient synth pad drone with gentle harmonic undertones',
           weight: 0.1,
         ),
-      ];
-    } else {
-      prompts = active
-          .map((k) => WeightedPrompt(text: k.prompt, weight: k.weight))
-          .toList();
+      );
     }
 
     _session!.setWeightedPrompts(prompts);
+    final summary = prompts.map((p) {
+      final text = p.text ?? '';
+      final display = text.length > 20 ? '${text.substring(0, 18)}..' : text;
+      final weightPct = (((p.weight ?? 0.0)) * 100).round();
+      return '$display [$weightPct%]';
+    }).join(' · ');
+    _addLog('⚡ Prompts sent (${prompts.length}): $summary', color: const Color(0xFFFBBF24));
   }
 
   void _sendGenerationConfig() {
@@ -325,13 +422,19 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       bpm: _bpm,
       scale: _selectedScale,
       musicGenerationMode: _mode,
-      temperature: 1.1,
-      guidance: 4.0,
-      density: 0.5,
-      brightness: 0.5,
+      temperature: _temperature,
+      guidance: _guidance,
+      density: _density,
+      brightness: _brightness,
+      muteBass: _muteBass,
+      muteDrums: _muteDrums,
     );
 
     _session!.setMusicGenerationConfig(config);
+    _addLog(
+      '🎛️ Config updated: $_bpm BPM · ${_mode.name} · ${_selectedScale?.name ?? "Auto Scale"} · Guidance $_guidance',
+      color: const Color(0xFF38BDF8),
+    );
   }
 
   void _onKnobChanged(int index, double newWeight) {
@@ -339,11 +442,18 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       _knobs[index].weight = newWeight.clamp(0.0, 1.0);
     });
     if (_isConnected) {
-      _sendWeightedPrompts();
+      // 100ms debounce during dial drag to avoid flooding WebSocket
+      _knobDebounceTimer?.cancel();
+      _knobDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+        if (_isConnected) {
+          _sendWeightedPrompts();
+        }
+      });
     }
   }
 
   void _onKnobTapped(int index) {
+    _knobDebounceTimer?.cancel();
     setState(() {
       // Toggle: if > 0 set to 0.0, if 0 set to 0.75
       if (_knobs[index].weight > 0.05) {
@@ -595,7 +705,42 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                 );
               }
 
-              // 3. Standard & Responsive Layout
+              // 3. Desktop / Wide Screen Split View Layout
+              if (width >= 860) {
+                final leftPanelWidth =
+                    math.min(width * 0.35, 420.0).clamp(320.0, 420.0);
+                return Row(
+                  children: [
+                    if (_showSidePanel)
+                      SizedBox(
+                        width: leftPanelWidth,
+                        child: _buildLeftConsolePanel(),
+                      ),
+                    if (_showSidePanel)
+                      Container(width: 1.5, color: Colors.white12),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildTopHeader(),
+                          Expanded(
+                            child: Center(
+                              child: _buildKnobGrid(
+                                knobIndices:
+                                    List.generate(_knobs.length, (i) => i),
+                                crossAxisCount: 4,
+                                maxWidth: 680,
+                              ),
+                            ),
+                          ),
+                          _buildBottomControls(),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // 4. Standard Compact & Mobile Layout
               final crossAxisCount = width < 420 ? 2 : (width < 600 ? 3 : 4);
 
               return Column(
@@ -768,6 +913,30 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
               const SizedBox(width: 4),
 
+              // Console Split-View Toggle Button
+              IconButton(
+                icon: Icon(
+                  _showSidePanel
+                      ? Icons.space_dashboard
+                      : Icons.space_dashboard_outlined,
+                  color: _showSidePanel
+                      ? const Color(0xFFA855F7)
+                      : Colors.white70,
+                  size: 20,
+                ),
+                onPressed: () {
+                  final width = MediaQuery.of(context).size.width;
+                  if (width < 860) {
+                    _showMobileConsoleSheet(context);
+                  } else {
+                    setState(() => _showSidePanel = !_showSidePanel);
+                  }
+                },
+                tooltip: _showSidePanel ? 'Hide Console' : 'Show Console (Prompt, Settings, Logs)',
+              ),
+
+              const SizedBox(width: 4),
+
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white70, size: 20),
                 onPressed: () => AppSettingsDialog.show(context),
@@ -781,49 +950,629 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
   }
 
   Widget _buildBottomControls() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24, top: 8),
-      child: Center(
-        child: GestureDetector(
-          onTap: _togglePlay,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              // Sleek indigo purple circular button matching image
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF4C2A85),
-                  Color(0xFF2A1550),
-                ],
-              ),
-              border: Border.all(
-                color: _isPlaying ? const Color(0xFFA855F7) : Colors.white.withAlpha(40),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _isPlaying
-                      ? const Color(0xFFA855F7).withAlpha(160)
-                      : Colors.black54,
-                  blurRadius: _isPlaying ? 20 : 12,
-                  spreadRadius: _isPlaying ? 3 : 1,
-                  offset: const Offset(0, 4),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _DjAudioVisualizer(
+          audioPlayer: _audioPlayer,
+          isPlaying: _isPlaying,
+          knobs: _knobs,
+          customPromptText:
+              _customPromptActive ? _customPromptController.text : null,
+          customPromptWeight:
+              _customPromptActive ? _customPromptWeight : null,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20, top: 2),
+          child: Center(
+            child: GestureDetector(
+              onTap: _togglePlay,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  // Sleek indigo purple circular button matching image
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF4C2A85),
+                      Color(0xFF2A1550),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: _isPlaying
+                        ? const Color(0xFFA855F7)
+                        : Colors.white.withAlpha(40),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isPlaying
+                          ? const Color(0xFFA855F7).withAlpha(160)
+                          : Colors.black54,
+                      blurRadius: _isPlaying ? 20 : 12,
+                      spreadRadius: _isPlaying ? 3 : 1,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(
-              _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: Colors.white,
-              size: 38,
+                child: Icon(
+                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  // Left Console Panel: Custom Prompt, Settings & Logs
+  // ==========================================================================
+
+  static const _presets = [
+    (
+      'Cyberpunk Synth',
+      'Aggressive cyberpunk industrial bassline with dark analog synth arpeggios and punchy drums',
+    ),
+    (
+      'K-Pop Dance',
+      'High-energy K-Pop dance idol track with infectious bright synth brass hook, punchy sidechained dance-pop 808 bass, crisp percussion claps, and glossy modern Korean pop production',
+    ),
+    (
+      'Lo-Fi Beats',
+      'Chill lo-fi hip hop dusty vinyl crackle with warm Rhodes electric piano and boom bap drums',
+    ),
+    (
+      'Liquid DnB',
+      'Smooth 174 BPM liquid drum and bass rolling breakbeats with atmospheric vocal textures',
+    ),
+    (
+      'French House',
+      'Groovy disco filtered house pump with funky bass guitar and sidechained 909 drums',
+    ),
+    (
+      'City Pop',
+      'Sparkling 80s Japanese city pop brass stabs with slap bass and nostalgic summer vibes',
+    ),
+  ];
+
+  void _showMobileConsoleSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF13092C),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (ctx) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.85,
+          child: _buildLeftConsolePanel(),
+        );
+      },
+    );
+  }
+
+  Widget _buildLeftConsolePanel() {
+    return DefaultTabController(
+      length: 3,
+      child: Container(
+        color: const Color(0xFF13092C).withAlpha(250),
+        child: Column(
+          children: [
+            // Panel Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white12, width: 1)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.tune, color: Color(0xFFA855F7), size: 18),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'DJ CONSOLE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA855F7).withAlpha(40),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFA855F7).withAlpha(100)),
+                    ),
+                    child: Text(
+                      _isPlaying ? 'STREAMING' : 'IDLE',
+                      style: const TextStyle(
+                        color: Color(0xFFA855F7),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tab Bar
+            Container(
+              color: Colors.black.withAlpha(40),
+              child: const TabBar(
+                indicatorColor: Color(0xFFA855F7),
+                indicatorWeight: 3,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white54,
+                labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                tabs: [
+                  Tab(icon: Icon(Icons.edit_note, size: 16), text: 'PROMPT'),
+                  Tab(icon: Icon(Icons.settings_input_component, size: 16), text: 'SETTINGS'),
+                  Tab(icon: Icon(Icons.terminal, size: 16), text: 'LOGS'),
+                ],
+              ),
+            ),
+
+            // Tab Content
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPromptTab(),
+                  _buildSettingsTab(),
+                  _buildLogsTab(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromptTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.edit_note, color: Color(0xFFFBBF24), size: 16),
+            const SizedBox(width: 6),
+            const Text(
+              'CUSTOM PROMPT INJECTION',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const Spacer(),
+            Switch.adaptive(
+              value: _customPromptActive,
+              activeTrackColor: const Color(0xFFA855F7),
+              onChanged: (val) {
+                setState(() => _customPromptActive = val);
+                if (_isConnected) _sendWeightedPrompts();
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _customPromptActive
+              ? 'Active: Steering the music along with the 16 rotary knobs'
+              : 'Disabled: Only rotary knobs are active',
+          style: TextStyle(
+            color: _customPromptActive ? const Color(0xFF34D399) : Colors.white38,
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _customPromptController,
+          maxLines: 4,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          decoration: InputDecoration(
+            hintText: 'Enter real-time music style prompt...',
+            hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+            filled: true,
+            fillColor: const Color(0xFF1E123D),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFA855F7))),
+          ),
+          onChanged: (_) {
+            if (_customPromptActive && _isConnected) {
+              _knobDebounceTimer?.cancel();
+              _knobDebounceTimer = Timer(const Duration(milliseconds: 350), () {
+                if (_isConnected) _sendWeightedPrompts();
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Weight Slider
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Prompt Weight (Influence):', style: TextStyle(color: Colors.white70, fontSize: 11)),
+            Text('${(_customPromptWeight * 100).round()}%',
+                style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: const Color(0xFFA855F7),
+            inactiveTrackColor: Colors.white12,
+            thumbColor: const Color(0xFFA855F7),
+            trackHeight: 3,
+          ),
+          child: Slider(
+            value: _customPromptWeight,
+            min: 0.05,
+            max: 1.0,
+            onChanged: (val) {
+              setState(() => _customPromptWeight = val);
+              if (_customPromptActive && _isConnected) {
+                _knobDebounceTimer?.cancel();
+                _knobDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+                  if (_isConnected) _sendWeightedPrompts();
+                });
+              }
+            },
+          ),
+        ),
+
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFA855F7),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          icon: const Icon(Icons.send_rounded, size: 16),
+          label: const Text('APPLY PROMPT TO MIX', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          onPressed: () {
+            setState(() => _customPromptActive = true);
+            if (_isConnected) {
+              _sendWeightedPrompts();
+            } else {
+              _addLog('Custom prompt saved: ${_customPromptController.text.trim()}', color: Colors.white70);
+            }
+          },
+        ),
+
+        const SizedBox(height: 20),
+        const Text(
+          'QUICK STYLE PRESETS',
+          style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final preset in _presets)
+              ActionChip(
+                backgroundColor: const Color(0xFF26184A),
+                label: Text(preset.$1, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                onPressed: () {
+                  setState(() {
+                    _customPromptController.text = preset.$2;
+                    _customPromptActive = true;
+                  });
+                  if (_isConnected) {
+                    _sendWeightedPrompts();
+                  }
+                },
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // BPM
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('TEMPO (BPM)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            Text('$_bpm BPM', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: const Color(0xFF38BDF8),
+            inactiveTrackColor: Colors.white12,
+            thumbColor: const Color(0xFF38BDF8),
+            trackHeight: 3,
+          ),
+          child: Slider(
+            value: _bpm.toDouble(),
+            min: 60,
+            max: 180,
+            divisions: 120,
+            onChanged: (val) {
+              setState(() => _bpm = val.round());
+              if (_isConnected) {
+                _knobDebounceTimer?.cancel();
+                _knobDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+                  if (_isConnected) _sendGenerationConfig();
+                });
+              }
+            },
+          ),
+        ),
+        Wrap(
+          spacing: 6,
+          children: [84, 96, 110, 120, 128, 140, 174].map((b) {
+            final isSel = _bpm == b;
+            return ChoiceChip(
+              selected: isSel,
+              selectedColor: const Color(0xFF38BDF8).withAlpha(60),
+              backgroundColor: const Color(0xFF1E123D),
+              label: Text('$b', style: TextStyle(color: isSel ? const Color(0xFF38BDF8) : Colors.white70, fontSize: 10)),
+              onSelected: (_) {
+                setState(() => _bpm = b);
+                if (_isConnected) _sendGenerationConfig();
+              },
+            );
+          }).toList(),
+        ),
+
+        const SizedBox(height: 18),
+        const Divider(color: Colors.white12),
+        const SizedBox(height: 8),
+
+        // Generation Mode
+        const Text('GENERATION MODE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E123D),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<MusicGenerationMode>(
+              value: _mode,
+              dropdownColor: const Color(0xFF1E123D),
+              isExpanded: true,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              items: MusicGenerationMode.values
+                  .where((m) => m != MusicGenerationMode.MUSIC_GENERATION_MODE_UNSPECIFIED)
+                  .map((m) => DropdownMenuItem(value: m, child: Text(m.name)))
+                  .toList(),
+              onChanged: (m) {
+                if (m != null) {
+                  setState(() => _mode = m);
+                  if (_isConnected) _sendGenerationConfig();
+                }
+              },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Scale
+        const Text('MUSICAL SCALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E123D),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<Scale?>(
+              value: _selectedScale,
+              dropdownColor: const Color(0xFF1E123D),
+              isExpanded: true,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Auto Scale (Model Decides)')),
+                ...Scale.values
+                    .where((s) => s != Scale.SCALE_UNSPECIFIED)
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name.replaceAll('_', ' ')))),
+              ],
+              onChanged: (s) {
+                setState(() => _selectedScale = s);
+                if (_isConnected) _sendGenerationConfig();
+              },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+        const Divider(color: Colors.white12),
+        const SizedBox(height: 8),
+
+        // Guidance Slider
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('GUIDANCE SCALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            Text(_guidance.toStringAsFixed(1), style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+        Slider(
+          value: _guidance,
+          min: 1.0,
+          max: 6.0,
+          activeColor: const Color(0xFFFBBF24),
+          onChanged: (val) {
+            setState(() => _guidance = val);
+            if (_isConnected) {
+              _knobDebounceTimer?.cancel();
+              _knobDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+                if (_isConnected) _sendGenerationConfig();
+              });
+            }
+          },
+        ),
+
+        // Density Slider
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('SOUND DENSITY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            Text('${(_density * 100).round()}%', style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+        Slider(
+          value: _density,
+          min: 0.0,
+          max: 1.0,
+          activeColor: const Color(0xFF34D399),
+          onChanged: (val) {
+            setState(() => _density = val);
+            if (_isConnected) {
+              _knobDebounceTimer?.cancel();
+              _knobDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+                if (_isConnected) _sendGenerationConfig();
+              });
+            }
+          },
+        ),
+
+        // Brightness Slider
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('BRIGHTNESS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            Text('${(_brightness * 100).round()}%', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+        Slider(
+          value: _brightness,
+          min: 0.0,
+          max: 1.0,
+          activeColor: const Color(0xFFEC4899),
+          onChanged: (val) {
+            setState(() => _brightness = val);
+            if (_isConnected) {
+              _knobDebounceTimer?.cancel();
+              _knobDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+                if (_isConnected) _sendGenerationConfig();
+              });
+            }
+          },
+        ),
+
+        const SizedBox(height: 12),
+        // Mute bass & drums
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Mute Bass', style: TextStyle(color: Colors.white, fontSize: 12)),
+          value: _muteBass,
+          activeTrackColor: const Color(0xFFEF4444),
+          onChanged: (v) {
+            setState(() => _muteBass = v);
+            if (_isConnected) _sendGenerationConfig();
+          },
+        ),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Mute Drums', style: TextStyle(color: Colors.white, fontSize: 12)),
+          value: _muteDrums,
+          activeTrackColor: const Color(0xFFEF4444),
+          onChanged: (v) {
+            setState(() => _muteDrums = v);
+            if (_isConnected) _sendGenerationConfig();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogsTab() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          color: Colors.black26,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'EVENTS (${_logs.length})',
+                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+              ),
+              InkWell(
+                onTap: () => setState(() => _logs.clear()),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text('CLEAR', style: TextStyle(color: Color(0xFFF43F5E), fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _logs.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No events logged yet.\nConnect or play to view real-time WebSocket events.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white30, fontSize: 11),
+                  ),
+                )
+              : ListView.builder(
+                  controller: _logScrollController,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _logs.length,
+                  itemBuilder: (ctx, i) {
+                    final log = _logs[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '[${log.timeFormatted}] ',
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              log.text,
+                              style: TextStyle(
+                                color: log.color,
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
@@ -1071,3 +1820,386 @@ class _MidiKnobData {
     required this.weight,
   });
 }
+
+// ============================================================================
+// Real-Time DJ Log Entry Model
+// ============================================================================
+
+class _MidiLogEntry {
+  final DateTime time;
+  final String text;
+  final Color color;
+
+  _MidiLogEntry(this.text, {Color? color})
+      : time = DateTime.now(),
+        color = color ?? const Color(0xFF94A3B8);
+
+  String get timeFormatted {
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    final s = time.second.toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+}
+
+// ============================================================================
+// Real-Time DJ FFT Spectrum & Waveform Visualizer
+// ============================================================================
+
+class _DjAudioVisualizer extends StatefulWidget {
+  final SoloudLiveAudioPlayer audioPlayer;
+  final bool isPlaying;
+  final List<_MidiKnobData> knobs;
+  final String? customPromptText;
+  final double? customPromptWeight;
+
+  const _DjAudioVisualizer({
+    required this.audioPlayer,
+    required this.isPlaying,
+    required this.knobs,
+    this.customPromptText,
+    this.customPromptWeight,
+  });
+
+  @override
+  State<_DjAudioVisualizer> createState() => _DjAudioVisualizerState();
+}
+
+class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ticker;
+  List<double> _fftValues = List.filled(32, 0.0);
+  List<double> _peakCaps = List.filled(32, 0.0);
+  List<double> _waveform = List.filled(64, 0.0);
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..addListener(_onTick);
+    if (widget.isPlaying) {
+      _ticker.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DjAudioVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        _ticker.repeat();
+      } else {
+        _ticker.stop();
+        setState(() {
+          _fftValues = List.filled(32, 0.0);
+          _peakCaps = List.filled(32, 0.0);
+          _waveform = List.filled(64, 0.0);
+        });
+      }
+    }
+  }
+
+  void _onTick() {
+    if (!widget.isPlaying) return;
+    final rawFft = widget.audioPlayer.getLiveFft(count: 32);
+    final rawWave = widget.audioPlayer.getLiveWaveform(count: 64);
+
+    final newPeaks = List<double>.from(_peakCaps);
+    for (var i = 0; i < 32; i++) {
+      final current = rawFft[i];
+      if (current >= newPeaks[i]) {
+        newPeaks[i] = current;
+      } else {
+        newPeaks[i] = math.max(0.0, newPeaks[i] - 0.035);
+      }
+    }
+
+    setState(() {
+      _fftValues = rawFft;
+      _peakCaps = newPeaks;
+      _waveform = rawWave;
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Generate active mix prompt summary string
+    final activeKnobs = widget.knobs.where((k) => k.weight > 0.01).toList();
+    final double customW = (widget.customPromptText != null &&
+            widget.customPromptText!.isNotEmpty &&
+            (widget.customPromptWeight ?? 0) > 0.01)
+        ? (widget.customPromptWeight ?? 0)
+        : 0.0;
+
+    final totalWeight =
+        activeKnobs.fold<double>(0.0, (acc, k) => acc + k.weight) + customW;
+
+    final List<String> blendParts = [];
+    if (customW > 0.0) {
+      final pct =
+          ((customW / (totalWeight > 0 ? totalWeight : 1.0)) * 100).round();
+      final preview = widget.customPromptText!.length > 14
+          ? '${widget.customPromptText!.substring(0, 12)}..'
+          : widget.customPromptText!;
+      blendParts.add('✍️ "$preview" $pct%');
+    }
+
+    for (final k in activeKnobs) {
+      final pct =
+          ((k.weight / (totalWeight > 0 ? totalWeight : 1.0)) * 100).round();
+      blendParts.add('${k.title} $pct%');
+    }
+
+    final String mixSummary =
+        blendParts.isEmpty ? 'Ambient Synth (100%)' : blendParts.join(' + ');
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 680),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF140D2B).withAlpha(220),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: widget.isPlaying
+              ? const Color(0xFFA855F7).withAlpha(140)
+              : Colors.white12,
+          width: 1.5,
+        ),
+        boxShadow: widget.isPlaying
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFA855F7).withAlpha(45),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header info row: live status + active blend
+          Row(
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      widget.isPlaying ? const Color(0xFF10B981) : Colors.white38,
+                  boxShadow: widget.isPlaying
+                      ? [
+                          const BoxShadow(
+                            color: Color(0xFF10B981),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          )
+                        ]
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'LIVE FFT & WAVEFORM',
+                style: TextStyle(
+                  color: widget.isPlaying ? Colors.white : Colors.white38,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const Spacer(),
+              // Active Blend Pills
+              Flexible(
+                child: Text(
+                  '🎛️ $mixSummary',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFFBBF24),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Custom Painter for FFT Bars & Waveform line
+          SizedBox(
+            height: 48,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _DjVisualizerPainter(
+                fftValues: _fftValues,
+                peakCaps: _peakCaps,
+                waveform: _waveform,
+                isPlaying: widget.isPlaying,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Frequency axis indicators
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('SUB BASS (40Hz)',
+                  style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold)),
+              Text('LOW-MID (500Hz)',
+                  style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold)),
+              Text('MID-HIGH (4kHz)',
+                  style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold)),
+              Text('TREBLE (16kHz)',
+                  style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DjVisualizerPainter extends CustomPainter {
+  final List<double> fftValues;
+  final List<double> peakCaps;
+  final List<double> waveform;
+  final bool isPlaying;
+
+  _DjVisualizerPainter({
+    required this.fftValues,
+    required this.peakCaps,
+    required this.waveform,
+    required this.isPlaying,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final width = size.width;
+    final height = size.height;
+
+    // 1. Draw subtle background grid lines
+    final gridPaint = Paint()
+      ..color = Colors.white.withAlpha(12)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+        Offset(0, height * 0.25), Offset(width, height * 0.25), gridPaint);
+    canvas.drawLine(
+        Offset(0, height * 0.5), Offset(width, height * 0.5), gridPaint);
+    canvas.drawLine(
+        Offset(0, height * 0.75), Offset(width, height * 0.75), gridPaint);
+
+    // 2. Draw 32 FFT Frequency Bars
+    final barCount = fftValues.length;
+    const barSpacing = 2.0;
+    final barWidth = (width - (barCount - 1) * barSpacing) / barCount;
+
+    for (var i = 0; i < barCount; i++) {
+      final x = i * (barWidth + barSpacing);
+      final mag = isPlaying ? fftValues[i].clamp(0.02, 1.0) : 0.02;
+      final barHeight = mag * (height - 6);
+      final y = height - barHeight;
+
+      // Color transition: Bass (Cyan/Blue) -> Mid (Amber/Orange) -> High (Rose/Magenta)
+      final norm = i / barCount;
+      final barColor = norm < 0.35
+          ? Color.lerp(
+              const Color(0xFF06B6D4), const Color(0xFF3B82F6), norm / 0.35)!
+          : norm < 0.7
+              ? Color.lerp(const Color(0xFFF59E0B), const Color(0xFFEC4899),
+                  (norm - 0.35) / 0.35)!
+              : Color.lerp(const Color(0xFFEC4899), const Color(0xFFF43F5E),
+                  (norm - 0.7) / 0.3)!;
+
+      final barRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, y, barWidth, barHeight),
+        const Radius.circular(2),
+      );
+
+      final barPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            barColor.withAlpha(120),
+            barColor,
+          ],
+        ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
+
+      canvas.drawRRect(barRect, barPaint);
+
+      // Draw Peak Cap
+      if (isPlaying) {
+        final peakMag = peakCaps[i].clamp(0.0, 1.0);
+        final peakY = height - (peakMag * (height - 6)) - 2;
+        final capPaint = Paint()
+          ..color = Colors.white.withAlpha(220)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, peakY, barWidth, 2),
+            const Radius.circular(1),
+          ),
+          capPaint,
+        );
+      }
+    }
+
+    // 3. Draw Oscilloscope Waveform overlay across center
+    if (isPlaying && waveform.isNotEmpty) {
+      final wavePath = Path();
+      final waveStep = width / (waveform.length - 1);
+      final centerY = height * 0.5;
+
+      for (var i = 0; i < waveform.length; i++) {
+        final x = i * waveStep;
+        final y = centerY - (waveform[i] * (height * 0.42));
+        if (i == 0) {
+          wavePath.moveTo(x, y);
+        } else {
+          wavePath.lineTo(x, y);
+        }
+      }
+
+      final waveGlowPaint = Paint()
+        ..color = const Color(0xFF38BDF8).withAlpha(100)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawPath(wavePath, waveGlowPaint);
+
+      final waveLinePaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawPath(wavePath, waveLinePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DjVisualizerPainter oldDelegate) {
+    return isPlaying || oldDelegate.isPlaying != isPlaying;
+  }
+}
+

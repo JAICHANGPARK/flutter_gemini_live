@@ -22,8 +22,10 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 
 | アシスタント / エコシステム | 専用 Skill 探索パス | プロジェクトガイド |
 |---|---|---|
-| **ルート共通** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | - |
-| **共通 Skills ディレクトリ** | [`skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md) |
+| **ルート共通 / AGENTS.md** | [`SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/SKILL.md) | [`AGENTS.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/AGENTS.md) |
+| **共通 Skills ディレクトリ / Hermes** | [`skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/flutter-gemini-live/SKILL.md) | [`skills/README.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/README.md) |
+| **Hermes Agent** | [`.hermes/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/flutter-gemini-live/SKILL.md) | - |
+| **Pi Agent** | [`.pi/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/flutter-gemini-live/SKILL.md) | - |
 | **Claude Code** | [`.claude/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/flutter-gemini-live/SKILL.md) | [`CLAUDE.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CLAUDE.md) |
 | **Gemini CLI / Antigravity** | [`.gemini/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/flutter-gemini-live/SKILL.md) | [`GEMINI.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/GEMINI.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
@@ -33,7 +35,9 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 
 | アシスタント / エコシステム | 移行スキルのパス |
 |---|---|
-| **共通 Skills ディレクトリ** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
+| **共通 Skills / Hermes** | [`skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Hermes Agent** | [`.hermes/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-firebase-migration/SKILL.md) |
+| **Pi Agent** | [`.pi/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-firebase-migration/SKILL.md) |
 | **Claude Code** | [`.claude/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-firebase-migration/SKILL.md) |
 | **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-firebase-migration/SKILL.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-firebase-migration/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-firebase-migration/SKILL.md) |
@@ -43,7 +47,9 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 
 | アシスタント / エコシステム | ウィジェットスキルのパス |
 |---|---|
-| **共通 Skills ディレクトリ** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
+| **共通 Skills / Hermes** | [`skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/skills/gemini-live-widgets/SKILL.md) |
+| **Hermes Agent** | [`.hermes/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.hermes/skills/gemini-live-widgets/SKILL.md) |
+| **Pi Agent** | [`.pi/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.pi/skills/gemini-live-widgets/SKILL.md) |
 | **Claude Code** | [`.claude/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.claude/skills/gemini-live-widgets/SKILL.md) |
 | **Gemini CLI / Antigravity** | [`.gemini/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.gemini/skills/gemini-live-widgets/SKILL.md) |
 | **OpenAI Codex / Cursor** | [`.codex/skills/gemini-live-widgets/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/gemini-live-widgets/SKILL.md) |
@@ -57,7 +63,7 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 
 ```bash
 # Install as a global skill (keep only the agents you use)
-for d in ~/.claude ~/.gemini ~/.codex ~/.agents; do
+for d in ~/.claude ~/.gemini ~/.codex ~/.agents ~/.hermes ~/.pi; do
   for s in flutter-gemini-live gemini-live-widgets gemini-live-firebase-migration; do
     mkdir -p "$d/skills/$s"
     curl -fsSL "https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/skills/$s/SKILL.md" \

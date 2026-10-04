@@ -1,15 +1,30 @@
-# Claude Code Guidelines for flutter_gemini_live
+# AGENTS.md — Coding Agent Guidelines for flutter_gemini_live
 
 This repository contains the `gemini_live` Flutter package: a zero-Firebase, low-latency, bidirectional multimodal streaming SDK connecting Flutter apps directly to Google's Gemini Live API over WebSockets.
 
 ---
 
-## Development & Test Commands
+## Setup & Development Commands
 
-- **Run Tests**: `flutter test`
-- **Run Static Analysis**: `dart analyze`
 - **Install Dependencies**: `flutter pub get`
-- **Build / Run Example App**: `cd example && flutter run`
+- **Run Static Analysis**: `dart analyze`
+- **Run Unit & Widget Tests**: `flutter test`
+- **Run Specific Test**: `flutter test test/<test_file>_test.dart`
+- **Run Example App**: `cd example && flutter run`
+
+---
+
+## Code Style & Conventions
+
+- **Dart & Flutter Standards**: Follow [Effective Dart](https://dart.dev/effective-dart) and official Flutter architecture conventions.
+- **Linter**: Follow `analysis_options.yaml` (strict pedantic rules).
+- **Public API Documentation**: Provide clean doc comments (`///`) for all exported classes, methods, and parameters.
+- **Zero Firebase Dependency**: Core package (`lib/gemini_live.dart`) must **never** import `firebase_core`, `firebase_ai`, or `firebase_vertexai`. Live WebSocket connectivity is established directly with Google's Gemini Live endpoints.
+- **Interruption Handling**: Always immediately flush or stop local audio buffers when `serverContent.interrupted == true` or `controller.isInterrupted == true`.
+- **Audio Specifications**:
+  - Microphone capture: 16-bit linear PCM, 16,000 Hz, mono.
+  - Live AI speech output: 16-bit linear PCM, 24,000 Hz, mono.
+  - Live Music (Lyria) output: 16-bit linear PCM, 48,000 Hz, stereo.
 
 ---
 
@@ -52,18 +67,17 @@ lib/
 
 ---
 
-## AI Agent Skill Reference
+## AI Agent Skills Reference
 
-A dedicated Agent Skill is maintained for this package at:
-- Standard / Hermes: [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) & [`.hermes/skills/`](.hermes/skills/flutter-gemini-live/SKILL.md)
-- Pi Agent: [`.pi/skills/`](.pi/skills/flutter-gemini-live/SKILL.md) & [`.agents/skills/`](.agents/skills/flutter-gemini-live/SKILL.md)
-- Claude Code Native: [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md)
-- Gemini CLI / Antigravity: [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md)
-- OpenAI Codex / Cursor: [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md)
-- Open Agents Spec: [`AGENTS.md`](AGENTS.md)
+A dedicated Agent Skill specification conforming to the open [agents.md](https://agents.md/) standard is maintained in:
 - Universal Root: [`SKILL.md`](SKILL.md)
-
-Refer to this skill whenever generating code, implementing UI features, adding tools/grounding, or handling Live API errors.
+- Standard Skills Directory: [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md)
+- Hermes Agent: [`.hermes/skills/flutter-gemini-live/SKILL.md`](.hermes/skills/flutter-gemini-live/SKILL.md)
+- Pi Agent: [`.pi/skills/flutter-gemini-live/SKILL.md`](.pi/skills/flutter-gemini-live/SKILL.md)
+- Gemini CLI / Antigravity: [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md)
+- Claude Code: [`.claude/skills/flutter-gemini-live/SKILL.md`](.claude/skills/flutter-gemini-live/SKILL.md)
+- OpenAI Codex / Cursor: [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md)
+- Agent Skills Standard: [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md)
 
 ### Additional Specialized Skills
 - **UI Widgets**: [`skills/gemini-live-widgets/SKILL.md`](skills/gemini-live-widgets/SKILL.md) (parameters, wiring, visualizers)

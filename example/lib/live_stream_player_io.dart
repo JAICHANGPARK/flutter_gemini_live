@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
@@ -15,6 +16,7 @@ class LiveStreamPlayerImpl {
   bool _isPlaying = false;
   StreamSubscription<AudioVisualizationData>? _visSubscription;
   Float32List? _latestWave;
+  Float32List? _latestFft;
   bool _turnIsEnded = false;
 
   LiveStreamPlayerImpl({
@@ -51,6 +53,7 @@ class LiveStreamPlayerImpl {
         _visSubscription =
             SoLoud.instance.audioVisualizationEvents.listen((data) {
           _latestWave = data.waveData;
+          _latestFft = data.fftData;
         });
       } catch (_) {}
       _isInitialized = true;
@@ -77,7 +80,7 @@ class LiveStreamPlayerImpl {
           channels: channels,
           format: BufferType.s16le,
           bufferingType: BufferingType.released,
-          bufferingTimeNeeds: 0.12,
+          bufferingTimeNeeds: 0.35,
           maxBufferSizeDuration: const Duration(seconds: 30),
           onBuffering: (isBuffering, handle, time) {
             _isPlaying = !isBuffering;
@@ -164,6 +167,24 @@ class LiveStreamPlayerImpl {
     for (var i = 0; i < count; i++) {
       final idx = (i * step).clamp(0, wave.length - 1);
       result.add(wave[idx].abs().clamp(0.05, 1.0));
+    }
+    return result;
+  }
+
+  /// Retrieves live audio FFT frequency magnitude data for visualization.
+  List<double> getLiveFft({int count = 32}) {
+    final fft = _latestFft;
+    if (fft == null || fft.isEmpty || !_isPlaying) {
+      return List<double>.filled(count, 0.0);
+    }
+    final result = <double>[];
+    for (var i = 0; i < count; i++) {
+      final norm = i / count;
+      // Focus more resolution on low and mid frequencies (0Hz to ~6kHz)
+      final index = (math.pow(norm, 1.5) * (fft.length - 1))
+          .round()
+          .clamp(0, fft.length - 1);
+      result.add(fft[index].clamp(0.0, 1.0));
     }
     return result;
   }

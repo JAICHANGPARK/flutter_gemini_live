@@ -46,6 +46,10 @@ class SoloudLiveAudioPlayer {
   List<double> getLiveWaveform({int count = 14}) =>
       _impl.getLiveWaveform(count: count);
 
+  /// Retrieves live audio FFT frequency magnitude data for visualization.
+  List<double> getLiveFft({int count = 32}) =>
+      _impl.getLiveFft(count: count);
+
   /// Disposes the player.
   Future<void> dispose() => _impl.dispose();
 }
