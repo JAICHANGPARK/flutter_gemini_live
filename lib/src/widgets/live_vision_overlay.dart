@@ -31,6 +31,7 @@ class GeminiLiveVisionOverlay extends StatefulWidget {
   /// Corner radius of the rounded viewfinder container. Defaults to 20.0.
   final double borderRadius;
 
+  /// Creates a multimodal vision overlay wrapping [child].
   const GeminiLiveVisionOverlay({
     super.key,
     required this.child,

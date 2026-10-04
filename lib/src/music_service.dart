@@ -34,6 +34,7 @@ class LiveMusicCallbacks {
   /// Called when the WebSocket connection closes.
   final void Function(int? closeCode, String? closeReason)? onClose;
 
+  /// Creates a container of callbacks for Realtime Music events.
   LiveMusicCallbacks({
     this.onOpen,
     this.onMessage,
@@ -54,6 +55,7 @@ class LiveMusicConnectParameters {
   /// Event callbacks.
   final LiveMusicCallbacks callbacks;
 
+  /// Creates parameters for connecting to the Realtime Music service.
   LiveMusicConnectParameters({
     this.model = LiveMusicModels.lyriaRealtimeExp,
     required this.callbacks,
@@ -150,13 +152,19 @@ class LiveMusicSession {
 class LiveMusicService {
   static const _sdkVersion = '2.27.0';
 
+  /// The Gemini API key used for authentication.
   final String apiKey;
+
+  /// The Gemini API version string (e.g. 'v1alpha').
   final String apiVersion;
+
+  /// Optional logging sink for debugging WebSocket messages.
   final void Function(String message)? logger;
   final WebSocketConnector _connector;
   final Duration _setupTimeout;
   final String Function() _dartVersionProvider;
 
+  /// Creates a Realtime Music service client.
   LiveMusicService({
     required this.apiKey,
     this.apiVersion = 'v1alpha',

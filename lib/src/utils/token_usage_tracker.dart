@@ -22,6 +22,7 @@ class GeminiPricingRates {
   /// Cost per 1M candidate audio output tokens.
   final double audioOutputPerM;
 
+  /// Creates a pricing rate tier for Gemini Live modalities.
   const GeminiPricingRates({
     required this.textInputPerM,
     required this.audioInputPerM,
@@ -143,6 +144,7 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
   int _textInputTokens = 0;
   int _textOutputTokens = 0;
 
+  /// Creates a token usage tracker for monitoring session consumption.
   GeminiTokenUsageTracker({
     this.model = 'gemini-3.5-live-translate-preview',
     this.usdToKrwRate = 1400.0,

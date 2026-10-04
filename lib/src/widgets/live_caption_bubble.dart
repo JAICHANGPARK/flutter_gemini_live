@@ -52,6 +52,7 @@ class GeminiLiveCaptionBubble extends StatefulWidget {
   /// Callback when the bubble automatically dismisses after [autoDismissDuration].
   final VoidCallback? onDismissed;
 
+  /// Creates a floating caption bubble displaying [text].
   const GeminiLiveCaptionBubble({
     super.key,
     required this.text,

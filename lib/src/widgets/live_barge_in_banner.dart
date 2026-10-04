@@ -38,6 +38,7 @@ class GeminiLiveBargeInBanner extends StatefulWidget {
   /// Corner radius of the banner capsule.
   final double borderRadius;
 
+  /// Creates an interruption notification banner when [isInterrupted] is true.
   const GeminiLiveBargeInBanner({
     super.key,
     required this.isInterrupted,

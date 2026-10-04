@@ -35,6 +35,7 @@ class CupertinoGeminiLiveMicButton extends StatefulWidget {
   /// Whether to trigger iOS haptic feedback on gestures. Defaults to `true`.
   final bool enableHaptics;
 
+  /// Creates a Cupertino microphone button for Gemini Live sessions.
   const CupertinoGeminiLiveMicButton({
     super.key,
     required this.isRecording,

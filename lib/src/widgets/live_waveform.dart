@@ -52,6 +52,7 @@ class GeminiLiveWaveform extends StatefulWidget {
   /// Defaults to `true` for a natural, native audio hardware aesthetic.
   final bool enableIdleBreathing;
 
+  /// Creates a reactive waveform audio visualizer widget.
   const GeminiLiveWaveform({
     super.key,
     this.amplitude,

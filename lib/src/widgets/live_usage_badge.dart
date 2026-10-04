@@ -29,6 +29,7 @@ class GeminiLiveUsageBadge extends StatelessWidget {
   /// Padding around badge content.
   final EdgeInsetsGeometry padding;
 
+  /// Creates a Material 3 token usage badge wired to [tracker].
   const GeminiLiveUsageBadge({
     super.key,
     required this.tracker,
@@ -135,8 +136,10 @@ class GeminiLiveUsageBadge extends StatelessWidget {
 /// A detailed modal dialog displaying full token metrics, modality breakdowns,
 /// and pricing explanations.
 class GeminiLiveUsageDetailsDialog extends StatelessWidget {
+  /// The usage tracker providing real-time metrics.
   final GeminiTokenUsageTracker tracker;
 
+  /// Creates a Material 3 dialog displaying detailed token metrics from [tracker].
   const GeminiLiveUsageDetailsDialog({
     super.key,
     required this.tracker,

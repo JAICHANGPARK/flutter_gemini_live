@@ -33,6 +33,7 @@ class CupertinoGeminiLiveStatusBadge extends StatelessWidget {
   /// Padding around the badge content.
   final EdgeInsetsGeometry padding;
 
+  /// Creates a Cupertino status badge with the given [state].
   const CupertinoGeminiLiveStatusBadge({
     super.key,
     required this.state,

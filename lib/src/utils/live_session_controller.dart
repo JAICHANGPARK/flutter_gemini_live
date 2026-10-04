@@ -43,6 +43,7 @@ class LiveTranscriptItem {
   /// Whether this turn is still receiving streaming text updates.
   final bool isStreaming;
 
+  /// Creates a live transcript history item.
   const LiveTranscriptItem({
     required this.role,
     required this.text,
@@ -52,6 +53,7 @@ class LiveTranscriptItem {
     this.isStreaming = false,
   });
 
+  /// Creates a copy of this transcript item with specified attributes replaced.
   LiveTranscriptItem copyWith({
     String? role,
     String? text,
@@ -78,7 +80,10 @@ class LiveTranscriptItem {
 /// Handles connection lifecycle, token accounting via [GeminiTokenUsageTracker],
 /// transcript accumulation, audio streams for visualizers, and error states.
 class GeminiLiveSessionController extends ChangeNotifier {
+  /// The underlying Live API service for establishing sessions.
   final LiveService liveService;
+
+  /// The token accounting tracker monitoring consumption and estimated cost.
   final GeminiTokenUsageTracker tokenTracker;
 
   LiveSessionState _state = LiveSessionState.disconnected;
@@ -100,6 +105,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
   final StreamController<Uint8List> _outgoingAudioController =
       StreamController<Uint8List>.broadcast();
 
+  /// Creates a reactive controller managing Gemini Live session state.
   GeminiLiveSessionController({
     required this.liveService,
     GeminiTokenUsageTracker? tokenTracker,

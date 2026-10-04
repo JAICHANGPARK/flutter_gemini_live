@@ -47,6 +47,7 @@ class GeminiLiveStatusBadge extends StatelessWidget {
   /// Padding around the badge content.
   final EdgeInsetsGeometry padding;
 
+  /// Creates a Material 3 status badge with the given [state].
   const GeminiLiveStatusBadge({
     super.key,
     required this.state,

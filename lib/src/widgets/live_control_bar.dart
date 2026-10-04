@@ -45,6 +45,7 @@ class GeminiLiveControlBar extends StatelessWidget {
   /// Spacing between buttons. Defaults to 12.0.
   final double spacing;
 
+  /// Creates a floating call control bar for Gemini Live sessions.
   const GeminiLiveControlBar({
     super.key,
     required this.isMicActive,

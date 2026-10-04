@@ -20,6 +20,7 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
   /// Optional custom list of voices. If null, uses [defaultLiveVoices].
   final List<GeminiVoiceOption>? voices;
 
+  /// Creates a voice selector modal sheet highlighting [currentVoice].
   const GeminiLiveVoiceSelectorSheet({
     super.key,
     required this.currentVoice,
@@ -227,6 +228,7 @@ class GeminiVoiceOption {
   /// The perceived vocal pitch or gender profile.
   final String gender;
 
+  /// Creates a Gemini voice option persona configuration.
   const GeminiVoiceOption({
     required this.name,
     required this.tone,

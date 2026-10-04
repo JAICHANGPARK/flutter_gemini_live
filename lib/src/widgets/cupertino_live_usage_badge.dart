@@ -29,6 +29,7 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
   /// Padding around badge content.
   final EdgeInsetsGeometry padding;
 
+  /// Creates a Cupertino token usage badge wired to [tracker].
   const CupertinoGeminiLiveUsageBadge({
     super.key,
     required this.tracker,
@@ -137,6 +138,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
   /// The usage tracker providing real-time metrics.
   final GeminiTokenUsageTracker tracker;
 
+  /// Creates a Cupertino dialog displaying detailed token metrics from [tracker].
   const CupertinoGeminiLiveUsageDetailsDialog({
     super.key,
     required this.tracker,

@@ -19,6 +19,7 @@ class GeminiLiveVoiceIndicator extends StatefulWidget {
   /// Color of the visualizer bars.
   final Color? color;
 
+  /// Creates an audio voice indicator showing activity when [isSpeaking] is true.
   const GeminiLiveVoiceIndicator({
     super.key,
     required this.isSpeaking,

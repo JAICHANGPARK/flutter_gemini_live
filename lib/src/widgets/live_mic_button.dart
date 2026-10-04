@@ -32,6 +32,7 @@ class GeminiLiveMicButton extends StatefulWidget {
   /// Tooltip message.
   final String? tooltip;
 
+  /// Creates a Material 3 microphone button for Gemini Live sessions.
   const GeminiLiveMicButton({
     super.key,
     required this.isRecording,
