@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../google_genai.dart';
+import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
 import 'live_mic_button.dart';
 import 'live_status_badge.dart';
@@ -141,6 +142,13 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Input hint text for the text field. Defaults to `'Ask Gemini Live...'`.
   final String inputHint;
 
+  /// Whether to enable structured console logging in debug mode. Defaults to `false`.
+  final bool debugLogging;
+
+  /// Optional custom logger or callback function for detailed network/lifecycle logging.
+  /// Accepts either a [GeminiLiveLogger] instance or a standard `void Function(String)` callback.
+  final Object? logger;
+
   /// Creates a pluggable Gemini Live chat screen widget.
   const GeminiLiveChatView({
     super.key,
@@ -168,6 +176,8 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showStatusBadge = true,
     this.showWaveform = true,
     this.inputHint = 'Ask Gemini Live...',
+    this.debugLogging = false,
+    this.logger,
   })  : assert(
           apiKey != null || controller != null,
           'Either apiKey or controller must be provided to GeminiLiveChatView.',
@@ -177,6 +187,12 @@ class GeminiLiveChatView extends StatefulWidget {
               systemInstruction is String ||
               systemInstruction is Content,
           'systemInstruction must be either a String or a Content instance.',
+        ),
+        assert(
+          logger == null ||
+              logger is GeminiLiveLogger ||
+              logger is void Function(String),
+          'logger must be either a GeminiLiveLogger or a void Function(String) callback.',
         );
 
   @override
@@ -215,7 +231,19 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       _controller = widget.controller!;
       _ownsController = false;
     } else {
-      final genAI = GoogleGenAI(apiKey: widget.apiKey!);
+      void Function(String message)? effectiveLogger;
+      if (widget.logger is GeminiLiveLogger) {
+        effectiveLogger = (widget.logger as GeminiLiveLogger).toCallback();
+      } else if (widget.logger is void Function(String)) {
+        effectiveLogger = widget.logger as void Function(String);
+      } else if (widget.debugLogging) {
+        effectiveLogger = const GeminiLiveLogger().toCallback();
+      }
+
+      final genAI = GoogleGenAI(
+        apiKey: widget.apiKey!,
+        logger: effectiveLogger,
+      );
       _controller = GeminiLiveSessionController(liveService: genAI.live);
       _ownsController = true;
     }
