@@ -12,15 +12,29 @@ This skill guides AI coding assistants (**Claude Code**, **Gemini CLI / Antigrav
 ## 📦 Setup
 
 ```bash
+# Core package
 flutter pub add gemini_live
-# Typical companions for voice apps (mic capture + low-latency PCM playback):
-flutter pub add record flutter_soloud
+
+# Recommended companion packages for complete voice & vision apps:
+# - Microphone input: record (captures 16 kHz 16-bit PCM mono)
+# - Low-latency PCM audio playback: flutter_soloud (prevents buffer lag & pops)
+# - Camera frame capture: camera (mobile/web) or camera_desktop (desktop)
+# - Image preprocessing & flipping: image (pure Dart flip/encode)
+flutter pub add record flutter_soloud camera image
 ```
 
-Platform permissions required for microphone input:
-- **Android** `AndroidManifest.xml`: `<uses-permission android:name="android.permission.RECORD_AUDIO" />` and `android.permission.INTERNET`.
-- **iOS** `Info.plist`: `NSMicrophoneUsageDescription` (and `NSCameraUsageDescription` for video).
-- **macOS** entitlements: `com.apple.security.device.audio-input` and `com.apple.security.network.client`.
+Platform permissions required for microphone & camera input:
+- **Android** `AndroidManifest.xml`:
+  - `<uses-permission android:name="android.permission.RECORD_AUDIO" />`
+  - `<uses-permission android:name="android.permission.CAMERA" />`
+  - `<uses-permission android:name="android.permission.INTERNET" />`
+- **iOS** `Info.plist`:
+  - `NSMicrophoneUsageDescription`: Reason for microphone access.
+  - `NSCameraUsageDescription`: Reason for camera access.
+- **macOS** entitlements (`DebugProfile.entitlements` & `Release.entitlements`):
+  - `com.apple.security.device.audio-input`
+  - `com.apple.security.device.camera`
+  - `com.apple.security.network.client`
 
 ---
 
@@ -321,6 +335,129 @@ session?.sendVideo(jpegFrameBytes, mimeType: 'image/jpeg');
 
 // Signal speech end when in manual VAD mode
 session?.sendActivityEnd();
+```
+
+---
+
+## 🛠️ Verified Companion Stack Recipes (Audio, Camera, Vision)
+
+To build complete end-to-end applications without trial and error, use these verified companion packages and patterns tested in the official example app:
+
+### 1. Microphone Streaming with `record` (Audio In)
+The Gemini Live API requires **16-bit linear PCM, 16,000 Hz, mono**. Configure `AudioRecorder`:
+
+```dart
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:record/record.dart';
+import 'package:gemini_live/gemini_live.dart';
+
+final recorder = AudioRecorder();
+
+// Check permission before streaming:
+if (await recorder.hasPermission()) {
+  final audioStream = await recorder.startStream(
+    const RecordConfig(
+      encoder: AudioEncoder.pcm16bits,
+      sampleRate: 16000,
+      numChannels: 1,
+      echoCancel: true,
+      noiseSuppress: true,
+    ),
+  );
+
+  // When using GeminiLiveSessionController:
+  audioStream.listen(controller.sendRealtimeAudio);
+
+  // Or when using direct LiveSession:
+  audioStream.listen((chunk) {
+    session?.sendAudio(chunk);
+    // Alternatively via Blob:
+    // session?.sendRealtimeInput(
+    //   audio: Blob(mimeType: 'audio/pcm;rate=16000', data: base64Encode(chunk)),
+    // );
+  });
+}
+```
+
+### 2. Low-Latency PCM Playback with `flutter_soloud` (Audio Out)
+Gemini returns **16-bit linear PCM at 24,000 Hz mono** (Live Music returns **48,000 Hz stereo**). Traditional audio players introduce buffering latency; use `flutter_soloud` buffer streams for smooth, low-latency playback:
+
+```dart
+import 'package:flutter_soloud/flutter_soloud.dart';
+
+await SoLoud.instance.init();
+
+AudioSource? playbackSource;
+
+void handleIncomingAudio(Uint8List pcmChunk) {
+  playbackSource ??= SoLoud.instance.setBufferStream(
+    sampleRate: 24000, // 48000 for Lyria Live Music
+    channels: Channels.mono, // Channels.stereo for Lyria Live Music
+    format: BufferType.s16le,
+    bufferingType: BufferingType.released,
+  );
+
+  final source = playbackSource!;
+  if (SoLoud.instance.getActiveVoiceCount() == 0) {
+    SoLoud.instance.play(source);
+  }
+  SoLoud.instance.addAudioDataStream(source, pcmChunk);
+}
+
+// CRITICAL for Barge-In (Interruption):
+// Immediately flush/dispose playback when the user interrupts the model:
+void interruptPlayback() {
+  if (playbackSource != null) {
+    SoLoud.instance.disposeSource(playbackSource!);
+    playbackSource = null;
+  }
+}
+```
+
+### 3. Camera Frame Streaming with `camera` & `image` (Vision In)
+Stream periodic JPEG camera frames (recommended: **1.0 to 1.5 second intervals**, `ResolutionPreset.medium`) to avoid exceeding network bandwidth while maintaining fast visual reasoning:
+
+```dart
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:camera/camera.dart';
+import 'package:image/image.dart' as img;
+import 'package:gemini_live/gemini_live.dart';
+
+Timer? frameTimer;
+bool isCaptureInFlight = false;
+
+void startVisionLoop(CameraController cameraController, LiveSession? session, {bool isFrontCamera = false}) {
+  frameTimer?.cancel();
+  frameTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) async {
+    if (isCaptureInFlight || session == null || !cameraController.value.isInitialized) return;
+
+    isCaptureInFlight = true;
+    try {
+      final XFile photo = await cameraController.takePicture();
+      Uint8List bytes = await photo.readAsBytes();
+
+      // Front-facing camera mirror correction (if necessary):
+      if (isFrontCamera) {
+        final decoded = img.decodeImage(bytes);
+        if (decoded != null) {
+          final flipped = img.flipHorizontal(decoded);
+          bytes = Uint8List.fromList(img.encodeJpg(flipped, quality: 75));
+        }
+      }
+
+      // Stream JPEG frame to Gemini Live
+      session.sendVideo(bytes, mimeType: 'image/jpeg');
+    } catch (e) {
+      // Handle snapshot error or frame drop
+    } finally {
+      isCaptureInFlight = false;
+    }
+  });
+}
 ```
 
 ---

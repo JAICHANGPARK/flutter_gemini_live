@@ -78,6 +78,10 @@ cp -r skills/flutter-gemini-live skills/gemini-live-widgets skills/gemini-live-f
 ## 📋 What the Skill Teaches Agents
 
 - **Supported Models**: `gemini-3.8-live` (default low-latency), `gemini-3.8-live-extended-thinking` (deep reasoning), and `models/lyria-realtime-exp` (live music).
+- **Verified Companion Stack Recipes**:
+  - **Audio Input (`record`)**: 16 kHz 16-bit linear PCM mono microphone streaming to `controller.sendRealtimeAudio` / `session.sendAudio`.
+  - **Low-Latency PCM Playback (`flutter_soloud`)**: Zero-latency 24 kHz buffer stream playback and acoustic barge-in interruption handling.
+  - **Camera Frame Streaming (`camera` & `image`)**: 1.2s periodic JPEG frames, in-flight guard, and selfie mirror/flip text correction.
 - **High-Level UI Controller**: `GeminiLiveSessionController` for reactive state, barge-in detection, and transcript history.
 - **Pre-Built Material 3 Widgets**: `GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveVoiceIndicator`, and `GeminiLiveUsageBadge`.
 - **Audio Utilities**: `GeminiLiveAudioUtils` (RMS, dBFS decibels, visual scaling).
