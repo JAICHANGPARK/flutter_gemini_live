@@ -41,6 +41,16 @@ AI コーディングアシスタント（**Claude Code**, **Gemini CLI / Antigr
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills オープン標準** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+#### `npx skills` によるインストール ([skills.sh](https://skills.sh/JAICHANGPARK/flutter_gemini_live))
+```bash
+# プロジェクトにコアスキルをインストール（グローバルインストールの場合は -g を追加）
+npx skills add JAICHANGPARK/flutter_gemini_live
+
+# サポートされている全エージェントに全スキル（コア、UI、移行）を一括インストール
+npx skills add JAICHANGPARK/flutter_gemini_live --full-depth --all
+```
+
+#### `curl` ワンライナーによるインストール (Node/npm 不要)
 ```bash
 # アクティブなエージェントを自動検出して一括インストール (~/.claude, ~/.gemini, ~/.codex など)
 curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash

@@ -41,8 +41,18 @@ AI 코딩 어시스턴트(**Claude Code**, **Gemini CLI / Antigravity**, **OpenA
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 오픈 표준** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+#### `npx skills`를 통한 설치 ([skills.sh](https://skills.sh/JAICHANGPARK/flutter_gemini_live))
 ```bash
-# 사용 중인 모든 에이전트 자동 감지 및 빠른 설치 (~/.claude, ~/.gemini, ~/.codex 등)
+# 현재 프로젝트에 핵심 스킬 설치 (전역 설치 시 -g 추가)
+npx skills add JAICHANGPARK/flutter_gemini_live
+
+# 모든 지원 에이전트에 전체 스킬(핵심, 위젯, 마이그레이션) 일괄 설치
+npx skills add JAICHANGPARK/flutter_gemini_live --full-depth --all
+```
+
+#### `curl` 원라이너 설치 (Node/npm 불필요)
+```bash
+# 사용 중인 에이전트 자동 감지 및 빠른 설치 (~/.claude, ~/.gemini, ~/.codex 등)
 curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
 
 # 또는 특정 에이전트만 지정하여 설치:

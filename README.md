@@ -42,11 +42,21 @@ If you are an AI coding assistant (**Claude Code**, **Gemini CLI / Antigravity**
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills Standard** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+#### Install via `npx skills` ([skills.sh](https://skills.sh/JAICHANGPARK/flutter_gemini_live))
 ```bash
-# Quick install for all active agents (auto-detects ~/.claude, ~/.gemini, ~/.codex, etc.)
+# Install the core skill to your current project (or add -g for global)
+npx skills add JAICHANGPARK/flutter_gemini_live
+
+# Install all skills (core, widgets, migration) across all agents
+npx skills add JAICHANGPARK/flutter_gemini_live --full-depth --all
+```
+
+#### Install via `curl` (Zero-Node One-Liner)
+```bash
+# Auto-detects existing agents (~/.claude, ~/.gemini, ~/.codex, etc.) and installs
 curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
 
-# Or install for specific agent(s) only:
+# Or install to specific agent(s) only:
 # curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash -s -- claude gemini
 ```
 

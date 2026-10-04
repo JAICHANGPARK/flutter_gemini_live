@@ -42,6 +42,16 @@ https://github.com/user-attachments/assets/7d826f37-196e-4ddd-8828-df66db252e8e
 | **OpenAI Codex / Cursor** | [`.codex/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.codex/skills/flutter-gemini-live/SKILL.md) | [`CODEX.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/CODEX.md) |
 | **Agent Skills 开放规范** | [`.agents/skills/flutter-gemini-live/SKILL.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/.agents/skills/flutter-gemini-live/SKILL.md) | - |
 
+#### 通过 `npx skills` 安装 ([skills.sh](https://skills.sh/JAICHANGPARK/flutter_gemini_live))
+```bash
+# 安装核心技能至当前项目（全局安装请添加 -g）
+npx skills add JAICHANGPARK/flutter_gemini_live
+
+# 一键安装所有技能（核心、UI组件、迁移）至所有支持的智能体
+npx skills add JAICHANGPARK/flutter_gemini_live --full-depth --all
+```
+
+#### 通过 `curl` 单行命令安装（无需 Node/npm）
 ```bash
 # 自动检测正在使用的智能体并一键安装 (~/.claude, ~/.gemini, ~/.codex 等)
 curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main/tool/install_skills.sh | bash
