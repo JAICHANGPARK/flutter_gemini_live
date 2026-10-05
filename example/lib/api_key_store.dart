@@ -77,7 +77,9 @@ class ApiKeyStore {
     final prefs = await SharedPreferences.getInstance();
     final storedKey = prefs.getString(_key) ?? '';
     const envKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    final systemEnvKey = !kIsWeb ? (Platform.environment['GEMINI_API_KEY'] ?? '') : '';
+    final systemEnvKey = !kIsWeb
+        ? (Platform.environment['GEMINI_API_KEY'] ?? '')
+        : '';
 
     if (storedKey.trim().isNotEmpty) {
       _apiKey = storedKey.trim();

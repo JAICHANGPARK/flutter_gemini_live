@@ -473,22 +473,23 @@ class AppTranslations {
   }
 
   String get liveMathTutorTitle => switch (language) {
-        AppLanguage.ko => '🎓 Live Exam Tutor (만능 AI 수능·시험 튜터)',
-        AppLanguage.ja => '🎓 Live Exam Tutor (万能 AI 共通テスト・受験チューター)',
-        AppLanguage.zh => '🎓 Live Exam Tutor (全能 AI 高考与各类考试私教)',
-        AppLanguage.en => '🎓 Live Exam Tutor (Omniscient College Entrance & Exam Tutor)',
-      };
+    AppLanguage.ko => '🎓 Live Exam Tutor (만능 AI 수능·시험 튜터)',
+    AppLanguage.ja => '🎓 Live Exam Tutor (万能 AI 共通テスト・受験チューター)',
+    AppLanguage.zh => '🎓 Live Exam Tutor (全能 AI 高考与各类考试私教)',
+    AppLanguage.en =>
+      '🎓 Live Exam Tutor (Omniscient College Entrance & Exam Tutor)',
+  };
 
   String get liveMathTutorSubtitle => switch (language) {
-        AppLanguage.ko =>
-          '카메라 실시간 문제 인식 · 한국 수능·일본 공통테스트·미국 SAT/AP 전과목(국어/수학/이과/사회/외국어/정보) 심층 추론 풀이',
-        AppLanguage.ja =>
-          'カメラリアルタイム問題認識・共通テスト・大学入試全科目(国語・数学・理科・地歴公民・外国語・情報)深層推論解説と解答記録',
-        AppLanguage.zh =>
-          '摄像头实时识题 · 高考/SAT/大学统考全科目(语文/数学/理综/文综/外语/信息)Extended Thinking深度推理与真题解析',
-        AppLanguage.en =>
-          'Real-time camera scan · Multimodal deep reasoning across all subjects (Math, Sciences, Humanities, Languages, CS) for CSAT, SAT, AP & DNC exams',
-      };
+    AppLanguage.ko =>
+      '카메라 실시간 문제 인식 · 한국 수능·일본 공통테스트·미국 SAT/AP 전과목(국어/수학/이과/사회/외국어/정보) 심층 추론 풀이',
+    AppLanguage.ja =>
+      'カメラリアルタイム問題認識・共通テスト・大学入試全科目(国語・数学・理科・地歴公民・外国語・情報)深層推論解説と解答記録',
+    AppLanguage.zh =>
+      '摄像头实时识题 · 高考/SAT/大学统考全科目(语文/数学/理综/文综/外语/信息)Extended Thinking深度推理与真题解析',
+    AppLanguage.en =>
+      'Real-time camera scan · Multimodal deep reasoning across all subjects (Math, Sciences, Humanities, Languages, CS) for CSAT, SAT, AP & DNC exams',
+  };
 
   String get liveMusicStudioTitle {
     switch (language) {
@@ -839,8 +840,8 @@ class AppLanguageScope extends InheritedNotifier<AppLanguageController> {
   }) : super(notifier: controller);
 
   static AppLanguageController of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<AppLanguageScope>();
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<AppLanguageScope>();
     return scope?.notifier ?? AppLanguageController.instance;
   }
 }
@@ -849,10 +850,7 @@ class AppLanguageScope extends InheritedNotifier<AppLanguageController> {
 class LanguageSelectorButton extends StatelessWidget {
   final bool compact;
 
-  const LanguageSelectorButton({
-    super.key,
-    this.compact = false,
-  });
+  const LanguageSelectorButton({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -880,7 +878,9 @@ class LanguageSelectorButton extends StatelessWidget {
                       child: Text(
                         lang.name,
                         style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
                               : null,
@@ -900,7 +900,10 @@ class LanguageSelectorButton extends StatelessWidget {
           },
           child: compact
               ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -917,12 +920,18 @@ class LanguageSelectorButton extends StatelessWidget {
                   ),
                 )
               : Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(

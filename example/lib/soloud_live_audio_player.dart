@@ -12,13 +12,8 @@ import 'live_stream_player_io.dart'
 class SoloudLiveAudioPlayer {
   final LiveStreamPlayerImpl _impl;
 
-  SoloudLiveAudioPlayer({
-    int sampleRate = 24000,
-    dynamic channels,
-  }) : _impl = LiveStreamPlayerImpl(
-          sampleRate: sampleRate,
-          channels: channels,
-        );
+  SoloudLiveAudioPlayer({int sampleRate = 24000, dynamic channels})
+    : _impl = LiveStreamPlayerImpl(sampleRate: sampleRate, channels: channels);
 
   /// Whether audio is actively playing through the speaker.
   bool get isPlaying => _impl.isPlaying;
@@ -47,8 +42,7 @@ class SoloudLiveAudioPlayer {
       _impl.getLiveWaveform(count: count);
 
   /// Retrieves live audio FFT frequency magnitude data for visualization.
-  List<double> getLiveFft({int count = 32}) =>
-      _impl.getLiveFft(count: count);
+  List<double> getLiveFft({int count = 32}) => _impl.getLiveFft(count: count);
 
   /// Disposes the player.
   Future<void> dispose() => _impl.dispose();

@@ -21,18 +21,14 @@ class LiveStreamPlayerImpl {
   final List<web.AudioBufferSourceNode> _activeSources = [];
   Float32List? _latestWave;
 
-  LiveStreamPlayerImpl({
-    this.sampleRate = 24000,
-    dynamic channels,
-  }) : channels = channels is int ? channels : 1;
+  LiveStreamPlayerImpl({this.sampleRate = 24000, dynamic channels})
+    : channels = channels is int ? channels : 1;
 
   bool get isPlaying => _isPlaying;
 
   Future<void> init() async {
     try {
-      final options = web.AudioContextOptions(
-        sampleRate: sampleRate,
-      );
+      final options = web.AudioContextOptions(sampleRate: sampleRate);
       _audioContext = web.AudioContext(options);
     } catch (_) {
       try {

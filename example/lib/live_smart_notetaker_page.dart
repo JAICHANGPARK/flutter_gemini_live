@@ -12,6 +12,7 @@ import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'foldable_utils.dart';
 import 'live_api_defaults.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Target languages for meeting / lecture translation.
 const List<Map<String, String>> kNoteLanguages = [
@@ -139,8 +140,9 @@ class _LiveSmartNotePageState extends State<LiveSmartNotePage>
           _availableAudioDevices = devices;
           final savedId = ApiKeyStore.audioDeviceId;
           if (savedId.isNotEmpty) {
-            _selectedAudioDevice =
-                devices.where((d) => d.id == savedId).firstOrNull;
+            _selectedAudioDevice = devices
+                .where((d) => d.id == savedId)
+                .firstOrNull;
           }
         });
       }
@@ -220,7 +222,8 @@ class _LiveSmartNotePageState extends State<LiveSmartNotePage>
 
     try {
       final targetLang = _getTargetLanguageName();
-      final systemPrompt = '''
+      final systemPrompt =
+          '''
 You are an expert real-time AI lecture and meeting note-taker.
 Your mission:
 1. Listen to the continuous live audio stream.
@@ -263,9 +266,7 @@ Your mission:
               silenceDurationMs: 300,
             ),
           ),
-          systemInstruction: Content(
-            parts: [Part(text: systemPrompt)],
-          ),
+          systemInstruction: Content(parts: [Part(text: systemPrompt)]),
           inputAudioTranscription: AudioTranscriptionConfig(),
           outputAudioTranscription: AudioTranscriptionConfig(),
           callbacks: LiveCallbacks(
@@ -283,12 +284,14 @@ Your mission:
                 _isConnected = false;
                 _isConnecting = false;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Live 세션 오류: $err')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Live 세션 오류: $err')));
             },
             onClose: (code, reason) {
-              debugPrint('[GeminiLive Note] 🔒 onClose (code: $code, reason: $reason)');
+              debugPrint(
+                '[GeminiLive Note] 🔒 onClose (code: $code, reason: $reason)',
+              );
               if (!mounted) return;
               setState(() {
                 _isConnected = false;
@@ -320,9 +323,9 @@ Your mission:
       debugPrint('[GeminiLive Note] 🚨 Connection failed: $e');
       if (mounted) {
         setState(() => _isConnecting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('세션 시작 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('세션 시작 실패: $e')));
       }
     }
   }
@@ -399,7 +402,8 @@ Your mission:
           if (text.isNotEmpty && !_keyTakeaways.contains(text)) {
             _keyTakeaways.add(text);
           }
-        } else if (trimmed.startsWith('[ACTION]') || trimmed.contains('[ACTION]')) {
+        } else if (trimmed.startsWith('[ACTION]') ||
+            trimmed.contains('[ACTION]')) {
           final text = trimmed.replaceAll(RegExp(r'.*?\[ACTION\]'), '').trim();
           if (text.isNotEmpty && !_actionItems.any((a) => a.title == text)) {
             _actionItems.add(NoteActionItem(title: text));
@@ -430,9 +434,9 @@ Your mission:
     final hasPermission = await _audioRecorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('마이크 권한이 필요합니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('마이크 권한이 필요합니다.')));
       }
       return;
     }
@@ -484,9 +488,9 @@ Your mission:
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('오디오 녹음 시작 오류: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('오디오 녹음 시작 오류: $e')));
       }
     }
   }
@@ -510,9 +514,9 @@ Your mission:
 
   void _generateWrapUpSummary() {
     if (_speechTurns.isEmpty && _rawNotesBuffer.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('요약할 회의/강의 내용이 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('요약할 회의/강의 내용이 없습니다.')));
       return;
     }
 
@@ -531,18 +535,18 @@ Your mission:
         ],
         turnComplete: true,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('AI에게 최종 요약 정리를 요청했습니다...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('AI에게 최종 요약 정리를 요청했습니다...')));
     }
   }
 
   void _copyNotesToClipboard() {
     final fullText = _rawNotesBuffer.toString();
     if (fullText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('복사할 노트 내용이 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('복사할 노트 내용이 없습니다.')));
       return;
     }
     Clipboard.setData(ClipboardData(text: fullText));
@@ -582,7 +586,9 @@ Your mission:
               : Colors.amberAccent.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+            color: foldableInfo.isTabletop
+                ? Colors.deepOrangeAccent
+                : Colors.amberAccent,
             width: 1,
           ),
         ),
@@ -592,17 +598,25 @@ Your mission:
             Icon(
               foldableInfo.isTabletop
                   ? Icons.laptop_chromebook_rounded
-                  : (foldableInfo.isDualScreen ? Icons.splitscreen_rounded : Icons.developer_board_rounded),
+                  : (foldableInfo.isDualScreen
+                        ? Icons.splitscreen_rounded
+                        : Icons.developer_board_rounded),
               size: 13,
-              color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+              color: foldableInfo.isTabletop
+                  ? Colors.deepOrangeAccent
+                  : Colors.amberAccent,
             ),
             const SizedBox(width: 4),
             Text(
-              foldableInfo.isTabletop ? 'TABLETOP' : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+              foldableInfo.isTabletop
+                  ? 'TABLETOP'
+                  : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.amberAccent,
+                color: foldableInfo.isTabletop
+                    ? Colors.deepOrangeAccent
+                    : Colors.amberAccent,
               ),
             ),
           ],
@@ -630,52 +644,59 @@ Your mission:
         backgroundColor: const Color(0xFF131B2E),
         foregroundColor: Colors.white,
         actions: [
-          foldablePill(),
-          // Target Language Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _targetLanguageCode,
-                dropdownColor: const Color(0xFF131B2E),
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.amberAccent),
-                items: kNoteLanguages.map((lang) {
-                  return DropdownMenuItem<String>(
-                    value: lang['code'],
-                    child: Text('${lang['flag']} ${lang['name']}'),
-                  );
-                }).toList(),
-                onChanged: _isConnected
-                    ? null
-                    : (val) {
-                        if (val != null) {
-                          setState(() => _targetLanguageCode = val);
-                        }
-                      },
+          ScrollableAppBarActions(
+            children: [
+              foldablePill(),
+              // Target Language Selector
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _targetLanguageCode,
+                    dropdownColor: const Color(0xFF131B2E),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.amberAccent,
+                    ),
+                    items: kNoteLanguages.map((lang) {
+                      return DropdownMenuItem<String>(
+                        value: lang['code'],
+                        child: Text('${lang['flag']} ${lang['name']}'),
+                      );
+                    }).toList(),
+                    onChanged: _isConnected
+                        ? null
+                        : (val) {
+                            if (val != null) {
+                              setState(() => _targetLanguageCode = val);
+                            }
+                          },
+                  ),
+                ),
               ),
-            ),
-          ),
-          // Real-time token usage and cost badge
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: GeminiLiveUsageBadge(tracker: _usageTracker),
-          ),
-          _buildAudioDeviceSelectorButton(isCompact: true),
-          IconButton(
-            icon: const Icon(Icons.summarize_rounded),
-            tooltip: 'AI 최종 요약본 정리',
-            onPressed: _isConnected ? _generateWrapUpSummary : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy_all_rounded),
-            tooltip: '마크다운 전체 복사',
-            onPressed: _copyNotesToClipboard,
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt_rounded),
-            tooltip: '새 노트 시작 (초기화)',
-            onPressed: _clearNotes,
+              // Real-time token usage and cost badge
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: GeminiLiveUsageBadge(tracker: _usageTracker),
+              ),
+              _buildAudioDeviceSelectorButton(isCompact: true),
+              IconButton(
+                icon: const Icon(Icons.summarize_rounded),
+                tooltip: 'AI 최종 요약본 정리',
+                onPressed: _isConnected ? _generateWrapUpSummary : null,
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy_all_rounded),
+                tooltip: '마크다운 전체 복사',
+                onPressed: _copyNotesToClipboard,
+              ),
+              IconButton(
+                icon: const Icon(Icons.restart_alt_rounded),
+                tooltip: '새 노트 시작 (초기화)',
+                onPressed: _clearNotes,
+              ),
+            ],
           ),
         ],
       ),
@@ -689,24 +710,19 @@ Your mission:
                 if (foldableInfo.isTabletop) {
                   return Column(
                     children: [
-                      Expanded(
-                        flex: 1,
-                        child: _buildLiveTimelinePanel(),
-                      ),
+                      Expanded(flex: 1, child: _buildLiveTimelinePanel()),
                       Container(
                         height: 3,
                         color: Colors.amberAccent.withValues(alpha: 0.6),
                       ),
-                      Expanded(
-                        flex: 1,
-                        child: _buildSmartNotesBoard(),
-                      ),
+                      Expanded(flex: 1, child: _buildSmartNotesBoard()),
                     ],
                   );
                 }
 
                 // Dual-Screen (Book mode) or Foldable unfolded or Wide screen
-                final isTwoPane = (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
+                final isTwoPane =
+                    (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
                     foldableInfo.isFoldableOrWide ||
                     constraints.maxWidth >= 780;
 
@@ -714,22 +730,19 @@ Your mission:
                   return Row(
                     children: [
                       // Left: Live Speech Stream & Audio Waveform (40%)
-                      Expanded(
-                        flex: 4,
-                        child: _buildLiveTimelinePanel(),
-                      ),
+                      Expanded(flex: 4, child: _buildLiveTimelinePanel()),
                       if (foldableInfo.isDualScreen)
                         SizedBox(
-                          width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                          width: (foldableInfo.hingeBounds?.width ?? 16).clamp(
+                            8.0,
+                            36.0,
+                          ),
                           child: Container(color: Colors.black),
                         )
                       else
                         const VerticalDivider(color: Colors.white12, width: 1),
                       // Right: Smart Note Board & Markdown Canvas (60%)
-                      Expanded(
-                        flex: 6,
-                        child: _buildSmartNotesBoard(),
-                      ),
+                      Expanded(flex: 6, child: _buildSmartNotesBoard()),
                     ],
                   );
                 }
@@ -742,8 +755,8 @@ Your mission:
                       child: _activeViewTab == 0
                           ? _buildLiveTimelinePanel()
                           : _activeViewTab == 1
-                              ? _buildSmartNotesBoard()
-                              : _buildActionItemsPanel(),
+                          ? _buildSmartNotesBoard()
+                          : _buildActionItemsPanel(),
                     ),
                   ],
                 );
@@ -781,9 +794,7 @@ Your mission:
         onSelectionChanged: (set) {
           setState(() => _activeViewTab = set.first);
         },
-        style: const ButtonStyle(
-          visualDensity: VisualDensity.compact,
-        ),
+        style: const ButtonStyle(visualDensity: VisualDensity.compact),
       ),
     );
   }
@@ -817,13 +828,21 @@ Your mission:
                         ),
                       )
                     else
-                      const Icon(Icons.radio_button_unchecked, size: 10, color: Colors.grey),
+                      const Icon(
+                        Icons.radio_button_unchecked,
+                        size: 10,
+                        color: Colors.grey,
+                      ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _isConnected ? 'RECORDING & TRANSLATING' : 'READY TO RECORD',
+                        _isConnected
+                            ? 'RECORDING & TRANSLATING'
+                            : 'READY TO RECORD',
                         style: TextStyle(
-                          color: _isConnected ? Colors.redAccent : Colors.white60,
+                          color: _isConnected
+                              ? Colors.redAccent
+                              : Colors.white60,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -833,7 +852,10 @@ Your mission:
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white10,
                         borderRadius: BorderRadius.circular(16),
@@ -841,7 +863,11 @@ Your mission:
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.timer_outlined, size: 12, color: Colors.amberAccent),
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 12,
+                            color: Colors.amberAccent,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             _formatElapsedTime(),
@@ -870,7 +896,9 @@ Your mission:
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _audioVolume > 0.6
                                 ? Colors.redAccent
-                                : (_audioVolume > 0.3 ? Colors.amberAccent : Colors.greenAccent),
+                                : (_audioVolume > 0.3
+                                      ? Colors.amberAccent
+                                      : Colors.greenAccent),
                           ),
                         ),
                       ),
@@ -880,23 +908,40 @@ Your mission:
                     const SizedBox(width: 8),
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor:
-                            _isConnected ? Colors.red.shade600 : Colors.amber.shade700,
+                        backgroundColor: _isConnected
+                            ? Colors.red.shade600
+                            : Colors.amber.shade700,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: _isConnecting ? null : _toggleSession,
                       icon: _isConnecting
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Icon(_isConnected ? Icons.stop_rounded : Icons.mic_rounded, size: 18),
+                          : Icon(
+                              _isConnected
+                                  ? Icons.stop_rounded
+                                  : Icons.mic_rounded,
+                              size: 18,
+                            ),
                       label: Text(
                         _isConnected ? '종료' : '녹음 시작',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -921,7 +966,11 @@ Your mission:
                   ),
                 )
               else
-                const Icon(Icons.radio_button_unchecked, size: 12, color: Colors.grey),
+                const Icon(
+                  Icons.radio_button_unchecked,
+                  size: 12,
+                  color: Colors.grey,
+                ),
               const SizedBox(width: 10),
               Text(
                 _isConnected ? 'RECORDING & TRANSLATING' : 'READY TO RECORD',
@@ -935,7 +984,10 @@ Your mission:
               const SizedBox(width: 16),
               // Timer
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(20),
@@ -943,7 +995,11 @@ Your mission:
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.timer_outlined, size: 14, color: Colors.amberAccent),
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 14,
+                      color: Colors.amberAccent,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       _formatElapsedTime(),
@@ -969,7 +1025,9 @@ Your mission:
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _audioVolume > 0.6
                           ? Colors.redAccent
-                          : (_audioVolume > 0.3 ? Colors.amberAccent : Colors.greenAccent),
+                          : (_audioVolume > 0.3
+                                ? Colors.amberAccent
+                                : Colors.greenAccent),
                     ),
                   ),
                 ),
@@ -980,20 +1038,31 @@ Your mission:
               // Start / Stop Session Button
               FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor:
-                      _isConnected ? Colors.red.shade600 : Colors.amber.shade700,
+                  backgroundColor: _isConnected
+                      ? Colors.red.shade600
+                      : Colors.amber.shade700,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: _isConnecting ? null : _toggleSession,
                 icon: _isConnecting
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : Icon(_isConnected ? Icons.stop_rounded : Icons.mic_rounded),
+                    : Icon(
+                        _isConnected ? Icons.stop_rounded : Icons.mic_rounded,
+                      ),
                 label: Text(
                   _isConnected ? '세션 종료' : '노트 녹음 시작',
                   style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1009,11 +1078,12 @@ Your mission:
   Widget _buildAudioDeviceSelectorButton({bool isCompact = false}) {
     final hasDevice = _selectedAudioDevice != null;
     final isBlackHole =
-        _selectedAudioDevice?.label.toLowerCase().contains('blackhole') ?? false;
+        _selectedAudioDevice?.label.toLowerCase().contains('blackhole') ??
+        false;
     final label = hasDevice
         ? (_selectedAudioDevice!.label.isNotEmpty
-            ? _selectedAudioDevice!.label
-            : '입력 장치 (${_selectedAudioDevice!.id})')
+              ? _selectedAudioDevice!.label
+              : '입력 장치 (${_selectedAudioDevice!.id})')
         : '기본 마이크 (System Default)';
 
     return PopupMenuButton<String>(
@@ -1070,8 +1140,9 @@ Your mission:
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         color: isBh ? Colors.amberAccent : null,
                       ),
                     ),
@@ -1138,8 +1209,11 @@ Your mission:
         children: [
           Row(
             children: [
-              const Icon(Icons.record_voice_over_rounded,
-                  color: Colors.amberAccent, size: 18),
+              const Icon(
+                Icons.record_voice_over_rounded,
+                color: Colors.amberAccent,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               const Text(
                 '실시간 발화 & 동시 번역',
@@ -1163,8 +1237,11 @@ Your mission:
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.mic_none_rounded,
-                            size: 44, color: Colors.white.withValues(alpha: 0.2)),
+                        Icon(
+                          Icons.mic_none_rounded,
+                          size: 44,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                         const SizedBox(height: 8),
                         const Text(
                           '녹음을 시작하면 회의/강의 발화가\n실시간으로 텍스트화 및 번역됩니다.',
@@ -1176,7 +1253,9 @@ Your mission:
                   )
                 : ListView.separated(
                     controller: _timelineScrollController,
-                    itemCount: _speechTurns.length + (_interimSpeech.isNotEmpty ? 1 : 0),
+                    itemCount:
+                        _speechTurns.length +
+                        (_interimSpeech.isNotEmpty ? 1 : 0),
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       if (index < _speechTurns.length) {
@@ -1231,7 +1310,11 @@ Your mission:
           const SizedBox(height: 6),
           Text(
             turn.speakerText,
-            style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              height: 1.3,
+            ),
           ),
         ],
       ),
@@ -1294,8 +1377,11 @@ Your mission:
           // Header with Quick Insights Tags
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded,
-                  color: Colors.amberAccent, size: 20),
+              const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.amberAccent,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               const Text(
                 'AI 실시간 구조화 노트',
@@ -1314,7 +1400,10 @@ Your mission:
                 ),
                 onPressed: _copyNotesToClipboard,
                 icon: const Icon(Icons.copy, size: 14),
-                label: const Text('Markdown 복사', style: TextStyle(fontSize: 11)),
+                label: const Text(
+                  'Markdown 복사',
+                  style: TextStyle(fontSize: 11),
+                ),
               ),
             ],
           ),
@@ -1399,7 +1488,11 @@ Your mission:
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline, color: Colors.amberAccent, size: 18),
+          const Icon(
+            Icons.lightbulb_outline,
+            color: Colors.amberAccent,
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Text(
             '핵심 요약 ${_keyTakeaways.length}건 · 액션 아이템 ${_actionItems.length}건 감지됨',
@@ -1439,8 +1532,11 @@ Your mission:
         children: [
           Row(
             children: [
-              const Icon(Icons.checklist_rtl_rounded,
-                  color: Colors.cyanAccent, size: 20),
+              const Icon(
+                Icons.checklist_rtl_rounded,
+                color: Colors.cyanAccent,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               const Text(
                 '액션 아이템 & 할 일 체크리스트',
@@ -1464,8 +1560,11 @@ Your mission:
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.task_alt_rounded,
-                            size: 40, color: Colors.white.withValues(alpha: 0.2)),
+                        Icon(
+                          Icons.task_alt_rounded,
+                          size: 40,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                         const SizedBox(height: 8),
                         const Text(
                           '감지된 액션 아이템이 없습니다.\n회의 중 과제나 할 일이 언급되면 자동 추가됩니다.',
@@ -1485,7 +1584,9 @@ Your mission:
                         title: Text(
                           item.title,
                           style: TextStyle(
-                            color: item.isCompleted ? Colors.white38 : Colors.white,
+                            color: item.isCompleted
+                                ? Colors.white38
+                                : Colors.white,
                             decoration: item.isCompleted
                                 ? TextDecoration.lineThrough
                                 : TextDecoration.none,

@@ -275,7 +275,10 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
     }
 
     setState(() => _isConnecting = true);
-    _addLog('SYSTEM', 'Connecting to Live API with Gemini 3.8 Live ($kLatestRealtimeLiveModel)...');
+    _addLog(
+      'SYSTEM',
+      'Connecting to Live API with Gemini 3.8 Live ($kLatestRealtimeLiveModel)...',
+    );
     await _responseAudioPlayer.stop();
 
     try {
@@ -552,10 +555,11 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
         (chunk) {
           if (_session == null || !_isConnected) return;
 
-          final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
-          _session!.sendRealtimeInput(
-            audio: blob,
+          final blob = Blob(
+            mimeType: _audioMimeType,
+            data: base64Encode(chunk),
           );
+          _session!.sendRealtimeInput(audio: blob);
 
           if (mounted && _audioChunksSent % 12 == 0) {
             setState(() {});
@@ -653,9 +657,7 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
       final bytes = await image.readAsBytes();
 
       final blob = Blob(mimeType: 'image/jpeg', data: base64Encode(bytes));
-      _session!.sendRealtimeInput(
-        video: blob,
-      );
+      _session!.sendRealtimeInput(video: blob);
 
       _videoFramesSent += 1;
 

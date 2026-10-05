@@ -16,6 +16,7 @@ import 'foldable_utils.dart';
 import 'live_math_tutor_page.dart';
 import 'pro_dj_console_page.dart';
 import 'realtime_media_demo.dart';
+import 'scrollable_app_bar_actions.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,111 +132,125 @@ class _HomePageState extends State<HomePage> {
             title: Text(t.appTitle),
             centerTitle: true,
             actions: [
-              PopupMenuButton<HomeViewMode>(
-                tooltip: _viewMode.label(t),
-                initialValue: _viewMode,
-                icon: Icon(_viewMode.icon, size: 20),
-                onSelected: (mode) => setState(() => _viewMode = mode),
-                itemBuilder: (context) => HomeViewMode.values.map((mode) {
-                  final isSelected = mode == _viewMode;
-                  return PopupMenuItem(
-                    value: mode,
-                    child: Row(
-                      children: [
-                        Icon(
-                          mode.icon,
-                          size: 18,
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          mode.label(t),
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(width: 4),
-              const LanguageSelectorButton(),
-              const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.settings),
-                tooltip: t.settingsTooltip,
-                onPressed: _openApiKeySettings,
-              ),
-              const SizedBox(width: 4),
-              Builder(
-                builder: (context) {
-                  final foldableInfo = FoldableLayoutInfo.of(context);
-                  if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Tooltip(
-                      message: foldableInfo.isTabletop
-                          ? t.tabletopMode
-                          : t.foldableDetected,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
-                              .withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.3),
-                          ),
-                        ),
+              ScrollableAppBarActions(
+                children: [
+                  PopupMenuButton<HomeViewMode>(
+                    tooltip: _viewMode.label(t),
+                    initialValue: _viewMode,
+                    icon: Icon(_viewMode.icon, size: 20),
+                    onSelected: (mode) => setState(() => _viewMode = mode),
+                    itemBuilder: (context) => HomeViewMode.values.map((mode) {
+                      final isSelected = mode == _viewMode;
+                      return PopupMenuItem(
+                        value: mode,
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              foldableInfo.isTabletop
-                                  ? Icons.laptop_chromebook_rounded
-                                  : Icons.devices_fold_rounded,
-                              size: 14,
-                              color: Theme.of(context).colorScheme.primary,
+                              mode.icon,
+                              size: 18,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             Text(
-                              foldableInfo.isTabletop
-                                  ? 'FLEX'
-                                  : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+                              mode.label(t),
                               style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  );
-                },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(width: 4),
+                  const LanguageSelectorButton(),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.settings),
+                    tooltip: t.settingsTooltip,
+                    onPressed: _openApiKeySettings,
+                  ),
+                  const SizedBox(width: 4),
+                  Builder(
+                    builder: (context) {
+                      final foldableInfo = FoldableLayoutInfo.of(context);
+                      if (!foldableInfo.hasHinge &&
+                          !foldableInfo.isFoldableOrWide) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Tooltip(
+                          message: foldableInfo.isTabletop
+                              ? t.tabletopMode
+                              : t.foldableDetected,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  foldableInfo.isTabletop
+                                      ? Icons.laptop_chromebook_rounded
+                                      : Icons.devices_fold_rounded,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  foldableInfo.isTabletop
+                                      ? 'FLEX'
+                                      : (foldableInfo.isDualScreen
+                                            ? 'DUO'
+                                            : 'FOLD'),
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                ],
               ),
-              const SizedBox(width: 4),
             ],
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
               final foldableInfo = FoldableLayoutInfo.of(context);
-              final isFoldable = _viewMode == HomeViewMode.foldable ||
+              final isFoldable =
+                  _viewMode == HomeViewMode.foldable ||
                   (_viewMode == HomeViewMode.auto &&
                       (foldableInfo.hasHinge ||
                           (foldableInfo.isFoldableOrWide && width >= 640)));
@@ -246,7 +261,10 @@ class _HomePageState extends State<HomePage> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1400),
                     child: FoldableTwoPane(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       startPane: ListView(
                         children: [
                           _buildHeader(t.featuredServices),
@@ -285,14 +303,18 @@ class _HomePageState extends State<HomePage> {
                 );
               }
 
-              final isGrid = _viewMode == HomeViewMode.grid ||
+              final isGrid =
+                  _viewMode == HomeViewMode.grid ||
                   (_viewMode == HomeViewMode.auto && width >= 660);
 
               return Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1240),
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     children: [
                       _buildHeader(t.featuredServices),
                       _buildSectionGrid(
@@ -529,10 +551,10 @@ class _HomePageState extends State<HomePage> {
     if (!isGrid) {
       return Column(
         children: children
-            .map((c) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: c,
-                ))
+            .map(
+              (c) =>
+                  Padding(padding: const EdgeInsets.only(bottom: 10), child: c),
+            )
             .toList(),
       );
     }
@@ -579,7 +601,9 @@ class _HomePageState extends State<HomePage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.35),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
       ),
       child: InkWell(

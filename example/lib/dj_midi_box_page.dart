@@ -35,7 +35,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
   // Side console panel state
   bool _showSidePanel = true;
   final TextEditingController _customPromptController = TextEditingController(
-    text: 'Energetic futuristic dance track with heavy punchy kicks and sparkling synth arpeggios',
+    text:
+        'Energetic futuristic dance track with heavy punchy kicks and sparkling synth arpeggios',
   );
   double _customPromptWeight = 0.85;
   bool _customPromptActive = false;
@@ -80,25 +81,29 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       // Row 1
       _MidiKnobData(
         title: 'Bossa Nova',
-        prompt: 'Bossa Nova acoustic guitar rhythm with gentle shaker and warm bass',
+        prompt:
+            'Bossa Nova acoustic guitar rhythm with gentle shaker and warm bass',
         color: const Color(0xFF38BDF8), // Sky Blue
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Chillwave',
-        prompt: 'Nostalgic chillwave synthesizer chords with warm analog tape saturation',
+        prompt:
+            'Nostalgic chillwave synthesizer chords with warm analog tape saturation',
         color: const Color(0xFF818CF8), // Indigo
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Drum and Bass',
-        prompt: 'Fast 174 BPM drum and bass rolling breakbeats and reese bassline',
+        prompt:
+            'Fast 174 BPM drum and bass rolling breakbeats and reese bassline',
         color: const Color(0xFFFB7185), // Rose
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Post Punk',
-        prompt: 'Post punk angular electric guitar riffs with driving drum machine',
+        prompt:
+            'Post punk angular electric guitar riffs with driving drum machine',
         color: const Color(0xFFF472B6), // Pink
         weight: 0.0,
       ),
@@ -112,7 +117,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       ),
       _MidiKnobData(
         title: 'Funk',
-        prompt: 'Funky slap bass groove with crisp rhythmic rhythm guitar and claps',
+        prompt:
+            'Funky slap bass groove with crisp rhythmic rhythm guitar and claps',
         color: const Color(0xFFFBBF24), // Amber
         weight: 0.0,
       ),
@@ -124,7 +130,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       ),
       _MidiKnobData(
         title: 'Lush Strings',
-        prompt: 'Lush orchestral string ensemble crescendo with cinematic emotional depth',
+        prompt:
+            'Lush orchestral string ensemble crescendo with cinematic emotional depth',
         color: const Color(0xFF34D399), // Mint Green (Active in reference!)
         weight: 0.80,
       ),
@@ -132,19 +139,22 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       // Row 3
       _MidiKnobData(
         title: 'Sparkling Arpeggios',
-        prompt: 'Sparkling crystalline synthesizer arpeggios floating over stereo reverb',
+        prompt:
+            'Sparkling crystalline synthesizer arpeggios floating over stereo reverb',
         color: const Color(0xFF22D3EE), // Cyan
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Staccato Rhythms',
-        prompt: 'Tight staccato pizzicato rhythms and percussive melodic accents',
+        prompt:
+            'Tight staccato pizzicato rhythms and percussive melodic accents',
         color: const Color(0xFFF97316), // Orange
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Punchy Kick',
-        prompt: 'Punchy deep 4/4 electronic dance kick drum with chest-thumping low end',
+        prompt:
+            'Punchy deep 4/4 electronic dance kick drum with chest-thumping low end',
         color: const Color(0xFFEF4444), // Red
         weight: 0.0,
       ),
@@ -165,19 +175,24 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       ),
       _MidiKnobData(
         title: 'Neo Soul',
-        prompt: 'Warm neo soul Fender Rhodes electric piano chords with laid-back swing beat',
+        prompt:
+            'Warm neo soul Fender Rhodes electric piano chords with laid-back swing beat',
         color: const Color(0xFFF59E0B), // Warm Gold
         weight: 0.0,
       ),
       _MidiKnobData(
         title: 'Trip Hop',
-        prompt: 'Moody Bristol trip hop downtempo vinyl beat with dusty acoustic jazz bass',
-        color: const Color(0xFF6366F1), // Royal Purple-Blue (Active in reference!)
+        prompt:
+            'Moody Bristol trip hop downtempo vinyl beat with dusty acoustic jazz bass',
+        color: const Color(
+          0xFF6366F1,
+        ), // Royal Purple-Blue (Active in reference!)
         weight: 0.70,
       ),
       _MidiKnobData(
         title: 'Thrash',
-        prompt: 'Aggressive fast thrash metal double-bass drumming and distorted heavy riffs',
+        prompt:
+            'Aggressive fast thrash metal double-bass drumming and distorted heavy riffs',
         color: const Color(0xFFDC2626), // Crimson
         weight: 0.0,
       ),
@@ -223,7 +238,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     }
 
     setState(() => _isConnecting = true);
-    _addLog('🔌 Connecting to Lyria RealTime WebSocket...', color: const Color(0xFF38BDF8));
+    _addLog(
+      '🔌 Connecting to Lyria RealTime WebSocket...',
+      color: const Color(0xFF38BDF8),
+    );
 
     try {
       final musicService = LiveMusicService(
@@ -237,14 +255,20 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           callbacks: LiveMusicCallbacks(
             onOpen: () {
               debugPrint('[MidiBox] WebSocket connection opened');
-              _addLog('✅ WebSocket opened: Connected to Google Lyria!', color: const Color(0xFF34D399));
+              _addLog(
+                '✅ WebSocket opened: Connected to Google Lyria!',
+                color: const Color(0xFF34D399),
+              );
             },
             onMessage: (message) {
               _handleServerMessage(message);
             },
             onError: (err, st) {
               debugPrint('[MidiBox] Error: $err');
-              _addLog('❌ WebSocket Error: $err', color: const Color(0xFFEF4444));
+              _addLog(
+                '❌ WebSocket Error: $err',
+                color: const Color(0xFFEF4444),
+              );
               if (mounted) {
                 setState(() {
                   _isConnected = false;
@@ -254,7 +278,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             },
             onClose: (code, reason) {
               debugPrint('[MidiBox] Closed: $code ($reason)');
-              _addLog('⚠️ WebSocket closed ($code: $reason)', color: const Color(0xFFF59E0B));
+              _addLog(
+                '⚠️ WebSocket closed ($code: $reason)',
+                color: const Color(0xFFF59E0B),
+              );
               if (mounted) {
                 setState(() {
                   _isConnected = false;
@@ -283,7 +310,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('🎛️ DJ MIDI Box Connected to Lyria RealTime! Tap ▶ to Play.'),
+          content: Text(
+            '🎛️ DJ MIDI Box Connected to Lyria RealTime! Tap ▶ to Play.',
+          ),
           backgroundColor: Colors.deepPurpleAccent,
           duration: Duration(seconds: 2),
         ),
@@ -293,7 +322,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         setState(() => _isConnecting = false);
         _addLog('❌ Connection failed: $e', color: const Color(0xFFEF4444));
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Connection failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -317,7 +349,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           totalBytes += bytes.length;
           _audioPlayer.appendPcmBytes(bytes);
           final rms = GeminiLiveAudioUtils.calculateRms(bytes);
-          final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
+          final visualScale = GeminiLiveAudioUtils.toVisualScale(
+            rms,
+            factor: 2.2,
+          );
 
           if (mounted) {
             setState(() {
@@ -340,7 +375,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         if (bytes != null && bytes.isNotEmpty && _isPlaying) {
           _audioPlayer.appendPcmBytes(bytes);
           final rms = GeminiLiveAudioUtils.calculateRms(bytes);
-          final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
+          final visualScale = GeminiLiveAudioUtils.toVisualScale(
+            rms,
+            factor: 2.2,
+          );
 
           if (mounted) {
             setState(() {
@@ -380,12 +418,11 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
     // 1. Injected custom text prompt (if active and not empty)
     final customText = _customPromptController.text.trim();
-    if (_customPromptActive && customText.isNotEmpty && _customPromptWeight > 0.01) {
+    if (_customPromptActive &&
+        customText.isNotEmpty &&
+        _customPromptWeight > 0.01) {
       prompts.add(
-        WeightedPrompt(
-          text: customText,
-          weight: _customPromptWeight,
-        ),
+        WeightedPrompt(text: customText, weight: _customPromptWeight),
       );
     }
 
@@ -406,13 +443,20 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     }
 
     _session!.setWeightedPrompts(prompts);
-    final summary = prompts.map((p) {
-      final text = p.text ?? '';
-      final display = text.length > 20 ? '${text.substring(0, 18)}..' : text;
-      final weightPct = (((p.weight ?? 0.0)) * 100).round();
-      return '$display [$weightPct%]';
-    }).join(' · ');
-    _addLog('⚡ Prompts sent (${prompts.length}): $summary', color: const Color(0xFFFBBF24));
+    final summary = prompts
+        .map((p) {
+          final text = p.text ?? '';
+          final display = text.length > 20
+              ? '${text.substring(0, 18)}..'
+              : text;
+          final weightPct = (((p.weight ?? 0.0)) * 100).round();
+          return '$display [$weightPct%]';
+        })
+        .join(' · ');
+    _addLog(
+      '⚡ Prompts sent (${prompts.length}): $summary',
+      color: const Color(0xFFFBBF24),
+    );
   }
 
   void _sendGenerationConfig() {
@@ -477,10 +521,15 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
       builder: (ctx) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1E1438),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Edit Knob: ${knob.title}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -512,7 +561,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('CANCEL', style: TextStyle(color: Colors.white54)),
+              child: const Text(
+                'CANCEL',
+                style: TextStyle(color: Colors.white54),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -580,7 +632,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                             AnimatedBuilder(
                               animation: _pulseAnim,
                               builder: (context, child) {
-                                final pulseScale = 1.0 + (_isPlaying ? _rmsLevel * 0.45 : 0.0);
+                                final pulseScale =
+                                    1.0 + (_isPlaying ? _rmsLevel * 0.45 : 0.0);
                                 return Transform.scale(
                                   scale: pulseScale,
                                   child: Container(
@@ -590,8 +643,12 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                                       shape: BoxShape.circle,
                                       gradient: RadialGradient(
                                         colors: [
-                                          const Color(0xFFA855F7).withValues(alpha: 0.6),
-                                          const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                          const Color(
+                                            0xFFA855F7,
+                                          ).withValues(alpha: 0.6),
+                                          const Color(
+                                            0xFF38BDF8,
+                                          ).withValues(alpha: 0.2),
                                           Colors.transparent,
                                         ],
                                       ),
@@ -604,7 +661,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                                     ),
                                     child: Center(
                                       child: Icon(
-                                        _isPlaying ? Icons.graphic_eq : Icons.music_note,
+                                        _isPlaying
+                                            ? Icons.graphic_eq
+                                            : Icons.music_note,
                                         color: Colors.white,
                                         size: 40,
                                       ),
@@ -641,7 +700,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                           children: [
                             const SizedBox(height: 8),
                             _buildKnobGrid(
-                              knobIndices: List.generate(_knobs.length, (i) => i),
+                              knobIndices: List.generate(
+                                _knobs.length,
+                                (i) => i,
+                              ),
                               crossAxisCount: 4,
                               maxWidth: 680,
                             ),
@@ -676,7 +738,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
                           // Hinge Spine Spacer
                           SizedBox(
-                            width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                            width: (foldableInfo.hingeBounds?.width ?? 16)
+                                .clamp(8.0, 36.0),
                             child: Center(
                               child: Container(width: 2, color: Colors.white24),
                             ),
@@ -707,8 +770,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
 
               // 3. Desktop / Wide Screen Split View Layout
               if (width >= 860) {
-                final leftPanelWidth =
-                    math.min(width * 0.35, 420.0).clamp(320.0, 420.0);
+                final leftPanelWidth = math
+                    .min(width * 0.35, 420.0)
+                    .clamp(320.0, 420.0);
                 return Row(
                   children: [
                     if (_showSidePanel)
@@ -725,8 +789,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                           Expanded(
                             child: Center(
                               child: _buildKnobGrid(
-                                knobIndices:
-                                    List.generate(_knobs.length, (i) => i),
+                                knobIndices: List.generate(
+                                  _knobs.length,
+                                  (i) => i,
+                                ),
                                 crossAxisCount: 4,
                                 maxWidth: 680,
                               ),
@@ -809,7 +875,11 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white70, size: 20),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white70,
+                  size: 20,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
                 tooltip: 'Back',
               ),
@@ -835,7 +905,8 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                   setState(() {
                     const bpms = [84, 96, 110, 120, 128, 140, 174];
                     final currentIdx = bpms.indexOf(_bpm);
-                    final nextIdx = (currentIdx == -1 ? 3 : currentIdx + 1) % bpms.length;
+                    final nextIdx =
+                        (currentIdx == -1 ? 3 : currentIdx + 1) % bpms.length;
                     _bpm = bpms[nextIdx];
                   });
                   if (_isConnected) {
@@ -844,7 +915,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(20),
                     borderRadius: BorderRadius.circular(16),
@@ -874,14 +948,19 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                 onTap: _isConnected ? () => _session?.close() : _connect,
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _isConnected
                         ? const Color(0xFF10B981).withAlpha(40)
                         : Colors.white.withAlpha(20),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _isConnected ? const Color(0xFF10B981) : Colors.white24,
+                      color: _isConnected
+                          ? const Color(0xFF10B981)
+                          : Colors.white24,
                     ),
                   ),
                   child: Row(
@@ -889,7 +968,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                       Icon(
                         Icons.circle,
                         size: 8,
-                        color: _isConnected ? const Color(0xFF10B981) : Colors.white54,
+                        color: _isConnected
+                            ? const Color(0xFF10B981)
+                            : Colors.white54,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -897,7 +978,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                             ? 'CONNECTING'
                             : (_isConnected ? 'ONLINE' : 'CONNECT'),
                         style: TextStyle(
-                          color: _isConnected ? const Color(0xFF10B981) : Colors.white70,
+                          color: _isConnected
+                              ? const Color(0xFF10B981)
+                              : Colors.white70,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                           letterSpacing: 0.8,
@@ -932,13 +1015,19 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                     setState(() => _showSidePanel = !_showSidePanel);
                   }
                 },
-                tooltip: _showSidePanel ? 'Hide Console' : 'Show Console (Prompt, Settings, Logs)',
+                tooltip: _showSidePanel
+                    ? 'Hide Console'
+                    : 'Show Console (Prompt, Settings, Logs)',
               ),
 
               const SizedBox(width: 4),
 
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white70, size: 20),
+                icon: const Icon(
+                  Icons.settings,
+                  color: Colors.white70,
+                  size: 20,
+                ),
                 onPressed: () => AppSettingsDialog.show(context),
                 tooltip: 'Settings',
               ),
@@ -957,10 +1046,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
           audioPlayer: _audioPlayer,
           isPlaying: _isPlaying,
           knobs: _knobs,
-          customPromptText:
-              _customPromptActive ? _customPromptController.text : null,
-          customPromptWeight:
-              _customPromptActive ? _customPromptWeight : null,
+          customPromptText: _customPromptActive
+              ? _customPromptController.text
+              : null,
+          customPromptWeight: _customPromptActive ? _customPromptWeight : null,
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 20, top: 2),
@@ -977,10 +1066,7 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF4C2A85),
-                      Color(0xFF2A1550),
-                    ],
+                    colors: [Color(0xFF4C2A85), Color(0xFF2A1550)],
                   ),
                   border: Border.all(
                     color: _isPlaying
@@ -1071,7 +1157,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white12, width: 1)),
+                border: Border(
+                  bottom: BorderSide(color: Colors.white12, width: 1),
+                ),
               ),
               child: Row(
                 children: [
@@ -1088,11 +1176,16 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFA855F7).withAlpha(40),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFA855F7).withAlpha(100)),
+                      border: Border.all(
+                        color: const Color(0xFFA855F7).withAlpha(100),
+                      ),
                     ),
                     child: Text(
                       _isPlaying ? 'STREAMING' : 'IDLE',
@@ -1116,10 +1209,16 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                 indicatorWeight: 3,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white54,
-                labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
                 tabs: [
                   Tab(icon: Icon(Icons.edit_note, size: 16), text: 'PROMPT'),
-                  Tab(icon: Icon(Icons.settings_input_component, size: 16), text: 'SETTINGS'),
+                  Tab(
+                    icon: Icon(Icons.settings_input_component, size: 16),
+                    text: 'SETTINGS',
+                  ),
                   Tab(icon: Icon(Icons.terminal, size: 16), text: 'LOGS'),
                 ],
               ),
@@ -1175,7 +1274,9 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               ? 'Active: Steering the music along with the 16 rotary knobs'
               : 'Disabled: Only rotary knobs are active',
           style: TextStyle(
-            color: _customPromptActive ? const Color(0xFF34D399) : Colors.white38,
+            color: _customPromptActive
+                ? const Color(0xFF34D399)
+                : Colors.white38,
             fontSize: 11,
           ),
         ),
@@ -1189,8 +1290,14 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
             filled: true,
             fillColor: const Color(0xFF1E123D),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFA855F7))),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFA855F7)),
+            ),
           ),
           onChanged: (_) {
             if (_customPromptActive && _isConnected) {
@@ -1207,9 +1314,18 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Prompt Weight (Influence):', style: TextStyle(color: Colors.white70, fontSize: 11)),
-            Text('${(_customPromptWeight * 100).round()}%',
-                style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'Prompt Weight (Influence):',
+              style: TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+            Text(
+              '${(_customPromptWeight * 100).round()}%',
+              style: const TextStyle(
+                color: Color(0xFFFBBF24),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         SliderTheme(
@@ -1227,9 +1343,12 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               setState(() => _customPromptWeight = val);
               if (_customPromptActive && _isConnected) {
                 _knobDebounceTimer?.cancel();
-                _knobDebounceTimer = Timer(const Duration(milliseconds: 150), () {
-                  if (_isConnected) _sendWeightedPrompts();
-                });
+                _knobDebounceTimer = Timer(
+                  const Duration(milliseconds: 150),
+                  () {
+                    if (_isConnected) _sendWeightedPrompts();
+                  },
+                );
               }
             },
           ),
@@ -1241,16 +1360,24 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             backgroundColor: const Color(0xFFA855F7),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
           icon: const Icon(Icons.send_rounded, size: 16),
-          label: const Text('APPLY PROMPT TO MIX', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          label: const Text(
+            'APPLY PROMPT TO MIX',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
           onPressed: () {
             setState(() => _customPromptActive = true);
             if (_isConnected) {
               _sendWeightedPrompts();
             } else {
-              _addLog('Custom prompt saved: ${_customPromptController.text.trim()}', color: Colors.white70);
+              _addLog(
+                'Custom prompt saved: ${_customPromptController.text.trim()}',
+                color: Colors.white70,
+              );
             }
           },
         ),
@@ -1258,7 +1385,12 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         const SizedBox(height: 20),
         const Text(
           'QUICK STYLE PRESETS',
-          style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0),
+          style: TextStyle(
+            color: Colors.white54,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+            letterSpacing: 1.0,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -1268,7 +1400,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             for (final preset in _presets)
               ActionChip(
                 backgroundColor: const Color(0xFF26184A),
-                label: Text(preset.$1, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                label: Text(
+                  preset.$1,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
                 onPressed: () {
                   setState(() {
                     _customPromptController.text = preset.$2;
@@ -1293,8 +1428,22 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('TEMPO (BPM)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-            Text('$_bpm BPM', style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'TEMPO (BPM)',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '$_bpm BPM',
+              style: const TextStyle(
+                color: Color(0xFF38BDF8),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         SliderTheme(
@@ -1313,9 +1462,12 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               setState(() => _bpm = val.round());
               if (_isConnected) {
                 _knobDebounceTimer?.cancel();
-                _knobDebounceTimer = Timer(const Duration(milliseconds: 200), () {
-                  if (_isConnected) _sendGenerationConfig();
-                });
+                _knobDebounceTimer = Timer(
+                  const Duration(milliseconds: 200),
+                  () {
+                    if (_isConnected) _sendGenerationConfig();
+                  },
+                );
               }
             },
           ),
@@ -1328,7 +1480,13 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               selected: isSel,
               selectedColor: const Color(0xFF38BDF8).withAlpha(60),
               backgroundColor: const Color(0xFF1E123D),
-              label: Text('$b', style: TextStyle(color: isSel ? const Color(0xFF38BDF8) : Colors.white70, fontSize: 10)),
+              label: Text(
+                '$b',
+                style: TextStyle(
+                  color: isSel ? const Color(0xFF38BDF8) : Colors.white70,
+                  fontSize: 10,
+                ),
+              ),
               onSelected: (_) {
                 setState(() => _bpm = b);
                 if (_isConnected) _sendGenerationConfig();
@@ -1342,7 +1500,14 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         const SizedBox(height: 8),
 
         // Generation Mode
-        const Text('GENERATION MODE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+        const Text(
+          'GENERATION MODE',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1358,7 +1523,11 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               isExpanded: true,
               style: const TextStyle(color: Colors.white, fontSize: 12),
               items: MusicGenerationMode.values
-                  .where((m) => m != MusicGenerationMode.MUSIC_GENERATION_MODE_UNSPECIFIED)
+                  .where(
+                    (m) =>
+                        m !=
+                        MusicGenerationMode.MUSIC_GENERATION_MODE_UNSPECIFIED,
+                  )
                   .map((m) => DropdownMenuItem(value: m, child: Text(m.name)))
                   .toList(),
               onChanged: (m) {
@@ -1374,7 +1543,14 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         const SizedBox(height: 16),
 
         // Scale
-        const Text('MUSICAL SCALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+        const Text(
+          'MUSICAL SCALE',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1390,10 +1566,18 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
               isExpanded: true,
               style: const TextStyle(color: Colors.white, fontSize: 12),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Auto Scale (Model Decides)')),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Auto Scale (Model Decides)'),
+                ),
                 ...Scale.values
                     .where((s) => s != Scale.SCALE_UNSPECIFIED)
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.name.replaceAll('_', ' ')))),
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s.name.replaceAll('_', ' ')),
+                      ),
+                    ),
               ],
               onChanged: (s) {
                 setState(() => _selectedScale = s);
@@ -1411,8 +1595,22 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('GUIDANCE SCALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-            Text(_guidance.toStringAsFixed(1), style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'GUIDANCE SCALE',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              _guidance.toStringAsFixed(1),
+              style: const TextStyle(
+                color: Color(0xFFFBBF24),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         Slider(
@@ -1435,8 +1633,22 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('SOUND DENSITY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-            Text('${(_density * 100).round()}%', style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'SOUND DENSITY',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '${(_density * 100).round()}%',
+              style: const TextStyle(
+                color: Color(0xFF34D399),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         Slider(
@@ -1459,8 +1671,22 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('BRIGHTNESS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
-            Text('${(_brightness * 100).round()}%', style: const TextStyle(color: Color(0xFFEC4899), fontWeight: FontWeight.bold, fontSize: 12)),
+            const Text(
+              'BRIGHTNESS',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              '${(_brightness * 100).round()}%',
+              style: const TextStyle(
+                color: Color(0xFFEC4899),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
         Slider(
@@ -1483,7 +1709,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         // Mute bass & drums
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Mute Bass', style: TextStyle(color: Colors.white, fontSize: 12)),
+          title: const Text(
+            'Mute Bass',
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
           value: _muteBass,
           activeTrackColor: const Color(0xFFEF4444),
           onChanged: (v) {
@@ -1493,7 +1722,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         ),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Mute Drums', style: TextStyle(color: Colors.white, fontSize: 12)),
+          title: const Text(
+            'Mute Drums',
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
           value: _muteDrums,
           activeTrackColor: const Color(0xFFEF4444),
           onChanged: (v) {
@@ -1516,13 +1748,25 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
             children: [
               Text(
                 'EVENTS (${_logs.length})',
-                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
               ),
               InkWell(
                 onTap: () => setState(() => _logs.clear()),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Text('CLEAR', style: TextStyle(color: Color(0xFFF43F5E), fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'CLEAR',
+                    style: TextStyle(
+                      color: Color(0xFFF43F5E),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1790,7 +2034,8 @@ class _MidiKnobPainter extends CustomPainter {
     );
 
     final dotPaint = Paint()
-      ..color = const Color(0xFF0F172A) // Dark slate black
+      ..color =
+          const Color(0xFF0F172A) // Dark slate black
       ..style = PaintingStyle.fill;
     canvas.drawCircle(dotOffset, 2.5, dotPaint);
   }
@@ -1831,8 +2076,8 @@ class _MidiLogEntry {
   final Color color;
 
   _MidiLogEntry(this.text, {Color? color})
-      : time = DateTime.now(),
-        color = color ?? const Color(0xFF94A3B8);
+    : time = DateTime.now(),
+      color = color ?? const Color(0xFF94A3B8);
 
   String get timeFormatted {
     final h = time.hour.toString().padLeft(2, '0');
@@ -1933,7 +2178,8 @@ class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
   Widget build(BuildContext context) {
     // Generate active mix prompt summary string
     final activeKnobs = widget.knobs.where((k) => k.weight > 0.01).toList();
-    final double customW = (widget.customPromptText != null &&
+    final double customW =
+        (widget.customPromptText != null &&
             widget.customPromptText!.isNotEmpty &&
             (widget.customPromptWeight ?? 0) > 0.01)
         ? (widget.customPromptWeight ?? 0)
@@ -1944,8 +2190,8 @@ class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
 
     final List<String> blendParts = [];
     if (customW > 0.0) {
-      final pct =
-          ((customW / (totalWeight > 0 ? totalWeight : 1.0)) * 100).round();
+      final pct = ((customW / (totalWeight > 0 ? totalWeight : 1.0)) * 100)
+          .round();
       final preview = widget.customPromptText!.length > 14
           ? '${widget.customPromptText!.substring(0, 12)}..'
           : widget.customPromptText!;
@@ -1953,13 +2199,14 @@ class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
     }
 
     for (final k in activeKnobs) {
-      final pct =
-          ((k.weight / (totalWeight > 0 ? totalWeight : 1.0)) * 100).round();
+      final pct = ((k.weight / (totalWeight > 0 ? totalWeight : 1.0)) * 100)
+          .round();
       blendParts.add('${k.title} $pct%');
     }
 
-    final String mixSummary =
-        blendParts.isEmpty ? 'Ambient Synth (100%)' : blendParts.join(' + ');
+    final String mixSummary = blendParts.isEmpty
+        ? 'Ambient Synth (100%)'
+        : blendParts.join(' + ');
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -1995,15 +2242,16 @@ class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
                 height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color:
-                      widget.isPlaying ? const Color(0xFF10B981) : Colors.white38,
+                  color: widget.isPlaying
+                      ? const Color(0xFF10B981)
+                      : Colors.white38,
                   boxShadow: widget.isPlaying
                       ? [
                           const BoxShadow(
                             color: Color(0xFF10B981),
                             blurRadius: 6,
                             spreadRadius: 1,
-                          )
+                          ),
                         ]
                       : null,
                 ),
@@ -2053,26 +2301,38 @@ class _DjAudioVisualizerState extends State<_DjAudioVisualizer>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text('SUB BASS (40Hz)',
-                  style: TextStyle(
-                      color: Colors.white24,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold)),
-              Text('LOW-MID (500Hz)',
-                  style: TextStyle(
-                      color: Colors.white24,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold)),
-              Text('MID-HIGH (4kHz)',
-                  style: TextStyle(
-                      color: Colors.white24,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold)),
-              Text('TREBLE (16kHz)',
-                  style: TextStyle(
-                      color: Colors.white24,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'SUB BASS (40Hz)',
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'LOW-MID (500Hz)',
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'MID-HIGH (4kHz)',
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'TREBLE (16kHz)',
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ],
@@ -2104,11 +2364,20 @@ class _DjVisualizerPainter extends CustomPainter {
       ..color = Colors.white.withAlpha(12)
       ..strokeWidth = 1.0;
     canvas.drawLine(
-        Offset(0, height * 0.25), Offset(width, height * 0.25), gridPaint);
+      Offset(0, height * 0.25),
+      Offset(width, height * 0.25),
+      gridPaint,
+    );
     canvas.drawLine(
-        Offset(0, height * 0.5), Offset(width, height * 0.5), gridPaint);
+      Offset(0, height * 0.5),
+      Offset(width, height * 0.5),
+      gridPaint,
+    );
     canvas.drawLine(
-        Offset(0, height * 0.75), Offset(width, height * 0.75), gridPaint);
+      Offset(0, height * 0.75),
+      Offset(width, height * 0.75),
+      gridPaint,
+    );
 
     // 2. Draw 32 FFT Frequency Bars
     final barCount = fftValues.length;
@@ -2125,12 +2394,21 @@ class _DjVisualizerPainter extends CustomPainter {
       final norm = i / barCount;
       final barColor = norm < 0.35
           ? Color.lerp(
-              const Color(0xFF06B6D4), const Color(0xFF3B82F6), norm / 0.35)!
+              const Color(0xFF06B6D4),
+              const Color(0xFF3B82F6),
+              norm / 0.35,
+            )!
           : norm < 0.7
-              ? Color.lerp(const Color(0xFFF59E0B), const Color(0xFFEC4899),
-                  (norm - 0.35) / 0.35)!
-              : Color.lerp(const Color(0xFFEC4899), const Color(0xFFF43F5E),
-                  (norm - 0.7) / 0.3)!;
+          ? Color.lerp(
+              const Color(0xFFF59E0B),
+              const Color(0xFFEC4899),
+              (norm - 0.35) / 0.35,
+            )!
+          : Color.lerp(
+              const Color(0xFFEC4899),
+              const Color(0xFFF43F5E),
+              (norm - 0.7) / 0.3,
+            )!;
 
       final barRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, barWidth, barHeight),
@@ -2141,10 +2419,7 @@ class _DjVisualizerPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [
-            barColor.withAlpha(120),
-            barColor,
-          ],
+          colors: [barColor.withAlpha(120), barColor],
         ).createShader(Rect.fromLTWH(x, y, barWidth, barHeight));
 
       canvas.drawRRect(barRect, barPaint);
@@ -2202,4 +2477,3 @@ class _DjVisualizerPainter extends CustomPainter {
     return isPlaying || oldDelegate.isPlaying != isPlaying;
   }
 }
-

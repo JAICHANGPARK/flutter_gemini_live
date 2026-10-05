@@ -80,9 +80,7 @@ class Bubble extends StatelessWidget {
                             }
                             return const SizedBox(
                               height: 150,
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                              child: Center(child: CircularProgressIndicator()),
                             );
                           },
                         ),
