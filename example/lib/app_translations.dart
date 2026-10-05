@@ -472,6 +472,24 @@ class AppTranslations {
     }
   }
 
+  String get liveMathTutorTitle => switch (language) {
+        AppLanguage.ko => '🎓 Live Exam Tutor (만능 AI 수능·시험 튜터)',
+        AppLanguage.ja => '🎓 Live Exam Tutor (万能 AI 共通テスト・受験チューター)',
+        AppLanguage.zh => '🎓 Live Exam Tutor (全能 AI 高考与各类考试私教)',
+        AppLanguage.en => '🎓 Live Exam Tutor (Omniscient College Entrance & Exam Tutor)',
+      };
+
+  String get liveMathTutorSubtitle => switch (language) {
+        AppLanguage.ko =>
+          '카메라 실시간 문제 인식 · 한국 수능·일본 공통테스트·미국 SAT/AP 전과목(국어/수학/이과/사회/외국어/정보) 심층 추론 풀이',
+        AppLanguage.ja =>
+          'カメラリアルタイム問題認識・共通テスト・大学入試全科目(国語・数学・理科・地歴公民・外国語・情報)深層推論解説と解答記録',
+        AppLanguage.zh =>
+          '摄像头实时识题 · 高考/SAT/大学统考全科目(语文/数学/理综/文综/外语/信息)Extended Thinking深度推理与真题解析',
+        AppLanguage.en =>
+          'Real-time camera scan · Multimodal deep reasoning across all subjects (Math, Sciences, Humanities, Languages, CS) for CSAT, SAT, AP & DNC exams',
+      };
+
   String get liveMusicStudioTitle {
     switch (language) {
       case AppLanguage.ko:
