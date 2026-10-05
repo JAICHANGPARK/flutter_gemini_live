@@ -8,6 +8,7 @@ import 'app_translations.dart';
 import 'dj_midi_box_page.dart';
 import 'foldable_utils.dart';
 import 'soloud_live_audio_player.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Professional DJ Console for Google Gemini Live (Lyria RealTime)
 /// streaming music generation.
@@ -28,7 +29,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
   bool _isPlaying = false;
 
   // Deck A & Deck B Prompts
-  String _deckAPrompt = 'Minimal techno with deep 909 kick and atmospheric synths';
+  String _deckAPrompt =
+      'Minimal techno with deep 909 kick and atmospheric synths';
   String _deckBPrompt = 'Acid 303 bassline with shimmering percussion';
   double _deckAWeight = 1.0;
   double _deckBWeight = 0.5;
@@ -44,9 +46,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
   MusicGenerationMode _mode = MusicGenerationMode.QUALITY;
 
   double _temperature = 1.1; // Trim / Variance
-  double _brightness = 0.5;  // HI EQ
-  double _density = 0.5;     // MID EQ
-  double _guidance = 4.0;    // LOW EQ (1.0 to 6.0)
+  double _brightness = 0.5; // HI EQ
+  double _density = 0.5; // MID EQ
+  double _guidance = 4.0; // LOW EQ (1.0 to 6.0)
 
   // Stem Isolators (Kill Switches)
   bool _muteBass = false;
@@ -72,8 +74,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     _HotCuePadData(
       label: '909 TECHNO',
       color: Colors.cyanAccent,
-      promptA: 'Peak-time Berlin techno with pounding 909 kick and dark warehouse ambiance',
-      promptB: 'Hypnotic modular synth arpeggios and industrial metallic percussion',
+      promptA:
+          'Peak-time Berlin techno with pounding 909 kick and dark warehouse ambiance',
+      promptB:
+          'Hypnotic modular synth arpeggios and industrial metallic percussion',
       bpm: 130,
       scale: Scale.C_MAJOR_A_MINOR,
       mode: MusicGenerationMode.QUALITY,
@@ -91,7 +95,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
       label: 'LO-FI STUDY',
       color: Colors.amberAccent,
       promptA: 'Mellow lo-fi hip hop beat with dusty vinyl crackle',
-      promptB: 'Warm Fender Rhodes electric piano chords and acoustic upright bass',
+      promptB:
+          'Warm Fender Rhodes electric piano chords and acoustic upright bass',
       bpm: 84,
       scale: Scale.C_MAJOR_A_MINOR,
       mode: MusicGenerationMode.QUALITY,
@@ -99,7 +104,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     _HotCuePadData(
       label: 'AFROBEAT',
       color: Colors.orangeAccent,
-      promptA: 'Uplifting Afrobeat groove with brass horn section and talking drums',
+      promptA:
+          'Uplifting Afrobeat groove with brass horn section and talking drums',
       promptB: 'Funky rhythmic rhythm guitar and polyrhythmic percussion',
       bpm: 116,
       scale: Scale.G_MAJOR_E_MINOR,
@@ -135,7 +141,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
     _HotCuePadData(
       label: 'DROP & RESET',
       color: Colors.redAccent,
-      promptA: 'Massive festival EDM drop with driving synth leads and heavy sub',
+      promptA:
+          'Massive festival EDM drop with driving synth leads and heavy sub',
       promptB: 'Punchy snare roll build-up into explosive bass drop',
       bpm: 128,
       scale: Scale.D_MAJOR_B_MINOR,
@@ -264,7 +271,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
         setState(() => _isConnecting = false);
         _log('Connection failed: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Connection failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -282,7 +292,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
 
         // Calculate RMS for DJ VU meters & Jog display
         final rms = GeminiLiveAudioUtils.calculateRms(bytes);
-        final visualScale = GeminiLiveAudioUtils.toVisualScale(rms, factor: 2.2);
+        final visualScale = GeminiLiveAudioUtils.toVisualScale(
+          rms,
+          factor: 2.2,
+        );
 
         final randSkew = (math.Random().nextDouble() - 0.5) * 0.15;
         if (mounted) {
@@ -379,7 +392,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
 
     _session!.setMusicGenerationConfig(config);
 
-    final bpmOrScaleChanged = (_lastAppliedBpm != null && _bpm != _lastAppliedBpm) ||
+    final bpmOrScaleChanged =
+        (_lastAppliedBpm != null && _bpm != _lastAppliedBpm) ||
         (_lastAppliedScale != _selectedScale);
     _lastAppliedBpm = _bpm;
     _lastAppliedScale = _selectedScale;
@@ -409,7 +423,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
       }
     }
 
-    _log('🎛️ Hot Cue Pad [${pad.label}] Triggered (${pad.bpm} BPM, ${pad.mode.name})');
+    _log(
+      '🎛️ Hot Cue Pad [${pad.label}] Triggered (${pad.bpm} BPM, ${pad.mode.name})',
+    );
   }
 
   // ==========================================================================
@@ -458,114 +474,132 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
           ],
         ),
         actions: [
-          // ON AIR Glowing LED Badge
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(
-              color: _isPlaying ? Colors.redAccent.withAlpha(50) : Colors.white10,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: _isPlaying ? Colors.redAccent : Colors.white24,
-                width: 1.5,
-              ),
-              boxShadow: _isPlaying
-                  ? [
-                      BoxShadow(
-                        color: Colors.redAccent.withAlpha(150),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                      )
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.circle,
-                  size: 8,
-                  color: _isPlaying ? Colors.redAccent : Colors.white38,
+          ScrollableAppBarActions(
+            children: [
+              // ON AIR Glowing LED Badge
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 2,
                 ),
-                const SizedBox(width: 5),
-                Text(
-                  'ON AIR',
-                  style: TextStyle(
-                    color: _isPlaying ? Colors.redAccent : Colors.white38,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11,
-                    letterSpacing: 1.0,
+                decoration: BoxDecoration(
+                  color: _isPlaying
+                      ? Colors.redAccent.withAlpha(50)
+                      : Colors.white10,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: _isPlaying ? Colors.redAccent : Colors.white24,
+                    width: 1.5,
                   ),
+                  boxShadow: _isPlaying
+                      ? [
+                          BoxShadow(
+                            color: Colors.redAccent.withAlpha(150),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : null,
                 ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.grid_view_rounded, color: Color(0xFFA855F7)),
-            tooltip: 'DJ MIDI Box (16-Pad Rotary Grid)',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
-              );
-            },
-          ),
-          const LanguageSelectorButton(compact: true),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white70),
-            onPressed: () => AppSettingsDialog.show(context),
-            tooltip: 'Settings',
-          ),
-          Builder(
-            builder: (context) {
-              final foldableInfo = FoldableLayoutInfo.of(context);
-              if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(right: 8, left: 2),
-                child: Tooltip(
-                  message: foldableInfo.isTabletop
-                      ? 'Tabletop / Flex Mode'
-                      : (foldableInfo.isDualScreen
-                          ? 'Duo Dual-Screen Active'
-                          : 'Foldable Active'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.cyanAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.cyanAccent.withValues(alpha: 0.5),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.circle,
+                      size: 8,
+                      color: _isPlaying ? Colors.redAccent : Colors.white38,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'ON AIR',
+                      style: TextStyle(
+                        color: _isPlaying ? Colors.redAccent : Colors.white38,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1.0,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          foldableInfo.isTabletop
-                              ? Icons.laptop_chromebook_rounded
-                              : Icons.devices_fold_rounded,
-                          size: 13,
-                          color: Colors.cyanAccent,
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.grid_view_rounded,
+                  color: Color(0xFFA855F7),
+                ),
+                tooltip: 'DJ MIDI Box (16-Pad Rotary Grid)',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
+                  );
+                },
+              ),
+              const LanguageSelectorButton(compact: true),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white70),
+                onPressed: () => AppSettingsDialog.show(context),
+                tooltip: 'Settings',
+              ),
+              Builder(
+                builder: (context) {
+                  final foldableInfo = FoldableLayoutInfo.of(context);
+                  if (!foldableInfo.hasHinge &&
+                      !foldableInfo.isFoldableOrWide) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8, left: 2),
+                    child: Tooltip(
+                      message: foldableInfo.isTabletop
+                          ? 'Tabletop / Flex Mode'
+                          : (foldableInfo.isDualScreen
+                                ? 'Duo Dual-Screen Active'
+                                : 'Foldable Active'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          foldableInfo.isTabletop
-                              ? 'FLEX DJ'
-                              : (foldableInfo.isDualScreen ? 'DUO DJ' : 'FOLD DJ'),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.cyanAccent,
-                            letterSpacing: 0.5,
+                        decoration: BoxDecoration(
+                          color: Colors.cyanAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.cyanAccent.withValues(alpha: 0.5),
                           ),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              foldableInfo.isTabletop
+                                  ? Icons.laptop_chromebook_rounded
+                                  : Icons.devices_fold_rounded,
+                              size: 13,
+                              color: Colors.cyanAccent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              foldableInfo.isTabletop
+                                  ? 'FLEX DJ'
+                                  : (foldableInfo.isDualScreen
+                                        ? 'DUO DJ'
+                                        : 'FOLD DJ'),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.cyanAccent,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -594,10 +628,7 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                   ),
 
                   // Physical Fold Line / Crease Divider
-                  Container(
-                    height: 4,
-                    color: const Color(0xFF1E2638),
-                  ),
+                  Container(height: 4, color: const Color(0xFF1E2638)),
 
                   // Bottom Screen (Tactile DJ Console flat on desk)
                   Expanded(
@@ -644,12 +675,12 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
 
                   // Center Hinge Spacer (Avoids physical hinge gap)
                   SizedBox(
-                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(
+                      8.0,
+                      36.0,
+                    ),
                     child: Center(
-                      child: Container(
-                        width: 2,
-                        color: Colors.white24,
-                      ),
+                      child: Container(width: 2, color: Colors.white24),
                     ),
                   ),
 
@@ -675,7 +706,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
             }
 
             // 3. Standard & Foldable Wide (Galaxy Z Fold unfolded or tablet/desktop)
-            final isWide = constraints.maxWidth >= 720 || foldableInfo.isFoldableOrWide;
+            final isWide =
+                constraints.maxWidth >= 720 || foldableInfo.isFoldableOrWide;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(12),
@@ -741,7 +773,11 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFF1E2638), width: 2),
         boxShadow: const [
-          BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black54,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -805,11 +841,17 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A273A),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: const Color(0xFF00E5FF).withAlpha(100)),
+                  border: Border.all(
+                    color: const Color(0xFF00E5FF).withAlpha(100),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.music_note, color: Color(0xFF00E5FF), size: 14),
+                    const Icon(
+                      Icons.music_note,
+                      color: Color(0xFF00E5FF),
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       _selectedScale != null ? _selectedScale!.name : 'NO KEY',
@@ -829,13 +871,17 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                   Icon(
                     Icons.circle,
                     size: 8,
-                    color: _isConnected ? Colors.greenAccent : Colors.orangeAccent,
+                    color: _isConnected
+                        ? Colors.greenAccent
+                        : Colors.orangeAccent,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     _isConnected ? 'LYRIA REALTIME ONLINE' : 'STANDBY',
                     style: TextStyle(
-                      color: _isConnected ? Colors.greenAccent : Colors.orangeAccent,
+                      color: _isConnected
+                          ? Colors.greenAccent
+                          : Colors.orangeAccent,
                       fontWeight: FontWeight.w800,
                       fontSize: 11,
                       letterSpacing: 1.0,
@@ -854,9 +900,14 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
               children: List.generate(48, (index) {
                 final heightFactor = _isPlaying
                     ? 0.2 +
-                        math.sin((index + _elapsed.inMilliseconds / 80) * 0.4).abs() *
-                            0.7 *
-                            _currentRmsL
+                          math
+                                  .sin(
+                                    (index + _elapsed.inMilliseconds / 80) *
+                                        0.4,
+                                  )
+                                  .abs() *
+                              0.7 *
+                              _currentRmsL
                     : 0.15;
                 final isBeatMarker = index % 4 == 0;
                 return Expanded(
@@ -869,8 +920,8 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                         color: isBeatMarker
                             ? const Color(0xFF00E5FF)
                             : (index % 2 == 0
-                                ? const Color(0xFF304FFE)
-                                : const Color(0xFF651FFF)),
+                                  ? const Color(0xFF304FFE)
+                                  : const Color(0xFF651FFF)),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -889,7 +940,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
   // ==========================================================================
 
   Widget _buildCdjDeck({required bool isDeckA}) {
-    final deckColor = isDeckA ? const Color(0xFF00E5FF) : const Color(0xFFFF9100);
+    final deckColor = isDeckA
+        ? const Color(0xFF00E5FF)
+        : const Color(0xFFFF9100);
     final deckTitle = isDeckA ? 'DECK 1 (A)' : 'DECK 2 (B)';
     final promptText = isDeckA ? _deckAPrompt : _deckBPrompt;
     final promptWeight = isDeckA ? _deckAWeight : _deckBWeight;
@@ -901,7 +954,11 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFF262E3E), width: 2),
         boxShadow: const [
-          BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black45,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -920,7 +977,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                       color: deckColor,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: deckColor.withAlpha(180), blurRadius: 6),
+                        BoxShadow(
+                          color: deckColor.withAlpha(180),
+                          blurRadius: 6,
+                        ),
                       ],
                     ),
                   ),
@@ -1007,7 +1067,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                       child: SliderTheme(
                         data: SliderTheme.of(context).copyWith(
                           trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 6,
+                          ),
                           activeTrackColor: deckColor,
                         ),
                         child: Slider(
@@ -1028,7 +1090,11 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit, size: 16, color: Colors.white70),
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 16,
+                        color: Colors.white70,
+                      ),
                       onPressed: () => _showEditPromptDialog(isDeckA),
                       tooltip: 'Edit Prompt',
                     ),
@@ -1104,7 +1170,11 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFF232A38), width: 2),
         boxShadow: const [
-          BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black45,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -1214,7 +1284,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                     _sendGenerationConfig();
                   }),
                   const SizedBox(height: 8),
-                  _buildStemKillButton('ONLY BASS/DRUM', _onlyBassAndDrums, (val) {
+                  _buildStemKillButton('ONLY BASS/DRUM', _onlyBassAndDrums, (
+                    val,
+                  ) {
                     setState(() => _onlyBassAndDrums = val);
                     _sendGenerationConfig();
                   }),
@@ -1274,7 +1346,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                     activeTrackColor: const Color(0xFFFF9100),
                     inactiveTrackColor: const Color(0xFF00E5FF),
                     thumbColor: Colors.white,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 10,
+                    ),
                   ),
                   child: Slider(
                     value: _crossfader,
@@ -1351,7 +1425,9 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
-                    color: isActive ? pad.color.withAlpha(80) : const Color(0xFF1C222E),
+                    color: isActive
+                        ? pad.color.withAlpha(80)
+                        : const Color(0xFF1C222E),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive ? pad.color : pad.color.withAlpha(80),
@@ -1427,12 +1503,15 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
               _isConnected ? Icons.link_off : Icons.power_settings_new,
               size: 18,
             ),
-            label: Text(_isConnecting
-                ? 'CONNECTING...'
-                : (_isConnected ? 'DISCONNECT' : 'CONNECT CONSOLE')),
+            label: Text(
+              _isConnecting
+                  ? 'CONNECTING...'
+                  : (_isConnected ? 'DISCONNECT' : 'CONNECT CONSOLE'),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  _isConnected ? Colors.red.shade800 : Colors.blue.shade700,
+              backgroundColor: _isConnected
+                  ? Colors.red.shade800
+                  : Colors.blue.shade700,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
@@ -1445,13 +1524,19 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
             children: [
               ElevatedButton.icon(
                 onPressed: _isConnected ? (_isPlaying ? _pause : _play) : null,
-                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 20),
+                icon: Icon(
+                  _isPlaying ? Icons.pause : Icons.play_arrow,
+                  size: 20,
+                ),
                 label: Text(_isPlaying ? 'PAUSE' : 'PLAY MASTER'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade700,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.white10,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                 ),
               ),
               ElevatedButton.icon(
@@ -1462,7 +1547,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                   backgroundColor: Colors.amber.shade800,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.white10,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
               ElevatedButton.icon(
@@ -1473,7 +1561,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
                   backgroundColor: Colors.purple.shade700,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.white10,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],
@@ -1729,7 +1820,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    final millis = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(2, '0');
+    final millis = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(
+      2,
+      '0',
+    );
     return '$minutes:$seconds.$millis';
   }
 }
@@ -1778,7 +1872,9 @@ class _DjJogWheel extends StatelessWidget {
                 ),
                 if (isPlaying)
                   BoxShadow(
-                    color: deckColor.withAlpha((100 * rms).toInt().clamp(20, 150)),
+                    color: deckColor.withAlpha(
+                      (100 * rms).toInt().clamp(20, 150),
+                    ),
                     blurRadius: 16,
                     spreadRadius: 2,
                   ),
@@ -1818,7 +1914,10 @@ class _DjJogWheel extends StatelessWidget {
                               color: Colors.redAccent,
                               borderRadius: BorderRadius.circular(2),
                               boxShadow: const [
-                                BoxShadow(color: Colors.redAccent, blurRadius: 4),
+                                BoxShadow(
+                                  color: Colors.redAccent,
+                                  blurRadius: 4,
+                                ),
                               ],
                             ),
                           ),
@@ -1882,10 +1981,7 @@ class _DjVuMeter extends StatelessWidget {
   final double level;
   final String channelLabel;
 
-  const _DjVuMeter({
-    required this.level,
-    required this.channelLabel,
-  });
+  const _DjVuMeter({required this.level, required this.channelLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -1933,12 +2029,7 @@ class _DjVuMeter extends StatelessWidget {
                   color: isActive ? color : color.withAlpha(40),
                   borderRadius: BorderRadius.circular(1),
                   boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: color.withAlpha(180),
-                            blurRadius: 3,
-                          ),
-                        ]
+                      ? [BoxShadow(color: color.withAlpha(180), blurRadius: 3)]
                       : null,
                 ),
               );

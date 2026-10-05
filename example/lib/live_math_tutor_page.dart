@@ -19,6 +19,7 @@ import 'app_settings_dialog.dart';
 import 'app_translations.dart';
 import 'live_audio_player.dart';
 import 'soloud_live_audio_player.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Universal Examination Subject and Curriculum categories for the Live Exam Tutor.
 /// Covering College Entrance Examinations across South Korea (CSAT / 수능),
@@ -30,9 +31,11 @@ enum MathCurriculumLevel {
     labelEn: 'All Subjects (Auto-Detect)',
     labelJa: '全科目 自動判別 (標準)',
     labelZh: '全科目 自动判别 (默认)',
-    description: '수학, 국어, 이과/과학, 사회/역사, 외국어, 정보(컴퓨터) 등 모든 시험 문제와 과목을 AI가 100% 자동 판별합니다.',
+    description:
+        '수학, 국어, 이과/과학, 사회/역사, 외국어, 정보(컴퓨터) 등 모든 시험 문제와 과목을 AI가 100% 자동 판별합니다.',
     badgeIcon: Icons.auto_awesome,
-    promptHint: 'Automatically detect the subject (Mathematics, Native Languages/Literature, Natural Sciences, Social Studies/History, Foreign Languages, Informatics/CS) and academic level (Elementary to College Entrance Exams: Korean CSAT, Japanese Common Test DNC, US SAT/AP, and University Courses). Tailor the depth, terminology, and analysis accordingly.',
+    promptHint:
+        'Automatically detect the subject (Mathematics, Native Languages/Literature, Natural Sciences, Social Studies/History, Foreign Languages, Informatics/CS) and academic level (Elementary to College Entrance Exams: Korean CSAT, Japanese Common Test DNC, US SAT/AP, and University Courses). Tailor the depth, terminology, and analysis accordingly.',
   ),
   math(
     id: 'math',
@@ -42,7 +45,8 @@ enum MathCurriculumLevel {
     labelZh: '数学 (高考・大学统考・高等数学)',
     description: '수학I·II, 미적분, 확률과 통계, 기하, 선형대수학 등 수능/공통테스트 킬러 문항 및 계산·증명 전개.',
     badgeIcon: Icons.functions_rounded,
-    promptHint: 'Focus on Mathematics (Algebra, Geometry, Calculus, Probability & Statistics, Discrete Math, Linear Algebra). Explain theorems, formulas with LaTeX, calculation steps, and examiner pitfalls.',
+    promptHint:
+        'Focus on Mathematics (Algebra, Geometry, Calculus, Probability & Statistics, Discrete Math, Linear Algebra). Explain theorems, formulas with LaTeX, calculation steps, and examiner pitfalls.',
   ),
   languages(
     id: 'languages',
@@ -50,9 +54,11 @@ enum MathCurriculumLevel {
     labelEn: 'Native Languages & Literature',
     labelJa: '国語 (現代文・古文・漢文)',
     labelZh: '语文 (现代文・古文・诗词鉴赏)',
-    description: '수능 국어(비문학 독서, 문학, 화작/언매), 일본 공통테스트 국어(현대문, 고문, 한문) 지문 구조 분석 및 문맥 추론.',
+    description:
+        '수능 국어(비문학 독서, 문학, 화작/언매), 일본 공통테스트 국어(현대문, 고문, 한문) 지문 구조 분석 및 문맥 추론.',
     badgeIcon: Icons.auto_stories_rounded,
-    promptHint: 'Focus on Native Language, Reading Comprehension, and Classical Literature (Korean CSAT Korean, Japanese DNC Kokugo including Modern, Classical Japanese Kobun, and Kanbun). Analyze passage structure, main themes, rhetorical devices, examiner intention, and sentence-by-sentence contextual evidence.',
+    promptHint:
+        'Focus on Native Language, Reading Comprehension, and Classical Literature (Korean CSAT Korean, Japanese DNC Kokugo including Modern, Classical Japanese Kobun, and Kanbun). Analyze passage structure, main themes, rhetorical devices, examiner intention, and sentence-by-sentence contextual evidence.',
   ),
   science(
     id: 'science',
@@ -60,9 +66,11 @@ enum MathCurriculumLevel {
     labelEn: 'Natural Sciences (Phys/Chem/Bio/Earth)',
     labelJa: '理科 (物理・化学・生物・地学)',
     labelZh: '理科综合 (物理・化学・生物・地学)',
-    description: '물리(역학/전자기학), 화학(몰농도/평형), 생명과학(유전/물질대사), 지구과학(천문/대기해양) 실험 및 도표 심층 분석.',
+    description:
+        '물리(역학/전자기학), 화학(몰농도/평형), 생명과학(유전/물질대사), 지구과학(천문/대기해양) 실험 및 도표 심층 분석.',
     badgeIcon: Icons.biotech_rounded,
-    promptHint: 'Focus on Natural Sciences (Physics, Chemistry, Biology, Earth & Space Science). Analyze experimental setups, charts, diagrams, chemical equations, physical laws, and quantitative data interpretations step-by-step.',
+    promptHint:
+        'Focus on Natural Sciences (Physics, Chemistry, Biology, Earth & Space Science). Analyze experimental setups, charts, diagrams, chemical equations, physical laws, and quantitative data interpretations step-by-step.',
   ),
   social(
     id: 'social',
@@ -70,9 +78,11 @@ enum MathCurriculumLevel {
     labelEn: 'Social Studies & History',
     labelJa: '地理歴史・公民 (地理・日本史・世界史・公共)',
     labelZh: '文科综合 (历史・地理・政治・哲学)',
-    description: '지리(기후/지형도), 역사(사료/연표), 일반사회(법과정치/경제), 윤리(사상가 비교) 등 사료와 통계 자료 완벽 해석.',
+    description:
+        '지리(기후/지형도), 역사(사료/연표), 일반사회(법과정치/경제), 윤리(사상가 비교) 등 사료와 통계 자료 완벽 해석.',
     badgeIcon: Icons.public_rounded,
-    promptHint: 'Focus on Social Studies, History, Geography, and Civics/Ethics (Korean Ethics/History/Geog, Japanese Geography Inquiry, Japanese/World History Inquiry, Public/Politics & Economy, US History/Gov). Deconstruct historical sources, timelines, map data, philosophical arguments, and legal/economic frameworks.',
+    promptHint:
+        'Focus on Social Studies, History, Geography, and Civics/Ethics (Korean Ethics/History/Geog, Japanese Geography Inquiry, Japanese/World History Inquiry, Public/Politics & Economy, US History/Gov). Deconstruct historical sources, timelines, map data, philosophical arguments, and legal/economic frameworks.',
   ),
   foreignLang(
     id: 'foreignLang',
@@ -80,9 +90,11 @@ enum MathCurriculumLevel {
     labelEn: 'Foreign Languages (Eng/Ger/Fr/Ch/Jp)',
     labelJa: '外国語 (英語・独・仏・中・韓)',
     labelZh: '外国语 (英语・德语・法语・日语・韩语)',
-    description: '수능/공통테스트 영어 리딩 및 리스닝 스크립트 분석, 빈칸추론, 어법, 다국어(제2외국어) 문법과 번역 해설.',
+    description:
+        '수능/공통테스트 영어 리딩 및 리스닝 스크립트 분석, 빈칸추론, 어법, 다국어(제2외국어) 문법과 번역 해설.',
     badgeIcon: Icons.translate_rounded,
-    promptHint: 'Focus on Foreign Languages (English Reading & Listening, German, French, Chinese, Japanese, Korean). Provide accurate translation, grammatical breakdowns, vocabulary nuances, paragraph logic flow, and audio script comprehension.',
+    promptHint:
+        'Focus on Foreign Languages (English Reading & Listening, German, French, Chinese, Japanese, Korean). Provide accurate translation, grammatical breakdowns, vocabulary nuances, paragraph logic flow, and audio script comprehension.',
   ),
   information(
     id: 'information',
@@ -90,9 +102,11 @@ enum MathCurriculumLevel {
     labelEn: 'Informatics & CS (DN-CL / AP CS)',
     labelJa: '情報Ⅰ (プログラミング・データ・アルゴリズム)',
     labelZh: '信息技术与编程 (算法・数据・计算机)',
-    description: '일본 공통테스트 정보I(의사코드 DN-CL, Python, 네트워크, 데이터 분석) 및 알고리즘 시뮬레이션 완벽 추적.',
+    description:
+        '일본 공통테스트 정보I(의사코드 DN-CL, Python, 네트워크, 데이터 분석) 및 알고리즘 시뮬레이션 완벽 추적.',
     badgeIcon: Icons.terminal_rounded,
-    promptHint: 'Focus on Informatics, Computer Science, and Programming (Japanese DNC Joho I pseudo-code DN-CL, Python, Algorithm tracing, Data structures, Digital logic, and Network security). Provide dry-run state tables, variable tracing, and time complexity insights.',
+    promptHint:
+        'Focus on Informatics, Computer Science, and Programming (Japanese DNC Joho I pseudo-code DN-CL, Python, Algorithm tracing, Data structures, Digital logic, and Network security). Provide dry-run state tables, variable tracing, and time complexity insights.',
   );
 
   final String id;
@@ -205,22 +219,24 @@ class MathSolutionRecord {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'timestamp': timestamp.toIso8601String(),
-        'level': level.id,
-        'problemSummary': problemSummary,
-        'problemLevel': problemLevel,
-        'examinerIntent': examinerIntent,
-        'solutionMarkdown': solutionMarkdown,
-        'finalAnswer': finalAnswer,
-        'thinkingLog': thinkingLog,
-        'capturedImage':
-            capturedImage != null ? base64Encode(capturedImage!) : null,
-      };
+    'id': id,
+    'timestamp': timestamp.toIso8601String(),
+    'level': level.id,
+    'problemSummary': problemSummary,
+    'problemLevel': problemLevel,
+    'examinerIntent': examinerIntent,
+    'solutionMarkdown': solutionMarkdown,
+    'finalAnswer': finalAnswer,
+    'thinkingLog': thinkingLog,
+    'capturedImage': capturedImage != null
+        ? base64Encode(capturedImage!)
+        : null,
+  };
 
   factory MathSolutionRecord.fromJson(Map<String, dynamic> json) {
     return MathSolutionRecord(
-      id: json['id'] as String? ??
+      id:
+          json['id'] as String? ??
           'math_${DateTime.now().millisecondsSinceEpoch}',
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'] as String) ?? DateTime.now()
@@ -263,266 +279,271 @@ class _MathTutorI18n {
   const _MathTutorI18n(this.lang);
 
   String get appTitle => switch (lang) {
-        AppLanguage.ko => 'AI 만능 시험 튜터',
-        AppLanguage.en => 'Live Exam Tutor',
-        AppLanguage.ja => 'AI 万能受験チューター',
-        AppLanguage.zh => 'AI 全能考试私教',
-      };
+    AppLanguage.ko => 'AI 만능 시험 튜터',
+    AppLanguage.en => 'Live Exam Tutor',
+    AppLanguage.ja => 'AI 万能受験チューター',
+    AppLanguage.zh => 'AI 全能考试私教',
+  };
 
   String get modelSubtitle => switch (lang) {
-        AppLanguage.ko => 'Gemini 3.8 Live Extended Thinking (전과목 심층 추론)',
-        AppLanguage.en => 'Gemini 3.8 Live Extended Thinking (All-Subject High Reasoning)',
-        AppLanguage.ja => 'Gemini 3.8 Live Extended Thinking (全科目・高度な推論)',
-        AppLanguage.zh => 'Gemini 3.8 Live Extended Thinking (全学科深度推理)',
-      };
+    AppLanguage.ko => 'Gemini 3.8 Live Extended Thinking (전과목 심층 추론)',
+    AppLanguage.en =>
+      'Gemini 3.8 Live Extended Thinking (All-Subject High Reasoning)',
+    AppLanguage.ja => 'Gemini 3.8 Live Extended Thinking (全科目・高度な推論)',
+    AppLanguage.zh => 'Gemini 3.8 Live Extended Thinking (全学科深度推理)',
+  };
 
   String get statusThinking => switch (lang) {
-        AppLanguage.ko => '추론 & 풀이 중',
-        AppLanguage.en => 'Thinking & Solving',
-        AppLanguage.ja => '推論・解答中',
-        AppLanguage.zh => '深度推理中',
-      };
+    AppLanguage.ko => '추론 & 풀이 중',
+    AppLanguage.en => 'Thinking & Solving',
+    AppLanguage.ja => '推論・解答中',
+    AppLanguage.zh => '深度推理中',
+  };
 
   String get statusIdle => switch (lang) {
-        AppLanguage.ko => '질문 대기 중',
-        AppLanguage.en => 'Ready for Question',
-        AppLanguage.ja => '質問待機中',
-        AppLanguage.zh => '等待提问',
-      };
+    AppLanguage.ko => '질문 대기 중',
+    AppLanguage.en => 'Ready for Question',
+    AppLanguage.ja => '質問待機中',
+    AppLanguage.zh => '等待提问',
+  };
 
   String get cameraGuide => switch (lang) {
-        AppLanguage.ko => '📐 시험 문제 또는 지문을 이 사각형 안에 맞춰주세요',
-        AppLanguage.en => '📐 Align the exam problem or text inside this frame',
-        AppLanguage.ja => '📐 試験問題または資料・設問をこの枠内に合わせてください',
-        AppLanguage.zh => '📐 请将考试题目、图表或阅读材料对准此取景框',
-      };
+    AppLanguage.ko => '📐 시험 문제 또는 지문을 이 사각형 안에 맞춰주세요',
+    AppLanguage.en => '📐 Align the exam problem or text inside this frame',
+    AppLanguage.ja => '📐 試験問題または資料・設問をこの枠内に合わせてください',
+    AppLanguage.zh => '📐 请将考试题目、图表或阅读材料对准此取景框',
+  };
 
   String get writingSolution => switch (lang) {
-        AppLanguage.ko => '선생님이 해설을 작성 중입니다...',
-        AppLanguage.en => 'Tutor is writing the solution...',
-        AppLanguage.ja => 'AI先生が解説を作成しています...',
-        AppLanguage.zh => '老师正在编写详细解析...',
-      };
+    AppLanguage.ko => '선생님이 해설을 작성 중입니다...',
+    AppLanguage.en => 'Tutor is writing the solution...',
+    AppLanguage.ja => 'AI先生が解説を作成しています...',
+    AppLanguage.zh => '老师正在编写详细解析...',
+  };
 
   String get interruptedNotice => switch (lang) {
-        AppLanguage.ko => '⚡ 학생의 질문으로 설명 중단',
-        AppLanguage.en => '⚡ Paused by student question',
-        AppLanguage.ja => '⚡ 質問を受け、説明を中断しました',
-        AppLanguage.zh => '⚡ 检测到提问，已暂停回答',
-      };
+    AppLanguage.ko => '⚡ 학생의 질문으로 설명 중단',
+    AppLanguage.en => '⚡ Paused by student question',
+    AppLanguage.ja => '⚡ 質問を受け、説明を中断しました',
+    AppLanguage.zh => '⚡ 检测到提问，已暂停回答',
+  };
 
   String get tabSolutions => switch (lang) {
-        AppLanguage.ko => '풀이 및 정답 노트',
-        AppLanguage.en => 'Solution Notes',
-        AppLanguage.ja => '解答・解説ノート',
-        AppLanguage.zh => '题解与答案记录',
-      };
+    AppLanguage.ko => '풀이 및 정답 노트',
+    AppLanguage.en => 'Solution Notes',
+    AppLanguage.ja => '解答・解説ノート',
+    AppLanguage.zh => '题解与答案记录',
+  };
 
   String get tabTranscript => switch (lang) {
-        AppLanguage.ko => '실시간 대화 로그',
-        AppLanguage.en => 'Live Dialog Log',
-        AppLanguage.ja => '対話ログ',
-        AppLanguage.zh => '实时对话记录',
-      };
+    AppLanguage.ko => '실시간 대화 로그',
+    AppLanguage.en => 'Live Dialog Log',
+    AppLanguage.ja => '対話ログ',
+    AppLanguage.zh => '实时对话记录',
+  };
 
   String get tabThinking => switch (lang) {
-        AppLanguage.ko => 'AI 생각 과정',
-        AppLanguage.en => 'Thinking Process',
-        AppLanguage.ja => '思考プロセス',
-        AppLanguage.zh => '思考过程',
-      };
+    AppLanguage.ko => 'AI 생각 과정',
+    AppLanguage.en => 'Thinking Process',
+    AppLanguage.ja => '思考プロセス',
+    AppLanguage.zh => '思考过程',
+  };
 
   String get emptyTitle => switch (lang) {
-        AppLanguage.ko => '카메라로 시험 문제를 비춰주세요.',
-        AppLanguage.en => 'Point camera at any exam question.',
-        AppLanguage.ja => 'カメラで試験問題を映してください。',
-        AppLanguage.zh => '请使用摄像头对准考试题目。',
-      };
+    AppLanguage.ko => '카메라로 시험 문제를 비춰주세요.',
+    AppLanguage.en => 'Point camera at any exam question.',
+    AppLanguage.ja => 'カメラで試験問題を映してください。',
+    AppLanguage.zh => '请使用摄像头对准考试题目。',
+  };
 
   String get emptyDesc => switch (lang) {
-        AppLanguage.ko =>
-          '한국 수능 · 일본 공통테스트 · 미국 SAT/AP · 대학 전공 시험\n수학, 국어/문학, 과학/이과, 사회/역사, 외국어, 정보(컴퓨터)까지\nExtended Thinking 모델이 심층 추론하여 단계별 해설을 기록합니다.',
-        AppLanguage.en =>
-          'Korean CSAT · Japanese DNC Common Test · US SAT/AP · College Exams\nMath, Literature, Natural Sciences, Social Studies, Languages & Informatics.\nGemini Extended Thinking traces logic and writes step-by-step solutions.',
-        AppLanguage.ja =>
-          '共通テスト・東大京大・韓国修能・米SAT/AP・大学専門試験\n数学・国語・理科・地歴公民・外国語・情報Ⅰまで、\nExtended Thinkingモデルがステップ別解説と最終正解をここに記録します。',
-        AppLanguage.zh =>
-          '高考 · 日本大学共通考试 · 美国SAT/AP · 大学专业课\n数学、语文、理综、文综、外语、信息技术全学科，\nExtended Thinking深度推理模型在此记录分步解析与答案。',
-      };
+    AppLanguage.ko =>
+      '한국 수능 · 일본 공통테스트 · 미국 SAT/AP · 대학 전공 시험\n수학, 국어/문학, 과학/이과, 사회/역사, 외국어, 정보(컴퓨터)까지\nExtended Thinking 모델이 심층 추론하여 단계별 해설을 기록합니다.',
+    AppLanguage.en =>
+      'Korean CSAT · Japanese DNC Common Test · US SAT/AP · College Exams\nMath, Literature, Natural Sciences, Social Studies, Languages & Informatics.\nGemini Extended Thinking traces logic and writes step-by-step solutions.',
+    AppLanguage.ja =>
+      '共通テスト・東大京大・韓国修能・米SAT/AP・大学専門試験\n数学・国語・理科・地歴公民・外国語・情報Ⅰまで、\nExtended Thinkingモデルがステップ別解説と最終正解をここに記録します。',
+    AppLanguage.zh =>
+      '高考 · 日本大学共通考试 · 美国SAT/AP · 大学专业课\n数学、语文、理综、文综、外语、信息技术全学科，\nExtended Thinking深度推理模型在此记录分步解析与答案。',
+  };
 
   String get finalAnswerLabel => switch (lang) {
-        AppLanguage.ko => '최종 정답 (Final Answer)',
-        AppLanguage.en => 'Final Answer',
-        AppLanguage.ja => '最終解答 (Final Answer)',
-        AppLanguage.zh => '最终答案 (Final Answer)',
-      };
+    AppLanguage.ko => '최종 정답 (Final Answer)',
+    AppLanguage.en => 'Final Answer',
+    AppLanguage.ja => '最終解答 (Final Answer)',
+    AppLanguage.zh => '最终答案 (Final Answer)',
+  };
 
   String get problemLevelLabel => switch (lang) {
-        AppLanguage.ko => '📊 과목·문제 수준 및 난이도 분석',
-        AppLanguage.en => '📊 Subject, Level & Difficulty',
-        AppLanguage.ja => '📊 科目・問題レベル・難易度分析',
-        AppLanguage.zh => '📊 科目、学段与难度分析',
-      };
+    AppLanguage.ko => '📊 과목·문제 수준 및 난이도 분석',
+    AppLanguage.en => '📊 Subject, Level & Difficulty',
+    AppLanguage.ja => '📊 科目・問題レベル・難易度分析',
+    AppLanguage.zh => '📊 科目、学段与难度分析',
+  };
 
   String get examinerIntentLabel => switch (lang) {
-        AppLanguage.ko => '🎯 출제자의 의도 및 평가 목표',
-        AppLanguage.en => '🎯 Examiner Intent & Assessment Goal',
-        AppLanguage.ja => '🎯 出題意図・評価目標',
-        AppLanguage.zh => '🎯 命题人意图与考查目标',
-      };
+    AppLanguage.ko => '🎯 출제자의 의도 및 평가 목표',
+    AppLanguage.en => '🎯 Examiner Intent & Assessment Goal',
+    AppLanguage.ja => '🎯 出題意図・評価目標',
+    AppLanguage.zh => '🎯 命题人意图与考查目标',
+  };
 
   String get viewThinkingProcess => switch (lang) {
-        AppLanguage.ko => '이 문제의 Extended Thinking 추론 과정 보기',
-        AppLanguage.en => 'View Extended Thinking process for this problem',
-        AppLanguage.ja => 'この問題のExtended Thinking思考プロセスを表示',
-        AppLanguage.zh => '查看此题的Extended Thinking推理过程',
-      };
+    AppLanguage.ko => '이 문제의 Extended Thinking 추론 과정 보기',
+    AppLanguage.en => 'View Extended Thinking process for this problem',
+    AppLanguage.ja => 'この問題のExtended Thinking思考プロセスを表示',
+    AppLanguage.zh => '查看此题的Extended Thinking推理过程',
+  };
 
   String get thinkingScratchpadTitle => switch (lang) {
-        AppLanguage.ko => 'Extended Thinking 심층 추론 및 검증 과정',
-        AppLanguage.en => 'Extended Thinking Reasoning Scratchpad',
-        AppLanguage.ja => 'Extended Thinking 深層推論・検証プロセス',
-        AppLanguage.zh => 'Extended Thinking 深度推理与验算过程',
-      };
+    AppLanguage.ko => 'Extended Thinking 심층 추론 및 검증 과정',
+    AppLanguage.en => 'Extended Thinking Reasoning Scratchpad',
+    AppLanguage.ja => 'Extended Thinking 深層推論・検証プロセス',
+    AppLanguage.zh => 'Extended Thinking 深度推理与验算过程',
+  };
 
   String get thinkingScratchpadDesc => switch (lang) {
-        AppLanguage.ko =>
-          'Gemini 3.8 Live Extended Thinking 모델이 학생에게 답변하기 전, '
-              '백그라운드에서 논리를 단계별로 검증하고 함정 선지를 제거한 내부 추론 노트입니다.',
-        AppLanguage.en =>
-          'Internal reasoning notes where Gemini 3.8 Live Extended Thinking traces logic, eliminates trap options, and verifies solutions before speaking.',
-        AppLanguage.ja =>
-          'Gemini 3.8 Live Extended Thinkingモデルが発話前にバックグラウンドで論理を段階的に検証し、罠の選択肢を排除した思考ノートです。',
-        AppLanguage.zh =>
-          'Gemini 3.8 Live Extended Thinking模型在发言前，在后台逐步验证逻辑、排除干扰选项的内部思维笔记。',
-      };
+    AppLanguage.ko =>
+      'Gemini 3.8 Live Extended Thinking 모델이 학생에게 답변하기 전, '
+          '백그라운드에서 논리를 단계별로 검증하고 함정 선지를 제거한 내부 추론 노트입니다.',
+    AppLanguage.en =>
+      'Internal reasoning notes where Gemini 3.8 Live Extended Thinking traces logic, eliminates trap options, and verifies solutions before speaking.',
+    AppLanguage.ja =>
+      'Gemini 3.8 Live Extended Thinkingモデルが発話前にバックグラウンドで論理を段階的に検証し、罠の選択肢を排除した思考ノートです。',
+    AppLanguage.zh =>
+      'Gemini 3.8 Live Extended Thinking模型在发言前，在后台逐步验证逻辑、排除干扰选项的内部思维笔记。',
+  };
 
   String get thinkingScratchpadWaiting => switch (lang) {
-        AppLanguage.ko => '문제를 카메라로 비추거나 스캔하면 모델의 심층 생각 과정이 실시간으로 출력됩니다.',
-        AppLanguage.en => 'Point camera at or scan a problem to watch real-time thoughts stream here.',
-        AppLanguage.ja => '問題をカメラで映すかスキャンすると、モデルの推論プロセスがリアルタイムに表示されます。',
-        AppLanguage.zh => '对准或扫描题目后，模型的深度推理过程将在此实时显示。',
-      };
+    AppLanguage.ko => '문제를 카메라로 비추거나 스캔하면 모델의 심층 생각 과정이 실시간으로 출력됩니다.',
+    AppLanguage.en =>
+      'Point camera at or scan a problem to watch real-time thoughts stream here.',
+    AppLanguage.ja => '問題をカメラで映すかスキャンすると、モデルの推論プロセスがリアルタイムに表示されます。',
+    AppLanguage.zh => '对准或扫描题目后，模型的深度推理过程将在此实时显示。',
+  };
 
   String get btnScanSolve => switch (lang) {
-        AppLanguage.ko => '스캔 & 풀이',
-        AppLanguage.en => 'Snap & Solve',
-        AppLanguage.ja => '撮影＆解答',
-        AppLanguage.zh => '拍照解题',
-      };
+    AppLanguage.ko => '스캔 & 풀이',
+    AppLanguage.en => 'Snap & Solve',
+    AppLanguage.ja => '撮影＆解答',
+    AppLanguage.zh => '拍照解题',
+  };
 
   String get btnAutoScan => switch (lang) {
-        AppLanguage.ko => '자동 스캔',
-        AppLanguage.en => 'Auto Scan',
-        AppLanguage.ja => '自動スキャン',
-        AppLanguage.zh => '自动扫描',
-      };
+    AppLanguage.ko => '자동 스캔',
+    AppLanguage.en => 'Auto Scan',
+    AppLanguage.ja => '自動スキャン',
+    AppLanguage.zh => '自动扫描',
+  };
 
   String get tooltipCopy => switch (lang) {
-        AppLanguage.ko => '해설 복사',
-        AppLanguage.en => 'Copy Solution',
-        AppLanguage.ja => '解説をコピー',
-        AppLanguage.zh => '复制题解',
-      };
+    AppLanguage.ko => '해설 복사',
+    AppLanguage.en => 'Copy Solution',
+    AppLanguage.ja => '解説をコピー',
+    AppLanguage.zh => '复制题解',
+  };
 
   String get copiedSnackBar => switch (lang) {
-        AppLanguage.ko => '해설이 클립보드에 복사되었습니다.',
-        AppLanguage.en => 'Solution copied to clipboard.',
-        AppLanguage.ja => '解説がクリップボードにコピーされました。',
-        AppLanguage.zh => '题解已复制到剪贴板。',
-      };
+    AppLanguage.ko => '해설이 클립보드에 복사되었습니다.',
+    AppLanguage.en => 'Solution copied to clipboard.',
+    AppLanguage.ja => '解説がクリップボードにコピーされました。',
+    AppLanguage.zh => '题解已复制到剪贴板。',
+  };
 
   String get cancel => switch (lang) {
-        AppLanguage.ko => '취소',
-        AppLanguage.en => 'Cancel',
-        AppLanguage.ja => 'キャンセル',
-        AppLanguage.zh => '取消',
-      };
+    AppLanguage.ko => '취소',
+    AppLanguage.en => 'Cancel',
+    AppLanguage.ja => 'キャンセル',
+    AppLanguage.zh => '取消',
+  };
 
   String get delete => switch (lang) {
-        AppLanguage.ko => '삭제',
-        AppLanguage.en => 'Delete',
-        AppLanguage.ja => '削除',
-        AppLanguage.zh => '删除',
-      };
+    AppLanguage.ko => '삭제',
+    AppLanguage.en => 'Delete',
+    AppLanguage.ja => '削除',
+    AppLanguage.zh => '删除',
+  };
 
   String get clearHistoryTitle => switch (lang) {
-        AppLanguage.ko => '풀이 이력 초기화',
-        AppLanguage.en => 'Clear Solution History',
-        AppLanguage.ja => '履歴の初期化',
-        AppLanguage.zh => '清空题解记录',
-      };
+    AppLanguage.ko => '풀이 이력 초기화',
+    AppLanguage.en => 'Clear Solution History',
+    AppLanguage.ja => '履歴の初期化',
+    AppLanguage.zh => '清空题解记录',
+  };
 
   String get clearHistoryConfirm => switch (lang) {
-        AppLanguage.ko => '저장된 모든 시험 문제 풀이 이력과 오답 노트를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.',
-        AppLanguage.en => 'Delete all saved exam solution records and review notes?\nThis action cannot be undone.',
-        AppLanguage.ja => '保存されているすべての問題解説履歴と復習ノートを削除しますか？\n削除後は復元できません。',
-        AppLanguage.zh => '确定删除所有保存的题解记录与错题本吗？\n删除后将无法恢复。',
-      };
+    AppLanguage.ko =>
+      '저장된 모든 시험 문제 풀이 이력과 오답 노트를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.',
+    AppLanguage.en =>
+      'Delete all saved exam solution records and review notes?\nThis action cannot be undone.',
+    AppLanguage.ja => '保存されているすべての問題解説履歴と復習ノートを削除しますか？\n削除後は復元できません。',
+    AppLanguage.zh => '确定删除所有保存的题解记录与错题本吗？\n删除后将无法恢复。',
+  };
 
   String get clearHistorySuccess => switch (lang) {
-        AppLanguage.ko => '풀이 이력이 초기화되었습니다.',
-        AppLanguage.en => 'Solution history has been cleared.',
-        AppLanguage.ja => '履歴が初期化されました。',
-        AppLanguage.zh => '题解记录已清空。',
-      };
+    AppLanguage.ko => '풀이 이력이 초기화되었습니다.',
+    AppLanguage.en => 'Solution history has been cleared.',
+    AppLanguage.ja => '履歴が初期化されました。',
+    AppLanguage.zh => '题解记录已清空。',
+  };
 
   String get systemInstructionTitle => switch (lang) {
-        AppLanguage.ko => 'System Instruction 설정',
-        AppLanguage.en => 'System Instruction Settings',
-        AppLanguage.ja => 'System Instruction 設定',
-        AppLanguage.zh => 'System Instruction 配置',
-      };
+    AppLanguage.ko => 'System Instruction 설정',
+    AppLanguage.en => 'System Instruction Settings',
+    AppLanguage.ja => 'System Instruction 設定',
+    AppLanguage.zh => 'System Instruction 配置',
+  };
 
   String get systemInstructionDesc => switch (lang) {
-        AppLanguage.ko =>
-          'Gemini 3.8 Live Extended Thinking 모델에 전달되는 시스템 프롬프트(영어)입니다.\n만능 시험 튜터 페르소나, 출력 마크다운 구조, 수식 및 코드 서식을 직접 자유롭게 수정할 수 있습니다.',
-        AppLanguage.en =>
-          'System prompt (English) sent to Gemini 3.8 Live Extended Thinking.\nYou can customize the omniscient exam tutor persona, markdown structure, and formatting rules freely.',
-        AppLanguage.ja =>
-          'Gemini 3.8 Live Extended Thinkingモデルに送信されるシステムプロンプト（英語）です。\n万能受験チューターペルソナ、マークダウン構成、数式・コード記法ルールを自由に編集できます。',
-        AppLanguage.zh =>
-          '发送给Gemini 3.8 Live Extended Thinking模型的系统提示词（英语）。\n可自由定制全能家教人设、Markdown排版结构及公式代码规则。',
-      };
+    AppLanguage.ko =>
+      'Gemini 3.8 Live Extended Thinking 모델에 전달되는 시스템 프롬프트(영어)입니다.\n만능 시험 튜터 페르소나, 출력 마크다운 구조, 수식 및 코드 서식을 직접 자유롭게 수정할 수 있습니다.',
+    AppLanguage.en =>
+      'System prompt (English) sent to Gemini 3.8 Live Extended Thinking.\nYou can customize the omniscient exam tutor persona, markdown structure, and formatting rules freely.',
+    AppLanguage.ja =>
+      'Gemini 3.8 Live Extended Thinkingモデルに送信されるシステムプロンプト（英語）です。\n万能受験チューターペルソナ、マークダウン構成、数式・コード記法ルールを自由に編集できます。',
+    AppLanguage.zh =>
+      '发送给Gemini 3.8 Live Extended Thinking模型的系统提示词（英语）。\n可自由定制全能家教人设、Markdown排版结构及公式代码规则。',
+  };
 
   String get btnHideSheet => switch (lang) {
-        AppLanguage.ko => '노트 접기/숨기기',
-        AppLanguage.en => 'Hide Sheet',
-        AppLanguage.ja => 'ノートを隠す',
-        AppLanguage.zh => '收起笔记',
-      };
+    AppLanguage.ko => '노트 접기/숨기기',
+    AppLanguage.en => 'Hide Sheet',
+    AppLanguage.ja => 'ノートを隠す',
+    AppLanguage.zh => '收起笔记',
+  };
 
   String get btnShowSheet => switch (lang) {
-        AppLanguage.ko => '📝 풀이 노트 보기',
-        AppLanguage.en => '📝 View Solution Notes',
-        AppLanguage.ja => '📝 解答ノートを表示',
-        AppLanguage.zh => '📝 查看题解笔记',
-      };
+    AppLanguage.ko => '📝 풀이 노트 보기',
+    AppLanguage.en => '📝 View Solution Notes',
+    AppLanguage.ja => '📝 解答ノートを表示',
+    AppLanguage.zh => '📝 查看题解笔记',
+  };
 
   String get snapScanningSnackBar => switch (lang) {
-        AppLanguage.ko => '📸 문제를 스캔하여 Extended Thinking으로 정밀 분석 중...',
-        AppLanguage.en => '📸 Problem scanned! Analyzing with Extended Thinking...',
-        AppLanguage.ja => '📸 問題をスキャンしました。Extended Thinkingで精密分析中...',
-        AppLanguage.zh => '📸 题目已扫描！正在通过Extended Thinking深入分析...',
-      };
+    AppLanguage.ko => '📸 문제를 스캔하여 Extended Thinking으로 정밀 분석 중...',
+    AppLanguage.en => '📸 Problem scanned! Analyzing with Extended Thinking...',
+    AppLanguage.ja => '📸 問題をスキャンしました。Extended Thinkingで精密分析中...',
+    AppLanguage.zh => '📸 题目已扫描！正在通过Extended Thinking深入分析...',
+  };
 
   String get gallerySendingSnackBar => switch (lang) {
-        AppLanguage.ko => '🖼️ 갤러리 사진을 전송했습니다. Extended Thinking으로 풀이 중...',
-        AppLanguage.en => '🖼️ Photo sent from gallery. Solving with Extended Thinking...',
-        AppLanguage.ja => '🖼️ ギャラリー写真を送信しました。Extended Thinkingで解答中...',
-        AppLanguage.zh => '🖼️ 已发送相册图片。正在通过Extended Thinking解题...',
-      };
+    AppLanguage.ko => '🖼️ 갤러리 사진을 전송했습니다. Extended Thinking으로 풀이 중...',
+    AppLanguage.en =>
+      '🖼️ Photo sent from gallery. Solving with Extended Thinking...',
+    AppLanguage.ja => '🖼️ ギャラリー写真を送信しました。Extended Thinkingで解答中...',
+    AppLanguage.zh => '🖼️ 已发送相册图片。正在通过Extended Thinking解题...',
+  };
 
   String get snapSolvePrompt => switch (lang) {
-        AppLanguage.ko =>
-          '방금 촬영하거나 제시한 시험 문제(지문, 도표, 사료, 소스코드 포함)를 정밀하게 분석해줘. 반드시 최종 정답(객관식 번호 또는 최종 답안 값)을 가장 먼저 명확하게 밝힌 후, 출제 의도, 핵심 개념 및 접근 전략, 단계별 상세 해설을 체계적으로 설명해줘.',
-        AppLanguage.en =>
-          'Please thoroughly analyze the exam question (including passages, charts, historical sources, and code) shown. You MUST state the definitive final answer (choice number or final value) first, followed by subject level, examiner intent, key concepts & strategy, and step-by-step solution.',
-        AppLanguage.ja =>
-          '提示された写真の試験問題（本文・資料・図表・コード含む）を精密に分析してください。必ず最終的な正解（選択肢番号または最終解答値）を一番最初に明確に述べてから、教科・科目レベル、出題者の意図、核心概念と解法戦略、段階別の詳細解説を論理的・体系的に説明してください。',
-        AppLanguage.zh =>
-          '请仔细分析刚刚拍照展示的照片中的考试题目（包含材料、图表、史料或代码）。必须首先明确给出最终正解（选择题选项编号或最终结果数值），随后系统地提供科目与难度、命题人意图、核心考点与解题策略以及分步详细解析。',
-      };
+    AppLanguage.ko =>
+      '방금 촬영하거나 제시한 시험 문제(지문, 도표, 사료, 소스코드 포함)를 정밀하게 분석해줘. 반드시 최종 정답(객관식 번호 또는 최종 답안 값)을 가장 먼저 명확하게 밝힌 후, 출제 의도, 핵심 개념 및 접근 전략, 단계별 상세 해설을 체계적으로 설명해줘.',
+    AppLanguage.en =>
+      'Please thoroughly analyze the exam question (including passages, charts, historical sources, and code) shown. You MUST state the definitive final answer (choice number or final value) first, followed by subject level, examiner intent, key concepts & strategy, and step-by-step solution.',
+    AppLanguage.ja =>
+      '提示された写真の試験問題（本文・資料・図表・コード含む）を精密に分析してください。必ず最終的な正解（選択肢番号または最終解答値）を一番最初に明確に述べてから、教科・科目レベル、出題者の意図、核心概念と解法戦略、段階別の詳細解説を論理的・体系的に説明してください。',
+    AppLanguage.zh =>
+      '请仔细分析刚刚拍照展示的照片中的考试题目（包含材料、图表、史料或代码）。必须首先明确给出最终正解（选择题选项编号或最终结果数值），随后系统地提供科目与难度、命题人意图、核心考点与解题策略以及分步详细解析。',
+  };
 }
 
 /// Fullscreen real-time Multimodal Math Tutor powered by
@@ -559,7 +580,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   bool _isCameraExpanded = false;
   bool _isCameraInitializing = false;
   bool _isBottomSheetVisible = true;
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
   bool _captureInFlight = false;
   bool _isMicMuted = false;
   bool _isFlashOn = false;
@@ -604,8 +626,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         : _audioPlayer.isPlaying;
     if (isPlaying) return true;
     if (_lastAiAudioReceivedTime != null) {
-      final diff =
-          DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
+      final diff = DateTime.now()
+          .difference(_lastAiAudioReceivedTime!)
+          .inMilliseconds;
       if (diff < 1200) return true;
     }
     return false;
@@ -696,7 +719,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   }
 
   static const _historyPrefKey = 'gemini_live_math_tutor_history';
-  static const _systemInstructionPrefKey = 'gemini_live_math_tutor_system_instruction';
+  static const _systemInstructionPrefKey =
+      'gemini_live_math_tutor_system_instruction';
   String _customSystemInstruction = defaultMathTutorSystemInstruction;
 
   Future<void> _loadHistory() async {
@@ -709,7 +733,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         } else {
           _customSystemInstruction = defaultMathTutorSystemInstruction;
           await prefs.setString(
-              _systemInstructionPrefKey, defaultMathTutorSystemInstruction);
+            _systemInstructionPrefKey,
+            defaultMathTutorSystemInstruction,
+          );
         }
       }
       final raw = prefs.getString(_historyPrefKey);
@@ -780,7 +806,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text(i18n.clearHistoryTitle, style: const TextStyle(color: Colors.white)),
+        title: Text(
+          i18n.clearHistoryTitle,
+          style: const TextStyle(color: Colors.white),
+        ),
         content: Text(
           i18n.clearHistoryConfirm,
           style: const TextStyle(color: Colors.white70),
@@ -818,7 +847,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   Future<void> _showSystemInstructionDialog() async {
     final lang = AppLanguageController.instance.currentLanguage;
     final i18n = _MathTutorI18n(lang);
-    final textController = TextEditingController(text: _customSystemInstruction);
+    final textController = TextEditingController(
+      text: _customSystemInstruction,
+    );
 
     final saved = await showDialog<bool>(
       context: context,
@@ -843,7 +874,11 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               children: [
                 Text(
                   i18n.systemInstructionDesc,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -878,14 +913,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             onPressed: () {
               textController.text = defaultMathTutorSystemInstruction;
             },
-            child: const Text('기본값 복원', style: TextStyle(color: Colors.amberAccent)),
+            child: const Text(
+              '기본값 복원',
+              style: TextStyle(color: Colors.amberAccent),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('취소', style: TextStyle(color: Colors.white60)),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.amber.shade700),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.amber.shade700,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('저장 및 적용'),
           ),
@@ -1008,7 +1048,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   Future<void> _toggleCamera() async {
     if (_availableCameras.length < 2) return;
     _cameraFrameTimer?.cancel();
-    _selectedCameraIndex = (_selectedCameraIndex + 1) % _availableCameras.length;
+    _selectedCameraIndex =
+        (_selectedCameraIndex + 1) % _availableCameras.length;
     await _initCameraController(_availableCameras[_selectedCameraIndex]);
   }
 
@@ -1045,7 +1086,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     setState(() => _isConnecting = true);
 
     // Prefer specificModel, or user-selected ApiKeyStore.liveModel, or default to extended thinking
-    final targetModel = specificModel ??
+    final targetModel =
+        specificModel ??
         (ApiKeyStore.liveModel.isNotEmpty
             ? ApiKeyStore.liveModel
             : LiveModels.gemini38LiveExtendedThinking);
@@ -1075,7 +1117,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       final systemInstructionText =
           '$_customSystemInstruction$languageInstruction$curriculumHint';
 
-      debugPrint('🔌 Attempting Gemini Live connection with model: $targetModel');
+      debugPrint(
+        '🔌 Attempting Gemini Live connection with model: $targetModel',
+      );
 
       final session = await genAI.live.connect(
         LiveConnectParameters(
@@ -1123,12 +1167,16 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 _isConnected = true;
                 _isConnecting = false;
               });
-              debugPrint('✅ Math Tutor Gemini Live Session Connected ($targetModel)!');
-              _liveTranscriptHistory.add(LiveTranscriptEntry(
-                role: 'system',
-                text: '✅ Gemini 3.8 Live 세션 연결 완료 ($targetModel)',
-                timestamp: DateTime.now(),
-              ));
+              debugPrint(
+                '✅ Math Tutor Gemini Live Session Connected ($targetModel)!',
+              );
+              _liveTranscriptHistory.add(
+                LiveTranscriptEntry(
+                  role: 'system',
+                  text: '✅ Gemini 3.8 Live 세션 연결 완료 ($targetModel)',
+                  timestamp: DateTime.now(),
+                ),
+              );
               _transcriptUpdateNotifier.value++;
               if (_isAutoScanEnabled) {
                 _startCameraFrameLoop();
@@ -1142,11 +1190,13 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 _isConnected = false;
                 _isConnecting = false;
               });
-              _liveTranscriptHistory.add(LiveTranscriptEntry(
-                role: 'system',
-                text: '🔴 Live 세션 오류 발생: $err',
-                timestamp: DateTime.now(),
-              ));
+              _liveTranscriptHistory.add(
+                LiveTranscriptEntry(
+                  role: 'system',
+                  text: '🔴 Live 세션 오류 발생: $err',
+                  timestamp: DateTime.now(),
+                ),
+              );
               _transcriptUpdateNotifier.value++;
               _showSafeSnackBar(
                 '수학 과외 세션 오류: $err',
@@ -1155,17 +1205,21 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               );
             },
             onClose: (code, reason) {
-              debugPrint('⚪ Live Session Closed ($targetModel): $code / $reason');
+              debugPrint(
+                '⚪ Live Session Closed ($targetModel): $code / $reason',
+              );
               if (!mounted) return;
               setState(() {
                 _isConnected = false;
                 _isConnecting = false;
               });
-              _liveTranscriptHistory.add(LiveTranscriptEntry(
-                role: 'system',
-                text: '⚪ Live 세션 연결 종료 ($code: $reason)',
-                timestamp: DateTime.now(),
-              ));
+              _liveTranscriptHistory.add(
+                LiveTranscriptEntry(
+                  role: 'system',
+                  text: '⚪ Live 세션 연결 종료 ($code: $reason)',
+                  timestamp: DateTime.now(),
+                ),
+              );
               _transcriptUpdateNotifier.value++;
             },
           ),
@@ -1180,7 +1234,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
       // Auto-fallback: If extended thinking failed, try standard live model
       if (targetModel != LiveModels.gemini38Live) {
-        debugPrint('⚠️ Falling back to stable model ${LiveModels.gemini38Live}...');
+        debugPrint(
+          '⚠️ Falling back to stable model ${LiveModels.gemini38Live}...',
+        );
         if (mounted) {
           _showSafeSnackBar(
             '안정적인 실시간 모델(${LiveModels.gemini38Live})로 자동 재연결 중...',
@@ -1217,7 +1273,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     final serverContent = message.serverContent;
 
     // 0. Live user speech transcription feedback (User STT)
-    final userInput = serverContent?.inputTranscription?.text ??
+    final userInput =
+        serverContent?.inputTranscription?.text ??
         serverContent?.interimInputTranscription?.text;
     if (userInput != null && userInput.trim().isNotEmpty) {
       final text = userInput.trim();
@@ -1226,14 +1283,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       // Record user utterance into live transcript history
       if (_liveTranscriptHistory.isNotEmpty &&
           _liveTranscriptHistory.last.role == 'user' &&
-          DateTime.now().difference(_liveTranscriptHistory.last.timestamp).inSeconds < 4) {
+          DateTime.now()
+                  .difference(_liveTranscriptHistory.last.timestamp)
+                  .inSeconds <
+              4) {
         _liveTranscriptHistory.last.text = text;
       } else {
-        _liveTranscriptHistory.add(LiveTranscriptEntry(
-          role: 'user',
-          text: text,
-          timestamp: DateTime.now(),
-        ));
+        _liveTranscriptHistory.add(
+          LiveTranscriptEntry(
+            role: 'user',
+            text: text,
+            timestamp: DateTime.now(),
+          ),
+        );
       }
       _transcriptUpdateNotifier.value++;
       _scrollToBottom(_transcriptScrollController);
@@ -1259,19 +1321,23 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       _liveSubtitleNotifier.value = _MathTutorI18n(lang).interruptedNotice;
 
       // Add system interruption log entry
-      _liveTranscriptHistory.add(LiveTranscriptEntry(
-        role: 'system',
-        text: '⚡ 사용자 발화 감지로 AI 해설이 일시 중단되었습니다 (Interrupted)',
-        timestamp: DateTime.now(),
-        isInterrupted: true,
-      ));
+      _liveTranscriptHistory.add(
+        LiveTranscriptEntry(
+          role: 'system',
+          text: '⚡ 사용자 발화 감지로 AI 해설이 일시 중단되었습니다 (Interrupted)',
+          timestamp: DateTime.now(),
+          isInterrupted: true,
+        ),
+      );
       _transcriptUpdateNotifier.value++;
       _scrollToBottom(_transcriptScrollController);
 
       // Auto-clear notice after 2.5s so false alarms or quick stops don't stay frozen
       _interruptionNoticeTimer?.cancel();
       _interruptionNoticeTimer = Timer(const Duration(milliseconds: 2500), () {
-        if (mounted && _liveSubtitleNotifier.value == _MathTutorI18n(lang).interruptedNotice) {
+        if (mounted &&
+            _liveSubtitleNotifier.value ==
+                _MathTutorI18n(lang).interruptedNotice) {
           _liveSubtitleNotifier.value = '';
         }
       });
@@ -1324,14 +1390,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           // Append model speech to live transcript history
           if (_liveTranscriptHistory.isNotEmpty &&
               _liveTranscriptHistory.last.role == 'model' &&
-              DateTime.now().difference(_liveTranscriptHistory.last.timestamp).inSeconds < 8) {
+              DateTime.now()
+                      .difference(_liveTranscriptHistory.last.timestamp)
+                      .inSeconds <
+                  8) {
             _liveTranscriptHistory.last.text += text;
           } else {
-            _liveTranscriptHistory.add(LiveTranscriptEntry(
-              role: 'model',
-              text: text,
-              timestamp: DateTime.now(),
-            ));
+            _liveTranscriptHistory.add(
+              LiveTranscriptEntry(
+                role: 'model',
+                text: text,
+                timestamp: DateTime.now(),
+              ),
+            );
           }
           _transcriptUpdateNotifier.value++;
           _scrollToBottom(_transcriptScrollController);
@@ -1340,7 +1411,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     }
 
     // 5. Turn Complete: commit the solution card to history
-    final isTurnComplete = (serverContent?.turnComplete ?? false) ||
+    final isTurnComplete =
+        (serverContent?.turnComplete ?? false) ||
         (serverContent?.generationComplete ?? false);
 
     if (isTurnComplete) {
@@ -1353,7 +1425,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       // Flush any throttled buffers immediately
       _solutionStreamThrottleTimer?.cancel();
       _thoughtsStreamThrottleTimer?.cancel();
-      _liveSolutionNotifier.value = _currentTurnSolutionBuffer.toString().trim();
+      _liveSolutionNotifier.value = _currentTurnSolutionBuffer
+          .toString()
+          .trim();
       _liveThoughtsNotifier.value = _currentTurnThoughtsBuffer.toString();
 
       _commitCurrentTurnToRecord();
@@ -1364,7 +1438,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     if (_solutionStreamThrottleTimer?.isActive ?? false) return;
     _solutionStreamThrottleTimer = Timer(const Duration(milliseconds: 80), () {
       if (mounted) {
-        _liveSolutionNotifier.value = _currentTurnSolutionBuffer.toString().trim();
+        _liveSolutionNotifier.value = _currentTurnSolutionBuffer
+            .toString()
+            .trim();
       }
     });
   }
@@ -1426,7 +1502,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       caseSensitive: false,
     ).firstMatch(solution);
     if (answerMatch != null && answerMatch.groupCount >= 1) {
-      finalAnswer = answerMatch
+      finalAnswer =
+          answerMatch
               .group(1)
               ?.replaceAll('*', '')
               .replaceAll('>', '')
@@ -1439,7 +1516,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         caseSensitive: false,
       ).firstMatch(solution);
       if (blockMatch != null && blockMatch.groupCount >= 1) {
-        finalAnswer = blockMatch
+        finalAnswer =
+            blockMatch
                 .group(1)
                 ?.replaceAll('*', '')
                 .replaceAll('>', '')
@@ -1649,7 +1727,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       final bool enableVoiceProc =
           !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
       debugPrint(
-          '🎙️ Starting tutor mic stream (sampleRate: $_audioSampleRate, device: ${_selectedAudioDevice?.label ?? "default"}, voiceProc: $enableVoiceProc)...');
+        '🎙️ Starting tutor mic stream (sampleRate: $_audioSampleRate, device: ${_selectedAudioDevice?.label ?? "default"}, voiceProc: $enableVoiceProc)...',
+      );
 
       final stream = await _audioRecorder.startStream(
         RecordConfig(
@@ -1696,19 +1775,24 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               return; // 스피커 에코 방지
             } else {
               debugPrint(
-                  '🗣️ Intentional student barge-in detected (vol=${_userMicVolume.toStringAsFixed(3)})');
+                '🗣️ Intentional student barge-in detected (vol=${_userMicVolume.toStringAsFixed(3)})',
+              );
             }
           }
 
           _micChunkCount++;
           if (_micChunkCount % 40 == 1) {
             debugPrint(
-                '🎙️ [Tutor Mic] Chunk #$_micChunkCount, len=${chunk.length}, vol=${_userMicVolume.toStringAsFixed(3)}, connected=$_isConnected');
+              '🎙️ [Tutor Mic] Chunk #$_micChunkCount, len=${chunk.length}, vol=${_userMicVolume.toStringAsFixed(3)}, connected=$_isConnected',
+            );
           }
 
           if (_session == null || !_isConnected) return;
 
-          final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
+          final blob = Blob(
+            mimeType: _audioMimeType,
+            data: base64Encode(chunk),
+          );
           _session!.sendRealtimeInput(audio: blob);
         },
         onError: (e) {
@@ -1741,7 +1825,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               role: 'user',
               parts: [
                 Part(
-                  text: '[Student Notice]: Curriculum focus preference updated to "${level.labelKo}". '
+                  text:
+                      '[Student Notice]: Curriculum focus preference updated to "${level.labelKo}". '
                       '${level.promptHint}',
                 ),
               ],
@@ -1793,7 +1878,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                             Positioned.fill(
                               child: _buildCameraPane(
                                 bottomPadding: _isBottomSheetVisible
-                                    ? (constraints.maxHeight * 0.16).clamp(70.0, 110.0)
+                                    ? (constraints.maxHeight * 0.16).clamp(
+                                        70.0,
+                                        110.0,
+                                      )
                                     : 24.0,
                               ),
                             ),
@@ -1831,7 +1919,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                                         scrollController: sheetScrollController,
                                         showDragHandle: true,
                                         onCloseSheet: () {
-                                          setState(() => _isBottomSheetVisible = false);
+                                          setState(
+                                            () => _isBottomSheetVisible = false,
+                                          );
                                         },
                                       ),
                                     ),
@@ -1849,7 +1939,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                                     color: Colors.transparent,
                                     child: InkWell(
                                       onTap: () {
-                                        setState(() => _isBottomSheetVisible = true);
+                                        setState(
+                                          () => _isBottomSheetVisible = true,
+                                        );
                                       },
                                       borderRadius: BorderRadius.circular(24),
                                       child: Container(
@@ -1858,10 +1950,15 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                                           vertical: 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF1E293B).withValues(alpha: 0.92),
-                                          borderRadius: BorderRadius.circular(24),
+                                          color: const Color(
+                                            0xFF1E293B,
+                                          ).withValues(alpha: 0.92),
+                                          borderRadius: BorderRadius.circular(
+                                            24,
+                                          ),
                                           border: Border.all(
-                                            color: Colors.amberAccent.withValues(alpha: 0.7),
+                                            color: Colors.amberAccent
+                                                .withValues(alpha: 0.7),
                                             width: 1.2,
                                           ),
                                           boxShadow: const [
@@ -1889,16 +1986,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            if (_solutionHistory.isNotEmpty) ...[
+                                            if (_solutionHistory
+                                                .isNotEmpty) ...[
                                               const SizedBox(width: 4),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 6,
-                                                  vertical: 1,
-                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 1,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.amberAccent,
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                 ),
                                                 child: Text(
                                                   '${_solutionHistory.length}',
@@ -1941,7 +2041,11 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               color: Colors.amber.shade700,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.school_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.school_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1952,7 +2056,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   i18n.appTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   i18n.modelSubtitle,
@@ -1966,95 +2073,104 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         ],
       ),
       actions: [
-        // Extended Thinking status indicator
-        _buildThinkingStatusPill(i18n),
-        IconButton(
-          icon: const Icon(Icons.tune_rounded),
-          tooltip: i18n.systemInstructionTitle,
-          onPressed: _showSystemInstructionDialog,
-        ),
-        // Audio Input Device selector
-        PopupMenuButton<String>(
-          tooltip: _selectedAudioDevice?.label.isNotEmpty == true
-              ? _selectedAudioDevice!.label
-              : '마이크 디바이스 선택',
-          icon: Icon(
-            _selectedAudioDevice != null
-                ? Icons.mic_external_on_rounded
-                : Icons.mic_rounded,
-            color: Colors.white70,
-            size: 20,
-          ),
-          onOpened: _loadAudioDevices,
-          onSelected: (deviceId) {
-            if (deviceId == '__default__') {
-              _switchAudioDevice(null);
-            } else {
-              final dev = _availableAudioDevices
-                  .where((d) => d.id == deviceId)
-                  .firstOrNull;
-              _switchAudioDevice(dev);
-            }
-          },
-          itemBuilder: (context) {
-            return [
-              PopupMenuItem<String>(
-                value: '__default__',
-                child: Row(
-                  children: [
-                    Icon(
-                      _selectedAudioDevice == null
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      size: 16,
-                      color: _selectedAudioDevice == null
-                          ? Colors.amberAccent
-                          : Colors.grey,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('기본 마이크', style: TextStyle(color: Colors.white)),
-                  ],
-                ),
+        ScrollableAppBarActions(
+          children: [
+            // Extended Thinking status indicator
+            _buildThinkingStatusPill(i18n),
+            IconButton(
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: i18n.systemInstructionTitle,
+              onPressed: _showSystemInstructionDialog,
+            ),
+            // Audio Input Device selector
+            PopupMenuButton<String>(
+              tooltip: _selectedAudioDevice?.label.isNotEmpty == true
+                  ? _selectedAudioDevice!.label
+                  : '마이크 디바이스 선택',
+              icon: Icon(
+                _selectedAudioDevice != null
+                    ? Icons.mic_external_on_rounded
+                    : Icons.mic_rounded,
+                color: Colors.white70,
+                size: 20,
               ),
-              ..._availableAudioDevices.map((dev) {
-                final isSelected = _selectedAudioDevice?.id == dev.id;
-                return PopupMenuItem<String>(
-                  value: dev.id,
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSelected
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked_rounded,
-                        size: 16,
-                        color: isSelected ? Colors.amberAccent : Colors.grey,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          dev.label.isNotEmpty ? dev.label : dev.id,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white),
+              onOpened: _loadAudioDevices,
+              onSelected: (deviceId) {
+                if (deviceId == '__default__') {
+                  _switchAudioDevice(null);
+                } else {
+                  final dev = _availableAudioDevices
+                      .where((d) => d.id == deviceId)
+                      .firstOrNull;
+                  _switchAudioDevice(dev);
+                }
+              },
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem<String>(
+                    value: '__default__',
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedAudioDevice == null
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          size: 16,
+                          color: _selectedAudioDevice == null
+                              ? Colors.amberAccent
+                              : Colors.grey,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        const Text(
+                          '기본 마이크',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              }),
-            ];
-          },
+                  ..._availableAudioDevices.map((dev) {
+                    final isSelected = _selectedAudioDevice?.id == dev.id;
+                    return PopupMenuItem<String>(
+                      value: dev.id,
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            size: 16,
+                            color: isSelected
+                                ? Colors.amberAccent
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              dev.label.isNotEmpty ? dev.label : dev.id,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ];
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: t.settingsTooltip,
+              onPressed: () async {
+                final changed = await AppSettingsDialog.show(context);
+                if (changed == true && mounted) {
+                  await _connectSession();
+                }
+              },
+            ),
+            const SizedBox(width: 4),
+          ],
         ),
-        IconButton(
-          icon: const Icon(Icons.settings_outlined),
-          tooltip: t.settingsTooltip,
-          onPressed: () async {
-            final changed = await AppSettingsDialog.show(context);
-            if (changed == true && mounted) {
-              await _connectSession();
-            }
-          },
-        ),
-        const SizedBox(width: 4),
       ],
     );
   }
@@ -2086,12 +2202,18 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   if (isThinking)
                     FadeTransition(
                       opacity: _pulseAnimController,
-                      child: const Icon(Icons.psychology_rounded,
-                          size: 15, color: Colors.amberAccent),
+                      child: const Icon(
+                        Icons.psychology_rounded,
+                        size: 15,
+                        color: Colors.amberAccent,
+                      ),
                     )
                   else
-                    const Icon(Icons.check_circle_outline,
-                        size: 14, color: Colors.greenAccent),
+                    const Icon(
+                      Icons.check_circle_outline,
+                      size: 14,
+                      color: Colors.greenAccent,
+                    ),
                   const SizedBox(width: 5),
                   Text(
                     isThinking ? i18n.statusThinking : i18n.statusIdle,
@@ -2105,7 +2227,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     const SizedBox(width: 6),
                     Text(
                       '($tokenCount tok)',
-                      style: const TextStyle(fontSize: 10, color: Colors.white60),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white60,
+                      ),
                     ),
                   ],
                 ],
@@ -2139,7 +2264,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   lvl.label(lang),
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: isSelected ? Colors.black : Colors.white,
                   ),
                 ),
@@ -2184,10 +2311,16 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   : const Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.videocam_off_rounded, size: 48, color: Colors.white24),
+                        Icon(
+                          Icons.videocam_off_rounded,
+                          size: 48,
+                          color: Colors.white24,
+                        ),
                         SizedBox(height: 12),
-                        Text('카메라를 불러오는 중입니다...',
-                            style: TextStyle(color: Colors.white54)),
+                        Text(
+                          '카메라를 불러오는 중입니다...',
+                          style: TextStyle(color: Colors.white54),
+                        ),
                       ],
                     ),
             ),
@@ -2197,8 +2330,14 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         Center(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final boxWidth = (constraints.maxWidth * 0.88).clamp(240.0, 480.0);
-              final boxHeight = (constraints.maxHeight * 0.65).clamp(160.0, 380.0);
+              final boxWidth = (constraints.maxWidth * 0.88).clamp(
+                240.0,
+                480.0,
+              );
+              final boxHeight = (constraints.maxHeight * 0.65).clamp(
+                160.0,
+                380.0,
+              );
 
               return ValueListenableBuilder<InteractionStatus>(
                 valueListenable: _interactionStatusNotifier,
@@ -2222,7 +2361,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                         Padding(
                           padding: const EdgeInsets.all(6),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black54,
                               borderRadius: BorderRadius.circular(6),
@@ -2231,7 +2373,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                               i18n.cameraGuide,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.amberAccent, fontSize: 11),
+                              style: const TextStyle(
+                                color: Colors.amberAccent,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ),
@@ -2262,7 +2407,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               right: 12,
               bottom: bottomPadding + 64,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isUserSpeaking
                       ? const Color(0xDD042F2E)
@@ -2296,8 +2444,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                               ? const Color(0xFFE0F2FE)
                               : Colors.white,
                           fontSize: 13,
-                          fontWeight:
-                              isUserSpeaking ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: isUserSpeaking
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -2331,7 +2480,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(),
                     icon: Icon(
-                      _isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                      _isFlashOn
+                          ? Icons.flash_on_rounded
+                          : Icons.flash_off_rounded,
                       color: _isFlashOn ? Colors.amberAccent : Colors.white70,
                     ),
                     tooltip: 'Flash',
@@ -2344,7 +2495,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     iconSize: 20,
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.photo_library_rounded, color: Colors.amberAccent),
+                    icon: const Icon(
+                      Icons.photo_library_rounded,
+                      color: Colors.amberAccent,
+                    ),
                     tooltip: 'Gallery',
                     onPressed: _pickAndSendImage,
                   ),
@@ -2365,7 +2519,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -2379,7 +2536,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       _isAutoScanEnabled
                           ? Icons.motion_photos_on_rounded
                           : Icons.motion_photos_off_rounded,
-                      color: _isAutoScanEnabled ? Colors.greenAccent : Colors.white38,
+                      color: _isAutoScanEnabled
+                          ? Colors.greenAccent
+                          : Colors.white38,
                     ),
                     tooltip: i18n.btnAutoScan,
                     onPressed: () {
@@ -2400,14 +2559,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     onTap: _toggleMic,
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: _isMicMuted
                             ? Colors.red.withValues(alpha: 0.2)
                             : Colors.white.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: _isMicMuted ? Colors.redAccent : Colors.white24,
+                          color: _isMicMuted
+                              ? Colors.redAccent
+                              : Colors.white24,
                           width: 1,
                         ),
                       ),
@@ -2415,9 +2579,13 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            _isMicMuted
+                                ? Icons.mic_off_rounded
+                                : Icons.mic_rounded,
                             size: 16,
-                            color: _isMicMuted ? Colors.redAccent : Colors.cyanAccent,
+                            color: _isMicMuted
+                                ? Colors.redAccent
+                                : Colors.cyanAccent,
                           ),
                           const SizedBox(width: 4),
                           // Live volume bar meter
@@ -2427,11 +2595,14 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                               return Row(
                                 children: List.generate(4, (index) {
                                   final threshold = (index + 1) * 0.18;
-                                  final active = !_isMicMuted && vol >= threshold;
+                                  final active =
+                                      !_isMicMuted && vol >= threshold;
                                   return Container(
                                     width: 2.5,
                                     height: 4 + (index * 2.5),
-                                    margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 0.8,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: active
                                           ? Colors.greenAccent
@@ -2454,7 +2625,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     iconSize: 20,
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white70),
+                    icon: const Icon(
+                      Icons.flip_camera_ios_rounded,
+                      color: Colors.white70,
+                    ),
                     tooltip: 'Switch Camera',
                     onPressed: _toggleCamera,
                   ),
@@ -2469,7 +2643,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       _isCameraExpanded
                           ? Icons.fullscreen_exit_rounded
                           : Icons.fullscreen_rounded,
-                      color: _isCameraExpanded ? Colors.amberAccent : Colors.white70,
+                      color: _isCameraExpanded
+                          ? Colors.amberAccent
+                          : Colors.white70,
                     ),
                     tooltip: _isCameraExpanded ? '축소' : '카메라 확대',
                     onPressed: () {
@@ -2489,7 +2665,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       _isBottomSheetVisible
                           ? Icons.vertical_align_bottom_rounded
                           : Icons.vertical_align_top_rounded,
-                      color: _isBottomSheetVisible ? Colors.amberAccent : Colors.white70,
+                      color: _isBottomSheetVisible
+                          ? Colors.amberAccent
+                          : Colors.white70,
                     ),
                     tooltip: _isBottomSheetVisible ? '노트 접기/숨기기' : '풀이 노트 열기',
                     onPressed: () {
@@ -2547,7 +2725,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   child: InkWell(
                     onTap: () => setState(() => _activeTabIndex = 0),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 2,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -2596,7 +2777,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   child: InkWell(
                     onTap: () => setState(() => _activeTabIndex = 1),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 2,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -2650,7 +2834,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   child: InkWell(
                     onTap: () => setState(() => _activeTabIndex = 2),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 2,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -2699,8 +2886,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     iconSize: 18,
                     padding: const EdgeInsets.all(6),
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.delete_sweep_rounded,
-                        color: Colors.white54),
+                    icon: const Icon(
+                      Icons.delete_sweep_rounded,
+                      color: Colors.white54,
+                    ),
                     tooltip: i18n.clearHistoryTitle,
                     onPressed: _clearHistory,
                   ),
@@ -2709,8 +2898,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     iconSize: 20,
                     padding: const EdgeInsets.all(6),
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                        color: Colors.white70),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white70,
+                    ),
                     tooltip: i18n.btnHideSheet,
                     onPressed: onCloseSheet,
                   ),
@@ -2723,7 +2914,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             child: switch (_activeTabIndex) {
               0 => _buildSolutionsListTab(scrollController: scrollController),
               1 => _buildTranscriptLogTab(scrollController: scrollController),
-              _ => _buildThinkingScratchpadTab(scrollController: scrollController),
+              _ => _buildThinkingScratchpadTab(
+                scrollController: scrollController,
+              ),
             },
           ),
         ],
@@ -2858,7 +3051,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.amber.shade700,
                     borderRadius: BorderRadius.circular(6),
@@ -2893,7 +3089,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   icon: const Icon(Icons.copy_rounded, color: Colors.white70),
                   tooltip: i18n.tooltipCopy,
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: item.solutionMarkdown));
+                    Clipboard.setData(
+                      ClipboardData(text: item.solutionMarkdown),
+                    );
                     _showSafeSnackBar(
                       i18n.copiedSnackBar,
                       icon: Icons.copy_rounded,
@@ -2930,17 +3128,26 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             if (item.problemLevel.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade900.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.indigoAccent.shade200, width: 1),
+                  border: Border.all(
+                    color: Colors.indigoAccent.shade200,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.analytics_rounded,
-                        color: Colors.indigoAccent, size: 16),
+                    const Icon(
+                      Icons.analytics_rounded,
+                      color: Colors.indigoAccent,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -2974,17 +3181,26 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             if (item.examinerIntent.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.purple.shade900.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.purpleAccent.shade200, width: 1),
+                  border: Border.all(
+                    color: Colors.purpleAccent.shade200,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.psychology_alt_rounded,
-                        color: Colors.purpleAccent, size: 16),
+                    const Icon(
+                      Icons.psychology_alt_rounded,
+                      color: Colors.purpleAccent,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -3018,16 +3234,25 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             if (item.finalAnswer.isNotEmpty)
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.shade900.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.greenAccent.shade400, width: 1.5),
+                  border: Border.all(
+                    color: Colors.greenAccent.shade400,
+                    width: 1.5,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: Colors.greenAccent, size: 22),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.greenAccent,
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -3064,14 +3289,19 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             if (item.thinkingLog.isNotEmpty) ...[
               const SizedBox(height: 10),
               Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
                   childrenPadding: const EdgeInsets.only(top: 6),
                   iconColor: Colors.cyanAccent,
                   collapsedIconColor: Colors.white54,
-                  leading: const Icon(Icons.psychology_alt_rounded,
-                      color: Colors.cyanAccent, size: 18),
+                  leading: const Icon(
+                    Icons.psychology_alt_rounded,
+                    color: Colors.cyanAccent,
+                    size: 18,
+                  ),
                   title: Text(
                     i18n.viewThinkingProcess,
                     style: const TextStyle(
@@ -3087,7 +3317,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       decoration: BoxDecoration(
                         color: const Color(0xFF0B132B),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.cyan.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.cyan.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: SelectableText(
                         item.thinkingLog,
@@ -3117,9 +3349,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: const BoxDecoration(
             color: Color(0xFF131D2E),
-            border: Border(
-              bottom: BorderSide(color: Colors.white10),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.white10)),
           ),
           child: Row(
             children: [
@@ -3133,7 +3363,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       Icon(
                         _isMicMuted
                             ? Icons.mic_off_rounded
-                            : (isActive ? Icons.mic_rounded : Icons.mic_none_rounded),
+                            : (isActive
+                                  ? Icons.mic_rounded
+                                  : Icons.mic_none_rounded),
                         size: 16,
                         color: _isMicMuted
                             ? Colors.redAccent
@@ -3167,11 +3399,14 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 child: Text(
                   _isConnected
                       ? (_isAiSpeaking
-                          ? '🤖 튜터 음성 설명 중...'
-                          : (_serverVadSpeaking ||
-                                  (DateTime.now().difference(_lastMicInputTime).inMilliseconds < 450)
-                              ? '🗣️ 학생 음성 인식 중...'
-                              : '🎙️ 음성 인식 대기 중 ("이거 풀어줘")'))
+                            ? '🤖 튜터 음성 설명 중...'
+                            : (_serverVadSpeaking ||
+                                      (DateTime.now()
+                                              .difference(_lastMicInputTime)
+                                              .inMilliseconds <
+                                          450)
+                                  ? '🗣️ 학생 음성 인식 중...'
+                                  : '🎙️ 음성 인식 대기 중 ("이거 풀어줘")'))
                       : '🔴 세션 연결 대기 중',
                   style: const TextStyle(
                     fontSize: 11,
@@ -3255,7 +3490,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
               return ListView.builder(
                 controller: scrollController ?? _transcriptScrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 itemCount: _liveTranscriptHistory.length,
                 itemBuilder: (context, index) {
                   final entry = _liveTranscriptHistory[index];
@@ -3265,7 +3503,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   if (entry.role == 'system') {
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: entry.isInterrupted
                             ? const Color(0x33DC2626)
@@ -3308,13 +3549,18 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
                   final isUser = entry.role == 'user';
                   return Align(
-                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: isUser
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.82,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
                       decoration: BoxDecoration(
                         color: isUser
                             ? const Color(0xFF0F3E3B)
@@ -3342,9 +3588,13 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                isUser ? Icons.person_rounded : Icons.smart_toy_rounded,
+                                isUser
+                                    ? Icons.person_rounded
+                                    : Icons.smart_toy_rounded,
                                 size: 12,
-                                color: isUser ? Colors.cyanAccent : Colors.amberAccent,
+                                color: isUser
+                                    ? Colors.cyanAccent
+                                    : Colors.amberAccent,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -3352,7 +3602,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: isUser ? Colors.cyanAccent : Colors.amberAccent,
+                                  color: isUser
+                                      ? Colors.cyanAccent
+                                      : Colors.amberAccent,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -3399,7 +3651,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         children: [
           Row(
             children: [
-              const Icon(Icons.psychology_alt_rounded, color: Colors.cyanAccent),
+              const Icon(
+                Icons.psychology_alt_rounded,
+                color: Colors.cyanAccent,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -3416,7 +3671,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 builder: (context, tokenCount, _) {
                   if (tokenCount <= 0) return const SizedBox.shrink();
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.cyan.shade900.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
@@ -3424,7 +3682,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     ),
                     child: Text(
                       '$tokenCount tokens',
-                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 11),
+                      style: const TextStyle(
+                        color: Colors.cyanAccent,
+                        fontSize: 11,
+                      ),
                     ),
                   );
                 },
@@ -3455,9 +3716,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 final displayThoughts = liveThoughts.isNotEmpty
                     ? liveThoughts
                     : (_solutionHistory.isNotEmpty &&
-                            _solutionHistory.first.thinkingLog.isNotEmpty
-                        ? _solutionHistory.first.thinkingLog
-                        : i18n.thinkingScratchpadWaiting);
+                              _solutionHistory.first.thinkingLog.isNotEmpty
+                          ? _solutionHistory.first.thinkingLog
+                          : i18n.thinkingScratchpadWaiting);
                 return SelectableText(
                   displayThoughts,
                   style: const TextStyle(
@@ -3492,11 +3753,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
-      p: const TextStyle(
-        color: Colors.white,
-        fontSize: 13,
-        height: 1.5,
-      ),
+      p: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
       code: const TextStyle(
         color: Colors.amberAccent,
         fontFamily: 'monospace',
@@ -3571,7 +3828,10 @@ class LatexInlineSyntax extends md.InlineSyntax {
 
 /// Block syntax for TeX display formulas: $$...$$
 class LatexBlockSyntax extends md.BlockSyntax {
-  static final _pattern = RegExp(r'^\$\$\s*([\s\S]*?)\s*\$\$$', multiLine: true);
+  static final _pattern = RegExp(
+    r'^\$\$\s*([\s\S]*?)\s*\$\$$',
+    multiLine: true,
+  );
 
   @override
   RegExp get pattern => _pattern;
@@ -3629,10 +3889,12 @@ class LatexElementBuilder extends MarkdownElementBuilder {
         ),
         child: Math.tex(
           tex,
-          textStyle: (preferredStyle ?? const TextStyle(color: Colors.white, fontSize: 14))
-              .copyWith(
-            color: isBlock ? Colors.amberAccent : Colors.cyanAccent,
-          ),
+          textStyle:
+              (preferredStyle ??
+                      const TextStyle(color: Colors.white, fontSize: 14))
+                  .copyWith(
+                    color: isBlock ? Colors.amberAccent : Colors.cyanAccent,
+                  ),
           mathStyle: isBlock ? MathStyle.display : MathStyle.text,
           onErrorFallback: (err) => Text(
             isBlock ? '\$\$\n$tex\n\$\$' : '\$$tex\$',

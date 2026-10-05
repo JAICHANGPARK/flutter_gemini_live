@@ -91,7 +91,9 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
     await ApiKeyStore.saveModel(newModel);
     await ApiKeyStore.saveVoice(_selectedVoice);
 
-    final selectedDev = _audioDevices.where((d) => d.id == _selectedAudioDeviceId).firstOrNull;
+    final selectedDev = _audioDevices
+        .where((d) => d.id == _selectedAudioDeviceId)
+        .firstOrNull;
     await ApiKeyStore.saveAudioDevice(
       _selectedAudioDeviceId,
       selectedDev?.label ?? '',
@@ -117,7 +119,10 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
               Expanded(
                 child: Text(
                   t.settingsDialogTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
               ),
               const LanguageSelectorButton(compact: true),
@@ -133,7 +138,10 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                   // 1. API Key Field
                   Text(
                     t.apiKeyLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   TextField(
@@ -149,7 +157,8 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                           _obscureKey ? Icons.visibility_off : Icons.visibility,
                           size: 20,
                         ),
-                        onPressed: () => setState(() => _obscureKey = !_obscureKey),
+                        onPressed: () =>
+                            setState(() => _obscureKey = !_obscureKey),
                       ),
                     ),
                   ),
@@ -163,7 +172,10 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                   // 2. Model Selection
                   Text(
                     t.liveModelLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
@@ -184,14 +196,19 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: isRecommended ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: isRecommended
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                             ),
                           ),
                         );
                       }),
                       DropdownMenuItem<String>(
                         value: 'custom',
-                        child: Text(t.customModelOption, style: const TextStyle(fontSize: 13)),
+                        child: Text(
+                          t.customModelOption,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     ],
                     onChanged: (val) {
@@ -220,18 +237,27 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                   // 3. Voice (음성) Selection
                   Text(
                     t.voiceLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    initialValue: ApiKeyStore.availableVoices.any((v) => v['name'] == _selectedVoice)
+                    initialValue:
+                        ApiKeyStore.availableVoices.any(
+                          (v) => v['name'] == _selectedVoice,
+                        )
                         ? _selectedVoice
                         : ApiKeyStore.defaultVoice,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       isDense: true,
-                      prefixIcon: Icon(Icons.record_voice_over_rounded, size: 20),
+                      prefixIcon: Icon(
+                        Icons.record_voice_over_rounded,
+                        size: 20,
+                      ),
                     ),
                     items: ApiKeyStore.availableVoices.map((voice) {
                       final name = voice['name']!;
@@ -240,11 +266,15 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                       return DropdownMenuItem<String>(
                         value: name,
                         child: Text(
-                          isDefault ? '$name -- $desc (Default)' : '$name -- $desc',
+                          isDefault
+                              ? '$name -- $desc (Default)'
+                              : '$name -- $desc',
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: isDefault ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isDefault
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       );
@@ -269,7 +299,10 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                     children: [
                       Text(
                         t.audioDeviceLabel,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                       if (_isLoadingDevices)
                         const SizedBox(
@@ -281,8 +314,11 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedAudioDeviceId.isEmpty ||
-                            !_audioDevices.any((d) => d.id == _selectedAudioDeviceId)
+                    initialValue:
+                        _selectedAudioDeviceId.isEmpty ||
+                            !_audioDevices.any(
+                              (d) => d.id == _selectedAudioDeviceId,
+                            )
                         ? ''
                         : _selectedAudioDeviceId,
                     isExpanded: true,
@@ -294,10 +330,15 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                     items: [
                       DropdownMenuItem<String>(
                         value: '',
-                        child: Text(t.defaultDeviceLabel, style: const TextStyle(fontSize: 13)),
+                        child: Text(
+                          t.defaultDeviceLabel,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                       ..._audioDevices.map((dev) {
-                        final label = dev.label.isNotEmpty ? dev.label : 'Device ${dev.id}';
+                        final label = dev.label.isNotEmpty
+                            ? dev.label
+                            : 'Device ${dev.id}';
                         return DropdownMenuItem<String>(
                           value: dev.id,
                           child: Text(

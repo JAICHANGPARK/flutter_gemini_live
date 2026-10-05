@@ -19,9 +19,7 @@ GenerationConfig buildExampleAudioGenerationConfig({
     responseModalities: const [Modality.AUDIO],
     speechConfig: SpeechConfig(
       voiceConfig: VoiceConfig(
-        prebuiltVoiceConfig: PrebuiltVoiceConfig(
-          voiceName: voice,
-        ),
+        prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: voice),
       ),
     ),
     thinkingConfig: thinkingConfig,

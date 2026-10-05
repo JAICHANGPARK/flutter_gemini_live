@@ -11,6 +11,7 @@ import 'dj_midi_box_page.dart';
 import 'foldable_utils.dart';
 import 'pro_dj_console_page.dart';
 import 'soloud_live_audio_player.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Interactive Real-time Music Studio powered by Google's Lyria Live models.
 ///
@@ -87,7 +88,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
     )..addListener(_updateVisualizer);
 
     // Initial default prompts from official Google Prompt DJ guide
-    _addPrompt('Minimal techno with deep bass, sparse percussion, and atmospheric synths', 1.0);
+    _addPrompt(
+      'Minimal techno with deep bass, sparse percussion, and atmospheric synths',
+      1.0,
+    );
     _addPrompt('Shimmering hi-hats and acid 303 bass', 0.8);
   }
 
@@ -112,7 +116,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
   void _removePrompt(int index) {
     if (_promptControllers.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('At least one weighted prompt is required.')),
+        const SnackBar(
+          content: Text('At least one weighted prompt is required.'),
+        ),
       );
       return;
     }
@@ -145,7 +151,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
   void _log(String message) {
     if (!mounted) return;
     setState(() {
-      _logs.insert(0, '[${DateTime.now().toIso8601String().substring(11, 19)}] $message');
+      _logs.insert(
+        0,
+        '[${DateTime.now().toIso8601String().substring(11, 19)}] $message',
+      );
       if (_logs.length > 100) _logs.removeLast();
     });
   }
@@ -237,9 +246,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           _statusText = 'Connection failed';
           _statusColor = Colors.red;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to connect: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to connect: $e')));
       }
     }
   }
@@ -332,7 +341,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
     _session!.resetContext();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Music context reset. Generating fresh variation seamlessly.'),
+        content: Text(
+          'Music context reset. Generating fresh variation seamlessly.',
+        ),
         duration: Duration(seconds: 2),
       ),
     );
@@ -350,7 +361,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
 
     if (prompts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter at least one valid prompt text.')),
+        const SnackBar(
+          content: Text('Please enter at least one valid prompt text.'),
+        ),
       );
       return;
     }
@@ -380,10 +393,13 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
       onlyBassAndDrums: _onlyBassAndDrums,
     );
 
-    _log('⚙️ Updating musicGenerationConfig (BPM: $_bpm, Mode: ${_mode.name})...');
+    _log(
+      '⚙️ Updating musicGenerationConfig (BPM: $_bpm, Mode: ${_mode.name})...',
+    );
     _session!.setMusicGenerationConfig(config);
 
-    final bpmOrScaleChanged = (_lastAppliedBpm != null && _bpm != _lastAppliedBpm) ||
+    final bpmOrScaleChanged =
+        (_lastAppliedBpm != null && _bpm != _lastAppliedBpm) ||
         (_lastAppliedScale != _selectedScale);
     _lastAppliedBpm = _bpm;
     _lastAppliedScale = _selectedScale;
@@ -396,9 +412,11 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(bpmOrScaleChanged && _autoResetOnTempoScaleChange
-            ? 'Applied config & auto-reset context for new tempo/scale.'
-            : 'Music generation configuration updated.'),
+        content: Text(
+          bpmOrScaleChanged && _autoResetOnTempoScaleChange
+              ? 'Applied config & auto-reset context for new tempo/scale.'
+              : 'Music generation configuration updated.',
+        ),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -488,7 +506,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               : Colors.purpleAccent.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+            color: foldableInfo.isTabletop
+                ? Colors.deepOrangeAccent
+                : Colors.purpleAccent,
             width: 1,
           ),
         ),
@@ -498,17 +518,25 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
             Icon(
               foldableInfo.isTabletop
                   ? Icons.laptop_chromebook_rounded
-                  : (foldableInfo.isDualScreen ? Icons.splitscreen_rounded : Icons.developer_board_rounded),
+                  : (foldableInfo.isDualScreen
+                        ? Icons.splitscreen_rounded
+                        : Icons.developer_board_rounded),
               size: 13,
-              color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+              color: foldableInfo.isTabletop
+                  ? Colors.deepOrangeAccent
+                  : Colors.purpleAccent,
             ),
             const SizedBox(width: 4),
             Text(
-              foldableInfo.isTabletop ? 'TABLETOP' : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+              foldableInfo.isTabletop
+                  ? 'TABLETOP'
+                  : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.purpleAccent,
+                color: foldableInfo.isTabletop
+                    ? Colors.deepOrangeAccent
+                    : Colors.purpleAccent,
               ),
             ),
           ],
@@ -549,49 +577,67 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           ],
         ),
         actions: [
-          foldablePill(),
-          FilledButton.tonalIcon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
-              );
-            },
-            icon: const Icon(Icons.grid_view_rounded, size: 16, color: Color(0xFFA855F7)),
-            label: const Text(
-              'MIDI BOX',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF261840),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-            ),
-          ),
-          const SizedBox(width: 6),
-          FilledButton.tonalIcon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProDjConsolePage()),
-              );
-            },
-            icon: const Icon(Icons.album_rounded, size: 16, color: Color(0xFF00E5FF)),
-            label: const Text(
-              'DJ CONSOLE',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1E2638),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-            ),
-          ),
-          const SizedBox(width: 6),
-          const LanguageSelectorButton(compact: true),
-          const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
-            onPressed: () => AppSettingsDialog.show(context),
+          ScrollableAppBarActions(
+            children: [
+              foldablePill(),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
+                  );
+                },
+                icon: const Icon(
+                  Icons.grid_view_rounded,
+                  size: 16,
+                  color: Color(0xFFA855F7),
+                ),
+                label: const Text(
+                  'MIDI BOX',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF261840),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProDjConsolePage()),
+                  );
+                },
+                icon: const Icon(
+                  Icons.album_rounded,
+                  size: 16,
+                  color: Color(0xFF00E5FF),
+                ),
+                label: const Text(
+                  'DJ CONSOLE',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E2638),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const LanguageSelectorButton(compact: true),
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () => AppSettingsDialog.show(context),
+              ),
+            ],
           ),
         ],
       ),
@@ -638,7 +684,8 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           }
 
           // 2. Dual-Screen Book Mode (Surface Duo) or Foldable Unfolded or Wide Screen
-          final isTwoPane = (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
+          final isTwoPane =
+              (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
               foldableInfo.isFoldableOrWide ||
               constraints.maxWidth >= 850;
 
@@ -664,7 +711,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                 ),
                 if (foldableInfo.isDualScreen)
                   SizedBox(
-                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(
+                      8.0,
+                      36.0,
+                    ),
                     child: Container(color: Colors.black),
                   )
                 else
@@ -730,8 +780,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       labelText: 'Lyria Live Model',
                       labelStyle: TextStyle(color: Colors.white70),
                       border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     items: const [
                       DropdownMenuItem(
@@ -756,8 +808,8 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   onPressed: _isConnecting
                       ? null
                       : _isConnected
-                          ? _disconnect
-                          : _connect,
+                      ? _disconnect
+                      : _connect,
                   icon: _isConnecting
                       ? const SizedBox(
                           width: 16,
@@ -767,10 +819,14 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       : Icon(_isConnected ? Icons.link_off : Icons.link),
                   label: Text(_isConnected ? 'Disconnect' : 'Connect'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        _isConnected ? Colors.red.shade700 : Colors.purple.shade600,
+                    backgroundColor: _isConnected
+                        ? Colors.red.shade700
+                        : Colors.purple.shade600,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ],
@@ -828,7 +884,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _isPlaying
                         ? Colors.green.withAlpha(40)
@@ -968,7 +1027,9 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   onPressed: () => _addPrompt('', 0.5),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Add Prompt'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.purpleAccent),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.purpleAccent,
+                  ),
                 ),
               ],
             ),
@@ -979,54 +1040,81 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _presetChip('Minimal Techno', [
-                    const MapEntry(
-                      'Minimal techno with deep bass, sparse percussion, and atmospheric synths',
-                      1.0,
-                    ),
-                    const MapEntry('Shimmering hi-hats and acid 303 bass', 0.8),
-                  ], bpm: 128, mode: MusicGenerationMode.QUALITY),
+                  _presetChip(
+                    'Minimal Techno',
+                    [
+                      const MapEntry(
+                        'Minimal techno with deep bass, sparse percussion, and atmospheric synths',
+                        1.0,
+                      ),
+                      const MapEntry(
+                        'Shimmering hi-hats and acid 303 bass',
+                        0.8,
+                      ),
+                    ],
+                    bpm: 128,
+                    mode: MusicGenerationMode.QUALITY,
+                  ),
                   const SizedBox(width: 8),
-                  _presetChip('Lo-Fi Study Beat', [
-                    const MapEntry(
-                      'Lo-fi hip hop beat with dusty vinyl crackle',
-                      1.0,
-                    ),
-                    const MapEntry(
-                      'Mellow Rhodes piano chords & warm upright bassline',
-                      0.8,
-                    ),
-                  ], bpm: 82, scale: Scale.C_MAJOR_A_MINOR, mode: MusicGenerationMode.QUALITY),
+                  _presetChip(
+                    'Lo-Fi Study Beat',
+                    [
+                      const MapEntry(
+                        'Lo-fi hip hop beat with dusty vinyl crackle',
+                        1.0,
+                      ),
+                      const MapEntry(
+                        'Mellow Rhodes piano chords & warm upright bassline',
+                        0.8,
+                      ),
+                    ],
+                    bpm: 82,
+                    scale: Scale.C_MAJOR_A_MINOR,
+                    mode: MusicGenerationMode.QUALITY,
+                  ),
                   const SizedBox(width: 8),
-                  _presetChip('Cyberpunk 110', [
-                    const MapEntry(
-                      'Dark, cinematic cyberpunk synthwave in D minor',
-                      1.0,
-                    ),
-                    const MapEntry(
-                      'Heavy distorted 303 bass & analog synths',
-                      0.8,
-                    ),
-                  ], bpm: 110, scale: Scale.D_MAJOR_B_MINOR, mode: MusicGenerationMode.QUALITY),
+                  _presetChip(
+                    'Cyberpunk 110',
+                    [
+                      const MapEntry(
+                        'Dark, cinematic cyberpunk synthwave in D minor',
+                        1.0,
+                      ),
+                      const MapEntry(
+                        'Heavy distorted 303 bass & analog synths',
+                        0.8,
+                      ),
+                    ],
+                    bpm: 110,
+                    scale: Scale.D_MAJOR_B_MINOR,
+                    mode: MusicGenerationMode.QUALITY,
+                  ),
                   const SizedBox(width: 8),
-                  _presetChip('Ambient Drone', [
-                    const MapEntry(
-                      'Ambient synth pads with ethereal strings',
-                      1.0,
-                    ),
-                    const MapEntry('Subtle reverberant piano', 0.7),
-                  ], bpm: 72, mode: MusicGenerationMode.DIVERSITY),
+                  _presetChip(
+                    'Ambient Drone',
+                    [
+                      const MapEntry(
+                        'Ambient synth pads with ethereal strings',
+                        1.0,
+                      ),
+                      const MapEntry('Subtle reverberant piano', 0.7),
+                    ],
+                    bpm: 72,
+                    mode: MusicGenerationMode.DIVERSITY,
+                  ),
                   const SizedBox(width: 8),
-                  _presetChip('Afrobeat Groove', [
-                    const MapEntry(
-                      'Afrobeat rhythm & brass section',
-                      1.0,
-                    ),
-                    const MapEntry(
-                      'Funky bassline and percussion groove',
-                      0.7,
-                    ),
-                  ], bpm: 118, mode: MusicGenerationMode.QUALITY),
+                  _presetChip(
+                    'Afrobeat Groove',
+                    [
+                      const MapEntry('Afrobeat rhythm & brass section', 1.0),
+                      const MapEntry(
+                        'Funky bassline and percussion groove',
+                        0.7,
+                      ),
+                    ],
+                    bpm: 118,
+                    mode: MusicGenerationMode.QUALITY,
+                  ),
                 ],
               ),
             ),
@@ -1035,7 +1123,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
             // Prompt DJ Crossfader (A <-> B)
             if (_promptControllers.length >= 2) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF222733),
                   borderRadius: BorderRadius.circular(10),
@@ -1049,7 +1140,11 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.tune, color: Colors.purpleAccent, size: 16),
+                            Icon(
+                              Icons.tune,
+                              color: Colors.purpleAccent,
+                              size: 16,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Prompt DJ Crossfader (A ⟷ B)',
@@ -1097,7 +1192,11 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               childrenPadding: const EdgeInsets.only(bottom: 12),
               title: const Row(
                 children: [
-                  Icon(Icons.library_music_rounded, color: Colors.cyanAccent, size: 16),
+                  Icon(
+                    Icons.library_music_rounded,
+                    color: Colors.cyanAccent,
+                    size: 16,
+                  ),
                   SizedBox(width: 6),
                   Text(
                     'Prompt DJ Tag Bank (Official Guide Vocabularies)',
@@ -1161,7 +1260,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       flex: 3,
                       child: TextField(
                         controller: _promptControllers[index],
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Prompt style, instrument, or vibe...',
                           hintStyle: const TextStyle(color: Colors.white38),
@@ -1186,7 +1288,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                         children: [
                           Text(
                             'Weight: ${_promptWeights[index].toStringAsFixed(1)}',
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
                           ),
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
@@ -1210,7 +1315,11 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white38, size: 18),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white38,
+                        size: 18,
+                      ),
                       onPressed: () => _removePrompt(index),
                       tooltip: 'Remove',
                     ),
@@ -1249,13 +1358,12 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
   }) {
     return ActionChip(
       backgroundColor: const Color(0xFF2B3242),
-      label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
-      onPressed: () => _applyPreset(
-        prompts: prompts,
-        bpm: bpm,
-        scale: scale,
-        mode: mode,
+      label: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
       ),
+      onPressed: () =>
+          _applyPreset(prompts: prompts, bpm: bpm, scale: scale, mode: mode),
     );
   }
 
@@ -1264,7 +1372,14 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
       backgroundColor: color.withAlpha(50),
       side: BorderSide(color: color.withAlpha(120)),
       avatar: Icon(Icons.add, size: 14, color: color),
-      label: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w500)),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       onPressed: () => _addTagToPrompt(label),
     );
   }
@@ -1295,7 +1410,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   width: 100,
                   child: Text(
                     'BPM: $_bpm',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -1318,7 +1436,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   width: 100,
                   child: Text(
                     'Scale / Key:',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -1335,10 +1456,12 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       ),
                       ...Scale.values
                           .where((s) => s != Scale.SCALE_UNSPECIFIED)
-                          .map((s) => DropdownMenuItem<Scale?>(
-                                value: s,
-                                child: Text(s.name.replaceAll('_', ' ')),
-                              )),
+                          .map(
+                            (s) => DropdownMenuItem<Scale?>(
+                              value: s,
+                              child: Text(s.name.replaceAll('_', ' ')),
+                            ),
+                          ),
                     ],
                     onChanged: (val) => setState(() => _selectedScale = val),
                   ),
@@ -1354,7 +1477,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                   width: 100,
                   child: Text(
                     'Mode:',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -1366,7 +1492,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       ),
                       ButtonSegment(
                         value: MusicGenerationMode.DIVERSITY,
-                        label: Text('Diversity', style: TextStyle(fontSize: 11)),
+                        label: Text(
+                          'Diversity',
+                          style: TextStyle(fontSize: 11),
+                        ),
                       ),
                       ButtonSegment(
                         value: MusicGenerationMode.VOCALIZATION,
@@ -1374,7 +1503,8 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
                       ),
                     ],
                     selected: {_mode},
-                    onSelectionChanged: (val) => setState(() => _mode = val.first),
+                    onSelectionChanged: (val) =>
+                        setState(() => _mode = val.first),
                     style: SegmentedButton.styleFrom(
                       selectedBackgroundColor: Colors.purple.shade700,
                       selectedForegroundColor: Colors.white,
@@ -1436,14 +1566,19 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               value: _autoResetOnTempoScaleChange,
               title: const Text(
                 'Auto-reset Context on BPM/Scale change',
-                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               subtitle: const Text(
                 'Lyria docs: BPM/Scale changes require resetContext() for new tempo/key adoption.',
                 style: TextStyle(color: Colors.white54, fontSize: 11),
               ),
               activeThumbColor: Colors.purpleAccent,
-              onChanged: (val) => setState(() => _autoResetOnTempoScaleChange = val),
+              onChanged: (val) =>
+                  setState(() => _autoResetOnTempoScaleChange = val),
             ),
             const SizedBox(height: 12),
 

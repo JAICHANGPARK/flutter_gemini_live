@@ -28,7 +28,10 @@ class FoldableLayoutInfo {
     required this.screenHeight,
   });
 
-  factory FoldableLayoutInfo.of(BuildContext context, {bool forceFoldable = false}) {
+  factory FoldableLayoutInfo.of(
+    BuildContext context, {
+    bool forceFoldable = false,
+  }) {
     final media = MediaQuery.of(context);
     final features = MediaQuery.displayFeaturesOf(context);
     final size = media.size;
@@ -43,25 +46,33 @@ class FoldableLayoutInfo {
     }
 
     final bool hasHinge = hingeFeature != null || forceFoldable;
-    final Rect? bounds = hingeFeature?.bounds ??
-        (forceFoldable ? Rect.fromLTWH(size.width / 2 - 8, 0, 16, size.height) : null);
+    final Rect? bounds =
+        hingeFeature?.bounds ??
+        (forceFoldable
+            ? Rect.fromLTWH(size.width / 2 - 8, 0, 16, size.height)
+            : null);
 
-    final bool isVerticalHinge = bounds != null &&
-        bounds.top <= 10 &&
-        bounds.bottom >= size.height - 10;
+    final bool isVerticalHinge =
+        bounds != null && bounds.top <= 10 && bounds.bottom >= size.height - 10;
 
-    final bool isHorizontalHinge = bounds != null &&
-        bounds.left <= 10 &&
-        bounds.right >= size.width - 10;
+    final bool isHorizontalHinge =
+        bounds != null && bounds.left <= 10 && bounds.right >= size.width - 10;
 
-    final bool isHalfOpened = hingeFeature?.state == DisplayFeatureState.postureHalfOpened;
+    final bool isHalfOpened =
+        hingeFeature?.state == DisplayFeatureState.postureHalfOpened;
 
-    final double aspectRatio = size.width / (size.height > 0 ? size.height : 1.0);
+    final double aspectRatio =
+        size.width / (size.height > 0 ? size.height : 1.0);
     final bool isWideFoldAspect =
-        size.width >= 620 && size.width <= 1000 && aspectRatio >= 0.72 && aspectRatio <= 1.45;
+        size.width >= 620 &&
+        size.width <= 1000 &&
+        aspectRatio >= 0.72 &&
+        aspectRatio <= 1.45;
 
-    final bool isBook = isVerticalHinge || (isHalfOpened && isVerticalHinge) || forceFoldable;
-    final bool isTabletop = isHorizontalHinge && (isHalfOpened || features.isNotEmpty);
+    final bool isBook =
+        isVerticalHinge || (isHalfOpened && isVerticalHinge) || forceFoldable;
+    final bool isTabletop =
+        isHorizontalHinge && (isHalfOpened || features.isNotEmpty);
     final bool isDual = hingeFeature?.type == DisplayFeatureType.hinge;
 
     return FoldableLayoutInfo(
@@ -120,16 +131,22 @@ class FoldableTwoPane extends StatelessWidget {
             ),
             SizedBox(
               width: hingeWidth,
-              child: hingeWidget ??
+              child:
+                  hingeWidget ??
                   Center(
                     child: Container(
                       width: 2,
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.3),
                     ),
                   ),
             ),
             SizedBox(
-              width: (rightWidth - padding.right).clamp(100.0, info.screenWidth),
+              width: (rightWidth - padding.right).clamp(
+                100.0,
+                info.screenWidth,
+              ),
               child: endPane,
             ),
           ],
@@ -161,13 +178,7 @@ class FoldableTwoPane extends StatelessWidget {
     // Single screen fallback
     return Padding(
       padding: padding,
-      child: Column(
-        children: [
-          startPane,
-          const SizedBox(height: 16),
-          endPane,
-        ],
-      ),
+      child: Column(children: [startPane, const SizedBox(height: 16), endPane]),
     );
   }
 }

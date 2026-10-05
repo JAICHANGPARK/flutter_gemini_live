@@ -12,6 +12,7 @@ import 'app_settings_dialog.dart';
 import 'foldable_utils.dart';
 import 'live_audio_player.dart';
 import 'soloud_live_audio_player.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Supported target languages for Gemini Live Translation.
 const List<Map<String, String>> kTranslationLanguages = [
@@ -109,7 +110,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         }
         return;
       }
-      final diff = DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
+      final diff = DateTime.now()
+          .difference(_lastAiAudioReceivedTime!)
+          .inMilliseconds;
       final isSpeaking = diff < 700;
       if (_isAiSpeaking != isSpeaking && mounted) {
         setState(() => _isAiSpeaking = isSpeaking);
@@ -130,7 +133,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       final devices = await _audioRecorder.listInputDevices();
       final savedId = ApiKeyStore.audioDeviceId;
       if (savedId.isNotEmpty) {
-        _selectedAudioDevice = devices.where((d) => d.id == savedId).firstOrNull;
+        _selectedAudioDevice = devices
+            .where((d) => d.id == savedId)
+            .firstOrNull;
       }
     } catch (_) {}
   }
@@ -245,9 +250,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                 _isConnecting = false;
                 _isMicActive = false;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('세션 오류: $error')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('세션 오류: $error')));
             },
             onClose: (code, reason) {
               if (!mounted) return;
@@ -268,9 +273,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           _isConnecting = false;
           _isConnected = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('연결 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('연결 실패: $e')));
       }
     }
   }
@@ -294,9 +299,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   Future<void> _startMicStreaming() async {
     if (!await _audioRecorder.hasPermission()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('마이크 권한이 필요합니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('마이크 권한이 필요합니다.')));
       }
       return;
     }
@@ -460,14 +465,18 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           _history[_history.length - 1] = LiveTranslationMessage(
             isUser: true,
             text: text,
-            languageCode: message.serverContent?.inputTranscription?.languageCode ?? _myLanguageCode,
+            languageCode:
+                message.serverContent?.inputTranscription?.languageCode ??
+                _myLanguageCode,
           );
         } else {
           _history.add(
             LiveTranslationMessage(
               isUser: true,
               text: text,
-              languageCode: message.serverContent?.inputTranscription?.languageCode ?? _myLanguageCode,
+              languageCode:
+                  message.serverContent?.inputTranscription?.languageCode ??
+                  _myLanguageCode,
             ),
           );
         }
@@ -490,14 +499,18 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           _history[_history.length - 1] = LiveTranslationMessage(
             isUser: false,
             text: text,
-            languageCode: message.serverContent?.outputTranscription?.languageCode ?? _targetLanguageCode,
+            languageCode:
+                message.serverContent?.outputTranscription?.languageCode ??
+                _targetLanguageCode,
           );
         } else {
           _history.add(
             LiveTranslationMessage(
               isUser: false,
               text: text,
-              languageCode: message.serverContent?.outputTranscription?.languageCode ?? _targetLanguageCode,
+              languageCode:
+                  message.serverContent?.outputTranscription?.languageCode ??
+                  _targetLanguageCode,
             ),
           );
         }
@@ -510,11 +523,19 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   Widget build(BuildContext context) {
     final myLang = kTranslationLanguages.firstWhere(
       (l) => l['code'] == _myLanguageCode,
-      orElse: () => {'code': _myLanguageCode, 'name': _myLanguageCode, 'flag': '🌐'},
+      orElse: () => {
+        'code': _myLanguageCode,
+        'name': _myLanguageCode,
+        'flag': '🌐',
+      },
     );
     final targetLang = kTranslationLanguages.firstWhere(
       (l) => l['code'] == _targetLanguageCode,
-      orElse: () => {'code': _targetLanguageCode, 'name': _targetLanguageCode, 'flag': '🌐'},
+      orElse: () => {
+        'code': _targetLanguageCode,
+        'name': _targetLanguageCode,
+        'flag': '🌐',
+      },
     );
 
     return Scaffold(
@@ -527,110 +548,128 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           ],
         ),
         actions: [
-          // Real-time token usage and cost badge
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: GeminiLiveUsageBadge(tracker: _usageTracker),
-          ),
-          // Voice Output Toggle Button (번역 음성 스피커 출력 ON/OFF)
-          IconButton(
-            icon: Icon(
-              _isAudioOutputEnabled
-                  ? Icons.volume_up_rounded
-                  : Icons.volume_off_rounded,
-              color: _isAudioOutputEnabled ? Colors.greenAccent : Colors.white54,
-            ),
-            tooltip: _isAudioOutputEnabled
-                ? '번역 음성 출력 켜짐 (클릭하여 음소거)'
-                : '번역 음성 출력 꺼짐 (클릭하여 켜기)',
-            onPressed: _toggleAudioOutput,
-          ),
-          // Echo Loop Prevention Toggle Button
-          IconButton(
-            icon: Icon(
-              _preventEchoLoop ? Icons.hearing_rounded : Icons.hearing_disabled_rounded,
-              color: _preventEchoLoop ? Colors.blueAccent : Colors.white54,
-            ),
-            tooltip: _preventEchoLoop
-                ? '에코 방지 켜짐 (스피커 출력 중 마이크 자동 차단으로 무한반복 방지)'
-                : '에코 방지 꺼짐 (헤드셋/이어폰 착용 시)',
-            onPressed: () {
-              setState(() => _preventEchoLoop = !_preventEchoLoop);
-            },
-          ),
-          // Dual Flip Mode Toggle Button
-          IconButton(
-            icon: Icon(
-              _isDualFlipMode ? Icons.splitscreen_rounded : Icons.chat_bubble_outline_rounded,
-              color: _isDualFlipMode ? Colors.amber : null,
-            ),
-            tooltip: _isDualFlipMode ? '단일 채팅 모드로 전환' : '양방향 대면 모드(Dual Flip)로 전환',
-            onPressed: () {
-              setState(() => _isDualFlipMode = !_isDualFlipMode);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: '설정',
-            onPressed: () async {
-              final updated = await AppSettingsDialog.show(context);
-              if (updated == true && mounted) {
-                await _loadAudioDevice();
-                setState(() {});
-              }
-            },
-          ),
-          Builder(
-            builder: (context) {
-              final foldableInfo = FoldableLayoutInfo.of(context);
-              if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(right: 8, left: 2),
-                child: Tooltip(
-                  message: foldableInfo.isTabletop
-                      ? '테이블탑 / 플렉스 모드'
-                      : (foldableInfo.isDualScreen
-                          ? '듀얼스크린 감지됨'
-                          : '폴더블 와이드 감지됨'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.amber.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          foldableInfo.isTabletop
-                              ? Icons.laptop_chromebook_rounded
-                              : Icons.devices_fold_rounded,
-                          size: 13,
-                          color: Colors.amber.shade900,
+          ScrollableAppBarActions(
+            children: [
+              // Real-time token usage and cost badge
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: GeminiLiveUsageBadge(tracker: _usageTracker),
+              ),
+              // Voice Output Toggle Button (번역 음성 스피커 출력 ON/OFF)
+              IconButton(
+                icon: Icon(
+                  _isAudioOutputEnabled
+                      ? Icons.volume_up_rounded
+                      : Icons.volume_off_rounded,
+                  color: _isAudioOutputEnabled
+                      ? Colors.greenAccent
+                      : Colors.white54,
+                ),
+                tooltip: _isAudioOutputEnabled
+                    ? '번역 음성 출력 켜짐 (클릭하여 음소거)'
+                    : '번역 음성 출력 꺼짐 (클릭하여 켜기)',
+                onPressed: _toggleAudioOutput,
+              ),
+              // Echo Loop Prevention Toggle Button
+              IconButton(
+                icon: Icon(
+                  _preventEchoLoop
+                      ? Icons.hearing_rounded
+                      : Icons.hearing_disabled_rounded,
+                  color: _preventEchoLoop ? Colors.blueAccent : Colors.white54,
+                ),
+                tooltip: _preventEchoLoop
+                    ? '에코 방지 켜짐 (스피커 출력 중 마이크 자동 차단으로 무한반복 방지)'
+                    : '에코 방지 꺼짐 (헤드셋/이어폰 착용 시)',
+                onPressed: () {
+                  setState(() => _preventEchoLoop = !_preventEchoLoop);
+                },
+              ),
+              // Dual Flip Mode Toggle Button
+              IconButton(
+                icon: Icon(
+                  _isDualFlipMode
+                      ? Icons.splitscreen_rounded
+                      : Icons.chat_bubble_outline_rounded,
+                  color: _isDualFlipMode ? Colors.amber : null,
+                ),
+                tooltip: _isDualFlipMode
+                    ? '단일 채팅 모드로 전환'
+                    : '양방향 대면 모드(Dual Flip)로 전환',
+                onPressed: () {
+                  setState(() => _isDualFlipMode = !_isDualFlipMode);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: '설정',
+                onPressed: () async {
+                  final updated = await AppSettingsDialog.show(context);
+                  if (updated == true && mounted) {
+                    await _loadAudioDevice();
+                    setState(() {});
+                  }
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final foldableInfo = FoldableLayoutInfo.of(context);
+                  if (!foldableInfo.hasHinge &&
+                      !foldableInfo.isFoldableOrWide) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8, left: 2),
+                    child: Tooltip(
+                      message: foldableInfo.isTabletop
+                          ? '테이블탑 / 플렉스 모드'
+                          : (foldableInfo.isDualScreen
+                                ? '듀얼스크린 감지됨'
+                                : '폴더블 와이드 감지됨'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          foldableInfo.isTabletop
-                              ? 'FLEX'
-                              : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900,
-                            letterSpacing: 0.5,
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.amber.withValues(alpha: 0.6),
                           ),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              foldableInfo.isTabletop
+                                  ? Icons.laptop_chromebook_rounded
+                                  : Icons.devices_fold_rounded,
+                              size: 13,
+                              color: Colors.amber.shade900,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              foldableInfo.isTabletop
+                                  ? 'FLEX'
+                                  : (foldableInfo.isDualScreen
+                                        ? 'DUO'
+                                        : 'FOLD'),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -640,7 +679,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
               border: Border(
                 bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
               ),
@@ -655,7 +696,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     children: [
                       const Text(
                         '내 언어:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueAccent),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.blueAccent,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       DropdownButton<String>(
@@ -668,11 +713,17 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(lang['flag'] ?? '', style: const TextStyle(fontSize: 15)),
+                                Text(
+                                  lang['flag'] ?? '',
+                                  style: const TextStyle(fontSize: 15),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   lang['name']!,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
@@ -691,7 +742,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                   const SizedBox(width: 6),
                   // 언어 맞바꾸기(Swap) 버튼
                   IconButton(
-                    icon: const Icon(Icons.swap_horiz_rounded, size: 20, color: Colors.blueAccent),
+                    icon: const Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 20,
+                      color: Colors.blueAccent,
+                    ),
                     tooltip: '내 언어와 상대방 언어 맞바꾸기',
                     visualDensity: VisualDensity.compact,
                     onPressed: _isConnected
@@ -711,7 +766,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     children: [
                       const Text(
                         '상대방 언어:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.amber,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       DropdownButton<String>(
@@ -724,11 +783,17 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(lang['flag'] ?? '', style: const TextStyle(fontSize: 15)),
+                                Text(
+                                  lang['flag'] ?? '',
+                                  style: const TextStyle(fontSize: 15),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   lang['name']!,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
@@ -747,18 +812,27 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                   const SizedBox(width: 14),
                   // Mode badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _isDualFlipMode ? Colors.amber.withValues(alpha: 0.15) : Colors.blue.withValues(alpha: 0.15),
+                      color: _isDualFlipMode
+                          ? Colors.amber.withValues(alpha: 0.15)
+                          : Colors.blue.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _isDualFlipMode ? Icons.screen_rotation_rounded : Icons.chat_rounded,
+                          _isDualFlipMode
+                              ? Icons.screen_rotation_rounded
+                              : Icons.chat_rounded,
                           size: 14,
-                          color: _isDualFlipMode ? Colors.amber.shade900 : Colors.blueAccent,
+                          color: _isDualFlipMode
+                              ? Colors.amber.shade900
+                              : Colors.blueAccent,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -766,7 +840,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: _isDualFlipMode ? Colors.amber.shade900 : Colors.blueAccent,
+                            color: _isDualFlipMode
+                                ? Colors.amber.shade900
+                                : Colors.blueAccent,
                           ),
                         ),
                       ],
@@ -778,7 +854,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     onTap: _toggleAudioOutput,
                     borderRadius: BorderRadius.circular(6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _isAudioOutputEnabled
                             ? Colors.green.withValues(alpha: 0.15)
@@ -825,7 +904,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     },
                     borderRadius: BorderRadius.circular(6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _preventEchoLoop
                             ? Colors.blue.withValues(alpha: 0.15)
@@ -902,8 +984,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                       color: _isAiCurrentlySpeaking
                           ? Colors.amber.withValues(alpha: 0.2)
                           : (_isMicActive
-                              ? Colors.redAccent.withValues(alpha: 0.15 + (_micVolume * 0.8))
-                              : Colors.grey.withValues(alpha: 0.1)),
+                                ? Colors.redAccent.withValues(
+                                    alpha: 0.15 + (_micVolume * 0.8),
+                                  )
+                                : Colors.grey.withValues(alpha: 0.1)),
                     ),
                     child: Icon(
                       _isAiCurrentlySpeaking
@@ -923,16 +1007,20 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                         Text(
                           _isConnected
                               ? (_isAiCurrentlySpeaking
-                                  ? '🔊 번역 음성 출력 중 (에코 방지 대기)'
-                                  : (_isMicActive
-                                      ? '실시간 동시통역 중 (말씀하시면 즉시 번역됩니다)'
-                                      : '마이크 일시 정지됨'))
-                              : (_isConnecting ? 'Live Translate 서버 연결 중...' : '준비 완료 (통역 시작을 누르세요)'),
+                                    ? '🔊 번역 음성 출력 중 (에코 방지 대기)'
+                                    : (_isMicActive
+                                          ? '실시간 동시통역 중 (말씀하시면 즉시 번역됩니다)'
+                                          : '마이크 일시 정지됨'))
+                              : (_isConnecting
+                                    ? 'Live Translate 서버 연결 중...'
+                                    : '준비 완료 (통역 시작을 누르세요)'),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                             color: _isConnected
-                                ? (_isAiCurrentlySpeaking ? Colors.amber.shade900 : Colors.green.shade700)
+                                ? (_isAiCurrentlySpeaking
+                                      ? Colors.amber.shade900
+                                      : Colors.green.shade700)
                                 : null,
                           ),
                         ),
@@ -942,13 +1030,19 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                           child: LinearProgressIndicator(
                             value: _isAiCurrentlySpeaking
                                 ? null
-                                : (_isMicActive ? (_micVolume * 2.5).clamp(0.0, 1.0) : 0.0),
+                                : (_isMicActive
+                                      ? (_micVolume * 2.5).clamp(0.0, 1.0)
+                                      : 0.0),
                             minHeight: 4,
-                            backgroundColor: Colors.grey.withValues(alpha: 0.15),
+                            backgroundColor: Colors.grey.withValues(
+                              alpha: 0.15,
+                            ),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               _isAiCurrentlySpeaking
                                   ? Colors.amber
-                                  : (_micVolume > 0.05 ? Colors.greenAccent.shade700 : Colors.blueAccent),
+                                  : (_micVolume > 0.05
+                                        ? Colors.greenAccent.shade700
+                                        : Colors.blueAccent),
                             ),
                           ),
                         ),
@@ -972,12 +1066,18 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                           _startMicStreaming();
                         }
                       },
-                      icon: Icon(_isMicActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                      icon: Icon(
+                        _isMicActive
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                      ),
                       tooltip: _isMicActive ? '마이크 일시중지' : '마이크 재개',
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
-                      style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                      ),
                       onPressed: _disconnect,
                       icon: const Icon(Icons.stop_rounded),
                       label: const Text('종료'),
@@ -989,7 +1089,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Icon(Icons.translate_rounded),
                       label: Text(_isConnecting ? '연결 중...' : '통역 시작'),
@@ -1005,7 +1108,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   }
 
   /// 🔄 양방향 대면 분할 뷰 (폴더블 듀얼스크린 북모드 및 테이블 맞은편 180도 회전 뷰)
-  Widget _buildDualFlipLayout(Map<String, String> myLang, Map<String, String> targetLang) {
+  Widget _buildDualFlipLayout(
+    Map<String, String> myLang,
+    Map<String, String> targetLang,
+  ) {
     final partnerMessages = _history.where((m) => !m.isUser).toList();
     final myMessages = _history;
     final foldableInfo = FoldableLayoutInfo.of(context);
@@ -1016,9 +1122,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 왼쪽 화면: 내 언어 & 통역 기록
-          Expanded(
-            child: _buildMyPanel(myLang, targetLang, myMessages),
-          ),
+          Expanded(child: _buildMyPanel(myLang, targetLang, myMessages)),
 
           // 중앙 힌지 여백 (하드웨어 베젤 가림 방지)
           SizedBox(
@@ -1033,7 +1137,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
           // 오른쪽 화면: 상대방 언어 & 실시간 번역문 (정방향)
           Expanded(
-            child: _buildPartnerPanel(targetLang, partnerMessages, rotate180: false),
+            child: _buildPartnerPanel(
+              targetLang,
+              partnerMessages,
+              rotate180: false,
+            ),
           ),
         ],
       );
@@ -1044,7 +1152,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       children: [
         // 상단 절반: 맞은편 상대방 화면 (180도 회전!)
         Expanded(
-          child: _buildPartnerPanel(targetLang, partnerMessages, rotate180: true),
+          child: _buildPartnerPanel(
+            targetLang,
+            partnerMessages,
+            rotate180: true,
+          ),
         ),
 
         // 중앙 분할선 (테이블 중앙 구분바 및 힌지 라인)
@@ -1058,7 +1170,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.arrow_upward_rounded, size: 14, color: Colors.amber),
+                  const Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 14,
+                    color: Colors.amber,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     '상대방: ${targetLang['name']} (180°)',
@@ -1080,7 +1196,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.arrow_downward_rounded, size: 14, color: Colors.blueAccent),
+                  const Icon(
+                    Icons.arrow_downward_rounded,
+                    size: 14,
+                    color: Colors.blueAccent,
+                  ),
                 ],
               ),
             ),
@@ -1088,9 +1208,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         ),
 
         // 하단 절반: 내 화면 (정방향 및 통역 기록)
-        Expanded(
-          child: _buildMyPanel(myLang, targetLang, myMessages),
-        ),
+        Expanded(child: _buildMyPanel(myLang, targetLang, myMessages)),
       ],
     );
   }
@@ -1108,7 +1226,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         children: [
           Row(
             children: [
-              Text(targetLang['flag'] ?? '🌐', style: const TextStyle(fontSize: 18)),
+              Text(
+                targetLang['flag'] ?? '🌐',
+                style: const TextStyle(fontSize: 18),
+              ),
               const SizedBox(width: 8),
               Text(
                 'For Partner: ${targetLang['name']}',
@@ -1119,7 +1240,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.person_pin_rounded, size: 18, color: Colors.amber),
+              const Icon(
+                Icons.person_pin_rounded,
+                size: 18,
+                color: Colors.amber,
+              ),
             ],
           ),
           const Divider(height: 12),
@@ -1146,7 +1271,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                       final msg = partnerMessages[idx];
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -1175,10 +1303,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     );
 
     if (rotate180) {
-      return Transform.rotate(
-        angle: math.pi,
-        child: content,
-      );
+      return Transform.rotate(angle: math.pi, child: content);
     }
     return content;
   }
@@ -1196,7 +1321,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         children: [
           Row(
             children: [
-              Text(myLang['flag'] ?? '🇰🇷', style: const TextStyle(fontSize: 18)),
+              Text(
+                myLang['flag'] ?? '🇰🇷',
+                style: const TextStyle(fontSize: 18),
+              ),
               const SizedBox(width: 8),
               Text(
                 '내 화면 (${myLang['name']} 발화 및 통역 기록)',
@@ -1207,7 +1335,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.person_rounded, size: 18, color: Colors.blueAccent),
+              const Icon(
+                Icons.person_rounded,
+                size: 18,
+                color: Colors.blueAccent,
+              ),
             ],
           ),
           const Divider(height: 12),
@@ -1233,54 +1365,71 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     itemBuilder: (context, idx) {
                       final msg = myMessages[idx];
                       return Align(
-                              alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width * 0.85,
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
+                        alignment: msg.isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.85,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: msg.isUser
+                                ? Colors.blueAccent.shade700
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: msg.isUser
+                                ? null
+                                : Border.all(color: Colors.blue.shade100),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: msg.isUser
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                msg.isUser
+                                    ? '🎤 내 발화 (${myLang['name']})'
+                                    : '🌐 번역문 (${targetLang['name']})',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
                                   color: msg.isUser
-                                      ? Colors.blueAccent.shade700
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: msg.isUser ? null : Border.all(color: Colors.blue.shade100),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      msg.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      msg.isUser ? '🎤 내 발화 (${myLang['name']})' : '🌐 번역문 (${targetLang['name']})',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: msg.isUser ? Colors.white70 : Colors.blueAccent,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      msg.text,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: msg.isUser ? Colors.white : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
+                                      ? Colors.white70
+                                      : Colors.blueAccent,
                                 ),
                               ),
-                            );
-                          },
+                              const SizedBox(height: 2),
+                              Text(
+                                msg.text,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: msg.isUser
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                ),
-              ],
-            ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
   /// 💬 일반 채팅형 단일 레이아웃
-  Widget _buildStandardChatLayout(Map<String, String> myLang, Map<String, String> targetLang) {
+  Widget _buildStandardChatLayout(
+    Map<String, String> myLang,
+    Map<String, String> targetLang,
+  ) {
     if (_history.isEmpty) {
       return Center(
         child: Column(
@@ -1330,8 +1479,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
               ),
             ),
             child: Column(
-              crossAxisAlignment:
-                  item.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: item.isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1343,7 +1493,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      item.isUser ? '내 음성 (${myLang['name']})' : '통역 결과 (${targetLang['name']})',
+                      item.isUser
+                          ? '내 음성 (${myLang['name']})'
+                          : '통역 결과 (${targetLang['name']})',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

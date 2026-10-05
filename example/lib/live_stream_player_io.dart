@@ -19,14 +19,12 @@ class LiveStreamPlayerImpl {
   Float32List? _latestFft;
   bool _turnIsEnded = false;
 
-  LiveStreamPlayerImpl({
-    this.sampleRate = 24000,
-    dynamic channels,
-  }) : channels = channels is Channels
-            ? channels
-            : channels == 2
-                ? Channels.stereo
-                : Channels.mono;
+  LiveStreamPlayerImpl({this.sampleRate = 24000, dynamic channels})
+    : channels = channels is Channels
+          ? channels
+          : channels == 2
+          ? Channels.stereo
+          : Channels.mono;
 
   bool get isPlaying {
     if (!_isPlaying ||
@@ -50,8 +48,9 @@ class LiveStreamPlayerImpl {
       }
       try {
         SoLoud.instance.setVisualizationEnabled(true);
-        _visSubscription =
-            SoLoud.instance.audioVisualizationEvents.listen((data) {
+        _visSubscription = SoLoud.instance.audioVisualizationEvents.listen((
+          data,
+        ) {
           _latestWave = data.waveData;
           _latestFft = data.fftData;
         });
@@ -181,9 +180,10 @@ class LiveStreamPlayerImpl {
     for (var i = 0; i < count; i++) {
       final norm = i / count;
       // Focus more resolution on low and mid frequencies (0Hz to ~6kHz)
-      final index = (math.pow(norm, 1.5) * (fft.length - 1))
-          .round()
-          .clamp(0, fft.length - 1);
+      final index = (math.pow(norm, 1.5) * (fft.length - 1)).round().clamp(
+        0,
+        fft.length - 1,
+      );
       result.add(fft[index].clamp(0.0, 1.0));
     }
     return result;

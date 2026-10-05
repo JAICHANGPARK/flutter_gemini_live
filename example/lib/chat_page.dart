@@ -15,6 +15,7 @@ import 'app_settings_dialog.dart';
 import 'example_debug_log.dart';
 import 'live_audio_player.dart';
 import 'live_api_defaults.dart';
+import 'scrollable_app_bar_actions.dart';
 import 'message.dart'; // The data class for a chat message (ChatMessage).
 import 'package:record/record.dart'; // Package for recording audio.
 
@@ -51,7 +52,8 @@ class _ChatScreenState extends State<ChatPage> {
 
   // --- Image and Audio Handling Variables ---
   XFile? _pickedImage; // Holds the image file selected by the user.
-  Uint8List? _pickedImageBytes; // Holds in-memory bytes of the picked image for cross-platform rendering.
+  Uint8List?
+  _pickedImageBytes; // Holds in-memory bytes of the picked image for cross-platform rendering.
   final ImagePicker _picker =
       ImagePicker(); // An instance of the image picker utility.
   StreamSubscription<RecordState>?
@@ -300,12 +302,14 @@ class _ChatScreenState extends State<ChatPage> {
       if (_canApplySessionUpdate(connectVersion)) {
         setState(() {
           _connectionStatus = ConnectionStatus.disconnected;
-          if (_messages.isNotEmpty && _messages.last.text.startsWith('Connecting to Gemini Live API')) {
+          if (_messages.isNotEmpty &&
+              _messages.last.text.startsWith('Connecting to Gemini Live API')) {
             _messages.removeLast();
           }
           _addMessage(
             ChatMessage(
-              text: "Failed to connect to Gemini Live API: $e\nPlease check your API key or model in Settings.",
+              text:
+                  "Failed to connect to Gemini Live API: $e\nPlease check your API key or model in Settings.",
               author: Role.model,
             ),
           );
@@ -433,7 +437,10 @@ class _ChatScreenState extends State<ChatPage> {
           _pickedImage = image;
           _pickedImageBytes = bytes;
         });
-        logExampleEvent('CHAT', 'Selected image: ${image.path} (${bytes.length} bytes)');
+        logExampleEvent(
+          'CHAT',
+          'Selected image: ${image.path} (${bytes.length} bytes)',
+        );
       }
     } catch (error) {
       logExampleEvent('CHAT', 'Image picker failed: $error');
@@ -542,8 +549,14 @@ class _ChatScreenState extends State<ChatPage> {
           // Start recording with a configuration that matches the MIME type.
           await _audioRecorder.start(
             kIsWeb
-                ? RecordConfig(encoder: AudioEncoder.wav, device: selectedDevice)
-                : RecordConfig(encoder: AudioEncoder.aacLc, device: selectedDevice),
+                ? RecordConfig(
+                    encoder: AudioEncoder.wav,
+                    device: selectedDevice,
+                  )
+                : RecordConfig(
+                    encoder: AudioEncoder.aacLc,
+                    device: selectedDevice,
+                  ),
             path: filePath,
           );
           logExampleEvent('CHAT', 'Started voice recording.');
@@ -562,9 +575,9 @@ class _ChatScreenState extends State<ChatPage> {
       } catch (e) {
         logExampleEvent('ERROR', 'Failed to start voice recording: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("마이크 녹음 오류: $e")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("마이크 녹음 오류: $e")));
         }
       }
     }
@@ -681,10 +694,7 @@ class _ChatScreenState extends State<ChatPage> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: _pickedImageBytes != null
-                          ? Image.memory(
-                              _pickedImageBytes!,
-                              fit: BoxFit.cover,
-                            )
+                          ? Image.memory(_pickedImageBytes!, fit: BoxFit.cover)
                           : FutureBuilder<Uint8List>(
                               future: _pickedImage!.readAsBytes(),
                               builder: (context, snapshot) {
@@ -779,50 +789,58 @@ class _ChatScreenState extends State<ChatPage> {
       appBar: AppBar(
         title: const Text('Gemini Live API'),
         actions: [
-          PopupMenuButton<ResponseMode>(
-            tooltip: 'Chat mode',
-            onSelected: (mode) {
-              if (mode == _responseMode) return;
-              if (_isRecording) {
-                _audioRecorder.stop();
-              }
-              logExampleEvent(
-                'CHAT',
-                'Switching chat mode to ${mode == ResponseMode.audio ? "voice" : "text"}.',
-              );
-              setState(() {
-                _responseMode = mode;
-                _isRecording = false;
-              });
-              _connectToLiveAPI();
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: ResponseMode.text, child: Text('Text Mode')),
-              PopupMenuItem(
-                value: ResponseMode.audio,
-                child: Text('Voice Mode'),
+          ScrollableAppBarActions(
+            children: [
+              PopupMenuButton<ResponseMode>(
+                tooltip: 'Chat mode',
+                onSelected: (mode) {
+                  if (mode == _responseMode) return;
+                  if (_isRecording) {
+                    _audioRecorder.stop();
+                  }
+                  logExampleEvent(
+                    'CHAT',
+                    'Switching chat mode to ${mode == ResponseMode.audio ? "voice" : "text"}.',
+                  );
+                  setState(() {
+                    _responseMode = mode;
+                    _isRecording = false;
+                  });
+                  _connectToLiveAPI();
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: ResponseMode.text,
+                    child: Text('Text Mode'),
+                  ),
+                  PopupMenuItem(
+                    value: ResponseMode.audio,
+                    child: Text('Voice Mode'),
+                  ),
+                ],
+                icon: Icon(
+                  _voiceModeEnabled ? Icons.graphic_eq : Icons.text_fields,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: 'API Key & Model Settings',
+                onPressed: _openApiKeySettings,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: GeminiLiveUsageBadge(tracker: _usageTracker),
+              ),
+              // A visual indicator for the connection status.
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: GeminiLiveStatusBadge.fromFlags(
+                  isConnected: _connectionStatus == ConnectionStatus.connected,
+                  isConnecting:
+                      _connectionStatus == ConnectionStatus.connecting,
+                ),
               ),
             ],
-            icon: Icon(
-              _voiceModeEnabled ? Icons.graphic_eq : Icons.text_fields,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            tooltip: 'API Key & Model Settings',
-            onPressed: _openApiKeySettings,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: GeminiLiveUsageBadge(tracker: _usageTracker),
-          ),
-          // A visual indicator for the connection status.
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GeminiLiveStatusBadge.fromFlags(
-              isConnected: _connectionStatus == ConnectionStatus.connected,
-              isConnecting: _connectionStatus == ConnectionStatus.connecting,
-            ),
           ),
         ],
       ),

@@ -12,6 +12,7 @@ import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'foldable_utils.dart';
 import 'live_api_defaults.dart';
+import 'scrollable_app_bar_actions.dart';
 
 /// Preset YouTube videos for quick testing.
 class YouTubePreset {
@@ -164,8 +165,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
           _availableAudioDevices = devices;
           final savedId = ApiKeyStore.audioDeviceId;
           if (savedId.isNotEmpty) {
-            _selectedAudioDevice =
-                devices.where((d) => d.id == savedId).firstOrNull;
+            _selectedAudioDevice = devices
+                .where((d) => d.id == savedId)
+                .firstOrNull;
           }
         });
       }
@@ -243,8 +245,7 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
   void _selectPreset(YouTubePreset preset) {
     setState(() {
       _currentVideoId = preset.videoId;
-      _urlController.text =
-          'https://www.youtube.com/watch?v=${preset.videoId}';
+      _urlController.text = 'https://www.youtube.com/watch?v=${preset.videoId}';
     });
   }
 
@@ -262,7 +263,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('YouTube 영상을 브라우저에서 재생합니다: $url\nBlackHole을 통해 오디오가 실시간 자막으로 번역됩니다.'),
+          content: Text(
+            'YouTube 영상을 브라우저에서 재생합니다: $url\nBlackHole을 통해 오디오가 실시간 자막으로 번역됩니다.',
+          ),
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.indigo.shade800,
         ),
@@ -348,12 +351,14 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                 _isConnected = false;
                 _isConnecting = false;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Live API 오류: $err')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Live API 오류: $err')));
             },
             onClose: (code, reason) {
-              debugPrint('[GeminiLive Subtitle] 🔒 onClose (code: $code, reason: $reason)');
+              debugPrint(
+                '[GeminiLive Subtitle] 🔒 onClose (code: $code, reason: $reason)',
+              );
               if (!mounted) return;
               setState(() {
                 _isConnected = false;
@@ -382,9 +387,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
       debugPrint('[GeminiLive Subtitle] 🚨 Connection failed: $e');
       if (mounted) {
         setState(() => _isConnecting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('연결 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('연결 실패: $e')));
       }
     }
   }
@@ -396,13 +401,15 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
     _usageTracker.recordMessage(message);
 
     // 1. Process original input transcription (STT of speaker speech)
-    final inputTranscript = message.serverContent?.interimInputTranscription?.text ??
+    final inputTranscript =
+        message.serverContent?.interimInputTranscription?.text ??
         message.serverContent?.inputTranscription?.text;
     if (inputTranscript != null && inputTranscript.isNotEmpty) {
       if (_currentOriginalSubtitle.isEmpty) {
         _currentOriginalSubtitle = inputTranscript.trimLeft();
       } else {
-        if (!_currentOriginalSubtitle.endsWith(' ') && !inputTranscript.startsWith(' ')) {
+        if (!_currentOriginalSubtitle.endsWith(' ') &&
+            !inputTranscript.startsWith(' ')) {
           _currentOriginalSubtitle += ' ';
         }
         _currentOriginalSubtitle += inputTranscript;
@@ -423,9 +430,13 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
 
     // 3. Segment sentence or check completion
     final translatedTrimmed = _currentTranslatedSubtitle.trim();
-    final bool hasSentenceEnd = RegExp(r'[.!?\n]$').hasMatch(translatedTrimmed) ||
-        (translatedTrimmed.length > 55 && (translatedTrimmed.endsWith(',') || translatedTrimmed.endsWith(' ')));
-    final bool isTurnComplete = message.serverContent?.turnComplete == true ||
+    final bool hasSentenceEnd =
+        RegExp(r'[.!?\n]$').hasMatch(translatedTrimmed) ||
+        (translatedTrimmed.length > 55 &&
+            (translatedTrimmed.endsWith(',') ||
+                translatedTrimmed.endsWith(' ')));
+    final bool isTurnComplete =
+        message.serverContent?.turnComplete == true ||
         message.serverContent?.interactionStatus == InteractionStatus.IDLE;
 
     if ((hasSentenceEnd || (isTurnComplete && translatedTrimmed.isNotEmpty)) &&
@@ -475,9 +486,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
     final hasPermission = await _audioRecorder.hasPermission();
     if (!hasPermission) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('마이크/오디오 캡처 권한이 필요합니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('마이크/오디오 캡처 권한이 필요합니다.')));
       }
       return;
     }
@@ -529,9 +540,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('오디오 스트리밍 시작 오류: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('오디오 스트리밍 시작 오류: $e')));
       }
     }
   }
@@ -554,9 +565,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
 
   void _copySubtitlesToClipboard() {
     if (_subtitleHistory.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('복사할 자막 기록이 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('복사할 자막 기록이 없습니다.')));
       return;
     }
     final buffer = StringBuffer();
@@ -570,9 +581,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
       buffer.writeln();
     }
     Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('전체 자막이 클립보드에 복사되었습니다.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('전체 자막이 클립보드에 복사되었습니다.')));
   }
 
   void _clearSubtitles() {
@@ -601,7 +612,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
               : Colors.cyanAccent.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.cyanAccent,
+            color: foldableInfo.isTabletop
+                ? Colors.deepOrangeAccent
+                : Colors.cyanAccent,
             width: 1,
           ),
         ),
@@ -611,17 +624,25 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
             Icon(
               foldableInfo.isTabletop
                   ? Icons.laptop_chromebook_rounded
-                  : (foldableInfo.isDualScreen ? Icons.splitscreen_rounded : Icons.developer_board_rounded),
+                  : (foldableInfo.isDualScreen
+                        ? Icons.splitscreen_rounded
+                        : Icons.developer_board_rounded),
               size: 13,
-              color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.cyanAccent,
+              color: foldableInfo.isTabletop
+                  ? Colors.deepOrangeAccent
+                  : Colors.cyanAccent,
             ),
             const SizedBox(width: 4),
             Text(
-              foldableInfo.isTabletop ? 'TABLETOP' : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+              foldableInfo.isTabletop
+                  ? 'TABLETOP'
+                  : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: foldableInfo.isTabletop ? Colors.deepOrangeAccent : Colors.cyanAccent,
+                color: foldableInfo.isTabletop
+                    ? Colors.deepOrangeAccent
+                    : Colors.cyanAccent,
               ),
             ),
           ],
@@ -649,47 +670,54 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
-          foldablePill(),
-          // Target Language Dropdown
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _targetLanguageCode,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.cyanAccent),
-                items: kSubtitleLanguages.map((lang) {
-                  return DropdownMenuItem<String>(
-                    value: lang['code'],
-                    child: Text('${lang['flag']} ${lang['name']}'),
-                  );
-                }).toList(),
-                onChanged: _isConnected
-                    ? null
-                    : (val) {
-                        if (val != null) {
-                          setState(() => _targetLanguageCode = val);
-                        }
-                      },
+          ScrollableAppBarActions(
+            children: [
+              foldablePill(),
+              // Target Language Dropdown
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _targetLanguageCode,
+                    dropdownColor: const Color(0xFF1E293B),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.cyanAccent,
+                    ),
+                    items: kSubtitleLanguages.map((lang) {
+                      return DropdownMenuItem<String>(
+                        value: lang['code'],
+                        child: Text('${lang['flag']} ${lang['name']}'),
+                      );
+                    }).toList(),
+                    onChanged: _isConnected
+                        ? null
+                        : (val) {
+                            if (val != null) {
+                              setState(() => _targetLanguageCode = val);
+                            }
+                          },
+                  ),
+                ),
               ),
-            ),
-          ),
-          // Real-time token usage and cost badge
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: GeminiLiveUsageBadge(tracker: _usageTracker),
-          ),
-          _buildAudioDeviceSelectorButton(isCompact: true),
-          IconButton(
-            icon: const Icon(Icons.copy_all_rounded),
-            tooltip: '자막 전체 복사',
-            onPressed: _copySubtitlesToClipboard,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_rounded),
-            tooltip: '자막 초기화',
-            onPressed: _clearSubtitles,
+              // Real-time token usage and cost badge
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: GeminiLiveUsageBadge(tracker: _usageTracker),
+              ),
+              _buildAudioDeviceSelectorButton(isCompact: true),
+              IconButton(
+                icon: const Icon(Icons.copy_all_rounded),
+                tooltip: '자막 전체 복사',
+                onPressed: _copySubtitlesToClipboard,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_sweep_rounded),
+                tooltip: '자막 초기화',
+                onPressed: _clearSubtitles,
+              ),
+            ],
           ),
         ],
       ),
@@ -722,7 +750,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         child: _buildLiveControlBar(),
                       ),
                       Expanded(child: _buildTranscriptPanel()),
@@ -734,28 +765,26 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
           }
 
           // Dual-Screen (Book mode) or Foldable unfolded or Wide screen
-          final isTwoPane = (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
+          final isTwoPane =
+              (foldableInfo.hasHinge && foldableInfo.isBookMode) ||
               foldableInfo.isFoldableOrWide ||
               constraints.maxWidth >= 800;
 
           if (isTwoPane) {
             return Row(
               children: [
-                Expanded(
-                  flex: 6,
-                  child: _buildVideoAndPlayerSection(),
-                ),
+                Expanded(flex: 6, child: _buildVideoAndPlayerSection()),
                 if (foldableInfo.isDualScreen)
                   SizedBox(
-                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(
+                      8.0,
+                      36.0,
+                    ),
                     child: Container(color: Colors.black),
                   )
                 else
                   const VerticalDivider(color: Colors.white12, width: 1),
-                Expanded(
-                  flex: 4,
-                  child: _buildTranscriptPanel(),
-                ),
+                Expanded(flex: 4, child: _buildTranscriptPanel()),
               ],
             );
           }
@@ -796,9 +825,7 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
         onSelectionChanged: (set) {
           setState(() => _activeViewTab = set.first);
         },
-        style: const ButtonStyle(
-          visualDensity: VisualDensity.compact,
-        ),
+        style: const ButtonStyle(visualDensity: VisualDensity.compact),
       ),
     );
   }
@@ -842,7 +869,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF0000),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -871,7 +901,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF0000),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -918,7 +951,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                 hintText: 'YouTube 링크 또는 Video ID 입력 (e.g. XEzRZ33sJCE)',
                 hintStyle: TextStyle(color: Colors.white38),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
               onSubmitted: (_) => _loadVideoFromInput(),
             ),
@@ -930,10 +966,15 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
             backgroundColor: Colors.cyanAccent.shade700,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
           onPressed: _loadVideoFromInput,
-          child: const Text('로드', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text(
+            '로드',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -945,7 +986,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
       children: [
         const Text(
           '추천 비디오 프리셋:',
-          style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white60,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 6),
         Wrap(
@@ -1006,11 +1051,18 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.smart_display, color: Colors.redAccent, size: 54),
+                        const Icon(
+                          Icons.smart_display,
+                          color: Colors.redAccent,
+                          size: 54,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Video ID: $_currentVideoId',
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -1025,11 +1077,7 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black26,
-                    Colors.transparent,
-                    Colors.black87,
-                  ],
+                  colors: [Colors.black26, Colors.transparent, Colors.black87],
                 ),
               ),
             ),
@@ -1042,9 +1090,14 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _isConnected ? Colors.red.shade600 : Colors.black54,
+                      color: _isConnected
+                          ? Colors.red.shade600
+                          : Colors.black54,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -1080,7 +1133,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   const Spacer(),
                   // Target language pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(20),
@@ -1108,12 +1164,18 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   borderRadius: BorderRadius.circular(50),
                   hoverColor: Colors.white10,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: _isConnected
                             ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                            : [const Color(0xFFFF0000), const Color(0xFFCC0000)],
+                            : [
+                                const Color(0xFFFF0000),
+                                const Color(0xFFCC0000),
+                              ],
                       ),
                       borderRadius: BorderRadius.circular(50),
                       border: Border.all(
@@ -1176,7 +1238,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
     final activeTranslated = _currentTranslatedSubtitle.trim();
     final activeOriginal = _currentOriginalSubtitle.trim();
 
-    final lastEntry = _subtitleHistory.isNotEmpty ? _subtitleHistory.last : null;
+    final lastEntry = _subtitleHistory.isNotEmpty
+        ? _subtitleHistory.last
+        : null;
 
     final displayOriginal = activeOriginal.isNotEmpty
         ? activeOriginal
@@ -1219,7 +1283,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                 fontSize: _subtitleFontSize * 0.75,
                 fontStyle: FontStyle.italic,
                 shadows: const [
-                  Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1)),
+                  Shadow(
+                    color: Colors.black,
+                    blurRadius: 4,
+                    offset: Offset(1, 1),
+                  ),
                 ],
               ),
             ),
@@ -1231,8 +1299,8 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
             hasTranslated
                 ? displayTranslated
                 : (_isConnected
-                    ? '실시간 음성을 스트리밍 통역 중입니다...'
-                    : '스트리밍을 시작하면 실시간 통역 자막이 여기에 표시됩니다.'),
+                      ? '실시간 음성을 스트리밍 통역 중입니다...'
+                      : '스트리밍을 시작하면 실시간 통역 자막이 여기에 표시됩니다.'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: hasTranslated ? const Color(0xFFFDE047) : Colors.white38,
@@ -1240,7 +1308,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
               fontWeight: FontWeight.bold,
               height: 1.3,
               shadows: const [
-                Shadow(color: Colors.black, blurRadius: 6, offset: Offset(1, 2)),
+                Shadow(
+                  color: Colors.black,
+                  blurRadius: 6,
+                  offset: Offset(1, 2),
+                ),
               ],
             ),
           ),
@@ -1277,7 +1349,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                       ),
                       child: Icon(
                         _isAudioStreaming ? Icons.mic : Icons.mic_off,
-                        color: _isAudioStreaming ? Colors.cyanAccent : Colors.white38,
+                        color: _isAudioStreaming
+                            ? Colors.cyanAccent
+                            : Colors.white38,
                         size: 20,
                       ),
                     ),
@@ -1289,8 +1363,8 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                           Text(
                             _isConnected
                                 ? (_isAudioStreaming
-                                    ? '초저지연 번역 스트리밍 중'
-                                    : '연결됨 (오디오 대기 중)')
+                                      ? '초저지연 번역 스트리밍 중'
+                                      : '연결됨 (오디오 대기 중)')
                                 : 'Live Translate (gemini-3.5) 자막기 오프라인',
                             style: const TextStyle(
                               color: Colors.white,
@@ -1310,8 +1384,8 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                                 _audioVolume > 0.6
                                     ? Colors.redAccent
                                     : (_audioVolume > 0.3
-                                        ? Colors.yellowAccent
-                                        : Colors.cyanAccent),
+                                          ? Colors.yellowAccent
+                                          : Colors.cyanAccent),
                               ),
                             ),
                           ),
@@ -1325,19 +1399,33 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   width: double.infinity,
                   child: FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: _isConnected ? Colors.red.shade600 : Colors.cyanAccent.shade700,
+                      backgroundColor: _isConnected
+                          ? Colors.red.shade600
+                          : Colors.cyanAccent.shade700,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: _isConnecting ? null : _toggleConnection,
                     icon: _isConnecting
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : Icon(_isConnected ? Icons.stop_rounded : Icons.play_arrow_rounded),
+                        : Icon(
+                            _isConnected
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                          ),
                     label: Text(
                       _isConnected ? '자막 정지' : '실시간 자막 시작',
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1358,7 +1446,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                       ),
                       child: Icon(
                         _isAudioStreaming ? Icons.mic : Icons.mic_off,
-                        color: _isAudioStreaming ? Colors.cyanAccent : Colors.white38,
+                        color: _isAudioStreaming
+                            ? Colors.cyanAccent
+                            : Colors.white38,
                         size: 20,
                       ),
                     ),
@@ -1370,8 +1460,8 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                           Text(
                             _isConnected
                                 ? (_isAudioStreaming
-                                    ? '오디오 수음 및 초저지연 번역 스트리밍 중'
-                                    : '연결됨 (오디오 대기 중)')
+                                      ? '오디오 수음 및 초저지연 번역 스트리밍 중'
+                                      : '연결됨 (오디오 대기 중)')
                                 : 'Live Translate (gemini-3.5) 자막기 오프라인',
                             style: const TextStyle(
                               color: Colors.white,
@@ -1391,8 +1481,8 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                                 _audioVolume > 0.6
                                     ? Colors.redAccent
                                     : (_audioVolume > 0.3
-                                        ? Colors.yellowAccent
-                                        : Colors.cyanAccent),
+                                          ? Colors.yellowAccent
+                                          : Colors.cyanAccent),
                               ),
                             ),
                           ),
@@ -1402,19 +1492,33 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                     const SizedBox(width: 16),
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: _isConnected ? Colors.red.shade600 : Colors.cyanAccent.shade700,
+                        backgroundColor: _isConnected
+                            ? Colors.red.shade600
+                            : Colors.cyanAccent.shade700,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: _isConnecting ? null : _toggleConnection,
                       icon: _isConnecting
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Icon(_isConnected ? Icons.stop_rounded : Icons.play_arrow_rounded),
+                          : Icon(
+                              _isConnected
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
+                            ),
                       label: Text(
                         _isConnected ? '자막 정지' : '실시간 자막 시작',
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1432,11 +1536,19 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: const [
-                      Icon(Icons.settings_voice_rounded, size: 16, color: Colors.cyanAccent),
+                      Icon(
+                        Icons.settings_voice_rounded,
+                        size: 16,
+                        color: Colors.cyanAccent,
+                      ),
                       SizedBox(width: 6),
                       Text(
                         '오디오 입력 장치:',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -1455,7 +1567,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('HUD 옵션:', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                      const Text(
+                        'HUD 옵션:',
+                        style: TextStyle(color: Colors.white60, fontSize: 12),
+                      ),
                       const SizedBox(width: 8),
                       FilterChip(
                         label: const Text('원문 함께 보기'),
@@ -1463,10 +1578,13 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                         backgroundColor: const Color(0xFF0F172A),
                         selectedColor: Colors.cyanAccent.shade700,
                         labelStyle: TextStyle(
-                          color: _showOriginalText ? Colors.white : Colors.white70,
+                          color: _showOriginalText
+                              ? Colors.white
+                              : Colors.white70,
                           fontSize: 11,
                         ),
-                        onSelected: (val) => setState(() => _showOriginalText = val),
+                        onSelected: (val) =>
+                            setState(() => _showOriginalText = val),
                       ),
                       const SizedBox(width: 6),
                       FilterChip(
@@ -1475,10 +1593,13 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                         backgroundColor: const Color(0xFF0F172A),
                         selectedColor: Colors.cyanAccent.shade700,
                         labelStyle: TextStyle(
-                          color: _showFloatingHud ? Colors.white : Colors.white70,
+                          color: _showFloatingHud
+                              ? Colors.white
+                              : Colors.white70,
                           fontSize: 11,
                         ),
-                        onSelected: (val) => setState(() => _showFloatingHud = val),
+                        onSelected: (val) =>
+                            setState(() => _showFloatingHud = val),
                       ),
                     ],
                   ),
@@ -1486,7 +1607,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.text_decrease, color: Colors.white70, size: 18),
+                        icon: const Icon(
+                          Icons.text_decrease,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
                         tooltip: '글자 크기 축소',
                         onPressed: _subtitleFontSize > 14
                             ? () => setState(() => _subtitleFontSize -= 2)
@@ -1494,10 +1619,17 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                       ),
                       Text(
                         '${_subtitleFontSize.toInt()}pt',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.text_increase, color: Colors.white70, size: 18),
+                        icon: const Icon(
+                          Icons.text_increase,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
                         tooltip: '글자 크기 확대',
                         onPressed: _subtitleFontSize < 28
                             ? () => setState(() => _subtitleFontSize += 2)
@@ -1517,11 +1649,12 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
   Widget _buildAudioDeviceSelectorButton({bool isCompact = false}) {
     final hasDevice = _selectedAudioDevice != null;
     final isBlackHole =
-        _selectedAudioDevice?.label.toLowerCase().contains('blackhole') ?? false;
+        _selectedAudioDevice?.label.toLowerCase().contains('blackhole') ??
+        false;
     final label = hasDevice
         ? (_selectedAudioDevice!.label.isNotEmpty
-            ? _selectedAudioDevice!.label
-            : '입력 장치 (${_selectedAudioDevice!.id})')
+              ? _selectedAudioDevice!.label
+              : '입력 장치 (${_selectedAudioDevice!.id})')
         : '기본 마이크 (System Default)';
 
     return PopupMenuButton<String>(
@@ -1578,8 +1711,9 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         color: isBh ? Colors.amberAccent : null,
                       ),
                     ),
@@ -1650,7 +1784,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
         children: [
           Row(
             children: [
-              const Icon(Icons.history_rounded, color: Colors.cyanAccent, size: 20),
+              const Icon(
+                Icons.history_rounded,
+                color: Colors.cyanAccent,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               const Text(
                 '실시간 자막 타임라인',
@@ -1681,8 +1819,11 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.subtitles_off_rounded,
-                            size: 48, color: Colors.white.withValues(alpha: 0.2)),
+                        Icon(
+                          Icons.subtitles_off_rounded,
+                          size: 48,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           '수신된 자막 기록이 없습니다.\n실시간 자막을 시작하면 타임라인이 누적됩니다.',
@@ -1713,9 +1854,13 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.cyanAccent.withValues(alpha: 0.2),
+                                      color: Colors.cyanAccent.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -1771,7 +1916,10 @@ class _LiveMediaSubtitlePageState extends State<LiveMediaSubtitlePage>
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.cyanAccent,
                                     borderRadius: BorderRadius.circular(4),
