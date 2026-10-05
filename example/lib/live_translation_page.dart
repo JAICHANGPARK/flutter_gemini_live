@@ -410,6 +410,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       _aiSpeakingResetTimer?.cancel();
       _lastAiAudioReceivedTime = null;
       _isAiSpeaking = false;
+      _openTranscriptIsUser = null;
       if (!_useFallbackAudio) {
         _audioPlayer.clear();
       } else {
@@ -449,74 +450,65 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       }
     }
 
-    // 2. Transcriptions (스트리밍 시 중복 메시지 누적 방지 및 실시간 업데이트)
-    final inputTranscript = message.serverContent?.inputTranscription?.text;
-    if (inputTranscript != null && inputTranscript.trim().isNotEmpty) {
-      final text = inputTranscript.trim();
-      setState(() {
-        if (_history.isNotEmpty &&
-            _history.last.isUser &&
-            _history.last.text == text) {
-          // 이미 반영된 동일 텍스트 무시
-        } else if (_history.isNotEmpty &&
-            _history.last.isUser &&
-            text.startsWith(_history.last.text)) {
-          // 스트리밍 조각 누적 업데이트
-          _history[_history.length - 1] = LiveTranslationMessage(
-            isUser: true,
-            text: text,
-            languageCode:
-                message.serverContent?.inputTranscription?.languageCode ??
-                _myLanguageCode,
-          );
-        } else {
-          _history.add(
-            LiveTranslationMessage(
-              isUser: true,
-              text: text,
-              languageCode:
-                  message.serverContent?.inputTranscription?.languageCode ??
-                  _myLanguageCode,
-            ),
-          );
-        }
-      });
-      _scrollToBottom();
+    // 2. Transcriptions: 서버는 누적 텍스트가 아닌 증분(delta) 조각을 보냅니다.
+    // 같은 턴 안에서는 마지막 말풍선에 이어 붙이고, 턴이 끝나면 닫습니다.
+    final inputChunk = message.serverContent?.inputTranscription?.text;
+    if (inputChunk != null && inputChunk.isNotEmpty) {
+      _appendTranscript(
+        isUser: true,
+        chunk: inputChunk,
+        languageCode:
+            message.serverContent?.inputTranscription?.languageCode ??
+            _myLanguageCode,
+      );
     }
 
-    final outputTranscript = message.serverContent?.outputTranscription?.text;
-    if (outputTranscript != null && outputTranscript.trim().isNotEmpty) {
-      final text = outputTranscript.trim();
-      setState(() {
-        if (_history.isNotEmpty &&
-            !_history.last.isUser &&
-            _history.last.text == text) {
-          // 이미 반영된 동일 텍스트 무시
-        } else if (_history.isNotEmpty &&
-            !_history.last.isUser &&
-            text.startsWith(_history.last.text)) {
-          // 스트리밍 조각 누적 업데이트
-          _history[_history.length - 1] = LiveTranslationMessage(
-            isUser: false,
-            text: text,
-            languageCode:
-                message.serverContent?.outputTranscription?.languageCode ??
-                _targetLanguageCode,
-          );
-        } else {
-          _history.add(
-            LiveTranslationMessage(
-              isUser: false,
-              text: text,
-              languageCode:
-                  message.serverContent?.outputTranscription?.languageCode ??
-                  _targetLanguageCode,
-            ),
-          );
-        }
-      });
-      _scrollToBottom();
+    final outputChunk = message.serverContent?.outputTranscription?.text;
+    if (outputChunk != null && outputChunk.isNotEmpty) {
+      _appendTranscript(
+        isUser: false,
+        chunk: outputChunk,
+        languageCode:
+            message.serverContent?.outputTranscription?.languageCode ??
+            _targetLanguageCode,
+      );
     }
+
+    if (message.serverContent?.turnComplete == true) {
+      _openTranscriptIsUser = null;
+    }
+  }
+
+  /// 현재 열려 있는 말풍선의 화자 (null이면 다음 조각은 새 말풍선).
+  bool? _openTranscriptIsUser;
+
+  void _appendTranscript({
+    required bool isUser,
+    required String chunk,
+    required String languageCode,
+  }) {
+    setState(() {
+      if (_openTranscriptIsUser == isUser && _history.isNotEmpty) {
+        final last = _history.last;
+        _history[_history.length - 1] = LiveTranslationMessage(
+          isUser: isUser,
+          text: last.text + chunk,
+          languageCode: languageCode,
+          timestamp: last.timestamp,
+        );
+      } else {
+        if (chunk.trim().isEmpty) return;
+        _history.add(
+          LiveTranslationMessage(
+            isUser: isUser,
+            text: chunk.trimLeft(),
+            languageCode: languageCode,
+          ),
+        );
+        _openTranscriptIsUser = isUser;
+      }
+    });
+    _scrollToBottom();
   }
 
   @override
