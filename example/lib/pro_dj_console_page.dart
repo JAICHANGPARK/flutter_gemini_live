@@ -462,14 +462,18 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
+            const Flexible(
+              child: Text(
               'DIGITAL MULTI-PLAYER CONSOLE',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
                 letterSpacing: 0.5,
               ),
+            ),
             ),
           ],
         ),

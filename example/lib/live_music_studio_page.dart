@@ -553,12 +553,18 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
           children: [
             const Icon(Icons.music_note_rounded, color: Colors.purpleAccent),
             const SizedBox(width: 8),
-            const Text(
-              'Live Music Studio',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            const Flexible(
+              child: Text(
+                'Live Music Studio',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
             ),
             const SizedBox(width: 8),
-            Container(
+            Flexible(
+              flex: 0,
+              child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: Colors.purple.withAlpha(50),
@@ -567,12 +573,15 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
               ),
               child: const Text(
                 'Lyria Realtime',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.purpleAccent,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
             ),
           ],
         ),

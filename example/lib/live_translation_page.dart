@@ -536,7 +536,13 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           children: [
             Icon(Icons.translate_rounded, color: Colors.blueAccent),
             SizedBox(width: 8),
-            Text('Live Translation (동시통역)'),
+            Flexible(
+              child: Text(
+                'Live Translation (동시통역)',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [
