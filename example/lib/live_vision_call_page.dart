@@ -11,6 +11,7 @@ import 'package:record/record.dart';
 
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
+import 'app_translations.dart';
 import 'foldable_utils.dart';
 import 'live_api_defaults.dart';
 import 'live_audio_player.dart';
@@ -21,11 +22,11 @@ import 'soloud_live_audio_player.dart';
 class LiveVisionCallPage extends StatefulWidget {
   const LiveVisionCallPage({
     super.key,
-    this.agentTitle = 'Live Vision AI',
+    this.agentTitle,
     this.customSystemPrompt,
   });
 
-  final String agentTitle;
+  final String? agentTitle;
   final String? customSystemPrompt;
 
   @override
@@ -263,20 +264,22 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
         await _initCameraController(cameras.first);
       } else {
         if (mounted) {
+          final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
           setState(() {
             _isCameraInitializing = false;
-            _cameraErrorMessage = '사용 가능한 카메라를 찾을 수 없습니다.';
+            _cameraErrorMessage = i18n.noCameraFound;
           });
         }
       }
     } catch (e) {
       debugPrint('Camera load error: $e');
       if (mounted) {
+        final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
         setState(() {
           _isCameraInitializing = false;
           _cameraErrorMessage = kIsWeb
-              ? '브라우저 카메라 권한을 허용해 주세요: $e'
-              : '카메라를 불러오지 못했습니다: $e';
+              ? i18n.cameraPermissionError(e)
+              : i18n.cameraLoadError(e);
         });
       }
     }
@@ -315,9 +318,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       }
     } catch (e) {
       if (mounted) {
+        final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
         setState(() {
           _isCameraInitializing = false;
-          _cameraErrorMessage = '카메라 초기화 실패: $e';
+          _cameraErrorMessage = i18n.cameraInitError(e);
         });
       }
       debugPrint('Camera controller init error: $e');
@@ -350,6 +354,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     _isCameraFlippedNotifier.value = next;
     await ApiKeyStore.saveCameraFlipped(next);
     if (mounted) {
+      final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -365,9 +370,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               ),
               const SizedBox(width: 10),
               Text(
-                next
-                    ? '카메라 좌우 반전 켜짐 (텍스트 정상 읽기 모드)'
-                    : '카메라 좌우 반전 꺼짐 (거울 모드)',
+                next ? i18n.flipOn : i18n.flipOff,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -421,12 +424,15 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   Future<void> _connectSession() async {
     if (_isConnecting) return;
+    final currentLang = AppLanguageController.instance.currentLanguage;
+    final i18n = _VisionI18n(currentLang);
+
     if (!ApiKeyStore.hasApiKey) {
       final configured = await AppSettingsDialog.show(context);
       if (configured != true || !ApiKeyStore.hasApiKey) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gemini API 키가 설정되지 않았습니다.')),
+            SnackBar(content: Text(i18n.apiKeyMissing)),
           );
         }
         return;
@@ -439,11 +445,8 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       final genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
       final currentModel = ApiKeyStore.liveModel;
 
-      final promptText = widget.customSystemPrompt ??
-          '너는 실시간 카메라와 음성으로 사용자를 도와주는 범용 멀티모달 AI 비서야. '
-          '카메라 화면에 비치는 사물, 텍스트, 코드, 주변 환경, 상황 등을 실시간으로 관찰하고, '
-          '사용자의 질문이나 대화에 맞춰 친절하고 자연스러운 한국어 구어체로 간결하게(1~2문장 내외) 실시간 음성으로 답변해줘. '
-          '듣는 사람이 편안하게 이해할 수 있도록 대화하듯이 말해줘.';
+      final basePrompt = widget.customSystemPrompt ?? i18n.defaultSystemPrompt;
+      final promptText = '$basePrompt${i18n.languageInstruction}';
 
       final systemInstruction = Content(
         parts: [
@@ -493,7 +496,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             onError: (error, stack) {
               debugPrint('❌ Live session error: $error');
               if (!mounted) return;
-              _liveSubtitleNotifier.value = '⚠️ 연결 끊김 / 오류: $error';
+              _liveSubtitleNotifier.value = i18n.connectionError(error);
               setState(() {
                 _isConnected = false;
                 _isConnecting = false;
@@ -503,7 +506,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
               debugPrint('🔒 Live session closed ($code): $reason');
               if (!mounted) return;
               if (reason != null && reason.isNotEmpty) {
-                _liveSubtitleNotifier.value = '연결 종료: $reason';
+                _liveSubtitleNotifier.value = i18n.connectionClosed(reason);
               }
               setState(() {
                 _isConnected = false;
@@ -525,7 +528,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     } catch (e) {
       debugPrint('Failed to connect live session: $e');
       if (mounted) {
-        _liveSubtitleNotifier.value = '⚠️ 연결 실패: $e\n(상단 ⚙️ 설정을 확인하세요)';
+        _liveSubtitleNotifier.value = i18n.connectionFailed(e);
         setState(() {
           _isConnecting = false;
         });
@@ -636,8 +639,8 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
       if (!await _audioRecorder.hasPermission()) {
         debugPrint('Microphone permission denied.');
         if (mounted) {
-          _liveSubtitleNotifier.value =
-              '⚠️ 마이크 권한이 필요합니다. macOS [시스템 설정 > 개인정보 보호 및 보안 > 마이크]에서 앱을 허용해 주세요.';
+          final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
+          _liveSubtitleNotifier.value = i18n.micPermissionRequired;
         }
         return;
       }
@@ -783,6 +786,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
   }
 
   void _openChatSheet() {
+    final i18n = _VisionI18n(AppLanguageController.instance.currentLanguage);
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0C2417),
@@ -810,9 +814,9 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                       children: [
                         const Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 20),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Live Transcript',
-                          style: TextStyle(
+                        Text(
+                          i18n.liveTranscriptTitle,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -820,7 +824,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                         ),
                         const Spacer(),
                         Text(
-                          '${_chatHistory.length} messages',
+                          i18n.messagesCount(_chatHistory.length),
                           style: const TextStyle(color: Colors.white38, fontSize: 13),
                         ),
                       ],
@@ -828,10 +832,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                     const Divider(color: Colors.white12, height: 24),
                     Expanded(
                       child: _chatHistory.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
-                                '대화가 시작되면 실시간 자막이 여기에 표시됩니다.',
-                                style: TextStyle(color: Colors.white38),
+                                i18n.transcriptWaiting,
+                                style: const TextStyle(color: Colors.white38),
                               ),
                             )
                           : ListView.builder(
@@ -890,246 +894,254 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
 
   @override
   Widget build(BuildContext context) {
-    // Deep forest green background theme matching the user's screenshot
-    const themeBgColor = Color(0xFF091E14);
-    final foldableInfo = FoldableLayoutInfo.of(context);
+    return ListenableBuilder(
+      listenable: AppLanguageController.instance,
+      builder: (context, _) {
+        final currentLang = AppLanguageController.instance.currentLanguage;
+        final i18n = _VisionI18n(currentLang);
 
-    // 1. Tabletop / Flex Mode (Foldable device half-opened on desk)
-    if (foldableInfo.isTabletop) {
-      return Scaffold(
-        backgroundColor: themeBgColor,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              // Top Upright Screen: Central Camera Viewfinder
-              Expanded(
-                flex: 5,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  child: _buildCameraViewfinder(),
-                ),
-              ),
+        // Deep forest green background theme matching the user's screenshot
+        const themeBgColor = Color(0xFF091E14);
+        final foldableInfo = FoldableLayoutInfo.of(context);
 
-              // Physical Crease Divider
-              Container(
-                height: 3,
-                color: Colors.greenAccent.withValues(alpha: 0.3),
-              ),
-
-              // Bottom Flat Screen: Live Subtitle, Transcript history, and Controls
-              Expanded(
-                flex: 4,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: _chatHistory.isEmpty
-                          ? const Center(
-                              child: Text(
-                                '실시간 대화와 Vision AI 분석이 여기에 표시됩니다.',
-                                style: TextStyle(color: Colors.white54, fontSize: 13),
-                              ),
-                            )
-                          : ListView.builder(
-                              reverse: true,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              itemCount: _chatHistory.length,
-                              itemBuilder: (context, index) {
-                                final item = _chatHistory[_chatHistory.length - 1 - index];
-                                return Align(
-                                  alignment: item.isUser
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 3),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: item.isUser
-                                          ? const Color(0xFF1B4D36)
-                                          : const Color(0xFF143323),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      item.text,
-                                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+        // 1. Tabletop / Flex Mode (Foldable device half-opened on desk)
+        if (foldableInfo.isTabletop) {
+          return Scaffold(
+            backgroundColor: themeBgColor,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(i18n),
+                  // Top Upright Screen: Central Camera Viewfinder
+                  Expanded(
+                    flex: 5,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      child: _buildCameraViewfinder(i18n),
                     ),
-                    _buildBottomControlBar(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 2. Dual-Screen Book Mode (Surface Duo or Galaxy Fold unfolded wide side-by-side)
-    if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
-      return Scaffold(
-        backgroundColor: themeBgColor,
-        body: SafeArea(
-          child: Row(
-            children: [
-              // Left Screen: Header + Camera Viewfinder
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: _buildCameraViewfinder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Center Hinge Spacer
-              SizedBox(
-                width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
-                child: Center(
-                  child: Container(
-                    width: 2,
-                    color: Colors.greenAccent.withValues(alpha: 0.2),
                   ),
-                ),
-              ),
 
-              // Right Screen: Transcript History & Controls
-              Expanded(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    const Row(
+                  // Physical Crease Divider
+                  Container(
+                    height: 3,
+                    color: Colors.greenAccent.withValues(alpha: 0.3),
+                  ),
+
+                  // Bottom Flat Screen: Live Subtitle, Transcript history, and Controls
+                  Expanded(
+                    flex: 4,
+                    child: Column(
                       children: [
-                        SizedBox(width: 16),
-                        Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Vision AI Live Transcript',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                        Expanded(
+                          child: _chatHistory.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    i18n.tabletopWaiting,
+                                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  reverse: true,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  itemCount: _chatHistory.length,
+                                  itemBuilder: (context, index) {
+                                    final item = _chatHistory[_chatHistory.length - 1 - index];
+                                    return Align(
+                                      alignment: item.isUser
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: item.isUser
+                                              ? const Color(0xFF1B4D36)
+                                              : const Color(0xFF143323),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          item.text,
+                                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        _buildBottomControlBar(i18n),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 2. Dual-Screen Book Mode (Surface Duo or Galaxy Fold unfolded wide side-by-side)
+        if (foldableInfo.hasHinge && foldableInfo.isBookMode) {
+          return Scaffold(
+            backgroundColor: themeBgColor,
+            body: SafeArea(
+              child: Row(
+                children: [
+                  // Left Screen: Header + Camera Viewfinder
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildHeader(i18n),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: _buildCameraViewfinder(i18n),
                           ),
                         ),
                       ],
                     ),
-                    const Divider(color: Colors.white12, height: 16),
-                    Expanded(
-                      child: _chatHistory.isEmpty
-                          ? const Center(
-                              child: Text(
-                                '대화가 시작되면 실시간 자막이 여기에 표시됩니다.',
-                                style: TextStyle(color: Colors.white38),
-                              ),
-                            )
-                          : ListView.builder(
-                              reverse: true,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              itemCount: _chatHistory.length,
-                              itemBuilder: (context, index) {
-                                final item = _chatHistory[_chatHistory.length - 1 - index];
-                                return Align(
-                                  alignment: item.isUser
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: item.isUser
-                                          ? const Color(0xFF1B4D36)
-                                          : const Color(0xFF143323),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      item.text,
-                                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    _buildBottomControlBar(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+                  ),
 
-    // 3. Standard Layout
-    return Scaffold(
-      backgroundColor: themeBgColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Top Header (Logo + Title)
-            _buildHeader(),
-
-            // 2. Central Camera Viewfinder with rounded corners
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                child: _buildCameraViewfinder(),
-              ),
-            ),
-
-            // Live subtitle badge if any
-            ValueListenableBuilder<String>(
-              valueListenable: _liveSubtitleNotifier,
-              builder: (context, subtitle, _) {
-                if (subtitle.isEmpty) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha(160),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                  // Center Hinge Spacer
+                  SizedBox(
+                    width: (foldableInfo.hingeBounds?.width ?? 16).clamp(8.0, 36.0),
+                    child: Center(
+                      child: Container(
+                        width: 2,
+                        color: Colors.greenAccent.withValues(alpha: 0.2),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
 
-            // 3. Bottom Control Bar (5 buttons)
-            _buildBottomControlBar(),
-          ],
-        ),
-      ),
+                  // Right Screen: Transcript History & Controls
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const SizedBox(width: 16),
+                            const Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              i18n.liveTranscriptTitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(color: Colors.white12, height: 16),
+                        Expanded(
+                          child: _chatHistory.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    i18n.transcriptWaiting,
+                                    style: const TextStyle(color: Colors.white38),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  reverse: true,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  itemCount: _chatHistory.length,
+                                  itemBuilder: (context, index) {
+                                    final item = _chatHistory[_chatHistory.length - 1 - index];
+                                    return Align(
+                                      alignment: item.isUser
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: item.isUser
+                                              ? const Color(0xFF1B4D36)
+                                              : const Color(0xFF143323),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          item.text,
+                                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        _buildBottomControlBar(i18n),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 3. Standard Layout
+        return Scaffold(
+          backgroundColor: themeBgColor,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // 1. Top Header (Logo + Title)
+                _buildHeader(i18n),
+
+                // 2. Central Camera Viewfinder with rounded corners
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    child: _buildCameraViewfinder(i18n),
+                  ),
+                ),
+
+                // Live subtitle badge if any
+                ValueListenableBuilder<String>(
+                  valueListenable: _liveSubtitleNotifier,
+                  builder: (context, subtitle, _) {
+                    if (subtitle.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(160),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                // 3. Bottom Control Bar (5 buttons)
+                _buildBottomControlBar(i18n),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(_VisionI18n i18n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -1160,7 +1172,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.agentTitle,
+                widget.agentTitle ?? i18n.defaultTitle,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 19,
@@ -1198,13 +1210,13 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                       Text(
                         _isConnected
                             ? (isAiSpeaking
-                                ? 'AI Speaking...'
+                                ? i18n.aiSpeaking
                                 : (isUserSpeaking
-                                    ? 'Listening...'
-                                    : 'Live · ${ApiKeyStore.liveModel}'))
+                                    ? i18n.listening
+                                    : i18n.liveStatus(ApiKeyStore.liveModel)))
                             : (_isConnecting
-                                ? 'Connecting...'
-                                : 'Disconnected'),
+                                ? i18n.connecting
+                                : i18n.disconnected),
                         style: TextStyle(
                           color: Colors.white.withAlpha(180),
                           fontSize: 11,
@@ -1220,17 +1232,25 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
           const Spacer(),
           // Real-time token usage and cost badge
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: GeminiLiveUsageBadge(
               tracker: _usageTracker,
               backgroundColor: Colors.white.withAlpha(25),
               foregroundColor: Colors.white,
             ),
           ),
+          // Language switcher dropdown
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 2.0),
+            child: LanguageSelectorButton(compact: true),
+          ),
           // Audio Input Device selector
           PopupMenuButton<String>(
-            tooltip:
-                '마이크 입력 장치 선택 (${_selectedAudioDevice?.label.isNotEmpty == true ? _selectedAudioDevice!.label : "기본 마이크"})',
+            tooltip: i18n.micSelectorTooltip(
+              _selectedAudioDevice?.label.isNotEmpty == true
+                  ? _selectedAudioDevice!.label
+                  : i18n.defaultMic,
+            ),
             icon: Icon(
               _selectedAudioDevice != null
                   ? Icons.mic_external_on_rounded
@@ -1265,7 +1285,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                             : Colors.grey,
                       ),
                       const SizedBox(width: 8),
-                      const Text('기본 마이크 (System Default)'),
+                      Text(i18n.defaultMic),
                     ],
                   ),
                 ),
@@ -1313,9 +1333,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                   color: isFlipped ? Colors.greenAccent : Colors.white70,
                   size: 22,
                 ),
-                tooltip: isFlipped
-                    ? '좌우 반전 켜짐 (텍스트 정상 읽기 모드)'
-                    : '좌우 반전 꺼짐 (거울 모드)',
+                tooltip: isFlipped ? i18n.flipOn : i18n.flipOff,
               );
             },
           ),
@@ -1324,13 +1342,13 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             IconButton(
               onPressed: _toggleCameraDirection,
               icon: const Icon(Icons.flip_camera_ios_outlined, color: Colors.white70, size: 22),
-              tooltip: 'Switch Camera',
+              tooltip: i18n.switchCameraTooltip,
             ),
           // Settings button (API Key & Model)
           IconButton(
             onPressed: _openSettings,
             icon: const Icon(Icons.tune_rounded, color: Colors.white70, size: 22),
-            tooltip: 'API Key & Model Settings',
+            tooltip: i18n.settingsTooltip,
           ),
         ],
       ),
@@ -1386,7 +1404,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     );
   }
 
-  Widget _buildCameraViewfinder() {
+  Widget _buildCameraViewfinder(_VisionI18n i18n) {
     const viewfinderRadius = 28.0;
 
     return ValueListenableBuilder<_AudioActivity>(
@@ -1447,10 +1465,10 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                         Text(
                           _cameraErrorMessage ??
                               (isPaused
-                                  ? '카메라가 일시정지되었습니다'
+                                  ? i18n.cameraPaused
                                   : (_isCameraInitializing
-                                      ? '카메라 연결 중...'
-                                      : '카메라 준비 중...')),
+                                      ? i18n.cameraConnecting
+                                      : i18n.cameraPreparing)),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.withAlpha(180),
@@ -1463,7 +1481,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                           OutlinedButton.icon(
                             onPressed: _loadCameras,
                             icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: const Text('카메라 다시 시도'),
+                            label: Text(i18n.retryCamera),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: const BorderSide(color: Colors.white24),
@@ -1542,7 +1560,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isFlipped ? '좌우반전 (글자 읽기)' : '거울 모드',
+                              isFlipped ? i18n.flipToggleTextOn : i18n.flipToggleTextOff,
                               style: TextStyle(
                                 color: isFlipped ? Colors.greenAccent : Colors.white70,
                                 fontSize: 11,
@@ -1624,7 +1642,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
     );
   }
 
-  Widget _buildBottomControlBar() {
+  Widget _buildBottomControlBar(_VisionI18n i18n) {
     return Padding(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 20),
       child: Row(
@@ -1636,7 +1654,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             icon: Icons.chat_bubble_outline_rounded,
             iconColor: Colors.white,
             onTap: _openChatSheet,
-            tooltip: 'Live Transcript',
+            tooltip: i18n.liveTranscriptTitle,
           ),
 
           // 2. Camera Toggle button (White circle)
@@ -1651,7 +1669,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                 iconColor:
                     isPaused ? Colors.black54 : const Color(0xFF0F2D1E),
                 onTap: _toggleVideoPause,
-                tooltip: 'Camera On/Off',
+                tooltip: i18n.cameraToggleTooltip,
               );
             },
           ),
@@ -1676,7 +1694,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
                 iconColor:
                     isMuted ? Colors.redAccent : const Color(0xFF0F2D1E),
                 onTap: _toggleMicMute,
-                tooltip: 'Microphone Mute',
+                tooltip: i18n.micToggleTooltip,
               );
             },
           ),
@@ -1687,7 +1705,7 @@ class _LiveVisionCallPageState extends State<LiveVisionCallPage>
             icon: Icons.call_end_rounded,
             iconColor: Colors.white,
             onTap: _endCall,
-            tooltip: 'End Session',
+            tooltip: i18n.endSessionTooltip,
           ),
         ],
       ),
@@ -1808,3 +1826,306 @@ class _AudioActivity {
   int get hashCode =>
       Object.hash(isAiResponding, isUserSpeaking, (userMicVolume * 100).round());
 }
+
+/// Multilingual translation helper for Live Vision Call Page (ko, en, ja, zh).
+class _VisionI18n {
+  final AppLanguage lang;
+  const _VisionI18n(this.lang);
+
+  String get defaultSystemPrompt => switch (lang) {
+        AppLanguage.ja =>
+          'あなたはリアルタイムカメラと音声でユーザーをサポートする汎用マルチモーダルAIアシスタントです。\n'
+          '【言語ルール】\n'
+          '1. 最優先ルール: ユーザーが発話した言語を自動認識し、常にユーザーと同じ言語で自然に回答してください。'
+          '(ユーザーが日本語で話したら日本語で、韓国語なら韓国語で、英語なら英語で、中国語なら中国語で回答)\n'
+          '2. ユーザーが言葉を発していない時や言語が不明確な場合の基本・優先言語は日本語（Japanese）です。\n'
+          '3. ユーザーが会話の途中で言語を変更した場合は、柔軟に変更後の言語に合わせて回答してください。\n'
+          '【応答スタイル】\n'
+          'カメラ映像（物体、文字、コード、周囲の状況）をリアルタイムで観察し、親切かつ簡潔に（1〜2文程度）自然な口語体でリアルタイム音声で回答してください。',
+        AppLanguage.ko =>
+          '너는 실시간 카메라와 음성으로 사용자를 도와주는 범용 멀티모달 AI 비서야.\n'
+          '【언어 규칙】\n'
+          '1. 최우선 규칙: 사용자가 말하는 언어를 자동으로 감지하여, 항상 사용자가 말한 언어와 동일한 언어로 자연스럽게 답변해줘. '
+          '(사용자가 한국어로 말하면 한국어로, 일본어로 말하면 일본어로, 영어로 말하면 영어로, 중국어로 말하면 중국어로 답변)\n'
+          '2. 사용자의 발화가 아직 없거나 언어가 불분명한 경우 기본 설정 언어는 한국어(Korean)야.\n'
+          '3. 사용자가 대화 도중 언어를 바꾸면 유연하게 바뀐 언어에 맞춰서 자연스럽게 답변해줘.\n'
+          '【응답 스타일】\n'
+          '카메라 화면(사물, 텍스트, 코드, 주변 환경 등)을 실시간으로 관찰하고, 친절하고 간결하게(1~2문장 내외) 자연스러운 구어체 음성으로 답변해줘.',
+        AppLanguage.zh =>
+          '你是一个通过实时摄像头和语音协助用户的全能多模态AI助手。\n'
+          '【语言规则】\n'
+          '1. 最高优先级规则: 自动识别用户说话所使用的语言，并始终以与用户相同的语言自然回答。'
+          '(用户说中文就用中文回答，说日文就用日文回答，说韩文就用韩文回答，说英文就用英文回答)\n'
+          '2. 用户未发声或语言不明确时的默认/首选语言为中文（Chinese）。\n'
+          '3. 如果用户在对话中切换了语言，请迅速灵活地跟进切换后的语言。\n'
+          '【交互风格】\n'
+          '实时观察镜头画面（物体、文字、代码、环境），并以亲切、简短（1-2句左右）且自然的口语语音回答。',
+        AppLanguage.en =>
+          'You are a versatile multimodal AI assistant helping the user via live camera vision and voice.\n'
+          '【Language Rules】\n'
+          '1. TOP PRIORITY: Automatically detect the language the user is speaking in, and ALWAYS reply in the exact same language as the user. '
+          '(If the user speaks Japanese, reply in Japanese; if Korean, reply in Korean; if English, reply in English; if Chinese, reply in Chinese, etc.)\n'
+          '2. When the user has not spoken yet or the language is ambiguous, use English as the default preferred language.\n'
+          '3. If the user switches languages mid-conversation, dynamically match their new language.\n'
+          '【Response Style】\n'
+          'Continuously observe objects, text, code, and surroundings in the camera stream, and answer concisely (1 to 2 sentences) in natural spoken conversational speech.',
+      };
+
+  String get languageInstruction => switch (lang) {
+        AppLanguage.ja =>
+          '\n\n[Multilingual Voice Interaction Rule]:\n'
+          '- Primary Rule: Always respond in the EXACT SAME language that the user speaks. If the user speaks Japanese, reply in Japanese; if Korean, reply in Korean; if English, reply in English.\n'
+          '- Default/Fallback Language: Japanese (日本語) when the user has not spoken yet or language is ambiguous.',
+        AppLanguage.ko =>
+          '\n\n[Multilingual Voice Interaction Rule]:\n'
+          '- Primary Rule: Always respond in the EXACT SAME language that the user speaks. If the user speaks Korean, reply in Korean; if Japanese, reply in Japanese; if English, reply in English.\n'
+          '- Default/Fallback Language: Korean (한국어) when the user has not spoken yet or language is ambiguous.',
+        AppLanguage.zh =>
+          '\n\n[Multilingual Voice Interaction Rule]:\n'
+          '- Primary Rule: Always respond in the EXACT SAME language that the user speaks. If the user speaks Chinese, reply in Chinese; if Japanese, reply in Japanese; if English, reply in English.\n'
+          '- Default/Fallback Language: Chinese (中文) when the user has not spoken or language is ambiguous.',
+        AppLanguage.en =>
+          '\n\n[Multilingual Voice Interaction Rule]:\n'
+          '- Primary Rule: Always respond in the EXACT SAME language that the user speaks. If the user speaks English, reply in English; if Japanese, reply in Japanese; if Korean, reply in Korean.\n'
+          '- Default/Fallback Language: English when the user has not spoken yet or language is ambiguous.',
+      };
+
+  String get defaultTitle => switch (lang) {
+        AppLanguage.ja => 'Live Vision AI',
+        AppLanguage.ko => 'Live Vision AI',
+        AppLanguage.zh => 'Live Vision AI',
+        AppLanguage.en => 'Live Vision AI',
+      };
+
+  String get aiSpeaking => switch (lang) {
+        AppLanguage.ja => 'AI 発話中...',
+        AppLanguage.ko => 'AI 답변 중...',
+        AppLanguage.zh => 'AI 发言中...',
+        AppLanguage.en => 'AI Speaking...',
+      };
+
+  String get listening => switch (lang) {
+        AppLanguage.ja => '聞き取り中...',
+        AppLanguage.ko => '듣는 중...',
+        AppLanguage.zh => '正在倾听...',
+        AppLanguage.en => 'Listening...',
+      };
+
+  String liveStatus(String model) => switch (lang) {
+        AppLanguage.ja => 'ライブ · $model',
+        AppLanguage.ko => '실시간 · $model',
+        AppLanguage.zh => '实时 · $model',
+        AppLanguage.en => 'Live · $model',
+      };
+
+  String get connecting => switch (lang) {
+        AppLanguage.ja => '接続中...',
+        AppLanguage.ko => '연결 중...',
+        AppLanguage.zh => '正在连接...',
+        AppLanguage.en => 'Connecting...',
+      };
+
+  String get disconnected => switch (lang) {
+        AppLanguage.ja => '切断済み',
+        AppLanguage.ko => '연결 끊김',
+        AppLanguage.zh => '已断开',
+        AppLanguage.en => 'Disconnected',
+      };
+
+  String get noCameraFound => switch (lang) {
+        AppLanguage.ja => '利用可能なカメラが見つかりません。',
+        AppLanguage.ko => '사용 가능한 카메라를 찾을 수 없습니다.',
+        AppLanguage.zh => '未找到可用摄像头。',
+        AppLanguage.en => 'No available cameras found.',
+      };
+
+  String cameraPermissionError(Object e) => switch (lang) {
+        AppLanguage.ja => 'ブラウザのカメラ権限を許可してください: $e',
+        AppLanguage.ko => '브라우저 카메라 권한을 허용해 주세요: $e',
+        AppLanguage.zh => '请允许浏览器摄像头权限: $e',
+        AppLanguage.en => 'Please grant browser camera permissions: $e',
+      };
+
+  String cameraLoadError(Object e) => switch (lang) {
+        AppLanguage.ja => 'カメラを読み込めませんでした: $e',
+        AppLanguage.ko => '카메라를 불러오지 못했습니다: $e',
+        AppLanguage.zh => '无法加载摄像头: $e',
+        AppLanguage.en => 'Failed to load camera: $e',
+      };
+
+  String cameraInitError(Object e) => switch (lang) {
+        AppLanguage.ja => 'カメラの初期化に失敗しました: $e',
+        AppLanguage.ko => '카메라 초기화 실패: $e',
+        AppLanguage.zh => '摄像头初始化失败: $e',
+        AppLanguage.en => 'Camera initialization failed: $e',
+      };
+
+  String get cameraPaused => switch (lang) {
+        AppLanguage.ja => 'カメラが一時停止中です',
+        AppLanguage.ko => '카메라가 일시정지되었습니다',
+        AppLanguage.zh => '摄像头已暂停',
+        AppLanguage.en => 'Camera is paused',
+      };
+
+  String get cameraConnecting => switch (lang) {
+        AppLanguage.ja => 'カメラ接続中...',
+        AppLanguage.ko => '카메라 연결 중...',
+        AppLanguage.zh => '摄像头连接中...',
+        AppLanguage.en => 'Connecting camera...',
+      };
+
+  String get cameraPreparing => switch (lang) {
+        AppLanguage.ja => 'カメラ準備中...',
+        AppLanguage.ko => '카메라 준비 중...',
+        AppLanguage.zh => '摄像头准备中...',
+        AppLanguage.en => 'Preparing camera...',
+      };
+
+  String get retryCamera => switch (lang) {
+        AppLanguage.ja => 'カメラを再試行',
+        AppLanguage.ko => '카메라 다시 시도',
+        AppLanguage.zh => '重试摄像头',
+        AppLanguage.en => 'Retry Camera',
+      };
+
+  String get flipOn => switch (lang) {
+        AppLanguage.ja => 'カメラ左右反転ON (文字正常読取モード)',
+        AppLanguage.ko => '카메라 좌우 반전 켜짐 (텍스트 정상 읽기 모드)',
+        AppLanguage.zh => '摄像头水平翻转已开启 (正常识字模式)',
+        AppLanguage.en => 'Camera flip ON (Natural reading mode)',
+      };
+
+  String get flipOff => switch (lang) {
+        AppLanguage.ja => 'カメラ左右反転OFF (ミラーモード)',
+        AppLanguage.ko => '카메라 좌우 반전 꺼짐 (거울 모드)',
+        AppLanguage.zh => '摄像头水平翻转已关闭 (镜像模式)',
+        AppLanguage.en => 'Camera flip OFF (Mirror mode)',
+      };
+
+  String get flipToggleTextOn => switch (lang) {
+        AppLanguage.ja => '反転 (文字読取)',
+        AppLanguage.ko => '좌우반전 (글자 읽기)',
+        AppLanguage.zh => '翻转 (正常识字)',
+        AppLanguage.en => 'Flipped (Reading)',
+      };
+
+  String get flipToggleTextOff => switch (lang) {
+        AppLanguage.ja => 'ミラーモード',
+        AppLanguage.ko => '거울 모드',
+        AppLanguage.zh => '镜像模式',
+        AppLanguage.en => 'Mirror Mode',
+      };
+
+  String get apiKeyMissing => switch (lang) {
+        AppLanguage.ja => 'Gemini APIキーが設定されていません。',
+        AppLanguage.ko => 'Gemini API 키가 설정되지 않았습니다.',
+        AppLanguage.zh => '未设置 Gemini API 密钥。',
+        AppLanguage.en => 'Gemini API key is not configured.',
+      };
+
+  String connectionError(Object error) => switch (lang) {
+        AppLanguage.ja => '⚠️ 接続切断 / エラー: $error',
+        AppLanguage.ko => '⚠️ 연결 끊김 / 오류: $error',
+        AppLanguage.zh => '⚠️ 连接断开 / 错误: $error',
+        AppLanguage.en => '⚠️ Disconnected / Error: $error',
+      };
+
+  String connectionClosed(String reason) => switch (lang) {
+        AppLanguage.ja => '接続終了: $reason',
+        AppLanguage.ko => '연결 종료: $reason',
+        AppLanguage.zh => '连接已关闭: $reason',
+        AppLanguage.en => 'Session closed: $reason',
+      };
+
+  String connectionFailed(Object error) => switch (lang) {
+        AppLanguage.ja => '⚠️ 接続失敗: $error\n(右上の ⚙️ 設定をご確認ください)',
+        AppLanguage.ko => '⚠️ 연결 실패: $error\n(상단 ⚙️ 설정을 확인하세요)',
+        AppLanguage.zh => '⚠️ 连接失败: $error\n(请检查顶部 ⚙️ 设置)',
+        AppLanguage.en => '⚠️ Connection failed: $error\n(Check ⚙️ settings above)',
+      };
+
+  String get micPermissionRequired => switch (lang) {
+        AppLanguage.ja => '⚠️ マイク権限が必要です。システムのプライバシー設定でアプリを許可してください。',
+        AppLanguage.ko => '⚠️ 마이크 권한이 필요합니다. [시스템 설정 > 개인정보 보호 및 보안 > 마이크]에서 앱을 허용해 주세요.',
+        AppLanguage.zh => '⚠️ 需要麦克风权限。请在系统设置中允许应用访问麦克风。',
+        AppLanguage.en => '⚠️ Microphone permission required. Please allow access in system settings.',
+      };
+
+  String get transcriptWaiting => switch (lang) {
+        AppLanguage.ja => '対話が始まると、ここにリアルタイム字幕が表示されます。',
+        AppLanguage.ko => '대화가 시작되면 실시간 자막이 여기에 표시됩니다.',
+        AppLanguage.zh => '对话开始后，实时字幕将显示在此处。',
+        AppLanguage.en => 'Live transcripts will appear here once conversation starts.',
+      };
+
+  String get tabletopWaiting => switch (lang) {
+        AppLanguage.ja => 'リアルタイム対話と Vision AI の分析がここに表示されます。',
+        AppLanguage.ko => '실시간 대화와 Vision AI 분석이 여기에 표시됩니다.',
+        AppLanguage.zh => '实时对话与 Vision AI 分析将显示在此处。',
+        AppLanguage.en => 'Live conversation and Vision AI analysis will appear here.',
+      };
+
+  String get liveTranscriptTitle => switch (lang) {
+        AppLanguage.ja => 'リアルタイム文字起こし',
+        AppLanguage.ko => '실시간 자막 & 대화 기록',
+        AppLanguage.zh => '实时文字记录',
+        AppLanguage.en => 'Live Transcript',
+      };
+
+  String messagesCount(int count) => switch (lang) {
+        AppLanguage.ja => '$count 件のメッセージ',
+        AppLanguage.ko => '$count개 메시지',
+        AppLanguage.zh => '$count 条消息',
+        AppLanguage.en => '$count messages',
+      };
+
+  String get defaultMic => switch (lang) {
+        AppLanguage.ja => 'デフォルトマイク (System Default)',
+        AppLanguage.ko => '기본 마이크 (System Default)',
+        AppLanguage.zh => '系统默认麦克风 (System Default)',
+        AppLanguage.en => 'System Default Microphone',
+      };
+
+  String micSelectorTooltip(String label) => switch (lang) {
+        AppLanguage.ja => 'マイク入力デバイス選択 ($label)',
+        AppLanguage.ko => '마이크 입력 장치 선택 ($label)',
+        AppLanguage.zh => '选择麦克风输入设备 ($label)',
+        AppLanguage.en => 'Select Microphone Device ($label)',
+      };
+
+  String get switchCameraTooltip => switch (lang) {
+        AppLanguage.ja => 'カメラ切り替え',
+        AppLanguage.ko => '카메라 전환',
+        AppLanguage.zh => '切换摄像头',
+        AppLanguage.en => 'Switch Camera',
+      };
+
+  String get settingsTooltip => switch (lang) {
+        AppLanguage.ja => 'APIキー・モデル設定',
+        AppLanguage.ko => 'API 키 및 모델 설정',
+        AppLanguage.zh => 'API 密钥及模型设置',
+        AppLanguage.en => 'API Key & Model Settings',
+      };
+
+  String get cameraToggleTooltip => switch (lang) {
+        AppLanguage.ja => 'カメラ ON/OFF',
+        AppLanguage.ko => '카메라 켜기/끄기',
+        AppLanguage.zh => '摄像头 开/关',
+        AppLanguage.en => 'Camera On/Off',
+      };
+
+  String get micToggleTooltip => switch (lang) {
+        AppLanguage.ja => 'マイクミュート切替',
+        AppLanguage.ko => '마이크 음소거 전환',
+        AppLanguage.zh => '麦克风静音切换',
+        AppLanguage.en => 'Microphone Mute',
+      };
+
+  String get endSessionTooltip => switch (lang) {
+        AppLanguage.ja => '通話を終了',
+        AppLanguage.ko => '통화 종료',
+        AppLanguage.zh => '结束通话',
+        AppLanguage.en => 'End Session',
+      };
+}
+

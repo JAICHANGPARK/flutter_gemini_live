@@ -71,7 +71,11 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   bool _isMicActive = false;
   String _myLanguageCode = 'ko'; // 내 언어 (기본 한국어)
   String _targetLanguageCode = 'en'; // 상대방 언어 (기본 영어)
-  final bool _echoTargetLanguage = true;
+  final bool _echoTargetLanguage = false; // 원문 반복 에코 비활성화 (피드백 루프 원인 제거)
+  bool _preventEchoLoop = true; // 스피커 소리의 마이크 재유입 방지 (소프트웨어 에코 억제)
+  bool _isAiSpeaking = false;
+  DateTime? _lastAiAudioReceivedTime;
+  Timer? _statusTicker;
   bool _isDualFlipMode = true; // 양방향 분할 플립 모드 기본 활성화
 
   double _micVolume = 0.0;
@@ -86,11 +90,29 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     model: 'gemini-3.5-live-translate-preview',
   );
 
+  /// AI가 현재 번역 음성을 스피커로 재생 중인지 여부
+  bool get _isAiCurrentlySpeaking => _isAudioOutputEnabled && _isAiSpeaking;
+
   @override
   void initState() {
     super.initState();
     _loadAudioDevice();
     _initAudioPlayer();
+
+    // 100ms마다 AI 발화 상태를 점검하여, 마지막 오디오 청크 수신 후 1.2초가 지나면 마이크를 자동으로 정상 개방합니다.
+    _statusTicker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!_isAudioOutputEnabled || _lastAiAudioReceivedTime == null) {
+        if (_isAiSpeaking && mounted) {
+          setState(() => _isAiSpeaking = false);
+        }
+        return;
+      }
+      final diff = DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
+      final isSpeaking = diff < 1200;
+      if (_isAiSpeaking != isSpeaking && mounted) {
+        setState(() => _isAiSpeaking = isSpeaking);
+      }
+    });
   }
 
   Future<void> _initAudioPlayer() async {
@@ -117,6 +139,8 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     setState(() {
       _isAudioOutputEnabled = !_isAudioOutputEnabled;
       if (!_isAudioOutputEnabled) {
+        _lastAiAudioReceivedTime = null;
+        _isAiSpeaking = false;
         if (!_useFallbackAudio) {
           _audioPlayer.clear();
         } else {
@@ -128,6 +152,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
   @override
   void dispose() {
+    _statusTicker?.cancel();
     _webAudioFlushTimer?.cancel();
     _audioStreamSubscription?.cancel();
     _audioRecorder.dispose();
@@ -273,7 +298,8 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     }
 
     try {
-      final bool enableVoiceProc = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final bool enableVoiceProc =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
       final stream = await _audioRecorder.startStream(
         RecordConfig(
           encoder: AudioEncoder.pcm16bits,
@@ -293,6 +319,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         if (!_isMicActive || _session == null || !_isConnected) return;
 
         // Amplitude calculation for waveform indicator
+        var norm = 0.0;
         if (chunk.length >= 2) {
           final byteData = ByteData.sublistView(chunk);
           var peak = 0;
@@ -300,11 +327,21 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
             final sample = byteData.getInt16(i, Endian.little).abs();
             if (sample > peak) peak = sample;
           }
-          final norm = (peak / 32768.0).clamp(0.0, 1.0);
+          norm = (peak / 32768.0).clamp(0.0, 1.0);
           if (mounted) {
             setState(() {
               _micVolume = (_micVolume * 0.3) + (norm * 0.7);
             });
+          }
+        }
+
+        // 🛡️ 소프트웨어 에코 차단 (Acoustic Echo Cancellation Gate):
+        // AI가 번역된 음성을 스피커로 출력하는 동안에는 스피커 소리가 마이크로 재유입되는 것을 차단합니다.
+        // 사용자가 스피커 소리를 뚫고 명시적으로 크게 말한 경우(norm >= 0.12)는 끼어들기로 전송 허용.
+        if (_preventEchoLoop && _isAiCurrentlySpeaking) {
+          const double intentionalBargeInThreshold = 0.12;
+          if (norm < intentionalBargeInThreshold) {
+            return;
           }
         }
 
@@ -334,7 +371,12 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   }
 
   void _feedAudioChunk(String base64Data) {
-    if (!_isAudioOutputEnabled) return;
+    if (!_isAudioOutputEnabled || base64Data.isEmpty) return;
+    _lastAiAudioReceivedTime = DateTime.now();
+    if (!_isAiSpeaking && mounted) {
+      setState(() => _isAiSpeaking = true);
+    }
+
     if (!_useFallbackAudio) {
       _audioPlayer.appendBase64Chunk(base64Data);
     } else {
@@ -356,12 +398,15 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
     // Interruption Handling: immediately flush local audio buffers when interrupted
     if (message.serverContent?.interrupted == true) {
+      _lastAiAudioReceivedTime = null;
+      _isAiSpeaking = false;
       if (!_useFallbackAudio) {
         _audioPlayer.clear();
       } else {
         _webAudioFlushTimer?.cancel();
         _fallbackAudioPlayer.clear();
       }
+      if (mounted) setState(() {});
       return;
     }
 
@@ -382,31 +427,63 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       }
     }
 
-    // 2. Transcriptions
+    // 2. Transcriptions (스트리밍 시 중복 메시지 누적 방지 및 실시간 업데이트)
     final inputTranscript = message.serverContent?.inputTranscription?.text;
     if (inputTranscript != null && inputTranscript.trim().isNotEmpty) {
+      final text = inputTranscript.trim();
       setState(() {
-        _history.add(
-          LiveTranslationMessage(
+        if (_history.isNotEmpty &&
+            _history.last.isUser &&
+            _history.last.text == text) {
+          // 이미 반영된 동일 텍스트 무시
+        } else if (_history.isNotEmpty &&
+            _history.last.isUser &&
+            text.startsWith(_history.last.text)) {
+          // 스트리밍 조각 누적 업데이트
+          _history[_history.length - 1] = LiveTranslationMessage(
             isUser: true,
-            text: inputTranscript.trim(),
-            languageCode: message.serverContent?.inputTranscription?.languageCode,
-          ),
-        );
+            text: text,
+            languageCode: message.serverContent?.inputTranscription?.languageCode ?? _myLanguageCode,
+          );
+        } else {
+          _history.add(
+            LiveTranslationMessage(
+              isUser: true,
+              text: text,
+              languageCode: message.serverContent?.inputTranscription?.languageCode ?? _myLanguageCode,
+            ),
+          );
+        }
       });
       _scrollToBottom();
     }
 
     final outputTranscript = message.serverContent?.outputTranscription?.text;
     if (outputTranscript != null && outputTranscript.trim().isNotEmpty) {
+      final text = outputTranscript.trim();
       setState(() {
-        _history.add(
-          LiveTranslationMessage(
+        if (_history.isNotEmpty &&
+            !_history.last.isUser &&
+            _history.last.text == text) {
+          // 이미 반영된 동일 텍스트 무시
+        } else if (_history.isNotEmpty &&
+            !_history.last.isUser &&
+            text.startsWith(_history.last.text)) {
+          // 스트리밍 조각 누적 업데이트
+          _history[_history.length - 1] = LiveTranslationMessage(
             isUser: false,
-            text: outputTranscript.trim(),
+            text: text,
             languageCode: message.serverContent?.outputTranscription?.languageCode ?? _targetLanguageCode,
-          ),
-        );
+          );
+        } else {
+          _history.add(
+            LiveTranslationMessage(
+              isUser: false,
+              text: text,
+              languageCode: message.serverContent?.outputTranscription?.languageCode ?? _targetLanguageCode,
+            ),
+          );
+        }
       });
       _scrollToBottom();
     }
@@ -450,6 +527,19 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                 ? '번역 음성 출력 켜짐 (클릭하여 음소거)'
                 : '번역 음성 출력 꺼짐 (클릭하여 켜기)',
             onPressed: _toggleAudioOutput,
+          ),
+          // Echo Loop Prevention Toggle Button
+          IconButton(
+            icon: Icon(
+              _preventEchoLoop ? Icons.hearing_rounded : Icons.hearing_disabled_rounded,
+              color: _preventEchoLoop ? Colors.blueAccent : Colors.white54,
+            ),
+            tooltip: _preventEchoLoop
+                ? '에코 방지 켜짐 (스피커 출력 중 마이크 자동 차단으로 무한반복 방지)'
+                : '에코 방지 꺼짐 (헤드셋/이어폰 착용 시)',
+            onPressed: () {
+              setState(() => _preventEchoLoop = !_preventEchoLoop);
+            },
           ),
           // Dual Flip Mode Toggle Button
           IconButton(
@@ -710,6 +800,53 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  // Echo loop prevention pill (클릭하여 켜기/끄기)
+                  InkWell(
+                    onTap: () {
+                      setState(() => _preventEchoLoop = !_preventEchoLoop);
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _preventEchoLoop
+                            ? Colors.blue.withValues(alpha: 0.15)
+                            : Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: _preventEchoLoop
+                              ? Colors.blueAccent.withValues(alpha: 0.5)
+                              : Colors.orangeAccent.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _preventEchoLoop
+                                ? Icons.hearing_rounded
+                                : Icons.hearing_disabled_rounded,
+                            size: 14,
+                            color: _preventEchoLoop
+                                ? Colors.blueAccent
+                                : Colors.orangeAccent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _preventEchoLoop ? '에코방지 ON' : '에코방지 OFF',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: _preventEchoLoop
+                                  ? Colors.blueAccent
+                                  : Colors.orangeAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -738,20 +875,26 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
             child: SafeArea(
               child: Row(
                 children: [
-                  // Mic amplitude meter
+                  // Mic amplitude meter / AI playback indicator
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 100),
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _isMicActive
-                          ? Colors.redAccent.withValues(alpha: 0.15 + (_micVolume * 0.8))
-                          : Colors.grey.withValues(alpha: 0.1),
+                      color: _isAiCurrentlySpeaking
+                          ? Colors.amber.withValues(alpha: 0.2)
+                          : (_isMicActive
+                              ? Colors.redAccent.withValues(alpha: 0.15 + (_micVolume * 0.8))
+                              : Colors.grey.withValues(alpha: 0.1)),
                     ),
                     child: Icon(
-                      _isMicActive ? Icons.mic : Icons.mic_off,
-                      color: _isMicActive ? Colors.redAccent : Colors.grey,
+                      _isAiCurrentlySpeaking
+                          ? Icons.volume_up_rounded
+                          : (_isMicActive ? Icons.mic : Icons.mic_off),
+                      color: _isAiCurrentlySpeaking
+                          ? Colors.amber.shade800
+                          : (_isMicActive ? Colors.redAccent : Colors.grey),
                       size: 20,
                     ),
                   ),
@@ -762,23 +905,33 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                       children: [
                         Text(
                           _isConnected
-                              ? (_isMicActive ? '실시간 동시통역 중 (말씀하시면 즉시 번역됩니다)' : '마이크 일시 정지됨')
+                              ? (_isAiCurrentlySpeaking
+                                  ? '🔊 번역 음성 출력 중 (에코 방지 대기)'
+                                  : (_isMicActive
+                                      ? '실시간 동시통역 중 (말씀하시면 즉시 번역됩니다)'
+                                      : '마이크 일시 정지됨'))
                               : (_isConnecting ? 'Live Translate 서버 연결 중...' : '준비 완료 (통역 시작을 누르세요)'),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color: _isConnected ? Colors.green.shade700 : null,
+                            color: _isConnected
+                                ? (_isAiCurrentlySpeaking ? Colors.amber.shade900 : Colors.green.shade700)
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 3),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: _isMicActive ? (_micVolume * 2.5).clamp(0.0, 1.0) : 0.0,
+                            value: _isAiCurrentlySpeaking
+                                ? null
+                                : (_isMicActive ? (_micVolume * 2.5).clamp(0.0, 1.0) : 0.0),
                             minHeight: 4,
                             backgroundColor: Colors.grey.withValues(alpha: 0.15),
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              _micVolume > 0.05 ? Colors.greenAccent.shade700 : Colors.blueAccent,
+                              _isAiCurrentlySpeaking
+                                  ? Colors.amber
+                                  : (_micVolume > 0.05 ? Colors.greenAccent.shade700 : Colors.blueAccent),
                             ),
                           ),
                         ),
@@ -791,6 +944,13 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
                       onPressed: () {
                         if (_isMicActive) {
                           _stopMicStreaming();
+                          _lastAiAudioReceivedTime = null;
+                          _isAiSpeaking = false;
+                          if (!_useFallbackAudio) {
+                            _audioPlayer.clear();
+                          } else {
+                            _fallbackAudioPlayer.clear();
+                          }
                         } else {
                           _startMicStreaming();
                         }

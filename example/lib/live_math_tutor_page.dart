@@ -144,15 +144,13 @@ Core Persona & Operational Rules:
 1. Automatically detect the subject, exam type (e.g., 한국 대학수학능력시험, 일본 共通テスト, 미국 SAT/AP, 고교 내신, 대학 전공), and difficulty level directly from the problem image, text, formulas, or diagrams.
 2. Thoroughly examine exam papers, test booklets, handwritten notes, geometric figures, charts, historical sources, and code snippets provided via real-time camera or images.
 3. Leverage your Extended Thinking capabilities to step-by-step trace logic, verify calculations/grammatical rules, eliminate plausible distractors (trap choices), and prove correctness before and during your response.
-4. Never remain completely silent while thinking. Provide natural conversational fillers in the student's active language:
-   - Korean: "문제를 확인했습니다. 지문과 핵심 조건을 먼저 분석해 볼게요..."
-   - English: "I see the question. Let me first analyze the passage and key constraints..."
-   - Japanese: "問題を確認しました。設問の条件と資料を読み解いてみます..."
-   - Chinese: "已经确认题目，我先梳理题干条件与核心考点..."
+4. Speak your complete pedagogical explanation in a single, continuous, unbroken voice stream.
+   - Do NOT stop speaking after a brief filler sentence.
+   - Deliver the entire lesson from start to finish without pausing or waiting for user confirmation.
 5. Always deliver spoken explanations and structured solution notes in the student's active language (matching their speech or configured language) with an encouraging, authoritative, and pedagogical tone.
    - [CRITICAL ANSWER RULE — MANDATORY]:
      Whenever the student asks to solve a problem or shows an exam question, you MUST ALWAYS explicitly and definitively announce the FINAL ANSWER (e.g., choice number '정답은 3번입니다' or numerical result '최종 계산 결과는 42입니다') BOTH in your spoken voice response AND in the written solution notes.
-     NEVER withhold the answer. NEVER finish with only theoretical concepts, hints, or asking the student to solve it on their own without giving the answer. Announce the exact final answer prominently (right at the start or clearly declared before detailed breakdown), followed by the step-by-step pedagogical explanation.
+     NEVER withhold the answer. NEVER finish with only theoretical concepts, hints, or asking the student to solve it on their own without giving the answer. Announce the exact final answer prominently (right at the start or clearly declared before detailed breakdown), and immediately continue without interruption to provide the complete step-by-step pedagogical explanation.
 6. Format your solution notes with the following standardized markdown sections for the student's review:
 
 ### 📊 [과목 및 문제 수준 / Subject & Problem Level]
@@ -244,6 +242,21 @@ class MathSolutionRecord {
   }
 }
 
+/// A real-time conversation or system event log entry for the Live Dialog Log tab.
+class LiveTranscriptEntry {
+  final String role; // 'user' | 'model' | 'system'
+  String text;
+  final DateTime timestamp;
+  final bool isInterrupted;
+
+  LiveTranscriptEntry({
+    required this.role,
+    required this.text,
+    required this.timestamp,
+    this.isInterrupted = false,
+  });
+}
+
 /// Comprehensive multilingual translation helper for Live Math Tutor (ko, en, ja, zh).
 class _MathTutorI18n {
   final AppLanguage lang;
@@ -300,16 +313,23 @@ class _MathTutorI18n {
 
   String get tabSolutions => switch (lang) {
         AppLanguage.ko => '풀이 및 정답 노트',
-        AppLanguage.en => 'Solution & Answer Notes',
+        AppLanguage.en => 'Solution Notes',
         AppLanguage.ja => '解答・解説ノート',
         AppLanguage.zh => '题解与答案记录',
       };
 
+  String get tabTranscript => switch (lang) {
+        AppLanguage.ko => '실시간 대화 로그',
+        AppLanguage.en => 'Live Dialog Log',
+        AppLanguage.ja => '対話ログ',
+        AppLanguage.zh => '实时对话记录',
+      };
+
   String get tabThinking => switch (lang) {
-        AppLanguage.ko => 'Extended Thinking 과정',
-        AppLanguage.en => 'Extended Thinking Process',
-        AppLanguage.ja => 'Extended Thinking 思考プロセス',
-        AppLanguage.zh => 'Extended Thinking 思考过程',
+        AppLanguage.ko => 'AI 생각 과정',
+        AppLanguage.en => 'Thinking Process',
+        AppLanguage.ja => '思考プロセス',
+        AppLanguage.zh => '思考过程',
       };
 
   String get emptyTitle => switch (lang) {
@@ -547,7 +567,14 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   Uint8List? _lastProblemImage;
 
   MathCurriculumLevel _curriculumLevel = MathCurriculumLevel.auto;
-  int _activeTabIndex = 0; // 0: 풀이 노트, 1: AI 심층 생각 과정
+  int _activeTabIndex = 0; // 0: 풀이 노트, 1: 실시간 대화 로그, 2: AI 심층 생각 과정
+
+  // Real-time dialogue transcript & event history
+  final List<LiveTranscriptEntry> _liveTranscriptHistory = [];
+  final ValueNotifier<int> _transcriptUpdateNotifier = ValueNotifier(0);
+  final ScrollController _transcriptScrollController = ScrollController();
+  final ValueNotifier<double> _liveMicVolumeNotifier = ValueNotifier(0.0);
+  int _micChunkCount = 0;
 
   // Performance-optimized reactive value notifiers (zero full-tree rebuilds during streaming)
   final StringBuffer _currentTurnSolutionBuffer = StringBuffer();
@@ -562,6 +589,27 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   Timer? _solutionStreamThrottleTimer;
   Timer? _thoughtsStreamThrottleTimer;
   Timer? _interruptionNoticeTimer;
+
+  // Audio input devices and voice activity detection state
+  final List<InputDevice> _availableAudioDevices = [];
+  InputDevice? _selectedAudioDevice;
+  double _userMicVolume = 0.0;
+  DateTime _lastMicInputTime = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime? _lastAiAudioReceivedTime;
+  bool _serverVadSpeaking = false;
+
+  bool get _isAiSpeaking {
+    final isPlaying = _useFallbackAudio
+        ? _fallbackAudioPlayer.isPlaying
+        : _audioPlayer.isPlaying;
+    if (isPlaying) return true;
+    if (_lastAiAudioReceivedTime != null) {
+      final diff =
+          DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
+      if (diff < 1200) return true;
+    }
+    return false;
+  }
 
   // Stored solutions list
   final List<MathSolutionRecord> _solutionHistory = [];
@@ -602,9 +650,49 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     }
 
     await _loadHistory();
+    await _loadAudioDevices();
     await _loadCameras();
     await _startMicStream();
     await _connectSession();
+  }
+
+  Future<void> _loadAudioDevices() async {
+    try {
+      final devices = await _audioRecorder.listInputDevices();
+      if (!mounted) return;
+      _availableAudioDevices
+        ..clear()
+        ..addAll(devices);
+      if (ApiKeyStore.audioDeviceId.isNotEmpty) {
+        _selectedAudioDevice = devices
+            .where((d) => d.id == ApiKeyStore.audioDeviceId)
+            .firstOrNull;
+      } else {
+        _selectedAudioDevice = null;
+      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Failed to load audio input devices: $e');
+    }
+  }
+
+  Future<void> _switchAudioDevice(InputDevice? device) async {
+    if (_selectedAudioDevice?.id == device?.id) return;
+    setState(() {
+      _selectedAudioDevice = device;
+    });
+    await ApiKeyStore.saveAudioDevice(device?.id ?? '', device?.label ?? '');
+
+    if (_audioStreamSubscription != null) {
+      await _audioStreamSubscription?.cancel();
+      _audioStreamSubscription = null;
+      try {
+        await _audioRecorder.stop();
+      } catch (_) {}
+      if (!_isMicMuted && mounted) {
+        await _startMicStream();
+      }
+    }
   }
 
   static const _historyPrefKey = 'gemini_live_math_tutor_history';
@@ -616,7 +704,13 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       final prefs = await SharedPreferences.getInstance();
       final savedSi = prefs.getString(_systemInstructionPrefKey);
       if (savedSi != null && savedSi.trim().isNotEmpty) {
-        _customSystemInstruction = savedSi;
+        if (savedSi.contains('CRITICAL ANSWER RULE')) {
+          _customSystemInstruction = savedSi;
+        } else {
+          _customSystemInstruction = defaultMathTutorSystemInstruction;
+          await prefs.setString(
+              _systemInstructionPrefKey, defaultMathTutorSystemInstruction);
+        }
       }
       final raw = prefs.getString(_historyPrefKey);
       if (raw != null && raw.isNotEmpty) {
@@ -841,8 +935,11 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     _liveThoughtsNotifier.dispose();
     _interactionStatusNotifier.dispose();
     _thoughtsTokenNotifier.dispose();
+    _transcriptUpdateNotifier.dispose();
+    _liveMicVolumeNotifier.dispose();
     _solutionScrollController.dispose();
     _thoughtsScrollController.dispose();
+    _transcriptScrollController.dispose();
     _sheetController.dispose();
     unawaited(_audioRecorder.stop());
     unawaited(_audioRecorder.dispose());
@@ -1011,9 +1108,10 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           outputAudioTranscription: AudioTranscriptionConfig(),
           realtimeInputConfig: RealtimeInputConfig(
             automaticActivityDetection: AutomaticActivityDetection(
+              disabled: false,
               startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
               endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
-              prefixPaddingMs: 80,
+              prefixPaddingMs: 250,
               silenceDurationMs: 800,
             ),
             activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
@@ -1026,6 +1124,12 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 _isConnecting = false;
               });
               debugPrint('✅ Math Tutor Gemini Live Session Connected ($targetModel)!');
+              _liveTranscriptHistory.add(LiveTranscriptEntry(
+                role: 'system',
+                text: '✅ Gemini 3.8 Live 세션 연결 완료 ($targetModel)',
+                timestamp: DateTime.now(),
+              ));
+              _transcriptUpdateNotifier.value++;
               if (_isAutoScanEnabled) {
                 _startCameraFrameLoop();
               }
@@ -1038,6 +1142,12 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 _isConnected = false;
                 _isConnecting = false;
               });
+              _liveTranscriptHistory.add(LiveTranscriptEntry(
+                role: 'system',
+                text: '🔴 Live 세션 오류 발생: $err',
+                timestamp: DateTime.now(),
+              ));
+              _transcriptUpdateNotifier.value++;
               _showSafeSnackBar(
                 '수학 과외 세션 오류: $err',
                 icon: Icons.error_outline_rounded,
@@ -1051,6 +1161,12 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                 _isConnected = false;
                 _isConnecting = false;
               });
+              _liveTranscriptHistory.add(LiveTranscriptEntry(
+                role: 'system',
+                text: '⚪ Live 세션 연결 종료 ($code: $reason)',
+                timestamp: DateTime.now(),
+              ));
+              _transcriptUpdateNotifier.value++;
             },
           ),
         ),
@@ -1100,6 +1216,29 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
     final serverContent = message.serverContent;
 
+    // 0. Live user speech transcription feedback (User STT)
+    final userInput = serverContent?.inputTranscription?.text ??
+        serverContent?.interimInputTranscription?.text;
+    if (userInput != null && userInput.trim().isNotEmpty) {
+      final text = userInput.trim();
+      _liveSubtitleNotifier.value = '🎤 나: $text';
+
+      // Record user utterance into live transcript history
+      if (_liveTranscriptHistory.isNotEmpty &&
+          _liveTranscriptHistory.last.role == 'user' &&
+          DateTime.now().difference(_liveTranscriptHistory.last.timestamp).inSeconds < 4) {
+        _liveTranscriptHistory.last.text = text;
+      } else {
+        _liveTranscriptHistory.add(LiveTranscriptEntry(
+          role: 'user',
+          text: text,
+          timestamp: DateTime.now(),
+        ));
+      }
+      _transcriptUpdateNotifier.value++;
+      _scrollToBottom(_transcriptScrollController);
+    }
+
     // 1. Interaction status tracking (IN_PROGRESS vs IDLE)
     if (serverContent?.interactionStatus != null) {
       final newStatus = serverContent!.interactionStatus!;
@@ -1115,8 +1254,20 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       } else {
         _audioPlayer.clear();
       }
+      _lastAiAudioReceivedTime = null;
       final lang = AppLanguageController.instance.currentLanguage;
       _liveSubtitleNotifier.value = _MathTutorI18n(lang).interruptedNotice;
+
+      // Add system interruption log entry
+      _liveTranscriptHistory.add(LiveTranscriptEntry(
+        role: 'system',
+        text: '⚡ 사용자 발화 감지로 AI 해설이 일시 중단되었습니다 (Interrupted)',
+        timestamp: DateTime.now(),
+        isInterrupted: true,
+      ));
+      _transcriptUpdateNotifier.value++;
+      _scrollToBottom(_transcriptScrollController);
+
       // Auto-clear notice after 2.5s so false alarms or quick stops don't stay frozen
       _interruptionNoticeTimer?.cancel();
       _interruptionNoticeTimer = Timer(const Duration(milliseconds: 2500), () {
@@ -1129,10 +1280,25 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
     // 3. Audio stream playback
     if (message.data != null && message.data!.isNotEmpty) {
+      _lastAiAudioReceivedTime = DateTime.now();
       if (_useFallbackAudio) {
         _fallbackAudioPlayer.appendBase64Chunk(message.data!);
       } else {
         _audioPlayer.appendBase64Chunk(message.data!);
+      }
+    }
+
+    // Voice Activity Detection (VAD) from server
+    if (message.voiceActivity != null) {
+      _serverVadSpeaking = message.voiceActivity!.speechActive == true;
+    }
+    if (message.voiceActivityDetectionSignal != null) {
+      final sig = message.voiceActivityDetectionSignal!;
+      if (sig.start == true) {
+        _serverVadSpeaking = true;
+      }
+      if (sig.end == true) {
+        _serverVadSpeaking = false;
       }
     }
 
@@ -1154,6 +1320,21 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           _liveSubtitleNotifier.value = text.trim();
           _notifySolutionStream();
           _scrollToBottom(_solutionScrollController);
+
+          // Append model speech to live transcript history
+          if (_liveTranscriptHistory.isNotEmpty &&
+              _liveTranscriptHistory.last.role == 'model' &&
+              DateTime.now().difference(_liveTranscriptHistory.last.timestamp).inSeconds < 8) {
+            _liveTranscriptHistory.last.text += text;
+          } else {
+            _liveTranscriptHistory.add(LiveTranscriptEntry(
+              role: 'model',
+              text: text,
+              timestamp: DateTime.now(),
+            ));
+          }
+          _transcriptUpdateNotifier.value++;
+          _scrollToBottom(_transcriptScrollController);
         }
       }
     }
@@ -1465,39 +1646,77 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         return;
       }
 
+      final bool enableVoiceProc =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      debugPrint(
+          '🎙️ Starting tutor mic stream (sampleRate: $_audioSampleRate, device: ${_selectedAudioDevice?.label ?? "default"}, voiceProc: $enableVoiceProc)...');
+
       final stream = await _audioRecorder.startStream(
-        const RecordConfig(
+        RecordConfig(
           encoder: AudioEncoder.pcm16bits,
           sampleRate: _audioSampleRate,
           numChannels: 1,
-          autoGain: true,
-          echoCancel: true,
-          noiseSuppress: true,
+          device: _selectedAudioDevice,
+          autoGain: enableVoiceProc,
+          echoCancel: enableVoiceProc,
+          noiseSuppress: enableVoiceProc,
+          streamBufferSize: 2048,
         ),
       );
 
-      _audioStreamSubscription = stream.listen((chunk) {
-        if (_isMicMuted || _session == null || !_isConnected) return;
+      await _audioStreamSubscription?.cancel();
+      _micChunkCount = 0;
+      _audioStreamSubscription = stream.listen(
+        (chunk) {
+          if (_isMicMuted) return;
 
-        // Client-side noise gate:
-        // Calculate RMS amplitude to avoid sending silent room hiss and device speaker bleed
-        final rms = GeminiLiveAudioUtils.calculateRms(chunk);
+          // Real-time amplitude from raw PCM 16-bit audio
+          if (chunk.length >= 2) {
+            final byteData = ByteData.sublistView(chunk);
+            var peak = 0;
+            for (var i = 0; i < chunk.length - 1; i += 2) {
+              final sample = byteData.getInt16(i, Endian.little).abs();
+              if (sample > peak) peak = sample;
+            }
+            final norm = (peak / 32768.0).clamp(0.0, 1.0);
+            _userMicVolume = (_userMicVolume * 0.25) + (norm * 0.75);
+            if (_userMicVolume > 0.015) {
+              _lastMicInputTime = DateTime.now();
+            }
+          }
 
-        // When tutor is actively speaking/explaining, require higher vocal threshold (0.025)
-        // to prevent phone speaker audio from falsely interrupting the explanation.
-        // When tutor is idle/listening, allow normal speech (0.008).
-        final isTutorSpeaking =
-            _interactionStatusNotifier.value == InteractionStatus.IN_PROGRESS;
-        final gateThreshold = isTutorSpeaking ? 0.025 : 0.008;
+          // Visual level meter notifier (scaled for responsive bar UI)
+          _liveMicVolumeNotifier.value = (_userMicVolume * 2.5).clamp(0.0, 1.0);
 
-        if (rms < gateThreshold) {
-          // Drop silent/ambient noise packet
-          return;
-        }
+          // Acoustic echo & barge-in filtering:
+          // AI가 발화 중일 때 스피커 소리가 마이크로 재유입되어 말을 끊지 않도록 방지
+          if (_isAiSpeaking) {
+            const double intentionalBargeInThreshold = 0.12;
+            if (_userMicVolume < intentionalBargeInThreshold) {
+              return; // 스피커 에코 방지
+            } else {
+              debugPrint(
+                  '🗣️ Intentional student barge-in detected (vol=${_userMicVolume.toStringAsFixed(3)})');
+            }
+          }
 
-        final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
-        _session!.sendRealtimeInput(audio: blob);
-      });
+          _micChunkCount++;
+          if (_micChunkCount % 40 == 1) {
+            debugPrint(
+                '🎙️ [Tutor Mic] Chunk #$_micChunkCount, len=${chunk.length}, vol=${_userMicVolume.toStringAsFixed(3)}, connected=$_isConnected');
+          }
+
+          if (_session == null || !_isConnected) return;
+
+          final blob = Blob(mimeType: _audioMimeType, data: base64Encode(chunk));
+          _session!.sendRealtimeInput(audio: blob);
+        },
+        onError: (e) {
+          debugPrint('Microphone stream error: $e');
+        },
+        cancelOnError: false,
+      );
+      debugPrint('🎙️ Tutor mic stream listening.');
     } catch (e) {
       debugPrint('Mic stream start error: $e');
     }
@@ -1754,6 +1973,77 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           tooltip: i18n.systemInstructionTitle,
           onPressed: _showSystemInstructionDialog,
         ),
+        // Audio Input Device selector
+        PopupMenuButton<String>(
+          tooltip: _selectedAudioDevice?.label.isNotEmpty == true
+              ? _selectedAudioDevice!.label
+              : '마이크 디바이스 선택',
+          icon: Icon(
+            _selectedAudioDevice != null
+                ? Icons.mic_external_on_rounded
+                : Icons.mic_rounded,
+            color: Colors.white70,
+            size: 20,
+          ),
+          onOpened: _loadAudioDevices,
+          onSelected: (deviceId) {
+            if (deviceId == '__default__') {
+              _switchAudioDevice(null);
+            } else {
+              final dev = _availableAudioDevices
+                  .where((d) => d.id == deviceId)
+                  .firstOrNull;
+              _switchAudioDevice(dev);
+            }
+          },
+          itemBuilder: (context) {
+            return [
+              PopupMenuItem<String>(
+                value: '__default__',
+                child: Row(
+                  children: [
+                    Icon(
+                      _selectedAudioDevice == null
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 16,
+                      color: _selectedAudioDevice == null
+                          ? Colors.amberAccent
+                          : Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('기본 마이크', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+              ..._availableAudioDevices.map((dev) {
+                final isSelected = _selectedAudioDevice?.id == dev.id;
+                return PopupMenuItem<String>(
+                  value: dev.id,
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 16,
+                        color: isSelected ? Colors.amberAccent : Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          dev.label.isNotEmpty ? dev.label : dev.id,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ];
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: t.settingsTooltip,
@@ -1966,6 +2256,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           valueListenable: _liveSubtitleNotifier,
           builder: (context, subtitle, _) {
             if (subtitle.isEmpty) return const SizedBox.shrink();
+            final isUserSpeaking = subtitle.startsWith('🎤');
             return Positioned(
               left: 12,
               right: 12,
@@ -1973,24 +2264,40 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xCC0F172A),
+                  color: isUserSpeaking
+                      ? const Color(0xDD042F2E)
+                      : const Color(0xCC0F172A),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: isUserSpeaking
+                        ? Colors.cyanAccent.withValues(alpha: 0.6)
+                        : Colors.amber.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.volume_up_rounded,
-                        color: Colors.amberAccent, size: 18),
+                    Icon(
+                      isUserSpeaking
+                          ? Icons.mic_rounded
+                          : Icons.volume_up_rounded,
+                      color: isUserSpeaking
+                          ? Colors.cyanAccent
+                          : Colors.amberAccent,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isUserSpeaking
+                              ? const Color(0xFFE0F2FE)
+                              : Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight:
+                              isUserSpeaking ? FontWeight.w600 : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -2088,17 +2395,57 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                   ),
                   const SizedBox(width: 4),
 
-                  // Mic toggle
-                  IconButton(
-                    iconSize: 20,
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
-                      _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                      color: _isMicMuted ? Colors.redAccent : Colors.white70,
+                  // Mic toggle with real-time volume level meter
+                  InkWell(
+                    onTap: _toggleMic,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _isMicMuted
+                            ? Colors.red.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _isMicMuted ? Colors.redAccent : Colors.white24,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                            size: 16,
+                            color: _isMicMuted ? Colors.redAccent : Colors.cyanAccent,
+                          ),
+                          const SizedBox(width: 4),
+                          // Live volume bar meter
+                          ValueListenableBuilder<double>(
+                            valueListenable: _liveMicVolumeNotifier,
+                            builder: (context, vol, _) {
+                              return Row(
+                                children: List.generate(4, (index) {
+                                  final threshold = (index + 1) * 0.18;
+                                  final active = !_isMicMuted && vol >= threshold;
+                                  return Container(
+                                    width: 2.5,
+                                    height: 4 + (index * 2.5),
+                                    margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                                    decoration: BoxDecoration(
+                                      color: active
+                                          ? Colors.greenAccent
+                                          : Colors.white24,
+                                      borderRadius: BorderRadius.circular(1),
+                                    ),
+                                  );
+                                }),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    tooltip: 'Microphone',
-                    onPressed: _toggleMic,
                   ),
                   const SizedBox(width: 4),
 
@@ -2190,16 +2537,17 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               ),
             ),
 
-          // Tab Header (해설 노트 vs AI 심층 생각 노트)
+          // Tab Header (해설 노트 vs 실시간 대화 로그 vs AI 심층 생각 노트)
           Container(
             color: const Color(0xFF1E293B),
             child: Row(
               children: [
+                // Tab 0: Solution Notes
                 Expanded(
                   child: InkWell(
                     onTap: () => setState(() => _activeTabIndex = 0),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -2227,7 +2575,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: _activeTabIndex == 0
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -2242,15 +2590,71 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     ),
                   ),
                 ),
+
+                // Tab 1: Live Dialog & Transcript Log
                 Expanded(
                   child: InkWell(
                     onTap: () => setState(() => _activeTabIndex = 1),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
                             color: _activeTabIndex == 1
+                                ? Colors.greenAccent
+                                : Colors.transparent,
+                            width: 2.5,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.forum_rounded,
+                            size: 15,
+                            color: _activeTabIndex == 1
+                                ? Colors.greenAccent
+                                : Colors.white54,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: _transcriptUpdateNotifier,
+                              builder: (context, _, _) {
+                                return Text(
+                                  '${i18n.tabTranscript} (${_liveTranscriptHistory.length})',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: _activeTabIndex == 1
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _activeTabIndex == 1
+                                        ? Colors.greenAccent
+                                        : Colors.white70,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Tab 2: AI Extended Thinking Process
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _activeTabIndex = 2),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: _activeTabIndex == 2
                                 ? Colors.cyanAccent
                                 : Colors.transparent,
                             width: 2.5,
@@ -2263,7 +2667,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                           Icon(
                             Icons.psychology_rounded,
                             size: 15,
-                            color: _activeTabIndex == 1
+                            color: _activeTabIndex == 2
                                 ? Colors.cyanAccent
                                 : Colors.white54,
                           ),
@@ -2274,11 +2678,11 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: _activeTabIndex == 1
+                                fontSize: 11,
+                                fontWeight: _activeTabIndex == 2
                                     ? FontWeight.bold
                                     : FontWeight.normal,
-                                color: _activeTabIndex == 1
+                                color: _activeTabIndex == 2
                                     ? Colors.cyanAccent
                                     : Colors.white70,
                               ),
@@ -2289,6 +2693,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     ),
                   ),
                 ),
+
                 if (_solutionHistory.isNotEmpty)
                   IconButton(
                     iconSize: 18,
@@ -2315,9 +2720,11 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
 
           // Tab Content
           Expanded(
-            child: _activeTabIndex == 0
-                ? _buildSolutionsListTab(scrollController: scrollController)
-                : _buildThinkingScratchpadTab(scrollController: scrollController),
+            child: switch (_activeTabIndex) {
+              0 => _buildSolutionsListTab(scrollController: scrollController),
+              1 => _buildTranscriptLogTab(scrollController: scrollController),
+              _ => _buildThinkingScratchpadTab(scrollController: scrollController),
+            },
           ),
         ],
       ),
@@ -2699,6 +3106,284 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTranscriptLogTab({ScrollController? scrollController}) {
+    return Column(
+      children: [
+        // Live Audio & Mic Status Header Banner
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: const BoxDecoration(
+            color: Color(0xFF131D2E),
+            border: Border(
+              bottom: BorderSide(color: Colors.white10),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Real-time Mic level meter
+              ValueListenableBuilder<double>(
+                valueListenable: _liveMicVolumeNotifier,
+                builder: (context, vol, _) {
+                  final isActive = vol > 0.08;
+                  return Row(
+                    children: [
+                      Icon(
+                        _isMicMuted
+                            ? Icons.mic_off_rounded
+                            : (isActive ? Icons.mic_rounded : Icons.mic_none_rounded),
+                        size: 16,
+                        color: _isMicMuted
+                            ? Colors.redAccent
+                            : (isActive ? Colors.greenAccent : Colors.white54),
+                      ),
+                      const SizedBox(width: 6),
+                      // Animated 5-bar volume level indicator
+                      Row(
+                        children: List.generate(5, (index) {
+                          final barLevel = (index + 1) / 5.0;
+                          final isFilled = vol >= (barLevel * 0.6);
+                          return Container(
+                            width: 3,
+                            height: 6 + (index * 2.5),
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: isFilled
+                                  ? Colors.greenAccent
+                                  : Colors.white12,
+                              borderRadius: BorderRadius.circular(1.5),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _isConnected
+                      ? (_isAiSpeaking
+                          ? '🤖 튜터 음성 설명 중...'
+                          : (_serverVadSpeaking ||
+                                  (DateTime.now().difference(_lastMicInputTime).inMilliseconds < 450)
+                              ? '🗣️ 학생 음성 인식 중...'
+                              : '🎙️ 음성 인식 대기 중 ("이거 풀어줘")'))
+                      : '🔴 세션 연결 대기 중',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (_liveTranscriptHistory.isNotEmpty)
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _liveTranscriptHistory.clear();
+                    });
+                    _transcriptUpdateNotifier.value++;
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Text(
+                      '기록 지우기',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white38,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // Dialog list
+        Expanded(
+          child: ValueListenableBuilder<int>(
+            valueListenable: _transcriptUpdateNotifier,
+            builder: (context, _, _) {
+              if (_liveTranscriptHistory.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(28.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.forum_outlined,
+                            size: 36,
+                            color: Colors.white38,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '실시간 대화 로그가 없습니다',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          '카메라로 문제를 비추고 "이거 풀어줘"라고 말하면\n내 음성과 AI 튜터의 답변이 실시간 텍스트로 기록됩니다.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white38,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                controller: scrollController ?? _transcriptScrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                itemCount: _liveTranscriptHistory.length,
+                itemBuilder: (context, index) {
+                  final entry = _liveTranscriptHistory[index];
+                  final timeStr =
+                      '${entry.timestamp.hour.toString().padLeft(2, '0')}:${entry.timestamp.minute.toString().padLeft(2, '0')}:${entry.timestamp.second.toString().padLeft(2, '0')}';
+
+                  if (entry.role == 'system') {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: entry.isInterrupted
+                            ? const Color(0x33DC2626)
+                            : const Color(0x221E293B),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: entry.isInterrupted
+                              ? Colors.redAccent.withValues(alpha: 0.4)
+                              : Colors.white12,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.text,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: entry.isInterrupted
+                                    ? Colors.redAccent.shade100
+                                    : Colors.white60,
+                                fontWeight: entry.isInterrupted
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            timeStr,
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              color: Colors.white30,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final isUser = entry.role == 'user';
+                  return Align(
+                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.82,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: isUser
+                            ? const Color(0xFF0F3E3B)
+                            : const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(12),
+                          topRight: const Radius.circular(12),
+                          bottomLeft: isUser
+                              ? const Radius.circular(12)
+                              : const Radius.circular(2),
+                          bottomRight: isUser
+                              ? const Radius.circular(2)
+                              : const Radius.circular(12),
+                        ),
+                        border: Border.all(
+                          color: isUser
+                              ? Colors.cyanAccent.withValues(alpha: 0.3)
+                              : Colors.amber.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isUser ? Icons.person_rounded : Icons.smart_toy_rounded,
+                                size: 12,
+                                color: isUser ? Colors.cyanAccent : Colors.amberAccent,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                isUser ? '나 (학생)' : 'AI 튜터',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isUser ? Colors.cyanAccent : Colors.amberAccent,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                timeStr,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white30,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          SelectableText(
+                            entry.text,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: Colors.white,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
