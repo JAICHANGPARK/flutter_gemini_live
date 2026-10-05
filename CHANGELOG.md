@@ -4,6 +4,12 @@
 - `LiveModels.gemini35LiveTranslatePreview` (`gemini-3.5-live-translate-preview`) for speech-to-speech translation.
 - `SpeechAnnotation` model and serialization for voice synthesis metadata (js-genai 2.27.0 sync).
 - `GoogleGenAI.music` getter that exposes the Realtime Music service directly.
+- **Type-Safe Voice Personas (`GeminiLiveVoice`)**:
+  - Added enhanced enum `GeminiLiveVoice` covering Google's 30 official prebuilt voices (`puck`, `charon`, `kore`, `fenrir`, `aoede`, `leda`, `orus`, `zephyr`, etc.) with compile-time safety, tone styles, and pitch/gender metadata.
+  - Added `SpeechConfig.fromLiveVoice(GeminiLiveVoice voice, {String? languageCode})` and extended `SpeechConfig.fromVoice(Object voice)` to accept both enums and custom strings.
+  - Added `liveVoice` getter across `SpeechConfig`, `VoiceConfig`, and `PrebuiltVoiceConfig` for typed inspection and JSON round-trip deserialization.
+  - Integrated `GeminiLiveVoice` with `GeminiLiveVoiceSelectorSheet` (`.showLiveVoice`, `onLiveVoiceSelected`, `.allLiveVoices` 30-voice catalog) and `GeminiVoiceOption.fromLiveVoice`.
+  - Synchronized `GeminiLiveVoice` and `SpeechConfig.fromLiveVoice` in `package:gemini_live/compat/firebase_ai.dart`.
 - Live/music service SDK version header bumped to js-genai `2.27.0`.
 
 ### Deprecated

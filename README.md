@@ -176,7 +176,10 @@ Future<void> startVoiceChat() async {
   await controller.connect(
     LiveConnectParameters(
       model: 'gemini-3.8-live',
-      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      config: GenerationConfig(
+        responseModalities: [Modality.AUDIO],
+        speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
+      ),
       outputAudioTranscription: AudioTranscriptionConfig(),
       callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
     ),
@@ -231,7 +234,7 @@ final model = FirebaseAI.googleAI().liveGenerativeModel(
   model: 'gemini-2.5-flash-native-audio-preview-12-2025',
   liveGenerationConfig: LiveGenerationConfig(
     responseModalities: [ResponseModalities.audio],
-    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
     outputAudioTranscription: AudioTranscriptionConfig(),
   ),
 );
@@ -304,6 +307,7 @@ For deep dives and complete references, see the modular guides in the [`doc/`](d
 * **Session Resumption**: Resume dropped connections via session handles.
 * **Google Maps & Search Grounding**: Location and routing-aware responses.
 * **Voice Activity Detection**: Automatic and manual VAD.
+* **Type-Safe Voice Personas (`GeminiLiveVoice`)**: Official 30-voice Google Gemini Live and TTS roster (`puck`, `charon`, `kore`, `fenrir`, `aoede`, `leda`, `orus`, `zephyr`, etc.) with compile-time safety and tone metadata.
 * **Live Speech Translation**: Real-time speech-to-speech translation (`TranslationConfig`).
 * **Pre-built Flutter Widgets & Controller**: `GeminiLiveSessionController`, `GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveUsageBadge`, `GeminiLiveVoiceIndicator`.
 * **Live Music (Lyria Realtime)**: Steerable real-time music generation via `genAI.live.music`.

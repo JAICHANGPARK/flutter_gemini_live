@@ -173,7 +173,10 @@ Future<void> startVoiceChat() async {
   await controller.connect(
     LiveConnectParameters(
       model: 'gemini-3.8-live',
-      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      config: GenerationConfig(
+        responseModalities: [Modality.AUDIO],
+        speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
+      ),
       outputAudioTranscription: AudioTranscriptionConfig(),
       callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
     ),
@@ -228,7 +231,7 @@ final model = FirebaseAI.googleAI().liveGenerativeModel(
   model: 'gemini-2.5-flash-native-audio-preview-12-2025',
   liveGenerationConfig: LiveGenerationConfig(
     responseModalities: [ResponseModalities.audio],
-    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
     outputAudioTranscription: AudioTranscriptionConfig(),
   ),
 );
@@ -301,6 +304,7 @@ API の対応表、動作の違い、1 つのアプリで両パッケージを�
 * **セッション再開**: 切断された接続をセッションハンドルで復元。
 * **Google Maps & 検索グラウンディング**: 位置やルートを認識した応答。
 * **音声アクティビティ検出 (VAD)**: 自動および手動 VAD。
+* **タイプ安全なボイスペルソナ (`GeminiLiveVoice`)**: 公式 30 種の Google Gemini Live / TTS 音声ロスター（`puck`, `charon`, `kore`, `fenrir`, `aoede`, `leda`, `orus`, `zephyr` など）およびトーンメタデータ対応。
 * **組み込み Flutter ウィジェット & コントローラー**: `GeminiLiveSessionController`, `GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveUsageBadge`, `GeminiLiveVoiceIndicator`。
 * **リアルタイム音声翻訳**: Speech-to-Speech のリアルタイム翻訳 (`TranslationConfig`)。
 * **Live Music (Lyria Realtime)**: `genAI.live.music` によるリアルタイム音楽生成と調整。

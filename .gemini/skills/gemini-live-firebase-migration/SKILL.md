@@ -124,7 +124,7 @@ grep -rnE "thinkingConfig|enableAffectiveDialog|proactivity|ProactivityConfig|tr
 | **Speech translation** | `TranslationConfig`, `gemini-3.5-live-translate-preview` | None | Not migratable. Keep this feature on gemini_live, or prompt a regular Live model to translate (lower quality, no translate model). |
 | **Explicit VAD signals** | `explicitVadSignal`, `VoiceActivityDetectionSignal`, `VoiceActivity` messages | None | Remove; derive "user speaking" from your own mic level or use `sendStart/StopActivityRealtime` with manual VAD. |
 | **Transcription options** | `AudioTranscriptionConfig(languageCodes:, customVocabulary:, languageHints:, mode:)` | `AudioTranscriptionConfig()` has no options | Drop the options; transcription stays on with defaults. Custom vocabulary is lost. |
-| **Custom / cloned voices** | `VoiceConfig.fromVoiceId`, `replicatedVoiceConfig`, `promptedVoiceConfig`, `GeminiVoicesService` | `SpeechConfig(voiceName:)` prebuilt voices only | Pick the closest prebuilt voice. Voice management APIs are lost. |
+| **Custom / cloned voices** | `VoiceConfig.fromVoiceId`, `replicatedVoiceConfig`, `promptedVoiceConfig`, `GeminiVoicesService` | `SpeechConfig(voiceName:)` / `SpeechConfig.fromLiveVoice(GeminiLiveVoice)` prebuilt voices only | Pick the closest prebuilt voice (`GeminiLiveVoice.puck`, etc.). Voice management APIs are lost. |
 | **Async (non-blocking) tools** | `FunctionDeclaration(behavior: Behavior.NON_BLOCKING)`, `FunctionResponse(scheduling:, willContinue:)` | None; tool calls block the turn | Make tools fast or return a placeholder result; scheduling semantics are lost. |
 | **Streamed function args** | `FunctionCall.partialArgs` | None | Wait for the complete `FunctionCall.args`. |
 | **Extra tools / tool options** | `computerUse`, `mcpServers`, `fileSearch`, `enterpriseWebSearch`, Exa / Parallel search, `GoogleSearch(excludeDomains:, timeRangeFilter:)`, `GoogleMaps(groundingTypes:)` | Plain `googleSearch()` / `googleMaps()` / `urlContext()` / `codeExecution()` | Drop options; replace other tools with your own function declarations. |
@@ -152,7 +152,7 @@ Use this when code written with `GoogleGenAI` / `genAI.live.connect` should beco
 | Core API (`package:gemini_live/gemini_live.dart`) | Compat API (`package:gemini_live/compat/firebase_ai.dart`) |
 | :--- | :--- |
 | `GoogleGenAI(apiKey: k).live.connect(LiveConnectParameters(model: m, ...))` | `FirebaseAI.googleAI(apiKey: k).liveGenerativeModel(model: m, ...).connect()` |
-| `config: GenerationConfig(responseModalities: [Modality.AUDIO], speechConfig: SpeechConfig.fromVoice('Puck'))` | `liveGenerationConfig: LiveGenerationConfig(responseModalities: [ResponseModalities.audio], speechConfig: SpeechConfig(voiceName: 'Puck'))` |
+| `config: GenerationConfig(responseModalities: [Modality.AUDIO], speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck))` | `liveGenerationConfig: LiveGenerationConfig(responseModalities: [ResponseModalities.audio], speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck))` |
 | `inputAudioTranscription: AudioTranscriptionConfig()` (parameter) | `LiveGenerationConfig(inputAudioTranscription: AudioTranscriptionConfig())` |
 | `realtimeInputConfig`, `contextWindowCompression` (parameters) | Same names inside `LiveGenerationConfig` |
 | `sessionResumption: SessionResumptionConfig(handle: h)` | `connect(sessionResumption: SessionResumptionConfig.resume(h))` |

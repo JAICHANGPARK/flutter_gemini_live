@@ -159,8 +159,29 @@ For apps built with `CupertinoApp` or seeking Apple Human Interface Guidelines s
 | :--- | :--- | :--- |
 | **Barge-In Banner** | `GeminiLiveBargeInBanner` | Slides & fades in when user interrupts the model (`isInterrupted: controller.isInterrupted`). Reassures the user that AI is listening. |
 | **Call Control Bar** | `GeminiLiveControlBar` | All-in-one floating call pill with Mic Mute, Video Toggle, Camera Flip, and Hang Up End Call buttons. |
-| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.show(context, currentVoice:)`) for switching official voices (Puck, Charon, Kore, Fenrir, Aoede, etc.) with tone tags. |
+| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.showLiveVoice(context, currentVoice:)` or `.show(...)`) for selecting official voices with `GeminiLiveVoice` enum, tone pill badges, and pitch profile tags. Supports all 30 voices catalog via `.allLiveVoices`. |
 | **Vision Overlay** | `GeminiLiveVisionOverlay` | Wraps any camera preview with Project Astra style radar scanlines, corner HUD target reticles, and in-flight analysis indicator. |
+
+#### Voice Selector (`GeminiLiveVoiceSelectorSheet`) Usage
+
+```dart
+// 1. Strongly typed enum modal bottom sheet
+final selectedVoice = await GeminiLiveVoiceSelectorSheet.showLiveVoice(
+  context,
+  currentVoice: currentVoiceEnum, // e.g., GeminiLiveVoice.puck
+  voices: GeminiLiveVoiceSelectorSheet.allLiveVoices, // All 30 voices (optional, defaults to 8 core voices)
+);
+if (selectedVoice != null) {
+  setState(() => currentVoiceEnum = selectedVoice);
+}
+
+// 2. Direct widget embedding with onLiveVoiceSelected callback
+GeminiLiveVoiceSelectorSheet(
+  currentVoice: currentVoiceEnum.voiceName,
+  onVoiceSelected: (name) => print('Selected voice: $name'),
+  onLiveVoiceSelected: (voice) => print('Selected enum: ${voice.voiceName} (${voice.tone})'),
+)
+```
 
 ### `GeminiLiveAudioUtils` and `addWavHeader`
 

@@ -333,5 +333,99 @@ void main() {
       expect(genAI.live, isA<LiveService>());
       genAI.close();
     });
+
+    test('GeminiLiveVoice enum properties and lookup', () {
+      expect(GeminiLiveVoice.values.length, 30);
+
+      // Verify popular voices
+      expect(GeminiLiveVoice.puck.voiceName, 'Puck');
+      expect(GeminiLiveVoice.charon.voiceName, 'Charon');
+      expect(GeminiLiveVoice.kore.voiceName, 'Kore');
+      expect(GeminiLiveVoice.fenrir.voiceName, 'Fenrir');
+      expect(GeminiLiveVoice.aoede.voiceName, 'Aoede');
+      expect(GeminiLiveVoice.leda.voiceName, 'Leda');
+      expect(GeminiLiveVoice.orus.voiceName, 'Orus');
+      expect(GeminiLiveVoice.zephyr.voiceName, 'Zephyr');
+
+      // Verify tones & genders exist
+      for (final voice in GeminiLiveVoice.values) {
+        expect(voice.voiceName.isNotEmpty, isTrue);
+        expect(voice.tone.isNotEmpty, isTrue);
+        expect(voice.gender.isNotEmpty, isTrue);
+        expect(voice.toJson(), voice.voiceName);
+      }
+
+      // Case-insensitive lookup
+      expect(GeminiLiveVoice.fromName('Puck'), GeminiLiveVoice.puck);
+      expect(GeminiLiveVoice.fromName('puck'), GeminiLiveVoice.puck);
+      expect(GeminiLiveVoice.fromName('PUCK'), GeminiLiveVoice.puck);
+      expect(GeminiLiveVoice.fromName(' Charon '), GeminiLiveVoice.charon);
+      expect(GeminiLiveVoice.fromString('sulafat'), GeminiLiveVoice.sulafat);
+      expect(GeminiLiveVoice.fromName('unknown_voice'), isNull);
+      expect(GeminiLiveVoice.fromName(null), isNull);
+      expect(GeminiLiveVoice.fromName(''), isNull);
+    });
+
+    test('GeminiLiveVoice SpeechConfig and VoiceConfig helpers', () {
+      // 1. toSpeechConfig
+      final speech1 = GeminiLiveVoice.puck.toSpeechConfig(languageCode: 'ko-KR');
+      expect(speech1.voice, 'Puck');
+      expect(speech1.languageCode, 'ko-KR');
+      expect(speech1.liveVoice, GeminiLiveVoice.puck);
+      expect(speech1.voiceConfig?.prebuiltVoiceConfig?.voiceName, 'Puck');
+      expect(speech1.voiceConfig?.liveVoice, GeminiLiveVoice.puck);
+
+      // 2. SpeechConfig.fromLiveVoice
+      final speech2 = SpeechConfig.fromLiveVoice(GeminiLiveVoice.charon);
+      expect(speech2.voice, 'Charon');
+      expect(speech2.liveVoice, GeminiLiveVoice.charon);
+
+      // 3. SpeechConfig.fromVoice with Enum
+      final speech3 = SpeechConfig.fromVoice(GeminiLiveVoice.kore);
+      expect(speech3.voice, 'Kore');
+      expect(speech3.liveVoice, GeminiLiveVoice.kore);
+
+      // 4. SpeechConfig.fromVoice with String
+      final speech4 = SpeechConfig.fromVoice('Fenrir');
+      expect(speech4.voice, 'Fenrir');
+      expect(speech4.liveVoice, GeminiLiveVoice.fenrir);
+
+      // 5. SpeechConfig with custom voice ID
+      final speech5 = SpeechConfig.fromVoice('voice_custom_abc123');
+      expect(speech5.voice, 'voice_custom_abc123');
+      expect(speech5.liveVoice, isNull);
+
+      // 6. VoiceConfig & PrebuiltVoiceConfig helpers
+      final voiceConfig = GeminiLiveVoice.aoede.toVoiceConfig();
+      expect(voiceConfig.voice, 'Aoede');
+      expect(voiceConfig.liveVoice, GeminiLiveVoice.aoede);
+
+      final prebuiltConfig = GeminiLiveVoice.leda.toPrebuiltVoiceConfig();
+      expect(prebuiltConfig.voiceName, 'Leda');
+      expect(prebuiltConfig.liveVoice, GeminiLiveVoice.leda);
+
+      // 7. VoiceConfig.fromLiveVoice & PrebuiltVoiceConfig.fromLiveVoice
+      final voiceConfig2 = VoiceConfig.fromLiveVoice(GeminiLiveVoice.orus);
+      expect(voiceConfig2.liveVoice, GeminiLiveVoice.orus);
+
+      final prebuiltConfig2 = PrebuiltVoiceConfig.fromLiveVoice(GeminiLiveVoice.zephyr);
+      expect(prebuiltConfig2.liveVoice, GeminiLiveVoice.zephyr);
+
+      // 8. JSON Deserialization keeps liveVoice getter intact
+      final json = speech1.toJson();
+      final deserialized = SpeechConfig.fromJson(json);
+      expect(deserialized.liveVoice, GeminiLiveVoice.puck);
+    });
+
+    test('GeminiLiveVoiceSelectorSheet allLiveVoices and GeminiVoiceOption', () {
+      expect(GeminiLiveVoiceSelectorSheet.defaultLiveVoices.length, 8);
+      expect(GeminiLiveVoiceSelectorSheet.allLiveVoices.length, 30);
+
+      final option = GeminiVoiceOption.fromLiveVoice(GeminiLiveVoice.puck);
+      expect(option.name, 'Puck');
+      expect(option.liveVoice, GeminiLiveVoice.puck);
+      expect(option.tone, GeminiLiveVoice.puck.tone);
+      expect(option.gender, GeminiLiveVoice.puck.gender);
+    });
   });
 }

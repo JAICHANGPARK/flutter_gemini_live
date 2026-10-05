@@ -173,7 +173,10 @@ Future<void> startVoiceChat() async {
   await controller.connect(
     LiveConnectParameters(
       model: 'gemini-3.8-live',
-      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      config: GenerationConfig(
+        responseModalities: [Modality.AUDIO],
+        speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
+      ),
       outputAudioTranscription: AudioTranscriptionConfig(),
       callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
     ),
@@ -228,7 +231,7 @@ final model = FirebaseAI.googleAI().liveGenerativeModel(
   model: 'gemini-2.5-flash-native-audio-preview-12-2025',
   liveGenerationConfig: LiveGenerationConfig(
     responseModalities: [ResponseModalities.audio],
-    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
     outputAudioTranscription: AudioTranscriptionConfig(),
   ),
 );
@@ -301,6 +304,7 @@ Live API만 지원합니다. `vertexAI()`, `generativeModel` 같은 Live 외 API
 * **세션 재개 (Session Resumption)**: 끊긴 연결을 세션 핸들로 간편하게 복구.
 * **Google Maps & Search 그라운딩**: 위치 및 경로 감지 답변 생성.
 * **음성 활동 감지 (VAD)**: 자동 및 수동 VAD 지원.
+* **타입 안전한 보이스 페르소나 (`GeminiLiveVoice`)**: 공식 30종 Google Gemini Live / TTS 음성 로스터(`puck`, `charon`, `kore`, `fenrir`, `aoede`, `leda`, `orus`, `zephyr` 등) 및 톤 메타데이터 지원.
 * **실시간 음성 번역**: Speech-to-Speech 실시간 번역 (`TranslationConfig`).
 * **내장 Flutter 위젯 & 컨트롤러**: `GeminiLiveSessionController`, `GeminiLiveWaveform`, `GeminiLiveCaptionBubble`, `GeminiLiveMicButton`, `GeminiLiveStatusBadge`, `GeminiLiveUsageBadge`, `GeminiLiveVoiceIndicator`.
 * **Live Music (Lyria Realtime)**: `genAI.live.music`로 실시간 음악 생성 및 조정.

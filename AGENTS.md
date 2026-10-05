@@ -80,6 +80,12 @@ A dedicated Agent Skill specification conforming to the open [agents.md](https:/
 - Agent Skills Standard: [`.agents/skills/flutter-gemini-live/SKILL.md`](.agents/skills/flutter-gemini-live/SKILL.md)
 
 ### Additional Specialized Skills
+- **Audio & Voice Chat**: [`skills/gemini-live-audio/SKILL.md`](skills/gemini-live-audio/SKILL.md) (16kHz mic, 24kHz speaker, SoLoud/record, barge-in, VAD, GeminiLiveVoice)
+- **Computer Vision**: [`skills/gemini-live-vision/SKILL.md`](skills/gemini-live-vision/SKILL.md) (1-2 FPS camera streaming, GeminiLiveVisionOverlay HUD)
+- **Function Calling & Tools**: [`skills/gemini-live-tools/SKILL.md`](skills/gemini-live-tools/SKILL.md) (Tools, Behavior.NON_BLOCKING, partialArgs, Google Maps/Search grounding)
+- **Realtime Music (Lyria)**: [`skills/gemini-live-music/SKILL.md`](skills/gemini-live-music/SKILL.md) (Lyria Realtime, 48kHz stereo, weighted prompts, BPM/Scale)
+- **Session Resumption & Auth**: [`skills/gemini-live-session-auth/SKILL.md`](skills/gemini-live-session-auth/SKILL.md) (Ephemeral tokens, SessionResumptionConfig, backoff)
+- **Live Translation**: [`skills/gemini-live-translate/SKILL.md`](skills/gemini-live-translate/SKILL.md) (gemini-3.5-live-translate-preview, TranslationConfig, face-to-face UI)
 - **UI Widgets**: [`skills/gemini-live-widgets/SKILL.md`](skills/gemini-live-widgets/SKILL.md) (parameters, wiring, visualizers)
 - **Firebase Migration**: [`skills/gemini-live-firebase-migration/SKILL.md`](skills/gemini-live-firebase-migration/SKILL.md) (1:1 translation between `firebase_ai` and `gemini_live`)
 - **Reference Guide**: [`doc/firebase_ai_compat.md`](doc/firebase_ai_compat.md)

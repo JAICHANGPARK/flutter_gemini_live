@@ -1050,12 +1050,162 @@ class DeleteVoiceResponse {
   Map<String, dynamic> toJson() => _$DeleteVoiceResponseToJson(this);
 }
 
+/// Standard prebuilt voice personas available in Google Gemini Live and Text-to-Speech (TTS).
+///
+/// Provides type-safe access to Google's official 30 voice personas, eliminating
+/// string typos and providing descriptive tonal metadata for each persona.
+enum GeminiLiveVoice {
+  /// Upbeat, playful, and lively voice (Default for many Gemini Live experiences).
+  puck('Puck', tone: 'Upbeat, playful, and lively', gender: 'Neutral / Expressive'),
+
+  /// Deep, calm, and informative resonant voice.
+  charon('Charon', tone: 'Deep, calm, and resonant', gender: 'Male / Deep'),
+
+  /// Warm, soothing, and empathetic voice.
+  kore('Kore', tone: 'Warm, soothing, and empathetic', gender: 'Female / Warm'),
+
+  /// Authoritative, excitable, clear, and confident voice.
+  fenrir('Fenrir', tone: 'Authoritative, clear, and confident', gender: 'Male / Strong'),
+
+  /// Melodic, breezy, gentle, and thoughtful voice.
+  aoede('Aoede', tone: 'Melodic, gentle, and thoughtful', gender: 'Female / Calm'),
+
+  /// Youthful, bright, energetic, and articulate voice.
+  leda('Leda', tone: 'Bright, energetic, and articulate', gender: 'Female / Bright'),
+
+  /// Steady, firm, direct, and composed voice.
+  orus('Orus', tone: 'Steady, direct, and composed', gender: 'Male / Neutral'),
+
+  /// Crisp, modern, bright, and friendly voice.
+  zephyr('Zephyr', tone: 'Crisp, modern, and friendly', gender: 'Neutral / Crisp'),
+
+  /// Easy-going and relaxed warm voice.
+  callirrhoe('Callirrhoe', tone: 'Easy-going and gentle', gender: 'Female / Warm'),
+
+  /// Bright and radiant voice.
+  autonoe('Autonoe', tone: 'Bright and energetic', gender: 'Female / Bright'),
+
+  /// Breathy and soft gentle voice.
+  enceladus('Enceladus', tone: 'Breathy and soft', gender: 'Neutral / Soft'),
+
+  /// Clear, articulate, and distinct voice.
+  iapetus('Iapetus', tone: 'Clear and distinct', gender: 'Male / Clear'),
+
+  /// Easy-going and composed voice.
+  umbriel('Umbriel', tone: 'Easy-going and calm', gender: 'Neutral / Calm'),
+
+  /// Smooth and balanced voice.
+  algieba('Algieba', tone: 'Smooth and balanced', gender: 'Neutral / Smooth'),
+
+  /// Smooth, natural, and gentle voice.
+  despina('Despina', tone: 'Smooth and natural', gender: 'Female / Smooth'),
+
+  /// Clear and crisp voice.
+  erinome('Erinome', tone: 'Clear and bright', gender: 'Female / Clear'),
+
+  /// Gravelly, deep, and textured voice.
+  algenib('Algenib', tone: 'Gravelly and deep', gender: 'Male / Textured'),
+
+  /// Informative, scholarly, and measured voice.
+  rasalgethi('Rasalgethi', tone: 'Informative and measured', gender: 'Male / Informative'),
+
+  /// Upbeat, vibrant, and optimistic voice.
+  laomedeia('Laomedeia', tone: 'Upbeat and vibrant', gender: 'Female / Upbeat'),
+
+  /// Soft, quiet, and delicate voice.
+  achernar('Achernar', tone: 'Soft and quiet', gender: 'Female / Soft'),
+
+  /// Firm, deliberate, and dependable voice.
+  alnilam('Alnilam', tone: 'Firm and deliberate', gender: 'Male / Firm'),
+
+  /// Even, measured, and steady voice.
+  schedar('Schedar', tone: 'Even and steady', gender: 'Neutral / Even'),
+
+  /// Mature, grounded, and experienced voice.
+  gacrux('Gacrux', tone: 'Mature and grounded', gender: 'Male / Mature'),
+
+  /// Forward, vivid, and confident voice.
+  pulcherrima('Pulcherrima', tone: 'Forward and vivid', gender: 'Female / Forward'),
+
+  /// Friendly, approachable, and warm voice.
+  achird('Achird', tone: 'Friendly and warm', gender: 'Neutral / Friendly'),
+
+  /// Casual, conversational, and relaxed voice.
+  zubenelgenubi('Zubenelgenubi', tone: 'Casual and relaxed', gender: 'Male / Casual'),
+
+  /// Gentle, sweet, and comforting voice.
+  vindemiatrix('Vindemiatrix', tone: 'Gentle and kind', gender: 'Female / Gentle'),
+
+  /// Lively, spirited, and active voice.
+  sadachbia('Sadachbia', tone: 'Lively and active', gender: 'Neutral / Lively'),
+
+  /// Knowledgeable, articulate, and professional voice.
+  sadaltager('Sadaltager', tone: 'Knowledgeable and scholarly', gender: 'Male / Knowledgeable'),
+
+  /// Warm, comforting, and resonant voice.
+  sulafat('Sulafat', tone: 'Warm and resonant', gender: 'Female / Warm');
+
+  /// The official name string sent to Google Gemini API (e.g. "Puck", "Charon").
+  final String voiceName;
+
+  /// The characteristic tonal style and persona description.
+  final String tone;
+
+  /// The perceived vocal pitch or gender profile.
+  final String gender;
+
+  const GeminiLiveVoice(
+    this.voiceName, {
+    required this.tone,
+    required this.gender,
+  });
+
+  /// Convenience method to create a [SpeechConfig] directly from this voice.
+  SpeechConfig toSpeechConfig({String? languageCode}) =>
+      SpeechConfig.fromVoice(voiceName, languageCode: languageCode);
+
+  /// Convenience method to create a [VoiceConfig] directly from this voice.
+  VoiceConfig toVoiceConfig() => VoiceConfig.fromVoiceName(voiceName);
+
+  /// Convenience method to create a [PrebuiltVoiceConfig] directly from this voice.
+  PrebuiltVoiceConfig toPrebuiltVoiceConfig() =>
+      PrebuiltVoiceConfig(voiceName: voiceName);
+
+  /// Case-insensitive lookup from string voice name or enum identifier.
+  ///
+  /// Returns null if no matching prebuilt voice is found.
+  static GeminiLiveVoice? fromName(String? name) {
+    if (name == null || name.isEmpty) return null;
+    final normalized = name.trim().toLowerCase();
+    for (final voice in GeminiLiveVoice.values) {
+      if (voice.voiceName.toLowerCase() == normalized ||
+          voice.name.toLowerCase() == normalized) {
+        return voice;
+      }
+    }
+    return null;
+  }
+
+  /// Alias for [fromName].
+  static GeminiLiveVoice? fromString(String? name) => fromName(name);
+
+  /// Serializes to the standard voice name string.
+  String toJson() => voiceName;
+}
+
 /// A prebuilt voice selection for synthesized audio output.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class PrebuiltVoiceConfig {
   final String? voiceName;
 
   PrebuiltVoiceConfig({this.voiceName});
+
+  /// Convenience constructor to create a [PrebuiltVoiceConfig] with a [GeminiLiveVoice] enum.
+  factory PrebuiltVoiceConfig.fromLiveVoice(GeminiLiveVoice voice) =>
+      PrebuiltVoiceConfig(voiceName: voice.voiceName);
+
+  /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
+  GeminiLiveVoice? get liveVoice => GeminiLiveVoice.fromName(voiceName);
 
   factory PrebuiltVoiceConfig.fromJson(Map<String, dynamic> json) =>
       _$PrebuiltVoiceConfigFromJson(json);
@@ -1087,9 +1237,17 @@ class VoiceConfig {
   factory VoiceConfig.fromVoiceName(String voiceName) =>
       VoiceConfig(prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: voiceName), voice: voiceName);
 
+  /// Convenience constructor to create a [VoiceConfig] with a [GeminiLiveVoice] enum.
+  factory VoiceConfig.fromLiveVoice(GeminiLiveVoice voice) =>
+      VoiceConfig.fromVoiceName(voice.voiceName);
+
   /// Convenience constructor to create a [VoiceConfig] with a custom voice ID or key.
   factory VoiceConfig.fromVoiceId(String voiceId) =>
       VoiceConfig(voice: voiceId);
+
+  /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
+  GeminiLiveVoice? get liveVoice =>
+      GeminiLiveVoice.fromName(voice ?? prebuiltVoiceConfig?.voiceName);
 
   factory VoiceConfig.fromJson(Map<String, dynamic> json) =>
       _$VoiceConfigFromJson(json);
@@ -1181,13 +1339,25 @@ class SpeechConfig {
     this.voice,
   });
 
-  /// Convenience constructor for single-voice configuration with a given voice name or ID.
-  factory SpeechConfig.fromVoice(String voiceNameOrId, {String? languageCode}) =>
-      SpeechConfig(
-        voiceConfig: VoiceConfig.fromVoiceName(voiceNameOrId),
-        voice: voiceNameOrId,
-        languageCode: languageCode,
-      );
+  /// Convenience constructor for single-voice configuration with a given voice name, custom voice ID, or [GeminiLiveVoice].
+  factory SpeechConfig.fromVoice(Object voiceNameOrId, {String? languageCode}) {
+    final name = voiceNameOrId is GeminiLiveVoice
+        ? voiceNameOrId.voiceName
+        : voiceNameOrId.toString();
+    return SpeechConfig(
+      voiceConfig: VoiceConfig.fromVoiceName(name),
+      voice: name,
+      languageCode: languageCode,
+    );
+  }
+
+  /// Convenience constructor for single-voice configuration using a [GeminiLiveVoice] enum.
+  factory SpeechConfig.fromLiveVoice(GeminiLiveVoice voice, {String? languageCode}) =>
+      SpeechConfig.fromVoice(voice.voiceName, languageCode: languageCode);
+
+  /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
+  GeminiLiveVoice? get liveVoice =>
+      GeminiLiveVoice.fromName(voice ?? voiceConfig?.prebuiltVoiceConfig?.voiceName);
 
   factory SpeechConfig.fromJson(Map<String, dynamic> json) =>
       _$SpeechConfigFromJson(json);

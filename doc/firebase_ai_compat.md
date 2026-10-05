@@ -58,7 +58,7 @@ Two edits. Everything from `FirebaseAI.googleAI()` onward stays the same.
       model: 'gemini-2.5-flash-native-audio-preview-12-2025',
       liveGenerationConfig: LiveGenerationConfig(
         responseModalities: [ResponseModalities.audio],
-        speechConfig: SpeechConfig(voiceName: 'Puck'),
+        speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck), // or SpeechConfig(voiceName: 'Puck')
       ),
     );
     final session = await model.connect();

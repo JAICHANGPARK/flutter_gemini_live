@@ -16,7 +16,17 @@
 set -euo pipefail
 
 REPO_RAW="https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/main"
-SKILLS=("flutter-gemini-live" "gemini-live-widgets" "gemini-live-firebase-migration")
+SKILLS=(
+  "flutter-gemini-live"
+  "gemini-live-widgets"
+  "gemini-live-firebase-migration"
+  "gemini-live-audio"
+  "gemini-live-vision"
+  "gemini-live-tools"
+  "gemini-live-music"
+  "gemini-live-session-auth"
+  "gemini-live-translate"
+)
 KNOWN_AGENTS=("agents" "claude" "gemini" "codex" "hermes" "pi")
 
 # Determine script location if running locally

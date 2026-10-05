@@ -370,5 +370,20 @@ void main() {
       expect(() => session.sendTextRealtime('x'),
           throwsA(isA<Exception>()));
     });
+
+    test('SpeechConfig supports GeminiLiveVoice in compat layer', () {
+      final speech1 = SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck, languageCode: 'ko-KR');
+      expect(speech1.voiceName, 'Puck');
+      expect(speech1.languageCode, 'ko-KR');
+      expect(speech1.liveVoice, GeminiLiveVoice.puck);
+
+      final speech2 = SpeechConfig.fromVoice(GeminiLiveVoice.charon);
+      expect(speech2.voiceName, 'Charon');
+      expect(speech2.liveVoice, GeminiLiveVoice.charon);
+
+      final speech3 = SpeechConfig.fromVoice('Kore');
+      expect(speech3.voiceName, 'Kore');
+      expect(speech3.liveVoice, GeminiLiveVoice.kore);
+    });
   });
 }

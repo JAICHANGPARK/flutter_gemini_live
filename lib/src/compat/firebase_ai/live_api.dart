@@ -2,6 +2,7 @@
 // Copyright Google LLC) so that code can move between the two packages by
 // swapping imports.
 
+import '../../model/models.dart' show GeminiLiveVoice;
 import 'content.dart';
 
 // ============================================================================
@@ -66,6 +67,17 @@ class SpeechConfig {
   SpeechConfig({this.voiceName, this.languageCode})
       : multiSpeakerVoiceConfig = null;
 
+  /// Creates a [SpeechConfig] instance from a [GeminiLiveVoice] enum.
+  SpeechConfig.fromLiveVoice(GeminiLiveVoice voice, {this.languageCode})
+      : voiceName = voice.voiceName,
+        multiSpeakerVoiceConfig = null;
+
+  /// Creates a [SpeechConfig] instance from a voice name, custom voice ID, or [GeminiLiveVoice].
+  factory SpeechConfig.fromVoice(Object voice, {String? languageCode}) {
+    final name = voice is GeminiLiveVoice ? voice.voiceName : voice.toString();
+    return SpeechConfig(voiceName: name, languageCode: languageCode);
+  }
+
   /// Creates a [SpeechConfig] instance for multiple speakers.
   SpeechConfig.multiSpeaker(
       {required this.multiSpeakerVoiceConfig, this.languageCode})
@@ -79,6 +91,9 @@ class SpeechConfig {
 
   /// The language code (BCP-47) of the speech output.
   final String? languageCode;
+
+  /// Returns the corresponding [GeminiLiveVoice] enum if matched.
+  GeminiLiveVoice? get liveVoice => GeminiLiveVoice.fromName(voiceName);
 }
 
 /// The configuration for the multi-speaker setup.

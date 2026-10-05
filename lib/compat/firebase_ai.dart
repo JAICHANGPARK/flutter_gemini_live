@@ -86,3 +86,4 @@ export '../src/compat/firebase_ai/tool.dart'
         Tool,
         UrlContext;
 export '../src/utils/token_usage_tracker.dart' show GeminiTokenUsageTracker;
+export '../src/model/models.dart' show GeminiLiveVoice;

@@ -174,7 +174,10 @@ Future<void> startVoiceChat() async {
   await controller.connect(
     LiveConnectParameters(
       model: 'gemini-3.8-live',
-      config: GenerationConfig(responseModalities: [Modality.AUDIO]),
+      config: GenerationConfig(
+        responseModalities: [Modality.AUDIO],
+        speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
+      ),
       outputAudioTranscription: AudioTranscriptionConfig(),
       callbacks: LiveCallbacks(onError: (e, st) => debugPrint('Live error: $e')),
     ),
@@ -229,7 +232,7 @@ final model = FirebaseAI.googleAI().liveGenerativeModel(
   model: 'gemini-2.5-flash-native-audio-preview-12-2025',
   liveGenerationConfig: LiveGenerationConfig(
     responseModalities: [ResponseModalities.audio],
-    speechConfig: SpeechConfig(voiceName: 'Puck'),
+    speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
     outputAudioTranscription: AudioTranscriptionConfig(),
   ),
 );
@@ -302,6 +305,7 @@ print(session.tokenTracker.formatCost());
 * **会话恢复**：通过会话句柄无缝恢复断开的连接。
 * **Google Maps 与搜索接地**：位置与路线感知的智能接地响应。
 * **语音活动检测 (VAD)**：支持自动与手动 VAD。
+* **类型安全语音人设 (`GeminiLiveVoice`)**：官方 30 种 Google Gemini Live 与 TTS 语音阵容（`puck`、`charon`、`kore`、`fenrir`、`aoede`、`leda`、`orus`、`zephyr` 等），包含编译期安全与音色元数据。
 * **内置 Flutter 组件与控制器**：`GeminiLiveSessionController`、`GeminiLiveWaveform`、`GeminiLiveCaptionBubble`、`GeminiLiveMicButton`、`GeminiLiveStatusBadge`、`GeminiLiveUsageBadge`、`GeminiLiveVoiceIndicator`。
 * **实时语音翻译**：Speech-to-Speech 实时翻译（`TranslationConfig`）。
 * **Live Music (Lyria Realtime)**：通过 `genAI.live.music` 实时生成并调控音乐。

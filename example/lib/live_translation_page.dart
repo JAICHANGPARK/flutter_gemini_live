@@ -354,20 +354,21 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     // Record real-time token usage and cost
     _usageTracker.recordMessage(message);
 
+    // Interruption Handling: immediately flush local audio buffers when interrupted
+    if (message.serverContent?.interrupted == true) {
+      if (!_useFallbackAudio) {
+        _audioPlayer.clear();
+      } else {
+        _webAudioFlushTimer?.cancel();
+        _fallbackAudioPlayer.clear();
+      }
+      return;
+    }
+
     // 1. Translated Audio output
     if (_isAudioOutputEnabled) {
       if (message.data != null && message.data!.isNotEmpty) {
         _feedAudioChunk(message.data!);
-      }
-
-      final parts = message.serverContent?.modelTurn?.parts;
-      if (parts != null) {
-        for (final part in parts) {
-          final data = part.inlineData?.data;
-          if (data != null && data.isNotEmpty) {
-            _feedAudioChunk(data);
-          }
-        }
       }
 
       final turnComplete = message.serverContent?.turnComplete ?? false;
@@ -873,33 +874,39 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         Container(
           height: 28,
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.arrow_upward_rounded, size: 14, color: Colors.amber),
-              const SizedBox(width: 6),
-              Text(
-                '맞은편 상대방: ${targetLang['name']} (180° 회전 화면)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.arrow_upward_rounded, size: 14, color: Colors.amber),
+                  const SizedBox(width: 6),
+                  Text(
+                    '상대방: ${targetLang['name']} (180°)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(width: 1, height: 14, color: Colors.grey.shade400),
+                  const SizedBox(width: 8),
+                  Text(
+                    '내 화면: ${myLang['name']}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_downward_rounded, size: 14, color: Colors.blueAccent),
+                ],
               ),
-              const SizedBox(width: 8),
-              Container(width: 1, height: 14, color: Colors.grey.shade400),
-              const SizedBox(width: 8),
-              Text(
-                '내 화면: ${myLang['name']} (정방향)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Icon(Icons.arrow_downward_rounded, size: 14, color: Colors.blueAccent),
-            ],
+            ),
           ),
         ),
 

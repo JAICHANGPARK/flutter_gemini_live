@@ -150,12 +150,18 @@ Core Persona & Operational Rules:
    - Japanese: "問題を確認しました。設問の条件と資料を読み解いてみます..."
    - Chinese: "已经确认题目，我先梳理题干条件与核心考点..."
 5. Always deliver spoken explanations and structured solution notes in the student's active language (matching their speech or configured language) with an encouraging, authoritative, and pedagogical tone.
+   - [CRITICAL ANSWER RULE — MANDATORY]:
+     Whenever the student asks to solve a problem or shows an exam question, you MUST ALWAYS explicitly and definitively announce the FINAL ANSWER (e.g., choice number '정답은 3번입니다' or numerical result '최종 계산 결과는 42입니다') BOTH in your spoken voice response AND in the written solution notes.
+     NEVER withhold the answer. NEVER finish with only theoretical concepts, hints, or asking the student to solve it on their own without giving the answer. Announce the exact final answer prominently (right at the start or clearly declared before detailed breakdown), followed by the step-by-step pedagogical explanation.
 6. Format your solution notes with the following standardized markdown sections for the student's review:
 
 ### 📊 [과목 및 문제 수준 / Subject & Problem Level]
 - **Subject / 교과목**: (e.g., 수학 / 국어(현대문) / 물리학I / 정보I / World History)
 - **Exam & Level / 시험 및 학년**: (e.g., 2026 일본 공통테스트 본시험 / 한국 수능 킬러 문항 / AP Calculus BC / 고교 심화)
 - **Difficulty / 난이도**: (★☆☆☆☆ ~ ★★★★★ / Basic, Intermediate, Advanced, Killer)
+
+### 🏁 [최종 정답 / Final Answer]
+> **정답 / Answer: [Clear, prominent final answer or choice number]**
 
 ### 🎯 [출제자의 의도 및 평가 요소 / Examiner's Intent & Assessment Objective]
 (Analyze the core concepts tested, required logical deduction, typical cognitive pitfalls, and common student traps)
@@ -167,9 +173,6 @@ Core Persona & Operational Rules:
 - **Step 1 / 1단계**: (Problem breakdown or premise analysis)
 - **Step 2 / 2단계**: (Derivation, source interpretation, or choice-by-choice elimination)
 - **Step 3 / 3단계**: (Verification & synthesis)
-
-### 🏁 [최종 정답 / Final Answer]
-> **정답 / Answer: [Clear, prominent final answer or choice number]**
 
 [Formula & Code Formatting Rules]:
 - Format all mathematical and chemical equations in standard LaTeX syntax (\$inline\$ or \$\$block\$\$).
@@ -462,6 +465,20 @@ class _MathTutorI18n {
           '发送给Gemini 3.8 Live Extended Thinking模型的系统提示词（英语）。\n可自由定制全能家教人设、Markdown排版结构及公式代码规则。',
       };
 
+  String get btnHideSheet => switch (lang) {
+        AppLanguage.ko => '노트 접기/숨기기',
+        AppLanguage.en => 'Hide Sheet',
+        AppLanguage.ja => 'ノートを隠す',
+        AppLanguage.zh => '收起笔记',
+      };
+
+  String get btnShowSheet => switch (lang) {
+        AppLanguage.ko => '📝 풀이 노트 보기',
+        AppLanguage.en => '📝 View Solution Notes',
+        AppLanguage.ja => '📝 解答ノートを表示',
+        AppLanguage.zh => '📝 查看题解笔记',
+      };
+
   String get snapScanningSnackBar => switch (lang) {
         AppLanguage.ko => '📸 문제를 스캔하여 Extended Thinking으로 정밀 분석 중...',
         AppLanguage.en => '📸 Problem scanned! Analyzing with Extended Thinking...',
@@ -478,13 +495,13 @@ class _MathTutorI18n {
 
   String get snapSolvePrompt => switch (lang) {
         AppLanguage.ko =>
-          '방금 촬영하여 첨부한 사진 속의 시험 문제(지문, 도표, 사료, 소스코드 포함)를 정밀하게 분석해줘. 교과목 및 문제 수준, 출제자의 의도, 핵심 개념 및 접근 전략, 단계별 상세 해설과 최종 정답을 체계적으로 설명해줘.',
+          '방금 촬영하거나 제시한 시험 문제(지문, 도표, 사료, 소스코드 포함)를 정밀하게 분석해줘. 반드시 최종 정답(객관식 번호 또는 최종 답안 값)을 가장 먼저 명확하게 밝힌 후, 출제 의도, 핵심 개념 및 접근 전략, 단계별 상세 해설을 체계적으로 설명해줘.',
         AppLanguage.en =>
-          'Please thoroughly analyze the exam question (including passages, charts, historical sources, and code) in the captured photo. Systematically provide subject & problem level, examiner intent, key concepts & strategy, step-by-step solution, and final answer.',
+          'Please thoroughly analyze the exam question (including passages, charts, historical sources, and code) shown. You MUST state the definitive final answer (choice number or final value) first, followed by subject level, examiner intent, key concepts & strategy, and step-by-step solution.',
         AppLanguage.ja =>
-          '今撮影した写真の試験問題（本文・資料・図表・コード含む）を精密に分析してください。教科・科目および問題レベル、出題者の意図、核心概念と解法戦略、段階別の詳細解説と最終正解を論理的・体系的に説明してください。',
+          '提示された写真の試験問題（本文・資料・図表・コード含む）を精密に分析してください。必ず最終的な正解（選択肢番号または最終解答値）を一番最初に明確に述べてから、教科・科目レベル、出題者の意図、核心概念と解法戦略、段階別の詳細解説を論理的・体系的に説明してください。',
         AppLanguage.zh =>
-          '请仔细分析刚刚拍照上传的照片中的考试题目（包含材料、图表、史料或代码）。系统地提供科目与题目学段难度、命题人意图、核心考点与解题策略、分步详细解析以及最终明确答案。',
+          '请仔细分析刚刚拍照展示的照片中的考试题目（包含材料、图表、史料或代码）。必须首先明确给出最终正解（选择题选项编号或最终结果数值），随后系统地提供科目与难度、命题人意图、核心考点与解题策略以及分步详细解析。',
       };
 }
 
@@ -521,6 +538,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   bool _isAutoScanEnabled = true;
   bool _isCameraExpanded = false;
   bool _isCameraInitializing = false;
+  bool _isBottomSheetVisible = true;
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
   bool _captureInFlight = false;
   bool _isMicMuted = false;
   bool _isFlashOn = false;
@@ -824,6 +843,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     _thoughtsTokenNotifier.dispose();
     _solutionScrollController.dispose();
     _thoughtsScrollController.dispose();
+    _sheetController.dispose();
     unawaited(_audioRecorder.stop());
     unawaited(_audioRecorder.dispose());
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
@@ -1351,6 +1371,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
         );
 
         if (mounted) {
+          setState(() {
+            _isBottomSheetVisible = true;
+          });
           HapticFeedback.mediumImpact();
           _showSafeSnackBar(
             i18n.snapScanningSnackBar,
@@ -1419,6 +1442,9 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
       );
 
       if (mounted) {
+        setState(() {
+          _isBottomSheetVisible = true;
+        });
         HapticFeedback.mediumImpact();
         _showSafeSnackBar(
           i18n.gallerySendingSnackBar,
@@ -1544,48 +1570,134 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       builder: (context, constraints) {
                         return Stack(
                           children: [
-                            // Full-bleed camera pane with bottom padding to keep HUD clear of the collapsed sheet
+                            // Full-bleed camera pane with dynamic bottom padding based on sheet visibility
                             Positioned.fill(
                               child: _buildCameraPane(
-                                bottomPadding: (constraints.maxHeight * 0.16).clamp(70.0, 110.0),
+                                bottomPadding: _isBottomSheetVisible
+                                    ? (constraints.maxHeight * 0.16).clamp(70.0, 110.0)
+                                    : 24.0,
                               ),
                             ),
 
                             // Height-adjustable Modal / Draggable Bottom Sheet for Solutions & Thinking Scratchpad
-                            DraggableScrollableSheet(
-                              initialChildSize: 0.28,
-                              minChildSize: 0.12,
-                              maxChildSize: 0.88,
-                              snap: true,
-                              snapSizes: const [0.12, 0.28, 0.88],
-                              builder: (context, sheetScrollController) {
-                                return Container(
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF0F172A),
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(20),
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black54,
-                                        blurRadius: 16,
-                                        spreadRadius: 4,
-                                        offset: Offset(0, -2),
+                            if (_isBottomSheetVisible)
+                              DraggableScrollableSheet(
+                                controller: _sheetController,
+                                initialChildSize: 0.32,
+                                minChildSize: 0.14,
+                                maxChildSize: 0.90,
+                                snap: true,
+                                snapSizes: const [0.14, 0.32, 0.90],
+                                builder: (context, sheetScrollController) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF0F172A),
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(20),
                                       ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black54,
+                                          blurRadius: 16,
+                                          spreadRadius: 4,
+                                          offset: Offset(0, -2),
+                                        ),
+                                      ],
                                     ),
-                                    child: _buildSolutionBoardPane(
-                                      scrollController: sheetScrollController,
-                                      showDragHandle: true,
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(20),
+                                      ),
+                                      child: _buildSolutionBoardPane(
+                                        scrollController: sheetScrollController,
+                                        showDragHandle: true,
+                                        onCloseSheet: () {
+                                          setState(() => _isBottomSheetVisible = false);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                            // Floating Reopen Button when bottom sheet is hidden
+                            if (!_isBottomSheetVisible)
+                              Positioned(
+                                left: 16,
+                                bottom: 84,
+                                child: SafeArea(
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() => _isBottomSheetVisible = true);
+                                      },
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1E293B).withValues(alpha: 0.92),
+                                          borderRadius: BorderRadius.circular(24),
+                                          border: Border.all(
+                                            color: Colors.amberAccent.withValues(alpha: 0.7),
+                                            width: 1.2,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black54,
+                                              blurRadius: 10,
+                                              offset: Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.assignment_rounded,
+                                              size: 16,
+                                              color: Colors.amberAccent,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _MathTutorI18n(lang).btnShowSheet,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            if (_solutionHistory.isNotEmpty) ...[
+                                              const SizedBox(width: 4),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 1,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.amberAccent,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                child: Text(
+                                                  '${_solutionHistory.length}',
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              ),
                           ],
                         );
                       },
@@ -2019,6 +2131,26 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                       });
                     },
                   ),
+                  const SizedBox(width: 4),
+
+                  // Bottom sheet toggle (풀이 노트 보기/숨기기)
+                  IconButton(
+                    iconSize: 20,
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                    icon: Icon(
+                      _isBottomSheetVisible
+                          ? Icons.vertical_align_bottom_rounded
+                          : Icons.vertical_align_top_rounded,
+                      color: _isBottomSheetVisible ? Colors.amberAccent : Colors.white70,
+                    ),
+                    tooltip: _isBottomSheetVisible ? '노트 접기/숨기기' : '풀이 노트 열기',
+                    onPressed: () {
+                      setState(() {
+                        _isBottomSheetVisible = !_isBottomSheetVisible;
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
@@ -2031,6 +2163,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
   Widget _buildSolutionBoardPane({
     ScrollController? scrollController,
     bool showDragHandle = false,
+    VoidCallback? onCloseSheet,
   }) {
     final lang = AppLanguageController.instance.currentLanguage;
     final i18n = _MathTutorI18n(lang);
@@ -2166,6 +2299,16 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
                     tooltip: i18n.clearHistoryTitle,
                     onPressed: _clearHistory,
                   ),
+                if (onCloseSheet != null)
+                  IconButton(
+                    iconSize: 20,
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                        color: Colors.white70),
+                    tooltip: i18n.btnHideSheet,
+                    onPressed: onCloseSheet,
+                  ),
               ],
             ),
           ),
@@ -2185,93 +2328,106 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     final lang = AppLanguageController.instance.currentLanguage;
     final i18n = _MathTutorI18n(lang);
 
-    return Column(
-      children: [
-        // Live streaming card (in-flight answer with reactive ValueListenableBuilder)
-        ValueListenableBuilder<String>(
-          valueListenable: _liveSolutionNotifier,
-          builder: (context, liveSolutionText, _) {
-            if (liveSolutionText.isEmpty) return const SizedBox.shrink();
-            return Container(
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amberAccent, width: 1.5),
-              ),
+    return ValueListenableBuilder<String>(
+      valueListenable: _liveSolutionNotifier,
+      builder: (context, liveSolutionText, _) {
+        final hasLiveSolution = liveSolutionText.isNotEmpty;
+        final hasHistory = _solutionHistory.isNotEmpty;
+
+        if (!hasLiveSolution && !hasHistory) {
+          return SingleChildScrollView(
+            controller: scrollController ?? _solutionScrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      FadeTransition(
-                        opacity: _pulseAnimController,
-                        child: const Icon(Icons.edit_note_rounded,
-                            color: Colors.amberAccent, size: 18),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        i18n.writingSolution,
-                        style: const TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    Icons.menu_book_rounded,
+                    size: 48,
+                    color: Colors.white.withValues(alpha: 0.15),
                   ),
-                  const SizedBox(height: 10),
-                  _buildMathMarkdown(liveSolutionText),
+                  const SizedBox(height: 12),
+                  Text(
+                    i18n.emptyTitle,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    i18n.emptyDesc,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }
 
-        // History of solved problems
-        Expanded(
-          child: _solutionHistory.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+        final totalCount = (hasLiveSolution ? 1 : 0) + _solutionHistory.length;
+
+        return ListView.builder(
+          controller: scrollController ?? _solutionScrollController,
+          padding: const EdgeInsets.all(12),
+          itemCount: totalCount,
+          itemBuilder: (context, index) {
+            if (hasLiveSolution && index == 0) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amberAccent, width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(Icons.menu_book_rounded,
-                            size: 56, color: Colors.white.withValues(alpha: 0.15)),
-                        const SizedBox(height: 16),
-                        Text(
-                          i18n.emptyTitle,
-                          style: const TextStyle(
-                              color: Colors.white70,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15),
+                        FadeTransition(
+                          opacity: _pulseAnimController,
+                          child: const Icon(
+                            Icons.edit_note_rounded,
+                            color: Colors.amberAccent,
+                            size: 18,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          i18n.emptyDesc,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            i18n.writingSolution,
+                            style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontWeight: FontWeight.bold,
                               fontSize: 12.5,
-                              height: 1.5),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                )
-              : ListView.builder(
-                  controller: scrollController ?? _solutionScrollController,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _solutionHistory.length,
-                  itemBuilder: (context, index) {
-                    final item = _solutionHistory[index];
-                    return _buildSolutionCard(item, index);
-                  },
+                    const SizedBox(height: 10),
+                    _buildMathMarkdown(liveSolutionText),
+                  ],
                 ),
-        ),
-      ],
+              );
+            }
+
+            final historyIndex = hasLiveSolution ? index - 1 : index;
+            final item = _solutionHistory[historyIndex];
+            return _buildSolutionCard(item, historyIndex);
+          },
+        );
+      },
     );
   }
 
@@ -2550,7 +2706,8 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
     final lang = AppLanguageController.instance.currentLanguage;
     final i18n = _MathTutorI18n(lang);
 
-    return Padding(
+    return SingleChildScrollView(
+      controller: scrollController ?? _thoughtsScrollController,
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2589,7 +2746,7 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             i18n.thinkingScratchpadDesc,
             style: TextStyle(
@@ -2599,37 +2756,33 @@ class _LiveMathTutorPageState extends State<LiveMathTutorPage>
             ),
           ),
           const SizedBox(height: 12),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B132B),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.cyan.withValues(alpha: 0.2)),
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController ?? _thoughtsScrollController,
-                child: ValueListenableBuilder<String>(
-                  valueListenable: _liveThoughtsNotifier,
-                  builder: (context, liveThoughts, _) {
-                    final displayThoughts = liveThoughts.isNotEmpty
-                        ? liveThoughts
-                        : (_solutionHistory.isNotEmpty &&
-                                _solutionHistory.first.thinkingLog.isNotEmpty
-                            ? _solutionHistory.first.thinkingLog
-                            : i18n.thinkingScratchpadWaiting);
-                    return SelectableText(
-                      displayThoughts,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12.5,
-                        color: Colors.cyanAccent,
-                        height: 1.5,
-                      ),
-                    );
-                  },
-                ),
-              ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B132B),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.cyan.withValues(alpha: 0.2)),
+            ),
+            child: ValueListenableBuilder<String>(
+              valueListenable: _liveThoughtsNotifier,
+              builder: (context, liveThoughts, _) {
+                final displayThoughts = liveThoughts.isNotEmpty
+                    ? liveThoughts
+                    : (_solutionHistory.isNotEmpty &&
+                            _solutionHistory.first.thinkingLog.isNotEmpty
+                        ? _solutionHistory.first.thinkingLog
+                        : i18n.thinkingScratchpadWaiting);
+                return SelectableText(
+                  displayThoughts,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12.5,
+                    color: Colors.cyanAccent,
+                    height: 1.5,
+                  ),
+                );
+              },
             ),
           ),
         ],

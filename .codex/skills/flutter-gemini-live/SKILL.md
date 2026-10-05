@@ -119,11 +119,7 @@ class _LiveChatWidgetState extends State<LiveChatWidget> {
           model: 'gemini-3.8-live',
           config: GenerationConfig(
             responseModalities: [Modality.AUDIO],
-            speechConfig: SpeechConfig(
-              voiceConfig: VoiceConfig(
-                prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: 'Puck'),
-              ),
-            ),
+            speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck),
           ),
           inputAudioTranscription: AudioTranscriptionConfig(
             languageCodes: ['en-US', 'ko-KR'],
@@ -636,6 +632,31 @@ LiveConnectParameters(
 )
 ```
 
+### 8. Type-Safe Voice Persona Configuration (`GeminiLiveVoice` Enum)
+
+Instead of hardcoding voice strings like `'Puck'`, use the strongly-typed `GeminiLiveVoice` enhanced enum for compile-time typo prevention, IDE auto-completion, and rich tonal metadata:
+
+```dart
+// 1. Dedicated type-safe factory (Recommended)
+speechConfig: SpeechConfig.fromLiveVoice(GeminiLiveVoice.puck, languageCode: 'ko-KR')
+
+// 2. Or create directly via enum extension helper
+speechConfig: GeminiLiveVoice.charon.toSpeechConfig(languageCode: 'en-US')
+
+// 3. Or pass enum or string to SpeechConfig.fromVoice
+speechConfig: SpeechConfig.fromVoice(GeminiLiveVoice.kore)
+speechConfig: SpeechConfig.fromVoice('voice_custom_id_123') // Custom / cloned voice ID supported
+
+// 4. Inspect voice persona metadata or check active voice
+if (speechConfig.liveVoice == GeminiLiveVoice.puck) {
+  print('Voice: ${speechConfig.liveVoice!.voiceName} (${speechConfig.liveVoice!.tone})');
+}
+```
+
+#### Prebuilt Voice Persona Roster (30 Official Voices):
+- **Core Personas:** `puck` (Upbeat, playful), `charon` (Deep, informative), `kore` (Warm, soothing), `fenrir` (Authoritative, clear), `aoede` (Melodic, gentle), `leda` (Youthful, bright), `orus` (Steady, composed), `zephyr` (Crisp, friendly)
+- **Extended Catalog:** `callirrhoe`, `autonoe`, `enceladus`, `iapetus`, `umbriel`, `algieba`, `despina`, `erinome`, `algenib`, `rasalgethi`, `laomedeia`, `achernar`, `alnilam`, `schedar`, `gacrux`, `pulcherrima`, `achird`, `zubenelgenubi`, `vindemiatrix`, `sadachbia`, `sadaltager`, `sulafat`.
+
 ---
 
 ## 🎨 Pre-Built Flutter Widgets & Helpers
@@ -649,6 +670,7 @@ Full parameter tables, wiring for every session API (controller, low-level `Live
 | **Microphone Button** | `GeminiLiveMicButton` | Material 3 mic toggle with ripple rings. Params: `isRecording` (required), `onPressed`, `onLongPressStart`/`onLongPressEnd` (push-to-talk). It does not record audio itself. |
 | **Status Badge** | `GeminiLiveStatusBadge` | Status pill for `GeminiLiveSessionState` (`disconnected`, `connecting`, `connected`, `inProgress`). Use `GeminiLiveStatusBadge.fromFlags(isConnected:, isConnecting:)` to build it from booleans. |
 | **Voice Activity** | `GeminiLiveVoiceIndicator` | Dual-harmonic wave visualizer reflecting voice activity. |
+| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.showLiveVoice(context, currentVoice:)`) with all 30 `GeminiLiveVoice` personas and tone/gender pills. |
 | **Token Monitor** | `GeminiLiveUsageBadge` | Real-time token usage badge and breakdown modal dialog via `GeminiTokenUsageTracker`. |
 | **Audio Analysis** | `GeminiLiveAudioUtils` | Utilities to calculate RMS amplitude, peak amplitude, dBFS decibels, and logarithmic visual scaling from 16-bit PCM buffers. |
 
