@@ -90,6 +90,8 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     model: 'gemini-3.5-live-translate-preview',
   );
 
+  Timer? _aiSpeakingResetTimer;
+
   /// AI가 현재 번역 음성을 스피커로 재생 중인지 여부
   bool get _isAiCurrentlySpeaking => _isAudioOutputEnabled && _isAiSpeaking;
 
@@ -99,7 +101,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     _loadAudioDevice();
     _initAudioPlayer();
 
-    // 100ms마다 AI 발화 상태를 점검하여, 마지막 오디오 청크 수신 후 1.2초가 지나면 마이크를 자동으로 정상 개방합니다.
+    // 100ms마다 AI 발화 상태를 점검하여, 마지막 오디오 청크 수신 후 700ms가 지나면 마이크를 자동으로 정상 개방합니다.
     _statusTicker = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (!_isAudioOutputEnabled || _lastAiAudioReceivedTime == null) {
         if (_isAiSpeaking && mounted) {
@@ -108,7 +110,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         return;
       }
       final diff = DateTime.now().difference(_lastAiAudioReceivedTime!).inMilliseconds;
-      final isSpeaking = diff < 1200;
+      final isSpeaking = diff < 700;
       if (_isAiSpeaking != isSpeaking && mounted) {
         setState(() => _isAiSpeaking = isSpeaking);
       }
@@ -139,6 +141,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     setState(() {
       _isAudioOutputEnabled = !_isAudioOutputEnabled;
       if (!_isAudioOutputEnabled) {
+        _aiSpeakingResetTimer?.cancel();
         _lastAiAudioReceivedTime = null;
         _isAiSpeaking = false;
         if (!_useFallbackAudio) {
@@ -153,6 +156,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   @override
   void dispose() {
     _statusTicker?.cancel();
+    _aiSpeakingResetTimer?.cancel();
     _webAudioFlushTimer?.cancel();
     _audioStreamSubscription?.cancel();
     _audioRecorder.dispose();
@@ -337,9 +341,9 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
         // 🛡️ 소프트웨어 에코 차단 (Acoustic Echo Cancellation Gate):
         // AI가 번역된 음성을 스피커로 출력하는 동안에는 스피커 소리가 마이크로 재유입되는 것을 차단합니다.
-        // 사용자가 스피커 소리를 뚫고 명시적으로 크게 말한 경우(norm >= 0.12)는 끼어들기로 전송 허용.
+        // 사용자가 스피커 소리를 뚫고 자연스럽게 말할 때(norm >= 0.05)는 즉시 끼어들기로 전송 허용.
         if (_preventEchoLoop && _isAiCurrentlySpeaking) {
-          const double intentionalBargeInThreshold = 0.12;
+          const double intentionalBargeInThreshold = 0.05;
           if (norm < intentionalBargeInThreshold) {
             return;
           }
@@ -398,6 +402,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
 
     // Interruption Handling: immediately flush local audio buffers when interrupted
     if (message.serverContent?.interrupted == true) {
+      _aiSpeakingResetTimer?.cancel();
       _lastAiAudioReceivedTime = null;
       _isAiSpeaking = false;
       if (!_useFallbackAudio) {
@@ -424,6 +429,18 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           _webAudioFlushTimer?.cancel();
           unawaited(_fallbackAudioPlayer.playBufferedAudio());
         }
+
+        // 💡 턴 완료 후 남아있는 오디오 버퍼 재생이 마무리되면(약 450ms)
+        // 에코 방지 상태를 즉시 해제하여 다음 사용자 발화(Turn 2)가 지연 없이 입력되도록 합니다.
+        _aiSpeakingResetTimer?.cancel();
+        _aiSpeakingResetTimer = Timer(const Duration(milliseconds: 450), () {
+          if (mounted) {
+            setState(() {
+              _isAiSpeaking = false;
+              _lastAiAudioReceivedTime = null;
+            });
+          }
+        });
       }
     }
 
