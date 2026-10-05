@@ -302,6 +302,14 @@ class LiveService {
       final json = jsonDecode(jsonData);
       logger?.call('📥 Received JSON: $jsonData');
       final message = LiveServerMessage.fromJson(json);
+      if (message.error != null) {
+        final err = message.error!;
+        logger?.call('🔴 Live Server returned error: [${err.code} / ${err.status}] ${err.message}');
+        callbacks.onError?.call(
+          Exception('Live API Error ${err.code ?? ""} (${err.status ?? ""}): ${err.message ?? jsonData}'),
+          StackTrace.current,
+        );
+      }
       final dispatch = onMessage ?? callbacks.onMessage;
       dispatch?.call(message);
     } catch (e, st) {

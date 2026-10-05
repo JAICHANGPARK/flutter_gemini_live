@@ -1592,6 +1592,13 @@ const _$ServiceTierEnumMap = {
   ServiceTier.DEFERRED: 'deferred',
 };
 
+LiveServerError _$LiveServerErrorFromJson(Map<String, dynamic> json) =>
+    LiveServerError(
+      code: (json['code'] as num?)?.toInt(),
+      message: json['message'] as String?,
+      status: json['status'] as String?,
+    );
+
 LiveServerMessage _$LiveServerMessageFromJson(
   Map<String, dynamic> json,
 ) => LiveServerMessage(
@@ -1632,6 +1639,9 @@ LiveServerMessage _$LiveServerMessageFromJson(
   voiceActivity: json['voiceActivity'] == null
       ? null
       : VoiceActivity.fromJson(json['voiceActivity'] as Map<String, dynamic>),
+  error: json['error'] == null
+      ? null
+      : LiveServerError.fromJson(json['error'] as Map<String, dynamic>),
 );
 
 AuthToken _$AuthTokenFromJson(Map<String, dynamic> json) => AuthToken(

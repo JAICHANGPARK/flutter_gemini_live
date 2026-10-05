@@ -2423,6 +2423,23 @@ class UsageMetadata {
       _$UsageMetadataFromJson(json);
 }
 
+/// An error returned by the Live API server.
+@JsonSerializable(includeIfNull: false, createToJson: false)
+class LiveServerError {
+  final int? code;
+  final String? message;
+  final String? status;
+
+  LiveServerError({this.code, this.message, this.status});
+
+  factory LiveServerError.fromJson(Map<String, dynamic> json) =>
+      _$LiveServerErrorFromJson(json);
+
+  @override
+  String toString() =>
+      'LiveServerError(code: $code, status: $status, message: $message)';
+}
+
 /// A top-level server message received over the Live API socket.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class LiveServerMessage {
@@ -2435,6 +2452,7 @@ class LiveServerMessage {
   final LiveServerSessionResumptionUpdate? sessionResumptionUpdate;
   final VoiceActivityDetectionSignal? voiceActivityDetectionSignal;
   final VoiceActivity? voiceActivity;
+  final LiveServerError? error;
 
   LiveServerMessage({
     this.setupComplete,
@@ -2446,6 +2464,7 @@ class LiveServerMessage {
     this.sessionResumptionUpdate,
     this.voiceActivityDetectionSignal,
     this.voiceActivity,
+    this.error,
   });
 
   factory LiveServerMessage.fromJson(Map<String, dynamic> json) =>
