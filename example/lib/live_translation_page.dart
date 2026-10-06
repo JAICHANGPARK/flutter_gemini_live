@@ -73,7 +73,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   String _myLanguageCode = 'ko'; // 내 언어 (기본 한국어)
   String _targetLanguageCode = 'en'; // 상대방 언어 (기본 영어)
   final bool _echoTargetLanguage = false; // 원문 반복 에코 비활성화 (피드백 루프 원인 제거)
-  bool _preventEchoLoop = true; // 스피커 소리의 마이크 재유입 방지 (소프트웨어 에코 억제)
+  bool _preventEchoLoop = false; // 스피커 소리의 마이크 재유입 방지 (소프트웨어 에코 억제)
   bool _isAiSpeaking = false;
   DateTime? _lastAiAudioReceivedTime;
   Timer? _statusTicker;
@@ -94,6 +94,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   Timer? _aiSpeakingResetTimer;
 
   /// AI가 현재 번역 음성을 스피커로 재생 중인지 여부
+  /// AI가 현재 번역 음성을 스피커로 재생 중인지 여부
   bool get _isAiCurrentlySpeaking => _isAudioOutputEnabled && _isAiSpeaking;
 
   @override
@@ -102,7 +103,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
     _loadAudioDevice();
     _initAudioPlayer();
 
-    // 100ms마다 AI 발화 상태를 점검하여, 마지막 오디오 청크 수신 후 700ms가 지나면 마이크를 자동으로 정상 개방합니다.
+    // 100ms마다 AI 발화 상태를 점검하여, 마지막 오디오 청크 수신 후 1.2초가 지나면 마이크를 자동으로 정상 개방합니다.
     _statusTicker = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (!_isAudioOutputEnabled || _lastAiAudioReceivedTime == null) {
         if (_isAiSpeaking && mounted) {
@@ -113,7 +114,7 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
       final diff = DateTime.now()
           .difference(_lastAiAudioReceivedTime!)
           .inMilliseconds;
-      final isSpeaking = diff < 700;
+      final isSpeaking = diff < 1200;
       if (_isAiSpeaking != isSpeaking && mounted) {
         setState(() => _isAiSpeaking = isSpeaking);
       }
@@ -319,6 +320,13 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           echoCancel: enableVoiceProc,
           noiseSuppress: enableVoiceProc,
           streamBufferSize: 2048,
+          // 통화용 오디오 소스 + 통화 모드: OS AEC가 스피커 출력을 기준 신호로 삼아
+          // 마이크로 재유입되는 번역 음성을 제거합니다.
+          androidConfig: const AndroidRecordConfig(
+            audioSource: AndroidAudioSource.voiceCommunication,
+            audioManagerMode: AudioManagerMode.modeInCommunication,
+            speakerphone: true,
+          ),
         ),
       );
 
@@ -348,8 +356,15 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
         // AI가 번역된 음성을 스피커로 출력하는 동안에는 스피커 소리가 마이크로 재유입되는 것을 차단합니다.
         // 사용자가 스피커 소리를 뚫고 자연스럽게 말할 때(norm >= 0.05)는 즉시 끼어들기로 전송 허용.
         if (_preventEchoLoop && _isAiCurrentlySpeaking) {
-          const double intentionalBargeInThreshold = 0.05;
+          const double intentionalBargeInThreshold = 0.12;
           if (norm < intentionalBargeInThreshold) {
+            // 청크를 버리면 스트림이 끊겨 서버 VAD/턴 처리가 멈추므로 무음으로 대체해 전송합니다.
+            _session!.sendRealtimeInput(
+              audio: Blob(
+                mimeType: 'audio/pcm;rate=$_audioSampleRate',
+                data: base64Encode(Uint8List(chunk.length)),
+              ),
+            );
             return;
           }
         }
@@ -435,18 +450,6 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
           _webAudioFlushTimer?.cancel();
           unawaited(_fallbackAudioPlayer.playBufferedAudio());
         }
-
-        // 💡 턴 완료 후 남아있는 오디오 버퍼 재생이 마무리되면(약 450ms)
-        // 에코 방지 상태를 즉시 해제하여 다음 사용자 발화(Turn 2)가 지연 없이 입력되도록 합니다.
-        _aiSpeakingResetTimer?.cancel();
-        _aiSpeakingResetTimer = Timer(const Duration(milliseconds: 450), () {
-          if (mounted) {
-            setState(() {
-              _isAiSpeaking = false;
-              _lastAiAudioReceivedTime = null;
-            });
-          }
-        });
       }
     }
 
