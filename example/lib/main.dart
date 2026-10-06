@@ -13,7 +13,7 @@ import 'live_translation_page.dart';
 import 'live_vision_call_page.dart';
 import 'dj_midi_box_page.dart';
 import 'foldable_utils.dart';
-import 'live_math_tutor_page.dart';
+import 'examples/math_tutor/ui/math_tutor/math_tutor_screen.dart';
 import 'pro_dj_console_page.dart';
 import 'realtime_media_demo.dart';
 import 'scrollable_app_bar_actions.dart';
