@@ -1,8 +1,8 @@
 import 'package:example/app_settings_dialog.dart';
 import 'package:example/app_translations.dart';
-import 'package:example/dj_midi_box_page.dart';
+import 'package:example/examples/dj_midi_box/ui/dj_midi_box/dj_midi_box_screen.dart';
 import 'package:example/foldable_utils.dart';
-import 'package:example/pro_dj_console_page.dart';
+import 'package:example/examples/pro_dj_console/ui/pro_dj_console/pro_dj_console_screen.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 
