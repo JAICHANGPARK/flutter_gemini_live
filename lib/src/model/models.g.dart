@@ -182,7 +182,7 @@ const _$PartMediaResolutionLevelEnumMap = {
 
 Content _$ContentFromJson(Map<String, dynamic> json) => Content(
   parts: (json['parts'] as List<dynamic>?)
-      ?.map((e) => Part.fromJson(e as Map<String, dynamic>))
+      ?.map((e) => e is Part ? e : Part.fromJson(e as Map<String, dynamic>))
       .toList(),
   role: json['role'] as String?,
 );
@@ -573,384 +573,6 @@ const _$MediaResolutionEnumMap = {
   MediaResolution.MEDIA_RESOLUTION_HIGH: 'MEDIA_RESOLUTION_HIGH',
 };
 
-PartialArg _$PartialArgFromJson(Map<String, dynamic> json) => PartialArg(
-  boolValue: json['bool_value'] as bool?,
-  jsonPath: json['json_path'] as String?,
-  nullValue: json['null_value'] as String?,
-  numberValue: (json['number_value'] as num?)?.toDouble(),
-  stringValue: json['string_value'] as String?,
-  willContinue: json['will_continue'] as bool?,
-);
-
-Map<String, dynamic> _$PartialArgToJson(PartialArg instance) =>
-    <String, dynamic>{
-      'bool_value': ?instance.boolValue,
-      'json_path': ?instance.jsonPath,
-      'null_value': ?instance.nullValue,
-      'number_value': ?instance.numberValue,
-      'string_value': ?instance.stringValue,
-      'will_continue': ?instance.willContinue,
-    };
-
-FunctionCall _$FunctionCallFromJson(Map<String, dynamic> json) => FunctionCall(
-  id: json['id'] as String?,
-  name: json['name'] as String?,
-  args: json['args'] as Map<String, dynamic>?,
-  partialArgs: (json['partial_args'] as List<dynamic>?)
-      ?.map((e) => PartialArg.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  willContinue: json['will_continue'] as bool?,
-);
-
-Map<String, dynamic> _$FunctionCallToJson(FunctionCall instance) =>
-    <String, dynamic>{
-      'id': ?instance.id,
-      'name': ?instance.name,
-      'args': ?instance.args,
-      'partial_args': ?instance.partialArgs,
-      'will_continue': ?instance.willContinue,
-    };
-
-ToolCall _$ToolCallFromJson(Map<String, dynamic> json) => ToolCall(
-  id: json['id'] as String?,
-  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
-  args: json['args'] as Map<String, dynamic>?,
-);
-
-Map<String, dynamic> _$ToolCallToJson(ToolCall instance) => <String, dynamic>{
-  'id': ?instance.id,
-  'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
-  'args': ?instance.args,
-};
-
-const _$ToolTypeEnumMap = {
-  ToolType.TOOL_TYPE_UNSPECIFIED: 'TOOL_TYPE_UNSPECIFIED',
-  ToolType.GOOGLE_SEARCH_WEB: 'GOOGLE_SEARCH_WEB',
-  ToolType.GOOGLE_SEARCH_IMAGE: 'GOOGLE_SEARCH_IMAGE',
-  ToolType.URL_CONTEXT: 'URL_CONTEXT',
-  ToolType.GOOGLE_MAPS: 'GOOGLE_MAPS',
-  ToolType.FILE_SEARCH: 'FILE_SEARCH',
-  ToolType.MEDIA_PROCESSING: 'MEDIA_PROCESSING',
-};
-
-ToolResponse _$ToolResponseFromJson(Map<String, dynamic> json) => ToolResponse(
-  id: json['id'] as String?,
-  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
-  response: json['response'] as Map<String, dynamic>?,
-);
-
-Map<String, dynamic> _$ToolResponseToJson(ToolResponse instance) =>
-    <String, dynamic>{
-      'id': ?instance.id,
-      'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
-      'response': ?instance.response,
-    };
-
-FunctionResponseBlob _$FunctionResponseBlobFromJson(
-  Map<String, dynamic> json,
-) => FunctionResponseBlob(
-  mimeType: json['mime_type'] as String?,
-  data: json['data'] as String?,
-  displayName: json['display_name'] as String?,
-);
-
-Map<String, dynamic> _$FunctionResponseBlobToJson(
-  FunctionResponseBlob instance,
-) => <String, dynamic>{
-  'mime_type': ?instance.mimeType,
-  'data': ?instance.data,
-  'display_name': ?instance.displayName,
-};
-
-FunctionResponseFileData _$FunctionResponseFileDataFromJson(
-  Map<String, dynamic> json,
-) => FunctionResponseFileData(
-  fileUri: json['file_uri'] as String?,
-  mimeType: json['mime_type'] as String?,
-  displayName: json['display_name'] as String?,
-);
-
-Map<String, dynamic> _$FunctionResponseFileDataToJson(
-  FunctionResponseFileData instance,
-) => <String, dynamic>{
-  'file_uri': ?instance.fileUri,
-  'mime_type': ?instance.mimeType,
-  'display_name': ?instance.displayName,
-};
-
-FunctionResponsePart _$FunctionResponsePartFromJson(
-  Map<String, dynamic> json,
-) => FunctionResponsePart(
-  inlineData: json['inline_data'] == null
-      ? null
-      : FunctionResponseBlob.fromJson(
-          json['inline_data'] as Map<String, dynamic>,
-        ),
-  fileData: json['file_data'] == null
-      ? null
-      : FunctionResponseFileData.fromJson(
-          json['file_data'] as Map<String, dynamic>,
-        ),
-);
-
-Map<String, dynamic> _$FunctionResponsePartToJson(
-  FunctionResponsePart instance,
-) => <String, dynamic>{
-  'inline_data': ?instance.inlineData,
-  'file_data': ?instance.fileData,
-};
-
-FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
-    FunctionResponse(
-      id: json['id'] as String?,
-      name: json['name'] as String?,
-      response: json['response'] as Map<String, dynamic>?,
-      willContinue: json['will_continue'] as bool?,
-      scheduling: $enumDecodeNullable(
-        _$FunctionResponseSchedulingEnumMap,
-        json['scheduling'],
-      ),
-      parts: (json['parts'] as List<dynamic>?)
-          ?.map((e) => FunctionResponsePart.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-
-Map<String, dynamic> _$FunctionResponseToJson(FunctionResponse instance) =>
-    <String, dynamic>{
-      'id': ?instance.id,
-      'name': ?instance.name,
-      'response': ?instance.response,
-      'will_continue': ?instance.willContinue,
-      'scheduling': ?_$FunctionResponseSchedulingEnumMap[instance.scheduling],
-      'parts': ?instance.parts,
-    };
-
-const _$FunctionResponseSchedulingEnumMap = {
-  FunctionResponseScheduling.SCHEDULING_UNSPECIFIED: 'SCHEDULING_UNSPECIFIED',
-  FunctionResponseScheduling.SILENT: 'SILENT',
-  FunctionResponseScheduling.WHEN_IDLE: 'WHEN_IDLE',
-  FunctionResponseScheduling.INTERRUPT: 'INTERRUPT',
-};
-
-FunctionDeclaration _$FunctionDeclarationFromJson(Map<String, dynamic> json) =>
-    FunctionDeclaration(
-      description: json['description'] as String?,
-      name: json['name'] as String?,
-      parameters: json['parameters'] as Map<String, dynamic>?,
-      parametersJsonSchema: json['parameters_json_schema'],
-      response: json['response'] as Map<String, dynamic>?,
-      responseJsonSchema: json['response_json_schema'],
-      behavior: $enumDecodeNullable(_$BehaviorEnumMap, json['behavior']),
-    );
-
-Map<String, dynamic> _$FunctionDeclarationToJson(
-  FunctionDeclaration instance,
-) => <String, dynamic>{
-  'description': ?instance.description,
-  'name': ?instance.name,
-  'parameters': ?instance.parameters,
-  'parameters_json_schema': ?instance.parametersJsonSchema,
-  'response': ?instance.response,
-  'response_json_schema': ?instance.responseJsonSchema,
-  'behavior': ?_$BehaviorEnumMap[instance.behavior],
-};
-
-const _$BehaviorEnumMap = {
-  Behavior.UNSPECIFIED: 'UNSPECIFIED',
-  Behavior.BLOCKING: 'BLOCKING',
-  Behavior.NON_BLOCKING: 'NON_BLOCKING',
-};
-
-Interval _$IntervalFromJson(Map<String, dynamic> json) => Interval(
-  startTime: json['start_time'] == null
-      ? null
-      : DateTime.parse(json['start_time'] as String),
-  endTime: json['end_time'] == null
-      ? null
-      : DateTime.parse(json['end_time'] as String),
-);
-
-Map<String, dynamic> _$IntervalToJson(Interval instance) => <String, dynamic>{
-  'start_time': ?instance.startTime?.toIso8601String(),
-  'end_time': ?instance.endTime?.toIso8601String(),
-};
-
-GoogleSearch _$GoogleSearchFromJson(Map<String, dynamic> json) => GoogleSearch(
-  excludeDomains: (json['exclude_domains'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
-  timeRangeFilter: json['time_range_filter'] == null
-      ? null
-      : Interval.fromJson(json['time_range_filter'] as Map<String, dynamic>),
-  blockingConfidence: json['blocking_confidence'] as String?,
-);
-
-Map<String, dynamic> _$GoogleSearchToJson(GoogleSearch instance) =>
-    <String, dynamic>{
-      'exclude_domains': ?instance.excludeDomains,
-      'time_range_filter': ?instance.timeRangeFilter,
-      'blocking_confidence': ?instance.blockingConfidence,
-    };
-
-DynamicRetrievalConfig _$DynamicRetrievalConfigFromJson(
-  Map<String, dynamic> json,
-) => DynamicRetrievalConfig(
-  dynamicThreshold: (json['dynamic_threshold'] as num?)?.toDouble(),
-  mode: json['mode'] as String?,
-);
-
-Map<String, dynamic> _$DynamicRetrievalConfigToJson(
-  DynamicRetrievalConfig instance,
-) => <String, dynamic>{
-  'dynamic_threshold': ?instance.dynamicThreshold,
-  'mode': ?instance.mode,
-};
-
-GoogleSearchRetrieval _$GoogleSearchRetrievalFromJson(
-  Map<String, dynamic> json,
-) => GoogleSearchRetrieval(
-  dynamicRetrievalConfig: json['dynamic_retrieval_config'] == null
-      ? null
-      : DynamicRetrievalConfig.fromJson(
-          json['dynamic_retrieval_config'] as Map<String, dynamic>,
-        ),
-);
-
-Map<String, dynamic> _$GoogleSearchRetrievalToJson(
-  GoogleSearchRetrieval instance,
-) => <String, dynamic>{
-  'dynamic_retrieval_config': ?instance.dynamicRetrievalConfig,
-};
-
-GoogleMaps _$GoogleMapsFromJson(Map<String, dynamic> json) => GoogleMaps(
-  groundingTypes: (json['grounding_types'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
-);
-
-Map<String, dynamic> _$GoogleMapsToJson(GoogleMaps instance) =>
-    <String, dynamic>{'grounding_types': ?instance.groundingTypes};
-
-Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
-  functionDeclarations: (json['function_declarations'] as List<dynamic>?)
-      ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  googleSearch: json['google_search'] == null
-      ? null
-      : GoogleSearch.fromJson(json['google_search'] as Map<String, dynamic>),
-  googleSearchRetrieval: json['google_search_retrieval'] == null
-      ? null
-      : GoogleSearchRetrieval.fromJson(
-          json['google_search_retrieval'] as Map<String, dynamic>,
-        ),
-  codeExecution: json['code_execution'] as Map<String, dynamic>?,
-  urlContext: json['url_context'] as Map<String, dynamic>?,
-  googleMaps: _googleMapsFromJson(json['google_maps']),
-  retrieval: json['retrieval'] as Map<String, dynamic>?,
-  computerUse: _computerUseFromJson(json['computer_use']),
-  fileSearch: json['file_search'] as Map<String, dynamic>?,
-  enterpriseWebSearch: json['enterprise_web_search'] as Map<String, dynamic>?,
-  mcpServers: (json['mcp_servers'] as List<dynamic>?)
-      ?.map((e) => e as Map<String, dynamic>)
-      .toList(),
-  exaAiSearch: json['exa_ai_search'] == null
-      ? null
-      : ToolExaAiSearch.fromJson(json['exa_ai_search'] as Map<String, dynamic>),
-  parallelAiSearch: json['parallel_ai_search'] == null
-      ? null
-      : ToolParallelAiSearch.fromJson(
-          json['parallel_ai_search'] as Map<String, dynamic>,
-        ),
-);
-
-Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
-  'function_declarations': ?instance.functionDeclarations,
-  'google_search': ?instance.googleSearch,
-  'google_search_retrieval': ?instance.googleSearchRetrieval,
-  'code_execution': ?instance.codeExecution,
-  'url_context': ?instance.urlContext,
-  'google_maps': ?_googleMapsToJson(instance.googleMaps),
-  'retrieval': ?instance.retrieval,
-  'computer_use': ?_computerUseToJson(instance.computerUse),
-  'file_search': ?instance.fileSearch,
-  'enterprise_web_search': ?instance.enterpriseWebSearch,
-  'mcp_servers': ?instance.mcpServers,
-  'exa_ai_search': ?instance.exaAiSearch,
-  'parallel_ai_search': ?instance.parallelAiSearch,
-};
-
-ToolParallelAiSearch _$ToolParallelAiSearchFromJson(
-  Map<String, dynamic> json,
-) => ToolParallelAiSearch(
-  apiKey: json['api_key'] as String?,
-  customConfigs: json['custom_configs'] as Map<String, dynamic>?,
-  enableDataRetention: json['enable_data_retention'] as bool?,
-  enableZeroDataRetention: json['enable_zero_data_retention'] as bool?,
-);
-
-Map<String, dynamic> _$ToolParallelAiSearchToJson(
-  ToolParallelAiSearch instance,
-) => <String, dynamic>{
-  'api_key': ?instance.apiKey,
-  'custom_configs': ?instance.customConfigs,
-  'enable_data_retention': ?instance.enableDataRetention,
-  'enable_zero_data_retention': ?instance.enableZeroDataRetention,
-};
-
-ToolExaAiSearch _$ToolExaAiSearchFromJson(Map<String, dynamic> json) =>
-    ToolExaAiSearch(
-      apiKey: json['api_key'] as String?,
-      customConfigs: json['custom_configs'] as Map<String, dynamic>?,
-    );
-
-Map<String, dynamic> _$ToolExaAiSearchToJson(ToolExaAiSearch instance) =>
-    <String, dynamic>{
-      'api_key': ?instance.apiKey,
-      'custom_configs': ?instance.customConfigs,
-    };
-
-ComputerUse _$ComputerUseFromJson(Map<String, dynamic> json) => ComputerUse(
-  environment: $enumDecodeNullable(_$EnvironmentEnumMap, json['environment']),
-  excludedPredefinedFunctions:
-      (json['excluded_predefined_functions'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-  enablePromptInjectionDetection:
-      json['enable_prompt_injection_detection'] as bool?,
-  disabledSafetyPolicies: (json['disabled_safety_policies'] as List<dynamic>?)
-      ?.map((e) => $enumDecode(_$SafetyPolicyEnumMap, e))
-      .toList(),
-);
-
-Map<String, dynamic> _$ComputerUseToJson(
-  ComputerUse instance,
-) => <String, dynamic>{
-  'environment': ?_$EnvironmentEnumMap[instance.environment],
-  'excluded_predefined_functions': ?instance.excludedPredefinedFunctions,
-  'enable_prompt_injection_detection': ?instance.enablePromptInjectionDetection,
-  'disabled_safety_policies': ?instance.disabledSafetyPolicies
-      ?.map((e) => _$SafetyPolicyEnumMap[e]!)
-      .toList(),
-};
-
-const _$EnvironmentEnumMap = {
-  Environment.ENVIRONMENT_UNSPECIFIED: 'ENVIRONMENT_UNSPECIFIED',
-  Environment.ENVIRONMENT_BROWSER: 'ENVIRONMENT_BROWSER',
-  Environment.ENVIRONMENT_MOBILE: 'ENVIRONMENT_MOBILE',
-  Environment.ENVIRONMENT_DESKTOP: 'ENVIRONMENT_DESKTOP',
-};
-
-const _$SafetyPolicyEnumMap = {
-  SafetyPolicy.SAFETY_POLICY_UNSPECIFIED: 'SAFETY_POLICY_UNSPECIFIED',
-  SafetyPolicy.FINANCIAL_TRANSACTIONS: 'FINANCIAL_TRANSACTIONS',
-  SafetyPolicy.SENSITIVE_DATA_MODIFICATION: 'SENSITIVE_DATA_MODIFICATION',
-  SafetyPolicy.COMMUNICATION_TOOL: 'COMMUNICATION_TOOL',
-  SafetyPolicy.ACCOUNT_CREATION: 'ACCOUNT_CREATION',
-  SafetyPolicy.DATA_MODIFICATION: 'DATA_MODIFICATION',
-  SafetyPolicy.USER_CONSENT_MANAGEMENT: 'USER_CONSENT_MANAGEMENT',
-  SafetyPolicy.LEGAL_TERMS_AND_AGREEMENTS: 'LEGAL_TERMS_AND_AGREEMENTS',
-};
-
 AutomaticActivityDetection _$AutomaticActivityDetectionFromJson(
   Map<String, dynamic> json,
 ) => AutomaticActivityDetection(
@@ -1007,6 +629,8 @@ RealtimeInputConfig _$RealtimeInputConfigFromJson(Map<String, dynamic> json) =>
         _$TurnCoverageEnumMap,
         json['turn_coverage'],
       ),
+      interimTranscriptTimestampEnabled:
+          json['interim_transcript_timestamp_enabled'] as bool?,
     );
 
 Map<String, dynamic> _$RealtimeInputConfigToJson(
@@ -1015,6 +639,8 @@ Map<String, dynamic> _$RealtimeInputConfigToJson(
   'automatic_activity_detection': ?instance.automaticActivityDetection,
   'activity_handling': ?_$ActivityHandlingEnumMap[instance.activityHandling],
   'turn_coverage': ?_$TurnCoverageEnumMap[instance.turnCoverage],
+  'interim_transcript_timestamp_enabled':
+      ?instance.interimTranscriptTimestampEnabled,
 };
 
 const _$ActivityHandlingEnumMap = {
@@ -1304,6 +930,489 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'labels': ?instance.labels,
     };
 
+PartialArg _$PartialArgFromJson(Map<String, dynamic> json) => PartialArg(
+  boolValue: json['bool_value'] as bool?,
+  jsonPath: json['json_path'] as String?,
+  nullValue: json['null_value'] as String?,
+  numberValue: (json['number_value'] as num?)?.toDouble(),
+  stringValue: json['string_value'] as String?,
+  willContinue: json['will_continue'] as bool?,
+);
+
+Map<String, dynamic> _$PartialArgToJson(PartialArg instance) =>
+    <String, dynamic>{
+      'bool_value': ?instance.boolValue,
+      'json_path': ?instance.jsonPath,
+      'null_value': ?instance.nullValue,
+      'number_value': ?instance.numberValue,
+      'string_value': ?instance.stringValue,
+      'will_continue': ?instance.willContinue,
+    };
+
+FunctionCall _$FunctionCallFromJson(Map<String, dynamic> json) => FunctionCall(
+  id: json['id'] as String?,
+  name: json['name'] as String?,
+  args: json['args'] as Map<String, dynamic>?,
+  partialArgs: (json['partial_args'] as List<dynamic>?)
+      ?.map((e) => PartialArg.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  willContinue: json['will_continue'] as bool?,
+);
+
+Map<String, dynamic> _$FunctionCallToJson(FunctionCall instance) =>
+    <String, dynamic>{
+      'id': ?instance.id,
+      'name': ?instance.name,
+      'args': ?instance.args,
+      'partial_args': ?instance.partialArgs,
+      'will_continue': ?instance.willContinue,
+    };
+
+ToolCall _$ToolCallFromJson(Map<String, dynamic> json) => ToolCall(
+  id: json['id'] as String?,
+  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
+  args: json['args'] as Map<String, dynamic>?,
+);
+
+Map<String, dynamic> _$ToolCallToJson(ToolCall instance) => <String, dynamic>{
+  'id': ?instance.id,
+  'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
+  'args': ?instance.args,
+};
+
+const _$ToolTypeEnumMap = {
+  ToolType.TOOL_TYPE_UNSPECIFIED: 'TOOL_TYPE_UNSPECIFIED',
+  ToolType.GOOGLE_SEARCH_WEB: 'GOOGLE_SEARCH_WEB',
+  ToolType.GOOGLE_SEARCH_IMAGE: 'GOOGLE_SEARCH_IMAGE',
+  ToolType.URL_CONTEXT: 'URL_CONTEXT',
+  ToolType.GOOGLE_MAPS: 'GOOGLE_MAPS',
+  ToolType.FILE_SEARCH: 'FILE_SEARCH',
+  ToolType.MEDIA_PROCESSING: 'MEDIA_PROCESSING',
+};
+
+ToolResponse _$ToolResponseFromJson(Map<String, dynamic> json) => ToolResponse(
+  id: json['id'] as String?,
+  toolType: $enumDecodeNullable(_$ToolTypeEnumMap, json['tool_type']),
+  response: json['response'] as Map<String, dynamic>?,
+);
+
+Map<String, dynamic> _$ToolResponseToJson(ToolResponse instance) =>
+    <String, dynamic>{
+      'id': ?instance.id,
+      'tool_type': ?_$ToolTypeEnumMap[instance.toolType],
+      'response': ?instance.response,
+    };
+
+FunctionResponseBlob _$FunctionResponseBlobFromJson(
+  Map<String, dynamic> json,
+) => FunctionResponseBlob(
+  mimeType: json['mime_type'] as String?,
+  data: json['data'] as String?,
+  displayName: json['display_name'] as String?,
+);
+
+Map<String, dynamic> _$FunctionResponseBlobToJson(
+  FunctionResponseBlob instance,
+) => <String, dynamic>{
+  'mime_type': ?instance.mimeType,
+  'data': ?instance.data,
+  'display_name': ?instance.displayName,
+};
+
+FunctionResponseFileData _$FunctionResponseFileDataFromJson(
+  Map<String, dynamic> json,
+) => FunctionResponseFileData(
+  fileUri: json['file_uri'] as String?,
+  mimeType: json['mime_type'] as String?,
+  displayName: json['display_name'] as String?,
+);
+
+Map<String, dynamic> _$FunctionResponseFileDataToJson(
+  FunctionResponseFileData instance,
+) => <String, dynamic>{
+  'file_uri': ?instance.fileUri,
+  'mime_type': ?instance.mimeType,
+  'display_name': ?instance.displayName,
+};
+
+FunctionResponsePart _$FunctionResponsePartFromJson(
+  Map<String, dynamic> json,
+) => FunctionResponsePart(
+  inlineData: json['inline_data'] == null
+      ? null
+      : FunctionResponseBlob.fromJson(
+          json['inline_data'] as Map<String, dynamic>,
+        ),
+  fileData: json['file_data'] == null
+      ? null
+      : FunctionResponseFileData.fromJson(
+          json['file_data'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$FunctionResponsePartToJson(
+  FunctionResponsePart instance,
+) => <String, dynamic>{
+  'inline_data': ?instance.inlineData,
+  'file_data': ?instance.fileData,
+};
+
+FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
+    FunctionResponse(
+      id: json['id'] as String?,
+      name: json['name'] as String?,
+      response: json['response'] as Map<String, dynamic>?,
+      willContinue: json['will_continue'] as bool?,
+      scheduling: $enumDecodeNullable(
+        _$FunctionResponseSchedulingEnumMap,
+        json['scheduling'],
+      ),
+      parts: (json['parts'] as List<dynamic>?)
+          ?.map((e) => FunctionResponsePart.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$FunctionResponseToJson(FunctionResponse instance) =>
+    <String, dynamic>{
+      'id': ?instance.id,
+      'name': ?instance.name,
+      'response': ?instance.response,
+      'will_continue': ?instance.willContinue,
+      'scheduling': ?_$FunctionResponseSchedulingEnumMap[instance.scheduling],
+      'parts': ?instance.parts,
+    };
+
+const _$FunctionResponseSchedulingEnumMap = {
+  FunctionResponseScheduling.SCHEDULING_UNSPECIFIED: 'SCHEDULING_UNSPECIFIED',
+  FunctionResponseScheduling.SILENT: 'SILENT',
+  FunctionResponseScheduling.WHEN_IDLE: 'WHEN_IDLE',
+  FunctionResponseScheduling.INTERRUPT: 'INTERRUPT',
+};
+
+FunctionDeclaration _$FunctionDeclarationFromJson(Map<String, dynamic> json) =>
+    FunctionDeclaration(
+      description: json['description'] as String?,
+      name: json['name'] as String?,
+      parameters: json['parameters'] as Map<String, dynamic>?,
+      parametersJsonSchema: json['parameters_json_schema'],
+      response: json['response'] as Map<String, dynamic>?,
+      responseJsonSchema: json['response_json_schema'],
+      behavior: $enumDecodeNullable(_$BehaviorEnumMap, json['behavior']),
+    );
+
+Map<String, dynamic> _$FunctionDeclarationToJson(
+  FunctionDeclaration instance,
+) => <String, dynamic>{
+  'description': ?instance.description,
+  'name': ?instance.name,
+  'parameters': ?instance.parameters,
+  'parameters_json_schema': ?instance.parametersJsonSchema,
+  'response': ?instance.response,
+  'response_json_schema': ?instance.responseJsonSchema,
+  'behavior': ?_$BehaviorEnumMap[instance.behavior],
+};
+
+const _$BehaviorEnumMap = {
+  Behavior.UNSPECIFIED: 'UNSPECIFIED',
+  Behavior.BLOCKING: 'BLOCKING',
+  Behavior.NON_BLOCKING: 'NON_BLOCKING',
+};
+
+Interval _$IntervalFromJson(Map<String, dynamic> json) => Interval(
+  startTime: json['start_time'] == null
+      ? null
+      : DateTime.parse(json['start_time'] as String),
+  endTime: json['end_time'] == null
+      ? null
+      : DateTime.parse(json['end_time'] as String),
+);
+
+Map<String, dynamic> _$IntervalToJson(Interval instance) => <String, dynamic>{
+  'start_time': ?instance.startTime?.toIso8601String(),
+  'end_time': ?instance.endTime?.toIso8601String(),
+};
+
+WebSearch _$WebSearchFromJson(Map<String, dynamic> json) => const WebSearch();
+
+Map<String, dynamic> _$WebSearchToJson(WebSearch instance) =>
+    <String, dynamic>{};
+
+ImageSearch _$ImageSearchFromJson(Map<String, dynamic> json) =>
+    const ImageSearch();
+
+Map<String, dynamic> _$ImageSearchToJson(ImageSearch instance) =>
+    <String, dynamic>{};
+
+SearchTypes _$SearchTypesFromJson(Map<String, dynamic> json) => SearchTypes(
+  webSearch: (json['web_search'] ?? json['webSearch']) == null
+      ? null
+      : WebSearch.fromJson(
+          (json['web_search'] ?? json['webSearch']) as Map<String, dynamic>,
+        ),
+  imageSearch: (json['image_search'] ?? json['imageSearch']) == null
+      ? null
+      : ImageSearch.fromJson(
+          (json['image_search'] ?? json['imageSearch']) as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$SearchTypesToJson(SearchTypes instance) =>
+    <String, dynamic>{
+      'web_search': ?instance.webSearch?.toJson(),
+      'image_search': ?instance.imageSearch?.toJson(),
+    };
+
+GoogleSearch _$GoogleSearchFromJson(Map<String, dynamic> json) => GoogleSearch(
+  excludeDomains:
+      ((json['exclude_domains'] ?? json['excludeDomains']) as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+  timeRangeFilter:
+      (json['time_range_filter'] ?? json['timeRangeFilter']) == null
+      ? null
+      : Interval.fromJson(
+          (json['time_range_filter'] ?? json['timeRangeFilter'])
+              as Map<String, dynamic>,
+        ),
+  blockingConfidence:
+      (json['blocking_confidence'] ?? json['blockingConfidence']) as String?,
+  searchTypes: (json['search_types'] ?? json['searchTypes']) == null
+      ? null
+      : SearchTypes.fromJson(
+          (json['search_types'] ?? json['searchTypes']) as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$GoogleSearchToJson(GoogleSearch instance) =>
+    <String, dynamic>{
+      'exclude_domains': ?instance.excludeDomains,
+      'time_range_filter': ?instance.timeRangeFilter,
+      'blocking_confidence': ?instance.blockingConfidence,
+      'search_types': ?instance.searchTypes?.toJson(),
+    };
+
+DynamicRetrievalConfig _$DynamicRetrievalConfigFromJson(
+  Map<String, dynamic> json,
+) => DynamicRetrievalConfig(
+  dynamicThreshold: (json['dynamic_threshold'] as num?)?.toDouble(),
+  mode: json['mode'] as String?,
+);
+
+Map<String, dynamic> _$DynamicRetrievalConfigToJson(
+  DynamicRetrievalConfig instance,
+) => <String, dynamic>{
+  'dynamic_threshold': ?instance.dynamicThreshold,
+  'mode': ?instance.mode,
+};
+
+GoogleSearchRetrieval _$GoogleSearchRetrievalFromJson(
+  Map<String, dynamic> json,
+) => GoogleSearchRetrieval(
+  dynamicRetrievalConfig: json['dynamic_retrieval_config'] == null
+      ? null
+      : DynamicRetrievalConfig.fromJson(
+          json['dynamic_retrieval_config'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$GoogleSearchRetrievalToJson(
+  GoogleSearchRetrieval instance,
+) => <String, dynamic>{
+  'dynamic_retrieval_config': ?instance.dynamicRetrievalConfig,
+};
+
+AuthConfig _$AuthConfigFromJson(Map<String, dynamic> json) => AuthConfig(
+  apiKey: (json['api_key'] ?? json['apiKey']) as String?,
+  authType: (json['auth_type'] ?? json['authType']) as String?,
+);
+
+Map<String, dynamic> _$AuthConfigToJson(AuthConfig instance) =>
+    <String, dynamic>{
+      'api_key': ?instance.apiKey,
+      'auth_type': ?instance.authType,
+    };
+
+GoogleMaps _$GoogleMapsFromJson(Map<String, dynamic> json) => GoogleMaps(
+  groundingTypes:
+      ((json['grounding_types'] ?? json['groundingTypes']) as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+  authConfig: (json['auth_config'] ?? json['authConfig']) == null
+      ? null
+      : AuthConfig.fromJson(
+          (json['auth_config'] ?? json['authConfig']) as Map<String, dynamic>,
+        ),
+  enableWidget: (json['enable_widget'] ?? json['enableWidget']) as bool?,
+);
+
+Map<String, dynamic> _$GoogleMapsToJson(GoogleMaps instance) =>
+    <String, dynamic>{
+      'grounding_types': ?instance.groundingTypes,
+      'auth_config': ?instance.authConfig?.toJson(),
+      'enable_widget': ?instance.enableWidget,
+    };
+
+StreamableHttpTransport _$StreamableHttpTransportFromJson(
+  Map<String, dynamic> json,
+) => StreamableHttpTransport(
+  url: json['url'] as String?,
+  headers: (json['headers'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as String),
+  ),
+  timeout: json['timeout'] as String?,
+  sseReadTimeout: (json['sse_read_timeout'] ?? json['sseReadTimeout'])
+      as String?,
+  terminateOnClose:
+      (json['terminate_on_close'] ?? json['terminateOnClose']) as bool?,
+);
+
+Map<String, dynamic> _$StreamableHttpTransportToJson(
+  StreamableHttpTransport instance,
+) => <String, dynamic>{
+  'url': ?instance.url,
+  'headers': ?instance.headers,
+  'timeout': ?instance.timeout,
+  'sse_read_timeout': ?instance.sseReadTimeout,
+  'terminate_on_close': ?instance.terminateOnClose,
+};
+
+McpServer _$McpServerFromJson(Map<String, dynamic> json) => McpServer(
+  name: json['name'] as String?,
+  streamableHttpTransport:
+      (json['streamable_http_transport'] ?? json['streamableHttpTransport']) ==
+          null
+      ? null
+      : StreamableHttpTransport.fromJson(
+          (json['streamable_http_transport'] ?? json['streamableHttpTransport'])
+              as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$McpServerToJson(McpServer instance) => <String, dynamic>{
+  'name': ?instance.name,
+  'streamable_http_transport': ?instance.streamableHttpTransport?.toJson(),
+};
+
+Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
+  functionDeclarations: (json['function_declarations'] as List<dynamic>?)
+      ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  googleSearch: json['google_search'] == null
+      ? null
+      : GoogleSearch.fromJson(json['google_search'] as Map<String, dynamic>),
+  googleSearchRetrieval: json['google_search_retrieval'] == null
+      ? null
+      : GoogleSearchRetrieval.fromJson(
+          json['google_search_retrieval'] as Map<String, dynamic>,
+        ),
+  codeExecution: json['code_execution'] as Map<String, dynamic>?,
+  urlContext: json['url_context'] as Map<String, dynamic>?,
+  googleMaps: _googleMapsFromJson(json['google_maps']),
+  retrieval: json['retrieval'] as Map<String, dynamic>?,
+  computerUse: _computerUseFromJson(json['computer_use']),
+  fileSearch: json['file_search'] as Map<String, dynamic>?,
+  enterpriseWebSearch: json['enterprise_web_search'] as Map<String, dynamic>?,
+  mcpServers: (json['mcp_servers'] as List<dynamic>?)
+      ?.map((e) => e as Map<String, dynamic>)
+      .toList(),
+  exaAiSearch: json['exa_ai_search'] == null
+      ? null
+      : ToolExaAiSearch.fromJson(json['exa_ai_search'] as Map<String, dynamic>),
+  parallelAiSearch: json['parallel_ai_search'] == null
+      ? null
+      : ToolParallelAiSearch.fromJson(
+          json['parallel_ai_search'] as Map<String, dynamic>,
+        ),
+);
+
+Map<String, dynamic> _$ToolToJson(Tool instance) => <String, dynamic>{
+  'function_declarations': ?instance.functionDeclarations,
+  'google_search': ?instance.googleSearch,
+  'google_search_retrieval': ?instance.googleSearchRetrieval,
+  'code_execution': ?instance.codeExecution,
+  'url_context': ?instance.urlContext,
+  'google_maps': ?_googleMapsToJson(instance.googleMaps),
+  'retrieval': ?instance.retrieval,
+  'computer_use': ?_computerUseToJson(instance.computerUse),
+  'file_search': ?instance.fileSearch,
+  'enterprise_web_search': ?instance.enterpriseWebSearch,
+  'mcp_servers': ?instance.mcpServers,
+  'exa_ai_search': ?instance.exaAiSearch,
+  'parallel_ai_search': ?instance.parallelAiSearch,
+};
+
+ToolParallelAiSearch _$ToolParallelAiSearchFromJson(
+  Map<String, dynamic> json,
+) => ToolParallelAiSearch(
+  apiKey: json['api_key'] as String?,
+  customConfigs: json['custom_configs'] as Map<String, dynamic>?,
+  enableDataRetention: json['enable_data_retention'] as bool?,
+  enableZeroDataRetention: json['enable_zero_data_retention'] as bool?,
+);
+
+Map<String, dynamic> _$ToolParallelAiSearchToJson(
+  ToolParallelAiSearch instance,
+) => <String, dynamic>{
+  'api_key': ?instance.apiKey,
+  'custom_configs': ?instance.customConfigs,
+  'enable_data_retention': ?instance.enableDataRetention,
+  'enable_zero_data_retention': ?instance.enableZeroDataRetention,
+};
+
+ToolExaAiSearch _$ToolExaAiSearchFromJson(Map<String, dynamic> json) =>
+    ToolExaAiSearch(
+      apiKey: json['api_key'] as String?,
+      customConfigs: json['custom_configs'] as Map<String, dynamic>?,
+    );
+
+Map<String, dynamic> _$ToolExaAiSearchToJson(ToolExaAiSearch instance) =>
+    <String, dynamic>{
+      'api_key': ?instance.apiKey,
+      'custom_configs': ?instance.customConfigs,
+    };
+
+ComputerUse _$ComputerUseFromJson(Map<String, dynamic> json) => ComputerUse(
+  environment: $enumDecodeNullable(_$EnvironmentEnumMap, json['environment']),
+  excludedPredefinedFunctions:
+      (json['excluded_predefined_functions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+  enablePromptInjectionDetection:
+      json['enable_prompt_injection_detection'] as bool?,
+  disabledSafetyPolicies: (json['disabled_safety_policies'] as List<dynamic>?)
+      ?.map((e) => $enumDecode(_$SafetyPolicyEnumMap, e))
+      .toList(),
+);
+
+Map<String, dynamic> _$ComputerUseToJson(
+  ComputerUse instance,
+) => <String, dynamic>{
+  'environment': ?_$EnvironmentEnumMap[instance.environment],
+  'excluded_predefined_functions': ?instance.excludedPredefinedFunctions,
+  'enable_prompt_injection_detection': ?instance.enablePromptInjectionDetection,
+  'disabled_safety_policies': ?instance.disabledSafetyPolicies
+      ?.map((e) => _$SafetyPolicyEnumMap[e]!)
+      .toList(),
+};
+
+const _$EnvironmentEnumMap = {
+  Environment.ENVIRONMENT_UNSPECIFIED: 'ENVIRONMENT_UNSPECIFIED',
+  Environment.ENVIRONMENT_BROWSER: 'ENVIRONMENT_BROWSER',
+  Environment.ENVIRONMENT_MOBILE: 'ENVIRONMENT_MOBILE',
+  Environment.ENVIRONMENT_DESKTOP: 'ENVIRONMENT_DESKTOP',
+};
+
+const _$SafetyPolicyEnumMap = {
+  SafetyPolicy.SAFETY_POLICY_UNSPECIFIED: 'SAFETY_POLICY_UNSPECIFIED',
+  SafetyPolicy.FINANCIAL_TRANSACTIONS: 'FINANCIAL_TRANSACTIONS',
+  SafetyPolicy.SENSITIVE_DATA_MODIFICATION: 'SENSITIVE_DATA_MODIFICATION',
+  SafetyPolicy.COMMUNICATION_TOOL: 'COMMUNICATION_TOOL',
+  SafetyPolicy.ACCOUNT_CREATION: 'ACCOUNT_CREATION',
+  SafetyPolicy.DATA_MODIFICATION: 'DATA_MODIFICATION',
+  SafetyPolicy.USER_CONSENT_MANAGEMENT: 'USER_CONSENT_MANAGEMENT',
+  SafetyPolicy.LEGAL_TERMS_AND_AGREEMENTS: 'LEGAL_TERMS_AND_AGREEMENTS',
+};
+
 ActivityStart _$ActivityStartFromJson(Map<String, dynamic> json) =>
     ActivityStart();
 
@@ -1356,11 +1465,23 @@ LiveServerSetupComplete _$LiveServerSetupCompleteFromJson(
         ),
 );
 
+WordInfo _$WordInfoFromJson(Map<String, dynamic> json) => WordInfo(
+  word: json['word'] as String?,
+  startOffset: json['startOffset'] as String?,
+  endOffset: json['endOffset'] as String?,
+);
+
 Transcription _$TranscriptionFromJson(Map<String, dynamic> json) =>
     Transcription(
       text: json['text'] as String?,
       finished: json['finished'] as bool?,
       languageCode: json['languageCode'] as String?,
+      speakerLabel: json['speakerLabel'] as String?,
+      words: (json['words'] as List<dynamic>?)
+          ?.map((e) => WordInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      startOffset: json['startOffset'] as String?,
+      endOffset: json['endOffset'] as String?,
     );
 
 ExecutableCode _$ExecutableCodeFromJson(Map<String, dynamic> json) =>
@@ -1523,7 +1644,7 @@ VoiceActivity _$VoiceActivityFromJson(Map<String, dynamic> json) =>
     VoiceActivity(
       voiceActivityType: $enumDecodeNullable(
         _$VoiceActivityTypeEnumMap,
-        json['voiceActivityType'],
+        json['voiceActivityType'] ?? json['type'],
       ),
       audioOffset: json['audioOffset'] as String?,
     );
@@ -1552,9 +1673,12 @@ const _$MediaModalityEnumMap = {
 UsageMetadata _$UsageMetadataFromJson(
   Map<String, dynamic> json,
 ) => UsageMetadata(
+  initialPromptTokenCount: (json['initialPromptTokenCount'] as num?)?.toInt(),
   promptTokenCount: (json['promptTokenCount'] as num?)?.toInt(),
   cachedContentTokenCount: (json['cachedContentTokenCount'] as num?)?.toInt(),
-  responseTokenCount: (json['responseTokenCount'] as num?)?.toInt(),
+  responseTokenCount:
+      ((json['responseTokenCount'] ?? json['candidatesTokenCount']) as num?)
+          ?.toInt(),
   toolUsePromptTokenCount: (json['toolUsePromptTokenCount'] as num?)?.toInt(),
   thoughtsTokenCount: (json['thoughtsTokenCount'] as num?)?.toInt(),
   totalTokenCount: (json['totalTokenCount'] as num?)?.toInt(),
@@ -1564,9 +1688,11 @@ UsageMetadata _$UsageMetadataFromJson(
   cacheTokensDetails: (json['cacheTokensDetails'] as List<dynamic>?)
       ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
       .toList(),
-  responseTokensDetails: (json['responseTokensDetails'] as List<dynamic>?)
-      ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  responseTokensDetails:
+      ((json['responseTokensDetails'] ?? json['candidatesTokensDetails'])
+              as List<dynamic>?)
+          ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
+          .toList(),
   toolUsePromptTokensDetails:
       (json['toolUsePromptTokensDetails'] as List<dynamic>?)
           ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
@@ -1665,11 +1791,104 @@ LiveConnectConstraints _$LiveConnectConstraintsFromJson(
   config: json['config'] == null
       ? null
       : GenerationConfig.fromJson(json['config'] as Map<String, dynamic>),
+  systemInstruction:
+      (json['system_instruction'] ?? json['systemInstruction']) == null
+      ? null
+      : Content.fromJson(
+          (json['system_instruction'] ?? json['systemInstruction'])
+              as Map<String, dynamic>,
+        ),
+  tools: (json['tools'] as List<dynamic>?)
+      ?.map((e) => Tool.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  realtimeInputConfig:
+      (json['realtime_input_config'] ?? json['realtimeInputConfig']) == null
+      ? null
+      : RealtimeInputConfig.fromJson(
+          (json['realtime_input_config'] ?? json['realtimeInputConfig'])
+              as Map<String, dynamic>,
+        ),
+  sessionResumption:
+      (json['session_resumption'] ?? json['sessionResumption']) == null
+      ? null
+      : SessionResumptionConfig.fromJson(
+          (json['session_resumption'] ?? json['sessionResumption'])
+              as Map<String, dynamic>,
+        ),
+  contextWindowCompression:
+      (json['context_window_compression'] ??
+              json['contextWindowCompression']) ==
+          null
+      ? null
+      : ContextWindowCompressionConfig.fromJson(
+          (json['context_window_compression'] ??
+                  json['contextWindowCompression'])
+              as Map<String, dynamic>,
+        ),
+  inputAudioTranscription:
+      (json['input_audio_transcription'] ?? json['inputAudioTranscription']) ==
+          null
+      ? null
+      : AudioTranscriptionConfig.fromJson(
+          (json['input_audio_transcription'] ?? json['inputAudioTranscription'])
+              as Map<String, dynamic>,
+        ),
+  outputAudioTranscription:
+      (json['output_audio_transcription'] ??
+              json['outputAudioTranscription']) ==
+          null
+      ? null
+      : AudioTranscriptionConfig.fromJson(
+          (json['output_audio_transcription'] ??
+                  json['outputAudioTranscription'])
+              as Map<String, dynamic>,
+        ),
+  proactivity: json['proactivity'] == null
+      ? null
+      : ProactivityConfig.fromJson(json['proactivity'] as Map<String, dynamic>),
+  avatarConfig: (json['avatar_config'] ?? json['avatarConfig']) == null
+      ? null
+      : AvatarConfig.fromJson(
+          (json['avatar_config'] ?? json['avatarConfig'])
+              as Map<String, dynamic>,
+        ),
+  safetySettings:
+      ((json['safety_settings'] ?? json['safetySettings']) as List<dynamic>?)
+          ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
+          .toList(),
+  historyConfig: (json['history_config'] ?? json['historyConfig']) == null
+      ? null
+      : HistoryConfig.fromJson(
+          (json['history_config'] ?? json['historyConfig'])
+              as Map<String, dynamic>,
+        ),
+  translationConfig:
+      (json['translation_config'] ?? json['translationConfig']) == null
+      ? null
+      : TranslationConfig.fromJson(
+          (json['translation_config'] ?? json['translationConfig'])
+              as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$LiveConnectConstraintsToJson(
   LiveConnectConstraints instance,
-) => <String, dynamic>{'model': ?instance.model, 'config': ?instance.config};
+) => <String, dynamic>{
+  'model': ?instance.model,
+  'config': ?instance.config,
+  'system_instruction': ?instance.systemInstruction,
+  'tools': ?instance.tools,
+  'realtime_input_config': ?instance.realtimeInputConfig,
+  'session_resumption': ?instance.sessionResumption,
+  'context_window_compression': ?instance.contextWindowCompression,
+  'input_audio_transcription': ?instance.inputAudioTranscription,
+  'output_audio_transcription': ?instance.outputAudioTranscription,
+  'proactivity': ?instance.proactivity,
+  'avatar_config': ?instance.avatarConfig,
+  'safety_settings': ?instance.safetySettings,
+  'history_config': ?instance.historyConfig,
+  'translation_config': ?instance.translationConfig,
+};
 
 CreateAuthTokenConfig _$CreateAuthTokenConfigFromJson(
   Map<String, dynamic> json,

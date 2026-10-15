@@ -27,3 +27,9 @@ export 'src/widgets/live_chat_view.dart';
 export 'src/music_service.dart';
 export 'src/auth_tokens_service.dart';
 export 'src/utils/live_logger.dart';
+export 'src/utils/pcm_audio_buffer.dart';
+export 'src/utils/reconnect_policy.dart';
+export 'src/widgets/live_tool_activity_chip.dart';
+export 'src/widgets/live_audio_route_button.dart';
+export 'src/widgets/live_translate_split_view.dart';
+

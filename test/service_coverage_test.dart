@@ -400,9 +400,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.27.0 dart/9.9',
+          'google-genai-sdk/2.30.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.27.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.30.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)

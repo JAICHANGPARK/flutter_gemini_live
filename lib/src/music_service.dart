@@ -150,7 +150,7 @@ class LiveMusicSession {
 
 /// Service for connecting to Gemini Realtime Music generation (Lyria Live).
 class LiveMusicService {
-  static const _sdkVersion = '2.27.0';
+  static const _sdkVersion = '2.30.0';
 
   /// The Gemini API key used for authentication.
   final String apiKey;

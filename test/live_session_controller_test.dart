@@ -187,6 +187,73 @@ void main() {
       expect(controller.state, LiveSessionState.disconnected);
       expect(controller.isConnected, isFalse);
     });
+
+    test('forwards translationConfig, skips thought parts, and replaces interim transcripts', () async {
+      await controller.connect(
+        LiveConnectParameters(
+          model: LiveModels.gemini35LiveTranslatePreview,
+          translationConfig: TranslationConfig(
+            targetLanguageCode: 'ko-KR',
+            echoTargetLanguage: true,
+          ),
+          callbacks: LiveCallbacks(),
+        ),
+      );
+
+      final sentSetup =
+          jsonDecode(fakeChannel.sentMessages.first as String)
+              as Map<String, dynamic>;
+      expect(
+        sentSetup['setup']['generation_config']['translation_config']
+            ['target_language_code'],
+        'ko-KR',
+      );
+
+      // Interim user transcript updates should replace the streaming user bubble
+      fakeChannel.emitServerJson({
+        'serverContent': {
+          'interimInputTranscription': {
+            'text': 'Hello',
+            'speakerLabel': 'spk_1',
+          },
+        },
+      });
+      await pumpEventQueue();
+      expect(controller.transcripts.length, 1);
+      expect(controller.transcripts.single.text, 'Hello');
+      expect(controller.transcripts.single.speaker, 'spk_1');
+      expect(controller.transcripts.single.isStreaming, isTrue);
+
+      fakeChannel.emitServerJson({
+        'serverContent': {
+          'interimInputTranscription': {
+            'text': 'Hello world',
+            'speakerLabel': 'spk_1',
+          },
+        },
+      });
+      await pumpEventQueue();
+      expect(controller.transcripts.length, 1);
+      expect(controller.transcripts.single.text, 'Hello world');
+
+      // Model turn with thought: true should be skipped from spoken transcript
+      fakeChannel.emitServerJson({
+        'serverContent': {
+          'modelTurn': {
+            'parts': [
+              {'text': 'Internal reasoning...', 'thought': true},
+              {'text': '안녕하세요!'},
+            ],
+          },
+          'turnComplete': true,
+        },
+      });
+      await pumpEventQueue();
+      expect(controller.transcripts.length, 2);
+      expect(controller.transcripts.last.role, 'model');
+      expect(controller.transcripts.last.text, '안녕하세요!');
+      expect(controller.transcripts.last.isStreaming, isFalse);
+    });
   });
 }
 

@@ -194,17 +194,74 @@ class Interval {
   Map<String, dynamic> toJson() => _$IntervalToJson(this);
 }
 
-/// Google Search tool configuration.
+/// Standard web search for grounding and related configurations.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class WebSearch {
+  /// Creates a web search marker.
+  const WebSearch();
+
+  /// Creates a [WebSearch] from a JSON payload.
+  factory WebSearch.fromJson(Map<String, dynamic> json) =>
+      _$WebSearchFromJson(json);
+
+  /// Converts this marker to a JSON payload.
+  Map<String, dynamic> toJson() => _$WebSearchToJson(this);
+}
+
+/// Image search for grounding and related configurations.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class ImageSearch {
+  /// Creates an image search marker.
+  const ImageSearch();
+
+  /// Creates an [ImageSearch] from a JSON payload.
+  factory ImageSearch.fromJson(Map<String, dynamic> json) =>
+      _$ImageSearchFromJson(json);
+
+  /// Converts this marker to a JSON payload.
+  Map<String, dynamic> toJson() => _$ImageSearchToJson(this);
+}
+
+/// Different types of search that can be enabled on the [GoogleSearch] tool.
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
+class SearchTypes {
+  /// Setting this field enables web search. Only text results are returned.
+  final WebSearch? webSearch;
+
+  /// Setting this field enables image search. Image bytes are returned.
+  final ImageSearch? imageSearch;
+
+  const SearchTypes({this.webSearch, this.imageSearch});
+
+  factory SearchTypes.fromJson(Map<String, dynamic> json) =>
+      _$SearchTypesFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SearchTypesToJson(this);
+}
+
+/// Google Search tool configuration.
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
 class GoogleSearch {
   final List<String>? excludeDomains;
   final Interval? timeRangeFilter;
   final String? blockingConfidence;
 
-  GoogleSearch({
+  /// The set of search types to enable. If not set, web search is enabled by default.
+  final SearchTypes? searchTypes;
+
+  const GoogleSearch({
     this.excludeDomains,
     this.timeRangeFilter,
     this.blockingConfidence,
+    this.searchTypes,
   });
 
   factory GoogleSearch.fromJson(Map<String, dynamic> json) =>
@@ -219,7 +276,7 @@ class DynamicRetrievalConfig {
   final double? dynamicThreshold;
   final String? mode;
 
-  DynamicRetrievalConfig({this.dynamicThreshold, this.mode});
+  const DynamicRetrievalConfig({this.dynamicThreshold, this.mode});
 
   factory DynamicRetrievalConfig.fromJson(Map<String, dynamic> json) =>
       _$DynamicRetrievalConfigFromJson(json);
@@ -232,7 +289,7 @@ class DynamicRetrievalConfig {
 class GoogleSearchRetrieval {
   final DynamicRetrievalConfig? dynamicRetrievalConfig;
 
-  GoogleSearchRetrieval({this.dynamicRetrievalConfig});
+  const GoogleSearchRetrieval({this.dynamicRetrievalConfig});
 
   factory GoogleSearchRetrieval.fromJson(Map<String, dynamic> json) =>
       _$GoogleSearchRetrievalFromJson(json);
@@ -240,18 +297,98 @@ class GoogleSearchRetrieval {
   Map<String, dynamic> toJson() => _$GoogleSearchRetrievalToJson(this);
 }
 
-/// Configuration options for Google Maps grounding in [Tool].
+/// Authentication configuration for tool integrations (such as Google Maps).
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class AuthConfig {
+  /// API key for authenticating with the external tool API.
+  final String? apiKey;
+
+  /// Optional authentication type identifier (e.g., "API_KEY").
+  final String? authType;
+
+  const AuthConfig({this.apiKey, this.authType});
+
+  factory AuthConfig.fromJson(Map<String, dynamic> json) =>
+      _$AuthConfigFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AuthConfigToJson(this);
+}
+
+/// Configuration options for Google Maps grounding in [Tool].
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
 class GoogleMaps {
+  /// Authentication config to access the Google Maps API.
+  final AuthConfig? authConfig;
+
+  /// Whether to return a widget context token in the GroundingMetadata of the response.
+  final bool? enableWidget;
+
   /// Grounding types supported by Google Maps, e.g. "places", "routing".
   final List<String>? groundingTypes;
 
-  GoogleMaps({this.groundingTypes});
+  const GoogleMaps({this.authConfig, this.enableWidget, this.groundingTypes});
 
   factory GoogleMaps.fromJson(Map<String, dynamic> json) =>
       _$GoogleMapsFromJson(json);
 
   Map<String, dynamic> toJson() => _$GoogleMapsToJson(this);
+}
+
+/// A transport that can stream HTTP requests and responses for an [McpServer].
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class StreamableHttpTransport {
+  /// The full URL for the MCPServer endpoint (e.g., "https://api.example.com/mcp").
+  final String? url;
+
+  /// Optional authentication headers or custom metadata.
+  final Map<String, String>? headers;
+
+  /// HTTP timeout for regular operations (e.g., "30s").
+  final String? timeout;
+
+  /// Timeout for SSE read operations (e.g., "60s").
+  final String? sseReadTimeout;
+
+  /// Whether to close the client session when the transport closes.
+  final bool? terminateOnClose;
+
+  const StreamableHttpTransport({
+    this.url,
+    this.headers,
+    this.timeout,
+    this.sseReadTimeout,
+    this.terminateOnClose,
+  });
+
+  factory StreamableHttpTransport.fromJson(Map<String, dynamic> json) =>
+      _$StreamableHttpTransportFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StreamableHttpTransportToJson(this);
+}
+
+/// An MCP server that can be called by the model to perform actions.
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
+class McpServer {
+  /// The name of the MCPServer.
+  final String? name;
+
+  /// A transport that can stream HTTP requests and responses.
+  final StreamableHttpTransport? streamableHttpTransport;
+
+  const McpServer({this.name, this.streamableHttpTransport});
+
+  factory McpServer.fromJson(Map<String, dynamic> json) =>
+      _$McpServerFromJson(json);
+
+  Map<String, dynamic> toJson() => _$McpServerToJson(this);
 }
 
 /// A tool bundle that can be attached to a model session.
@@ -288,6 +425,14 @@ class Tool {
     this.exaAiSearch,
     this.parallelAiSearch,
   });
+
+  /// Convenience factory to construct a [Tool] with typed [McpServer] definitions.
+  factory Tool.fromMcpServers(List<McpServer> servers) =>
+      Tool(mcpServers: servers.map((s) => s.toJson()).toList());
+
+  /// Returns [mcpServers] parsed as typed [McpServer] instances.
+  List<McpServer>? get typedMcpServers =>
+      mcpServers?.map(McpServer.fromJson).toList();
 
   factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
 

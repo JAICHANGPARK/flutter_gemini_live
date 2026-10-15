@@ -118,10 +118,14 @@ class RealtimeInputConfig {
   final ActivityHandling? activityHandling;
   final TurnCoverage? turnCoverage;
 
+  /// If true, enables interim transcript timestamps.
+  final bool? interimTranscriptTimestampEnabled;
+
   RealtimeInputConfig({
     this.automaticActivityDetection,
     this.activityHandling,
     this.turnCoverage,
+    this.interimTranscriptTimestampEnabled,
   });
 
   factory RealtimeInputConfig.fromJson(Map<String, dynamic> json) =>

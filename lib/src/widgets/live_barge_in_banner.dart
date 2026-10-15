@@ -92,6 +92,9 @@ class _GeminiLiveBargeInBannerState extends State<GeminiLiveBargeInBanner>
     super.didUpdateWidget(oldWidget);
     if (widget.isInterrupted && !oldWidget.isInterrupted) {
       _show();
+    } else if (!widget.isInterrupted && oldWidget.isInterrupted) {
+      _hideTimer?.cancel();
+      _controller.reverse();
     }
   }
 
@@ -99,7 +102,7 @@ class _GeminiLiveBargeInBannerState extends State<GeminiLiveBargeInBanner>
     _hideTimer?.cancel();
     _controller.forward();
     _hideTimer = Timer(widget.displayDuration, () {
-      if (mounted && widget.isInterrupted == false) {
+      if (mounted) {
         _controller.reverse();
       }
     });

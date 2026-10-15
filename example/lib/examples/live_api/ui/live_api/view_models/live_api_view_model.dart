@@ -85,13 +85,14 @@ class LiveApiViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _live.close();
     unawaited(_audio.dispose());
-    _disposed = true;
     super.dispose();
   }
 
   void _addLog(String type, String message, {Map<String, dynamic>? data}) {
+    if (_disposed) return;
     _logs.insert(
       0,
       LogEntry(

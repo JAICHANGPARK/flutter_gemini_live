@@ -132,6 +132,8 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
   final GeminiPricingRates pricingRates;
 
   int _promptTokens = 0;
+  int _initialPromptTokens = 0;
+  int _toolUsePromptTokens = 0;
   int _responseTokens = 0;
   int _totalTokens = 0;
   int _cachedTokens = 0;
@@ -153,6 +155,12 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
 
   /// Total number of prompt (input) tokens processed.
   int get promptTokens => _promptTokens;
+
+  /// Number of tokens in the initial prompt, excluding subsequent turns.
+  int get initialPromptTokens => _initialPromptTokens;
+
+  /// Number of tokens present in tool-use prompt(s).
+  int get toolUsePromptTokens => _toolUsePromptTokens;
 
   /// Total number of candidate response (output) tokens generated.
   int get responseTokens => _responseTokens;
@@ -197,13 +205,21 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
     bool changed = false;
 
     final prompt = usage.promptTokenCount ?? 0;
+    final initialPrompt = usage.initialPromptTokenCount ?? 0;
+    final toolUsePrompt = usage.toolUsePromptTokenCount ?? 0;
     final response = usage.responseTokenCount ?? 0;
     final total = usage.totalTokenCount ?? (prompt + response);
     final cached = usage.cachedContentTokenCount ?? 0;
     final thoughts = usage.thoughtsTokenCount ?? 0;
 
-    if (prompt > 0 || response > 0 || total > 0) {
+    if (prompt > 0 ||
+        initialPrompt > 0 ||
+        toolUsePrompt > 0 ||
+        response > 0 ||
+        total > 0) {
       _promptTokens += prompt;
+      _initialPromptTokens += initialPrompt;
+      _toolUsePromptTokens += toolUsePrompt;
       _responseTokens += response;
       _totalTokens += total;
       _cachedTokens += cached;
@@ -267,6 +283,8 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
   /// Resets all accumulated token counters and costs to zero.
   void reset() {
     _promptTokens = 0;
+    _initialPromptTokens = 0;
+    _toolUsePromptTokens = 0;
     _responseTokens = 0;
     _totalTokens = 0;
     _cachedTokens = 0;

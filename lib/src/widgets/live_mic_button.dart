@@ -32,6 +32,12 @@ class GeminiLiveMicButton extends StatefulWidget {
   /// Tooltip message.
   final String? tooltip;
 
+  /// Optional custom widget to display inside the button when active.
+  final Widget? activeIcon;
+
+  /// Optional custom widget to display inside the button when inactive.
+  final Widget? inactiveIcon;
+
   /// Creates a Material 3 microphone button for Gemini Live sessions.
   const GeminiLiveMicButton({
     super.key,
@@ -44,6 +50,8 @@ class GeminiLiveMicButton extends StatefulWidget {
     this.activeColor,
     this.inactiveColor,
     this.tooltip,
+    this.activeIcon,
+    this.inactiveIcon,
   });
 
   @override
@@ -164,11 +172,14 @@ class _GeminiLiveMicButtonState extends State<GeminiLiveMicButton>
                     customBorder: const CircleBorder(),
                     onTap: widget.onPressed,
                     child: Center(
-                      child: Icon(
-                        widget.isRecording ? Icons.mic : Icons.mic_none,
-                        color: widget.isRecording ? activeFg : inactiveFg,
-                        size: widget.iconSize,
-                      ),
+                      child: (widget.isRecording
+                              ? widget.activeIcon
+                              : widget.inactiveIcon) ??
+                          Icon(
+                            widget.isRecording ? Icons.mic : Icons.mic_none,
+                            color: widget.isRecording ? activeFg : inactiveFg,
+                            size: widget.iconSize,
+                          ),
                     ),
                   ),
                 ),

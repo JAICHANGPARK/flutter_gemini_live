@@ -18,6 +18,24 @@ class LiveServerSetupComplete {
       _$LiveServerSetupCompleteFromJson(json);
 }
 
+/// Information about a single recognized word in a [Transcription].
+@JsonSerializable(includeIfNull: false, createToJson: false)
+class WordInfo {
+  /// Transcript of the word.
+  final String? word;
+
+  /// Start offset in time of the word relative to the start of the audio.
+  final String? startOffset;
+
+  /// End offset in time of the word relative to the start of the audio.
+  final String? endOffset;
+
+  WordInfo({this.word, this.startOffset, this.endOffset});
+
+  factory WordInfo.fromJson(Map<String, dynamic> json) =>
+      _$WordInfoFromJson(json);
+}
+
 /// A transcription update for input or output audio.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class Transcription {
@@ -27,7 +45,27 @@ class Transcription {
   /// The BCP-47 language code of the transcription.
   final String? languageCode;
 
-  Transcription({this.text, this.finished, this.languageCode});
+  /// A label identifying the speaker of this audio segment (e.g. "spk_1", "spk_2").
+  final String? speakerLabel;
+
+  /// Detailed word-level transcriptions and timing details.
+  final List<WordInfo>? words;
+
+  /// Start offset in time of the transcription relative to the start of the audio.
+  final String? startOffset;
+
+  /// End offset in time of the transcription relative to the start of the audio.
+  final String? endOffset;
+
+  Transcription({
+    this.text,
+    this.finished,
+    this.languageCode,
+    this.speakerLabel,
+    this.words,
+    this.startOffset,
+    this.endOffset,
+  });
 
   factory Transcription.fromJson(Map<String, dynamic> json) =>
       _$TranscriptionFromJson(json);
@@ -230,6 +268,8 @@ class ModalityTokenCount {
 /// Usage statistics attached to a server response.
 @JsonSerializable(includeIfNull: false, createToJson: false)
 class UsageMetadata {
+  /// Number of tokens in the initial prompt.
+  final int? initialPromptTokenCount;
   final int? promptTokenCount;
   final int? cachedContentTokenCount;
   final int? responseTokenCount;
@@ -244,6 +284,7 @@ class UsageMetadata {
   final ServiceTier? serviceTier;
 
   UsageMetadata({
+    this.initialPromptTokenCount,
     this.promptTokenCount,
     this.cachedContentTokenCount,
     this.responseTokenCount,

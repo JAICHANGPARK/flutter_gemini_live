@@ -109,6 +109,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _cameraFrameTimer?.cancel();
     _audioStreamSubscription?.cancel();
     unawaited(_mic.stop());
@@ -116,7 +117,6 @@ class RealtimeMediaViewModel extends ChangeNotifier {
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
     unawaited(_live.close());
     unawaited(_audio.dispose());
-    _disposed = true;
     super.dispose();
   }
 

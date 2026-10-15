@@ -36,8 +36,58 @@ class AuthTokensService {
             : 'models/${constraints.model!}';
         bidiSetup['model'] = model;
       }
-      if (constraints.config != null) {
-        bidiSetup['generationConfig'] = constraints.config!.toJson();
+      if (constraints.config != null || constraints.translationConfig != null) {
+        final genConfigJson = constraints.config != null
+            ? Map<String, dynamic>.from(constraints.config!.toJson())
+            : <String, dynamic>{};
+        if (constraints.translationConfig != null &&
+            genConfigJson['translation_config'] == null &&
+            genConfigJson['translationConfig'] == null) {
+          genConfigJson['translationConfig'] =
+              constraints.translationConfig!.toJson();
+        }
+        bidiSetup['generationConfig'] = genConfigJson;
+      }
+      if (constraints.systemInstruction != null) {
+        bidiSetup['systemInstruction'] =
+            constraints.systemInstruction!.toJson();
+      }
+      if (constraints.tools != null) {
+        bidiSetup['tools'] =
+            constraints.tools!.map((t) => t.toJson()).toList();
+      }
+      if (constraints.realtimeInputConfig != null) {
+        bidiSetup['realtimeInputConfig'] =
+            constraints.realtimeInputConfig!.toJson();
+      }
+      if (constraints.sessionResumption != null) {
+        bidiSetup['sessionResumption'] =
+            constraints.sessionResumption!.toJson();
+      }
+      if (constraints.contextWindowCompression != null) {
+        bidiSetup['contextWindowCompression'] =
+            constraints.contextWindowCompression!.toJson();
+      }
+      if (constraints.inputAudioTranscription != null) {
+        bidiSetup['inputAudioTranscription'] =
+            constraints.inputAudioTranscription!.toJson();
+      }
+      if (constraints.outputAudioTranscription != null) {
+        bidiSetup['outputAudioTranscription'] =
+            constraints.outputAudioTranscription!.toJson();
+      }
+      if (constraints.proactivity != null) {
+        bidiSetup['proactivity'] = constraints.proactivity!.toJson();
+      }
+      if (constraints.avatarConfig != null) {
+        bidiSetup['avatarConfig'] = constraints.avatarConfig!.toJson();
+      }
+      if (constraints.safetySettings != null) {
+        bidiSetup['safetySettings'] =
+            constraints.safetySettings!.map((s) => s.toJson()).toList();
+      }
+      if (constraints.historyConfig != null) {
+        bidiSetup['historyConfig'] = constraints.historyConfig!.toJson();
       }
       body['bidiGenerateContentSetup'] = bidiSetup;
     }
@@ -47,7 +97,7 @@ class AuthTokensService {
       final fields = <String>[];
       if (bidiSetup != null) {
         for (final entry in bidiSetup.entries) {
-          if (entry.value is Map) {
+          if (entry.value is Map && (entry.value as Map).isNotEmpty) {
             for (final subKey in (entry.value as Map).keys) {
               fields.add('${entry.key}.$subKey');
             }

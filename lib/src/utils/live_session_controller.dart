@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../live_service.dart';
 import '../model/models.dart';
+import 'pcm_audio_buffer.dart';
+import 'reconnect_policy.dart';
 import 'token_usage_tracker.dart';
 
 /// Connection state of a [GeminiLiveSessionController].
@@ -90,7 +92,9 @@ class LiveTranscriptItem {
 /// Implements [ChangeNotifier] to seamlessly integrate with Flutter's
 /// `ListenableBuilder`, `AnimatedBuilder`, or state management solutions.
 /// Handles connection lifecycle, token accounting via [GeminiTokenUsageTracker],
-/// transcript accumulation, audio streams for visualizers, and error states.
+/// transcript accumulation, audio streams for visualizers, tool execution state,
+/// session resumption handles, and optional automatic reconnection via
+/// [GeminiLiveReconnectPolicy].
 class GeminiLiveSessionController extends ChangeNotifier {
   /// The underlying Live API service for establishing sessions.
   final LiveService liveService;
@@ -98,15 +102,35 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// The token accounting tracker monitoring consumption and estimated cost.
   final GeminiTokenUsageTracker tokenTracker;
 
+  /// Optional automatic reconnection policy when `GoAway` or abnormal close occurs.
+  final GeminiLiveReconnectPolicy? reconnectPolicy;
+
   LiveSessionState _state = LiveSessionState.disconnected;
   LiveSession? _session;
+  LiveConnectParameters? _lastConnectParams;
   Object? _lastError;
   StackTrace? _lastStackTrace;
 
   bool _isModelSpeaking = false;
   bool _isUserSpeaking = false;
   bool _isInterrupted = false;
+  bool _manualDisconnectRequested = false;
+  bool _isReconnecting = false;
+  int _reconnectAttempt = 0;
+  Timer? _reconnectTimer;
+
   String? _sessionId;
+  String? _latestSessionHandle;
+  bool _isSessionResumable = false;
+  LiveServerGoAway? _lastGoAway;
+
+  final List<FunctionCall> _activeToolCalls = [];
+  final GeminiLiveAudioBuffer _currentTurnAudioBuffer = GeminiLiveAudioBuffer(
+    sampleRate: 24000,
+    numChannels: 1,
+    bitsPerSample: 16,
+  );
+  Uint8List? _lastCompletedTurnWav;
 
   final List<LiveTranscriptItem> _transcripts = [];
   String? _latestTranscript;
@@ -121,6 +145,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
   GeminiLiveSessionController({
     required this.liveService,
     GeminiTokenUsageTracker? tokenTracker,
+    this.reconnectPolicy,
   }) : tokenTracker = tokenTracker ?? GeminiTokenUsageTracker();
 
   /// Current session connection state.
@@ -138,8 +163,41 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// Whether the model was interrupted by user speech during the current turn.
   bool get isInterrupted => _isInterrupted;
 
+  /// Whether the controller is currently attempting an automatic reconnection.
+  bool get isReconnecting => _isReconnecting;
+
+  /// Current reconnection attempt count (`0` when connected normally).
+  int get reconnectAttempt => _reconnectAttempt;
+
   /// Server session identifier assigned upon setup completion.
   String? get sessionId => _sessionId;
+
+  /// Latest session resumption handle emitted by the server (`sessionResumptionUpdate.newHandle`).
+  String? get latestSessionHandle => _latestSessionHandle;
+
+  /// Whether the current session state is marked as resumable by the server.
+  bool get isSessionResumable => _isSessionResumable;
+
+  /// Latest `GoAway` notice emitted by the server, if any.
+  LiveServerGoAway? get lastGoAway => _lastGoAway;
+
+  /// Currently active (in-flight) function calls requested by the model.
+  List<FunctionCall> get activeToolCalls => List.unmodifiable(_activeToolCalls);
+
+  /// Whether one or more tool/function calls are currently awaiting responses.
+  bool get isExecutingTool => _activeToolCalls.isNotEmpty;
+
+  /// Audio buffer accumulating 24kHz 16-bit mono PCM chunks for the current model turn.
+  GeminiLiveAudioBuffer get currentTurnAudioBuffer => _currentTurnAudioBuffer;
+
+  /// Exports the most recently completed (or current in-progress) model speech turn
+  /// as a complete 24kHz 16-bit mono WAV byte array, or `null` if no audio was received.
+  Uint8List? exportLastTurnWav() {
+    if (_currentTurnAudioBuffer.isNotEmpty) {
+      return _currentTurnAudioBuffer.toWavBytes();
+    }
+    return _lastCompletedTurnWav;
+  }
 
   /// Last error encountered by the session, if any.
   Object? get lastError => _lastError;
@@ -172,6 +230,9 @@ class GeminiLiveSessionController extends ChangeNotifier {
       return;
     }
 
+    _manualDisconnectRequested = false;
+    _reconnectTimer?.cancel();
+    _lastConnectParams = params;
     _setState(LiveSessionState.connecting);
     _lastError = null;
     _lastStackTrace = null;
@@ -196,6 +257,14 @@ class GeminiLiveSessionController extends ChangeNotifier {
       },
     );
 
+    final effectiveSessionResumption = (_latestSessionHandle != null &&
+            (params.sessionResumption != null || reconnectPolicy != null))
+        ? SessionResumptionConfig(
+            handle: _latestSessionHandle,
+            transparent: params.sessionResumption?.transparent,
+          )
+        : params.sessionResumption;
+
     final wrappedParams = LiveConnectParameters(
       model: params.model,
       callbacks: wrappedCallbacks,
@@ -203,7 +272,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
       systemInstruction: params.systemInstruction,
       tools: params.tools,
       realtimeInputConfig: params.realtimeInputConfig,
-      sessionResumption: params.sessionResumption,
+      sessionResumption: effectiveSessionResumption,
       contextWindowCompression: params.contextWindowCompression,
       inputAudioTranscription: params.inputAudioTranscription,
       outputAudioTranscription: params.outputAudioTranscription,
@@ -213,10 +282,13 @@ class GeminiLiveSessionController extends ChangeNotifier {
       safetySettings: params.safetySettings,
       historyConfig: params.historyConfig,
       labels: params.labels,
+      translationConfig: params.translationConfig,
     );
 
     try {
       _session = await liveService.connect(wrappedParams);
+      _reconnectAttempt = 0;
+      _isReconnecting = false;
       _setState(LiveSessionState.connected);
     } catch (e, st) {
       _lastError = e;
@@ -233,6 +305,44 @@ class GeminiLiveSessionController extends ChangeNotifier {
       notifyListeners();
     }
 
+    // 1b. Session resumption handle update
+    if (message.sessionResumptionUpdate != null) {
+      final update = message.sessionResumptionUpdate!;
+      if (update.newHandle != null && update.newHandle!.isNotEmpty) {
+        _latestSessionHandle = update.newHandle;
+      }
+      if (update.resumable != null) {
+        _isSessionResumable = update.resumable!;
+      }
+      notifyListeners();
+    }
+
+    // 1c. GoAway server notice
+    if (message.goAway != null) {
+      _lastGoAway = message.goAway;
+      notifyListeners();
+      if (reconnectPolicy != null &&
+          reconnectPolicy!.reconnectOnGoAway &&
+          !_manualDisconnectRequested) {
+        _scheduleReconnect();
+      }
+    }
+
+    // 1d. Tool calls & cancellations
+    if (message.toolCall?.functionCalls != null &&
+        message.toolCall!.functionCalls!.isNotEmpty) {
+      _activeToolCalls.addAll(message.toolCall!.functionCalls!);
+      notifyListeners();
+    }
+    if (message.toolCallCancellation?.ids != null &&
+        message.toolCallCancellation!.ids!.isNotEmpty) {
+      final cancelledIds = message.toolCallCancellation!.ids!.toSet();
+      _activeToolCalls.removeWhere(
+        (call) => call.id != null && cancelledIds.contains(call.id),
+      );
+      notifyListeners();
+    }
+
     // 2. Server content / Model turn
     final serverContent = message.serverContent;
     if (serverContent != null) {
@@ -240,6 +350,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
       if (serverContent.interrupted == true) {
         _isInterrupted = true;
         _isModelSpeaking = false;
+        _currentTurnAudioBuffer.clear();
+        _finalizeStreamingTranscripts();
         notifyListeners();
       }
 
@@ -253,12 +365,15 @@ class GeminiLiveSessionController extends ChangeNotifier {
             _isInterrupted = false;
             try {
               final bytes = Uint8List.fromList(base64Decode(part.inlineData!.data));
+              _currentTurnAudioBuffer.add(bytes);
               _incomingAudioController.add(bytes);
             } catch (_) {}
           }
 
-          // Text part
-          if (part.text != null && part.text!.isNotEmpty) {
+          // Text part (skip internal thought parts)
+          if (part.text != null &&
+              part.text!.isNotEmpty &&
+              part.thought != true) {
             _appendOrUpdateTranscript(
               role: 'model',
               text: part.text!,
@@ -272,43 +387,57 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
       // Input audio transcription (user STT)
       if (serverContent.inputTranscription?.text != null) {
-        final text = serverContent.inputTranscription!.text!;
+        final transcription = serverContent.inputTranscription!;
+        final text = transcription.text!;
         if (text.isNotEmpty) {
           _appendOrUpdateTranscript(
             role: 'user',
             text: text,
-            isStreaming: !(serverContent.turnComplete ?? false),
+            speaker: transcription.speakerLabel,
+            isStreaming: !(serverContent.turnComplete ?? false) &&
+                !(transcription.finished ?? false),
           );
         }
       }
 
       // Interim input transcription (streaming user STT)
       if (serverContent.interimInputTranscription?.text != null) {
-        final text = serverContent.interimInputTranscription!.text!;
+        final transcription = serverContent.interimInputTranscription!;
+        final text = transcription.text!;
         if (text.isNotEmpty) {
           _appendOrUpdateTranscript(
             role: 'user',
             text: text,
+            speaker: transcription.speakerLabel,
             isStreaming: true,
+            replaceLastStreaming: true,
           );
         }
       }
 
       // Output audio transcription (model STT)
       if (serverContent.outputTranscription?.text != null) {
-        final text = serverContent.outputTranscription!.text!;
+        final transcription = serverContent.outputTranscription!;
+        final text = transcription.text!;
         if (text.isNotEmpty) {
           _appendOrUpdateTranscript(
             role: 'model',
             text: text,
-            isStreaming: !(serverContent.turnComplete ?? false),
+            speaker: transcription.speakerLabel,
+            isStreaming: !(serverContent.turnComplete ?? false) &&
+                !(transcription.finished ?? false),
           );
         }
       }
 
       // Turn complete
-      if (serverContent.turnComplete == true) {
+      if (serverContent.turnComplete == true ||
+          serverContent.isInteractionComplete) {
         _isModelSpeaking = false;
+        if (_currentTurnAudioBuffer.isNotEmpty) {
+          _lastCompletedTurnWav = _currentTurnAudioBuffer.toWavBytes();
+          _currentTurnAudioBuffer.clear();
+        }
         _finalizeStreamingTranscripts();
         notifyListeners();
       }
@@ -327,6 +456,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     Uint8List? imageBytes,
     String? imageMimeType,
     required bool isStreaming,
+    bool replaceLastStreaming = false,
   }) {
     _latestTranscript = text;
     _latestTranscriptRole = role;
@@ -336,7 +466,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
         _transcripts.last.role == role) {
       final last = _transcripts.last;
       _transcripts[_transcripts.length - 1] = last.copyWith(
-        text: last.text + text,
+        text: replaceLastStreaming ? text : (last.text + text),
         speaker: speaker ?? last.speaker,
         style: style ?? last.style,
         imageBytes: imageBytes ?? last.imageBytes,
@@ -373,6 +503,52 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _isUserSpeaking = false;
     _session = null;
     _setState(LiveSessionState.disconnected);
+
+    if (reconnectPolicy != null &&
+        reconnectPolicy!.reconnectOnAbnormalClose &&
+        !_manualDisconnectRequested &&
+        closeCode != 1000) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    final policy = reconnectPolicy;
+    final params = _lastConnectParams;
+    if (policy == null || params == null || _manualDisconnectRequested) return;
+    if (_reconnectAttempt >= policy.maxAttempts) {
+      _isReconnecting = false;
+      notifyListeners();
+      return;
+    }
+
+    _reconnectTimer?.cancel();
+    _isReconnecting = true;
+    final delay = policy.delayForAttempt(_reconnectAttempt);
+    _reconnectAttempt++;
+    notifyListeners();
+
+    _reconnectTimer = Timer(delay, () async {
+      if (_manualDisconnectRequested || _lastConnectParams == null) return;
+      if (_session != null) {
+        try {
+          await _session!.close();
+        } catch (_) {}
+        _session = null;
+      }
+      _state = LiveSessionState.disconnected;
+      try {
+        await connect(_lastConnectParams!);
+      } catch (_) {
+        if (!_manualDisconnectRequested &&
+            _reconnectAttempt < policy.maxAttempts) {
+          _scheduleReconnect();
+        } else {
+          _isReconnecting = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   /// Sends a raw 16-bit linear PCM audio chunk to the model.
@@ -386,12 +562,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _outgoingAudioController.add(pcmBytes);
 
     _session!.sendRealtimeInput(
-      mediaChunks: [
-        Blob(
-          mimeType: mimeType,
-          data: base64Encode(pcmBytes),
-        ),
-      ],
+      audio: Blob(
+        mimeType: mimeType,
+        data: base64Encode(pcmBytes),
+      ),
     );
     notifyListeners();
   }
@@ -409,6 +583,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     if (_isModelSpeaking) {
       _isModelSpeaking = false;
       _isInterrupted = true;
+      _currentTurnAudioBuffer.clear();
       _finalizeStreamingTranscripts();
       notifyListeners();
     }
@@ -498,23 +673,44 @@ class GeminiLiveSessionController extends ChangeNotifier {
     if (_session == null || !isConnected) return;
 
     _session!.sendRealtimeInput(
-      mediaChunks: [
-        Blob(
-          mimeType: mimeType,
-          data: base64Encode(imageBytes),
-        ),
-      ],
+      video: Blob(
+        mimeType: mimeType,
+        data: base64Encode(imageBytes),
+      ),
     );
   }
 
   /// Sends tool / function call responses back to Gemini.
   void sendToolResponses(List<FunctionResponse> responses) {
+    final respondedIds = responses
+        .map((r) => r.id)
+        .whereType<String>()
+        .toSet();
+    final respondedNames = responses
+        .map((r) => r.name)
+        .whereType<String>()
+        .toSet();
+    if (_activeToolCalls.isNotEmpty) {
+      _activeToolCalls.removeWhere(
+        (call) =>
+            (call.id != null && respondedIds.contains(call.id)) ||
+            (call.id == null &&
+                call.name != null &&
+                respondedNames.contains(call.name)),
+      );
+      notifyListeners();
+    }
     if (_session == null || !isConnected) return;
     _session!.sendToolResponse(functionResponses: responses);
   }
 
   /// Disconnects the active session cleanly.
   Future<void> disconnect({int? closeCode, String? closeReason}) async {
+    _manualDisconnectRequested = true;
+    _reconnectTimer?.cancel();
+    _isReconnecting = false;
+    _reconnectAttempt = 0;
+
     if (_session == null) {
       _setState(LiveSessionState.disconnected);
       return;
@@ -525,6 +721,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _session = null;
     _isModelSpeaking = false;
     _isUserSpeaking = false;
+    _activeToolCalls.clear();
+    _currentTurnAudioBuffer.clear();
     _setState(LiveSessionState.disconnected);
   }
 
@@ -533,6 +731,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _transcripts.clear();
     _latestTranscript = null;
     _latestTranscriptRole = null;
+    _lastCompletedTurnWav = null;
+    _currentTurnAudioBuffer.clear();
     tokenTracker.reset();
     notifyListeners();
   }
@@ -551,6 +751,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _manualDisconnectRequested = true;
+    _reconnectTimer?.cancel();
     _session?.close();
     _incomingAudioController.close();
     _outgoingAudioController.close();

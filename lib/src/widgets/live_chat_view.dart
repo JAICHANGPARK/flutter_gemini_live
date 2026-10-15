@@ -6,6 +6,7 @@ import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
 import 'live_mic_button.dart';
 import 'live_status_badge.dart';
+import 'live_tool_activity_chip.dart';
 import 'live_waveform.dart';
 
 /// Builder signature for custom user and model chat bubbles.
@@ -110,6 +111,18 @@ class GeminiLiveChatView extends StatefulWidget {
   final Widget Function(BuildContext context, bool isModelSpeaking)?
       streamingIndicatorBuilder;
 
+  /// Custom builder for the live audio waveform header bar when connected.
+  final Widget Function(
+    BuildContext context,
+    GeminiLiveSessionController controller,
+  )? waveformBuilder;
+
+  /// Custom builder for active tool/function call activity indicator.
+  final Widget Function(
+    BuildContext context,
+    List<FunctionCall> activeCalls,
+  )? toolActivityBuilder;
+
   /// Callback when the user taps the image / attachment button.
   /// If null, default attachment button is omitted unless custom builder provides it.
   final Future<void> Function(BuildContext context, GeminiLiveSessionController controller)?
@@ -139,6 +152,9 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Whether to show real-time live waveform indicator during voice interaction. Defaults to `true`.
   final bool showWaveform;
 
+  /// Whether to show a compact status chip when tools/functions are executing. Defaults to `true`.
+  final bool showToolActivity;
+
   /// Input hint text for the text field. Defaults to `'Ask Gemini Live...'`.
   final String inputHint;
 
@@ -166,6 +182,8 @@ class GeminiLiveChatView extends StatefulWidget {
     this.headerBuilder,
     this.emptyBuilder,
     this.streamingIndicatorBuilder,
+    this.waveformBuilder,
+    this.toolActivityBuilder,
     this.onAttachPressed,
     this.onConnectPressed,
     this.onDisconnectPressed,
@@ -175,6 +193,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.title = 'Gemini Live',
     this.showStatusBadge = true,
     this.showWaveform = true,
+    this.showToolActivity = true,
     this.inputHint = 'Ask Gemini Live...',
     this.debugLogging = false,
     this.logger,
@@ -200,8 +219,8 @@ class GeminiLiveChatView extends StatefulWidget {
 }
 
 class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
-  late final GeminiLiveSessionController _controller;
-  late final bool _ownsController;
+  late GeminiLiveSessionController _controller;
+  late bool _ownsController;
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isRecordingMic = false;
@@ -224,6 +243,23 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
     });
   }
 
+  GeminiLiveSessionController _createInternalController() {
+    void Function(String message)? effectiveLogger;
+    if (widget.logger is GeminiLiveLogger) {
+      effectiveLogger = (widget.logger as GeminiLiveLogger).toCallback();
+    } else if (widget.logger is void Function(String)) {
+      effectiveLogger = widget.logger as void Function(String);
+    } else if (widget.debugLogging) {
+      effectiveLogger = const GeminiLiveLogger().toCallback();
+    }
+
+    final genAI = GoogleGenAI(
+      apiKey: widget.apiKey!,
+      logger: effectiveLogger,
+    );
+    return GeminiLiveSessionController(liveService: genAI.live);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -231,20 +267,7 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       _controller = widget.controller!;
       _ownsController = false;
     } else {
-      void Function(String message)? effectiveLogger;
-      if (widget.logger is GeminiLiveLogger) {
-        effectiveLogger = (widget.logger as GeminiLiveLogger).toCallback();
-      } else if (widget.logger is void Function(String)) {
-        effectiveLogger = widget.logger as void Function(String);
-      } else if (widget.debugLogging) {
-        effectiveLogger = const GeminiLiveLogger().toCallback();
-      }
-
-      final genAI = GoogleGenAI(
-        apiKey: widget.apiKey!,
-        logger: effectiveLogger,
-      );
-      _controller = GeminiLiveSessionController(liveService: genAI.live);
+      _controller = _createInternalController();
       _ownsController = true;
     }
 
@@ -254,6 +277,25 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _connectSession();
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(GeminiLiveChatView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      _controller.removeListener(_onControllerUpdate);
+      if (_ownsController) {
+        _controller.dispose();
+      }
+      if (widget.controller != null) {
+        _controller = widget.controller!;
+        _ownsController = false;
+      } else {
+        _controller = _createInternalController();
+        _ownsController = true;
+      }
+      _controller.addListener(_onControllerUpdate);
     }
   }
 
@@ -374,7 +416,8 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
           children: [
             // Live waveform header bar when connected
             if (widget.showWaveform && _controller.isConnected)
-              _buildWaveformBar(context),
+              widget.waveformBuilder?.call(context, _controller) ??
+                  _buildWaveformBar(context),
 
             // Transcript message list
             Expanded(
@@ -383,6 +426,19 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
                       _buildDefaultEmpty(context))
                   : _buildMessageList(context),
             ),
+
+            // Active tool / function call status chip
+            if (widget.showToolActivity && _controller.isExecutingTool)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: widget.toolActivityBuilder?.call(
+                      context,
+                      _controller.activeToolCalls,
+                    ) ??
+                    GeminiLiveToolActivityChip.fromController(
+                      controller: _controller,
+                    ),
+              ),
 
             // Live streaming / speaking indicator
             if (widget.streamingIndicatorBuilder != null)

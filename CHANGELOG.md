@@ -1,3 +1,45 @@
+## 2026.10.6
+
+### Added (Upstream Parity with `js-genai` 2.30.0 & `python-genai` 2.31.0)
+- **Word-Level Transcription & Timestamps**:
+  - Added `WordInfo` (`word`, `startOffset`, `endOffset`) and extended `Transcription` with `words`, `startOffset`, and `endOffset` fields.
+  - Added `interimTranscriptTimestampEnabled` to `RealtimeInputConfig`.
+- **Token Usage Metadata & Accounting**:
+  - Added `initialPromptTokenCount` to `UsageMetadata` and exposed `initialPromptTokens` and `toolUsePromptTokens` on `GeminiTokenUsageTracker`.
+  - Added wire-format fallback deserialization for `candidatesTokenCount` / `candidatesTokensDetails` on `UsageMetadata` and `type` on `VoiceActivity`.
+- **Live Grounding & Remote MCP Tool Models**:
+  - Added `SearchTypes`, `WebSearch`, and `ImageSearch` models and `GoogleSearch.searchTypes`.
+  - Added `AuthConfig` (`apiKey`, `authType`) and `GoogleMaps.authConfig` / `GoogleMaps.enableWidget`.
+  - Added typed `McpServer` and `StreamableHttpTransport` models along with `Tool.fromMcpServers` and `Tool.typedMcpServers`.
+- **Full Live Setup Constraints on Ephemeral Tokens (`LiveConnectConstraints`)**:
+  - Expanded `LiveConnectConstraints` and `AuthTokensService.create()` to support locking `systemInstruction`, `tools`, `realtimeInputConfig`, `sessionResumption`, `contextWindowCompression`, `inputAudioTranscription`, `outputAudioTranscription`, `proactivity`, `avatarConfig`, `safetySettings`, `historyConfig`, and `translationConfig` inside `bidiGenerateContentSetup`.
+- Bumped internal SDK client version header to `2.30.0` across `LiveService` and `LiveMusicService`.
+
+### Added (Widgets, Utilities & Controller Enhancements)
+- **New Pre-Built Widgets**:
+  - `GeminiLiveToolActivityChip`: Animated status pill that automatically appears while the model executes `LiveServerToolCall` functions, with custom `labelBuilder` and `leadingIcon` support.
+  - `GeminiLiveAudioRouteButton`: Hardware audio route switcher (`speaker`, `earpiece`, `bluetooth`, `wiredHeadset`) with 2-route quick toggle and 3+ route bottom sheet selector.
+  - `GeminiLiveTranslateSplitView`: Dual-pane real-time speech-to-speech interpreter view for `gemini-3.5-live-translate-preview`, including 180-degree `faceToFaceMode` rotation for across-the-table conversations.
+- **New Audio & Reconnection Utilities**:
+  - `GeminiLivePcmChunker`: Streams irregular microphone buffers into fixed-duration (e.g., 100ms / 3,200-byte) 16-bit aligned PCM frames.
+  - `GeminiLiveAudioBuffer`: Accumulates 16-bit PCM chunks with optional `maxDuration` rolling cap, duration calculation, and instant WAV export (`toWavBytes()`).
+  - `GeminiLiveReconnectPolicy`: Exponential backoff with random jitter and retryable WebSocket close code evaluation (`1006`, `1011`, `1012`, `1013`).
+- **`GeminiLiveSessionController` Enhancements**:
+  - Automatic session resumption handle (`resumptionHandle`) tracking and injection on reconnect.
+  - Optional automatic reconnection (`reconnectPolicy`) on `GoAway` notices and retryable disconnects.
+  - Real-time tool execution state tracking (`activeToolCalls`, `isExecutingTool`) for `LiveServerToolCall` and `LiveServerToolCallCancellation`.
+  - Optional model turn PCM recording (`recordModelAudio`) and WAV export (`exportLastModelTurnWav()`), plus `sendAudioStreamEnd()`.
+
+### Fixed & Refactored
+- Fixed `GeminiLiveMicButton` and `CupertinoGeminiLiveMicButton` ignoring custom `activeIcon` and `inactiveIcon` widget parameters.
+- Fixed `GeminiLiveChatView.didUpdateWidget` to properly rebind listeners when swapping `controller`, and guarded empty `LiveTranscriptItem.text` indexing.
+- Added auto-dismiss timer (`displayDuration`, `onDismissed`) and custom `icon` widget support to `GeminiLiveBargeInBanner`.
+- Fixed `GeminiLiveUsageBadge` custom `backgroundColor` and `borderColor` override precedence.
+- Fixed `GeminiLiveSessionController.dispose()` so externally injected `GeminiTokenUsageTracker` instances are not prematurely disposed.
+- Added `GeminiLiveLogger.removeListener()` and `clearListeners()` to prevent listener leaks.
+- Modularized `lib/src/model/models.dart` into domain-specific part files under `lib/src/model/models/`.
+- Refactored all example app demos into a layered MVVM architecture (`data/services`, `ui/view_models`, `ui/widgets`).
+
 ## 2026.10.5
 
 ### Added

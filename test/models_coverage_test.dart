@@ -1441,6 +1441,58 @@ void main() {
       expect(decoded.style, 'whispering, slow');
       expect(decoded.type, 'speech_metadata');
     });
+
+    test('Transcription parses startOffset, endOffset, speakerLabel, and words', () {
+      final transcription = Transcription.fromJson({
+        'text': 'Hello world',
+        'finished': true,
+        'languageCode': 'en-US',
+        'speakerLabel': 'spk_1',
+        'startOffset': '1.2s',
+        'endOffset': '2.5s',
+        'words': [
+          {
+            'word': 'Hello',
+            'startOffset': '1.2s',
+            'endOffset': '1.7s',
+          },
+          {
+            'word': 'world',
+            'startOffset': '1.8s',
+            'endOffset': '2.5s',
+          },
+        ],
+      });
+
+      expect(transcription.text, 'Hello world');
+      expect(transcription.finished, isTrue);
+      expect(transcription.languageCode, 'en-US');
+      expect(transcription.speakerLabel, 'spk_1');
+      expect(transcription.startOffset, '1.2s');
+      expect(transcription.endOffset, '2.5s');
+      expect(transcription.words, hasLength(2));
+      expect(transcription.words!.first.word, 'Hello');
+      expect(transcription.words!.first.startOffset, '1.2s');
+      expect(transcription.words!.first.endOffset, '1.7s');
+      expect(transcription.words!.last.word, 'world');
+    });
+
+    test('RealtimeInputConfig serializes interimTranscriptTimestampEnabled', () {
+      final config = RealtimeInputConfig(
+        interimTranscriptTimestampEnabled: true,
+        activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
+      );
+
+      final json = normalizeJson(config.toJson());
+      expect(json['interim_transcript_timestamp_enabled'], isTrue);
+
+      final decoded = RealtimeInputConfig.fromJson(json);
+      expect(decoded.interimTranscriptTimestampEnabled, isTrue);
+      expect(
+        decoded.activityHandling,
+        ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
+      );
+    });
   });
 }
 

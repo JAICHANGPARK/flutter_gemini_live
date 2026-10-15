@@ -51,7 +51,58 @@ class LiveConnectConstraints {
   /// Configuration specific to Live API connections created using this token.
   final GenerationConfig? config;
 
-  LiveConnectConstraints({this.model, this.config});
+  /// System instructions locked in the ephemeral token.
+  final Content? systemInstruction;
+
+  /// Tools locked in the ephemeral token.
+  final List<Tool>? tools;
+
+  /// Realtime input settings locked in the ephemeral token.
+  final RealtimeInputConfig? realtimeInputConfig;
+
+  /// Session resumption settings locked in the ephemeral token.
+  final SessionResumptionConfig? sessionResumption;
+
+  /// Context window compression settings locked in the ephemeral token.
+  final ContextWindowCompressionConfig? contextWindowCompression;
+
+  /// Input audio transcription settings locked in the ephemeral token.
+  final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// Output audio transcription settings locked in the ephemeral token.
+  final AudioTranscriptionConfig? outputAudioTranscription;
+
+  /// Proactivity settings locked in the ephemeral token.
+  final ProactivityConfig? proactivity;
+
+  /// Avatar settings locked in the ephemeral token.
+  final AvatarConfig? avatarConfig;
+
+  /// Safety settings locked in the ephemeral token.
+  final List<SafetySetting>? safetySettings;
+
+  /// History exchange settings locked in the ephemeral token.
+  final HistoryConfig? historyConfig;
+
+  /// Stream translation settings locked in the ephemeral token.
+  final TranslationConfig? translationConfig;
+
+  LiveConnectConstraints({
+    this.model,
+    this.config,
+    this.systemInstruction,
+    this.tools,
+    this.realtimeInputConfig,
+    this.sessionResumption,
+    this.contextWindowCompression,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
+    this.proactivity,
+    this.avatarConfig,
+    this.safetySettings,
+    this.historyConfig,
+    this.translationConfig,
+  });
 
   factory LiveConnectConstraints.fromJson(Map<String, dynamic> json) =>
       _$LiveConnectConstraintsFromJson(json);

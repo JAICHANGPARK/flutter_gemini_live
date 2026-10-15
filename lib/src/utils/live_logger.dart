@@ -91,7 +91,10 @@ class GeminiLiveLogger {
         traffic(message);
       } else if (message.startsWith('⚠️')) {
         warning(message);
-      } else if (message.startsWith('❌') || message.contains('Failed')) {
+      } else if (message.startsWith('❌') ||
+          message.startsWith('🔴') ||
+          message.startsWith('🚨') ||
+          message.contains('Failed')) {
         error(message);
       } else {
         info(message);

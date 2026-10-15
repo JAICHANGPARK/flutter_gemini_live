@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:example/api_key_store.dart';
 import 'package:example/soloud_live_audio_player.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart'
-    show Color, Colors, TextEditingController;
+import 'package:flutter/services.dart' show Color;
+import 'package:flutter/widgets.dart' show TextEditingController;
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../data/services/dj_audio_service.dart';
@@ -118,9 +118,10 @@ class DjMidiBoxViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _knobDebounceTimer?.cancel();
     _music.close();
     _audio.dispose();
-    _disposed = true;
     super.dispose();
   }
 
@@ -301,7 +302,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       _isPlaying = false;
       _rmsLevel = 0.0;
       notifyListeners();
-      _addLog('⏸️ Playback paused', color: Colors.white70);
+      _addLog('⏸️ Playback paused', color: const Color(0xB3FFFFFF));
     } else {
       _music.play();
       _isPlaying = true;
@@ -478,7 +479,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     } else {
       _addLog(
         'Custom prompt saved: ${customPromptController.text.trim()}',
-        color: Colors.white70,
+        color: const Color(0xB3FFFFFF),
       );
     }
   }

@@ -32,11 +32,15 @@ void main() {
       callback('📤 Sending: {"turn": 1}');
       callback('⚠️ Warning: Deprecated');
       callback('❌ Error: Failed setup');
+      callback('🔴 Live Server returned error');
+      callback('🚨 WebSocket stream error');
       callback('Normal informational line');
 
       expect(logs, [
         GeminiLiveLogLevel.traffic,
         GeminiLiveLogLevel.warning,
+        GeminiLiveLogLevel.error,
+        GeminiLiveLogLevel.error,
         GeminiLiveLogLevel.error,
         GeminiLiveLogLevel.info,
       ]);

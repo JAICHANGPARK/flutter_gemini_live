@@ -343,7 +343,9 @@ class GeminiLiveUsageDetailsDialog extends StatelessWidget {
               },
               icon: const Icon(Icons.refresh_rounded, size: 16),
               label: const Text('통계 초기화'),
-              style: TextButton.styleFrom(foregroundColor: Colors.white60),
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white60 : Colors.black54,
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),

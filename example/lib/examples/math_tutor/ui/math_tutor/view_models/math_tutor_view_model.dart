@@ -4,8 +4,8 @@ import 'package:camera/camera.dart';
 import 'package:example/api_key_store.dart';
 import 'package:example/app_translations.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gemini_live/gemini_live.dart';
 import 'package:record/record.dart';
 

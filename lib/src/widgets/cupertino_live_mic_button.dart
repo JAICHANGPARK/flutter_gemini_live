@@ -35,6 +35,12 @@ class CupertinoGeminiLiveMicButton extends StatefulWidget {
   /// Whether to trigger iOS haptic feedback on gestures. Defaults to `true`.
   final bool enableHaptics;
 
+  /// Optional custom widget to display inside the button when active.
+  final Widget? activeIcon;
+
+  /// Optional custom widget to display inside the button when inactive.
+  final Widget? inactiveIcon;
+
   /// Creates a Cupertino microphone button for Gemini Live sessions.
   const CupertinoGeminiLiveMicButton({
     super.key,
@@ -47,6 +53,8 @@ class CupertinoGeminiLiveMicButton extends StatefulWidget {
     this.activeColor,
     this.inactiveColor,
     this.enableHaptics = true,
+    this.activeIcon,
+    this.inactiveIcon,
   });
 
   @override
@@ -200,13 +208,16 @@ class _CupertinoGeminiLiveMicButtonState
                   ],
                 ),
                 child: Center(
-                  child: Icon(
-                    widget.isRecording
-                        ? CupertinoIcons.mic_fill
-                        : CupertinoIcons.mic,
-                    color: widget.isRecording ? activeFg : inactiveFg,
-                    size: widget.iconSize,
-                  ),
+                  child: (widget.isRecording
+                          ? widget.activeIcon
+                          : widget.inactiveIcon) ??
+                      Icon(
+                        widget.isRecording
+                            ? CupertinoIcons.mic_fill
+                            : CupertinoIcons.mic,
+                        color: widget.isRecording ? activeFg : inactiveFg,
+                        size: widget.iconSize,
+                      ),
                 ),
               ),
             ),

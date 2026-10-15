@@ -47,9 +47,9 @@ class FunctionCallingViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _live.close();
     unawaited(_audio.dispose());
-    _disposed = true;
     super.dispose();
   }
 
