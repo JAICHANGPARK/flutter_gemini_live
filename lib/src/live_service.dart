@@ -31,7 +31,7 @@ class LiveCallbacks {
   final void Function(Object error, StackTrace stackTrace)? onError;
   final void Function(int? closeCode, String? closeReason)? onClose;
 
-  LiveCallbacks({this.onOpen, this.onMessage, this.onError, this.onClose});
+  const LiveCallbacks({this.onOpen, this.onMessage, this.onError, this.onClose});
 }
 
 // ============================================================================
@@ -72,7 +72,7 @@ class LiveConnectParameters {
 
   LiveConnectParameters({
     required this.model,
-    required this.callbacks,
+    this.callbacks = const LiveCallbacks(),
     this.config,
     this.systemInstruction,
     this.tools,
@@ -635,6 +635,35 @@ class LiveSession {
         FunctionResponse(id: id, name: name, response: response),
       ],
     );
+  }
+
+  /// Sends an in-session context update (`systemInstruction` and/or `tools`)
+  /// over the established WebSocket connection.
+  ///
+  /// Only fields that are set will be updated, and updates are guaranteed to
+  /// be processed in order with the rest of the session inputs.
+  ///
+  /// Pass either an explicit [update] ([LiveClientContextUpdate]) or named
+  /// [systemInstruction] ([String] or [Content]) and/or [tools] ([List<Tool>]
+  /// or [LiveClientContextUpdateTools]). Pass `tools: const <Tool>[]` to clear
+  /// all previously registered tools.
+  void sendContextUpdate({
+    LiveClientContextUpdate? update,
+    Object? systemInstruction,
+    Object? tools,
+  }) {
+    final resolved =
+        update ??
+        LiveClientContextUpdate(
+          systemInstruction: systemInstruction,
+          tools: tools,
+        );
+    if (resolved.systemInstruction == null && resolved.tools == null) {
+      throw ArgumentError(
+        'At least one of `systemInstruction` or `tools` must be set.',
+      );
+    }
+    sendMessage(LiveClientMessage(contextUpdate: resolved));
   }
 
   /// Closes the WebSocket connection

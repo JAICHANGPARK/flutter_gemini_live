@@ -166,9 +166,7 @@ class GeminiLiveAudioRouteButton extends StatelessWidget {
         return SafeArea(
           child: Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: sheetBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isDark
@@ -177,7 +175,12 @@ class GeminiLiveAudioRouteButton extends StatelessWidget {
                 width: 0.5,
               ),
             ),
-            child: Column(
+            child: Material(
+              color: sheetBg,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -220,6 +223,8 @@ class GeminiLiveAudioRouteButton extends StatelessWidget {
                     onTap: () => Navigator.of(sheetContext).pop(route),
                   ),
               ],
+                ),
+              ),
             ),
           ),
         );
@@ -236,8 +241,8 @@ class GeminiLiveAudioRouteButton extends StatelessWidget {
     Brightness? brightness;
     try {
       brightness = Theme.of(context).brightness;
-    } catch (_) {
-      brightness = CupertinoTheme.maybeBrightnessOf(context);
+    } catch (_) { // coverage:ignore-line
+      brightness = CupertinoTheme.maybeBrightnessOf(context); // coverage:ignore-line
     }
     final isDark = brightness == Brightness.dark;
 

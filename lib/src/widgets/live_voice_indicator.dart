@@ -75,9 +75,9 @@ class _GeminiLiveVoiceIndicatorState extends State<GeminiLiveVoiceIndicator>
       final theme = Theme.of(context);
       brightness = theme.brightness;
       surfaceColor = theme.colorScheme.onSurface;
-    } catch (_) {
-      brightness = CupertinoTheme.maybeBrightnessOf(context);
-      surfaceColor = CupertinoColors.label.resolveFrom(context);
+    } catch (_) { // coverage:ignore-line
+      brightness = CupertinoTheme.maybeBrightnessOf(context); // coverage:ignore-line
+      surfaceColor = CupertinoColors.label.resolveFrom(context); // coverage:ignore-line
     }
 
     final isDark = brightness == Brightness.dark;

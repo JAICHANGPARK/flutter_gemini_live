@@ -592,5 +592,71 @@ void main() {
       expect(tracker.initialPromptTokens, 0);
       expect(tracker.toolUsePromptTokens, 0);
     });
+
+    test('LiveClientContextUpdate supports systemInstruction, tool updates, and clearing tools', () {
+      // 1. Update systemInstruction via String
+      final sysUpdate = LiveClientContextUpdate(
+        systemInstruction: 'You are a helpful assistant.',
+      );
+      final sysMsg = LiveClientMessage(contextUpdate: sysUpdate).toJson();
+      final ctxJson = (sysMsg['contextUpdate'] as LiveClientContextUpdate).toJson();
+      expect(ctxJson['systemInstruction']['role'], 'user');
+      expect(
+        (ctxJson['systemInstruction']['parts'] as List).first.text,
+        'You are a helpful assistant.',
+      );
+
+      // 2. Clear tools via empty list []
+      final clearUpdate = LiveClientContextUpdate(tools: const <Tool>[]);
+      final clearJson = clearUpdate.toJson();
+      expect(clearJson['tools'], {'tools': []});
+
+      // 3. Update tools with function declaration & round-trip fromJson
+      final toolUpdate = LiveClientContextUpdate(
+        systemInstruction: 'Updated instruction.',
+        tools: LiveClientContextUpdateTools(
+          tools: [
+            Tool(
+              functionDeclarations: [
+                FunctionDeclaration(
+                  name: 'get_current_weather',
+                  description: 'Gets the weather for a location.',
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      final restored = LiveClientContextUpdate.fromJson(toolUpdate.toJson());
+      expect(
+        restored.systemInstruction?.parts?.first.text,
+        'Updated instruction.',
+      );
+      expect(
+        restored.tools?.tools?.first.functionDeclarations?.first.name,
+        'get_current_weather',
+      );
+    });
+
+    test('PromptedVoice and CreateVoiceRequest.prompted support baseVoice', () {
+      final req = CreateVoiceRequest.prompted(
+        prompt: 'Make the voice slightly warmer and slower.',
+        baseVoice: 'Puck',
+        displayName: 'Warm Puck',
+      );
+      final json = req.toJson();
+      expect((json['prompted'] as Map)['base_voice'], 'Puck');
+      expect(
+        (json['prompted'] as Map)['input'],
+        'Make the voice slightly warmer and slower.',
+      );
+
+      final restored = CreateVoiceRequest.fromJson(json);
+      expect(restored.prompted?.baseVoice, 'Puck');
+      expect(
+        restored.prompted?.input,
+        'Make the voice slightly warmer and slower.',
+      );
+    });
   });
 }

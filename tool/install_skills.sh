@@ -26,6 +26,9 @@ SKILLS=(
   "gemini-live-music"
   "gemini-live-session-auth"
   "gemini-live-translate"
+  "gemini-live-observability"
+  "gemini-live-thinking-context"
+  "gemini-live-testing"
 )
 KNOWN_AGENTS=("agents" "claude" "gemini" "codex" "hermes" "pi")
 

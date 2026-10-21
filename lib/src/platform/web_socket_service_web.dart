@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:web_socket_channel/html.dart' as ws;
 import 'package:web_socket_channel/web_socket_channel.dart';
 

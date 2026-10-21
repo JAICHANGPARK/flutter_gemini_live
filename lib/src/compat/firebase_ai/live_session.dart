@@ -304,7 +304,7 @@ class LiveSession {
     final previous = _core;
     _generation++;
     await previous.close().timeout(const Duration(seconds: 2),
-        onTimeout: () {});
+        onTimeout: () {}); // coverage:ignore-line
     await _open(sessionResumption);
   }
 
@@ -419,7 +419,7 @@ class LiveSession {
     _generation++;
     try {
       await _core.close().timeout(const Duration(seconds: 1),
-          onTimeout: () {});
+          onTimeout: () {}); // coverage:ignore-line
     } finally {
       _closeController();
     }

@@ -1,11 +1,11 @@
 ---
 name: gemini-live-widgets
-description: Build Gemini Live voice and chat UIs in Flutter with the pre-built `gemini_live` widgets (GeminiLiveStatusBadge, GeminiLiveMicButton, GeminiLiveVoiceIndicator, GeminiLiveCaptionBubble, GeminiLiveWaveform, GeminiLiveUsageBadge) and GeminiLiveAudioUtils. Use when adding or styling these widgets, wiring them to GeminiLiveSessionController, a low-level LiveSession, the firebase_ai-compatible layer, or plain firebase_ai, or when building captions, waveforms, mic buttons, status pills, push-to-talk, or barge-in UI.
+description: Build Gemini Live voice, multimodal vision, and translation UIs in Flutter with the 17 pre-built `gemini_live` Material 3 & Cupertino widgets (GeminiLiveChatView, GeminiLiveTranslateSplitView, GeminiLiveStatusBadge, GeminiLiveMicButton, GeminiLiveVoiceIndicator, GeminiLiveCaptionBubble, GeminiLiveWaveform, GeminiLiveUsageBadge, GeminiLiveControlBar, GeminiLiveVisionOverlay, GeminiLiveVoiceSelectorSheet, GeminiLiveBargeInBanner, GeminiLiveToolActivityChip, GeminiLiveAudioRouteButton, and Cupertino counterparts) plus GeminiLiveAudioUtils.
 ---
 
 # Gemini Live Widgets Skill
 
-The `gemini_live` package ships six Material 3 widgets for live voice/chat screens, plus PCM audio helpers. This skill gives their exact parameters, how to feed them from each session API, and the patterns and pitfalls that matter in real apps.
+The `gemini_live` package ships **17 Material 3 & Cupertino UI widgets** for live voice, video, translation, and chat screens, plus PCM audio helpers. This skill gives their exact parameters, how to feed them from each session API, and the patterns and pitfalls that matter in real apps.
 
 Exports come from `package:gemini_live/gemini_live.dart`. Full screen example: the *Quickstart 1* section of the `flutter-gemini-live` skill. Human-readable reference: [`doc/widgets_guide.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/doc/widgets_guide.md).
 
@@ -153,12 +153,16 @@ For apps built with `CupertinoApp` or seeking Apple Human Interface Guidelines s
 
 *Note: `GeminiLiveCaptionBubble`, `GeminiLiveWaveform`, and `GeminiLiveVoiceIndicator` are designed to work seamlessly in both `MaterialApp` and `CupertinoApp` by automatically adapting their brightness and primary tint.*
 
-### 🚀 Advanced Multimodal & Call Interaction Widgets
+### 🚀 Full-Screen, Multimodal & Call Interaction Widgets
 
 | Widget | Class | Highlights |
 | :--- | :--- | :--- |
+| **Full-Screen Chat View** | `GeminiLiveChatView` | Zero-boilerplate pluggable chat screen (`apiKey:` or `controller:`) with slot builders (`bubbleBuilder`, `inputBuilder`, `headerBuilder`, `emptyBuilder`). |
+| **Live Translate Split View** | `GeminiLiveTranslateSplitView` | Dual-pane face-to-face interpreter UI for `gemini-3.5-live-translate-preview` with 180° top-card rotation (`faceToFaceMode: true`) and language swap bar. |
 | **Barge-In Banner** | `GeminiLiveBargeInBanner` | Slides & fades in when user interrupts the model (`isInterrupted: controller.isInterrupted`). Reassures the user that AI is listening. |
-| **Call Control Bar** | `GeminiLiveControlBar` | All-in-one floating call pill with Mic Mute, Video Toggle, Camera Flip, and Hang Up End Call buttons. |
+| **Call Control Bar** | `GeminiLiveControlBar` | All-in-one floating call pill with Mic Mute, Video Toggle, Camera Flip, `trailing:` slot, and Hang Up End Call buttons. |
+| **Tool Activity Chip** | `GeminiLiveToolActivityChip` | Native system-styled status pill showing in-flight `toolCall` execution (`.fromController(controller: controller)` or `isExecuting:`). |
+| **Audio Route Button** | `GeminiLiveAudioRouteButton` | Speaker / Earpiece / Headphones / Bluetooth route selector button (`currentRoute:`, `onRouteChanged:`) designed to slot into `GeminiLiveControlBar.trailing`. |
 | **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.showLiveVoice(context, currentVoice:)` or `.show(...)`) for selecting official voices with `GeminiLiveVoice` enum, tone pill badges, and pitch profile tags. Supports all 30 voices catalog via `.allLiveVoices`. |
 | **Vision Overlay** | `GeminiLiveVisionOverlay` | Wraps any camera preview with Project Astra style radar scanlines, corner HUD target reticles, and in-flight analysis indicator. |
 

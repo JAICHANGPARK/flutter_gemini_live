@@ -174,6 +174,138 @@ class LiveClientToolResponse {
   }
 }
 
+/// A wrapper around the list of tools for in-session context updates.
+///
+/// This wrapper exists because a bare `repeated Tool` field cannot tell apart
+/// "not sending a tools update" from "clearing all tools":
+/// - `tools` field unset on [LiveClientContextUpdate]: no update; keep the
+///   previously provided tools.
+/// - `tools` field set (even with an empty list `[]`): replace the current
+///   tools with the provided list, which may be empty to clear all tools.
+class LiveClientContextUpdateTools {
+  /// The list of tools the model may use to generate subsequent responses.
+  final List<Tool>? tools;
+
+  /// Creates a [LiveClientContextUpdateTools] wrapper.
+  const LiveClientContextUpdateTools({this.tools});
+
+  /// Creates a [LiveClientContextUpdateTools] from a JSON payload.
+  factory LiveClientContextUpdateTools.fromJson(Map<String, dynamic> json) {
+    final raw = json['tools'] as List<dynamic>?;
+    return LiveClientContextUpdateTools(
+      tools: raw
+          ?.map((e) => e is Tool ? e : Tool.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  /// Converts this wrapper to a JSON payload.
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    if (tools != null) {
+      json['tools'] = tools!.map((t) => t.toJson()).toList();
+    }
+    return json;
+  }
+}
+
+/// Updates to the context (`systemInstruction` and/or `tools`) of the current
+/// Live API session.
+///
+/// Only fields that are set will be updated. Updates are guaranteed to be
+/// processed in order with the rest of the inputs.
+class LiveClientContextUpdate {
+  /// Updated system instruction for the model.
+  ///
+  /// Overrides `BidiGenerateContentSetup.system_instruction`. Because system
+  /// instructions are part of the model preamble, updating them invalidates
+  /// the prefix cache.
+  final Content? systemInstruction;
+
+  /// An updated list of tools the model may use to generate subsequent
+  /// responses. Pass `LiveClientContextUpdateTools(tools: [])` (or `tools: <Tool>[]`)
+  /// to clear all tools.
+  final LiveClientContextUpdateTools? tools;
+
+  /// Creates an in-session context update.
+  ///
+  /// [systemInstruction] accepts either a [String] or a [Content] object.
+  /// [tools] accepts either a [LiveClientContextUpdateTools] or a `List<Tool>`.
+  LiveClientContextUpdate({
+    Object? systemInstruction,
+    Object? tools,
+  }) : systemInstruction = _parseContextSystemInstruction(systemInstruction),
+       tools = _parseContextTools(tools);
+
+  static Content? _parseContextSystemInstruction(Object? value) {
+    if (value == null) return null;
+    if (value is Content) return value;
+    if (value is String) {
+      return Content(parts: [Part(text: value)], role: 'user');
+    }
+    throw ArgumentError.value(
+      value,
+      'systemInstruction',
+      'Must be a String or Content.',
+    );
+  }
+
+  static LiveClientContextUpdateTools? _parseContextTools(Object? value) {
+    if (value == null) return null;
+    if (value is LiveClientContextUpdateTools) return value;
+    if (value is List<Tool>) return LiveClientContextUpdateTools(tools: value);
+    throw ArgumentError.value(
+      value,
+      'tools',
+      'Must be a List<Tool> or LiveClientContextUpdateTools.',
+    );
+  }
+
+  /// Creates a [LiveClientContextUpdate] from a JSON payload.
+  factory LiveClientContextUpdate.fromJson(Map<String, dynamic> json) {
+    final rawSys = json['systemInstruction'] ?? json['system_instruction'];
+    final rawTools = json['tools'];
+    return LiveClientContextUpdate(
+      systemInstruction: rawSys == null
+          ? null
+          : (rawSys is Content
+                ? rawSys
+                : (rawSys is String
+                      ? Content(parts: [Part(text: rawSys)], role: 'user')
+                      : Content.fromJson(rawSys as Map<String, dynamic>))),
+      tools: rawTools == null
+          ? null
+          : (rawTools is LiveClientContextUpdateTools
+                ? rawTools
+                : (rawTools is List
+                      ? LiveClientContextUpdateTools(
+                          tools: rawTools
+                              .map(
+                                (e) => e is Tool
+                                    ? e
+                                    : Tool.fromJson(e as Map<String, dynamic>),
+                              )
+                              .toList(),
+                        )
+                      : LiveClientContextUpdateTools.fromJson(
+                          rawTools as Map<String, dynamic>,
+                        ))),
+    );
+  }
+
+  /// Converts this context update to a JSON payload.
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    if (systemInstruction != null) {
+      json['systemInstruction'] = systemInstruction!.toJson();
+    }
+    if (tools != null) {
+      json['tools'] = tools!.toJson();
+    }
+    return json;
+  }
+}
+
 /// A top-level client message sent over the Live API socket.
 @JsonSerializable(includeIfNull: false)
 class LiveClientMessage {
@@ -182,11 +314,15 @@ class LiveClientMessage {
   final LiveClientRealtimeInput? realtimeInput;
   final LiveClientToolResponse? toolResponse;
 
+  /// Updates to the context (`systemInstruction` and/or `tools`) of the current session.
+  final LiveClientContextUpdate? contextUpdate;
+
   LiveClientMessage({
     this.setup,
     this.clientContent,
     this.realtimeInput,
     this.toolResponse,
+    this.contextUpdate,
   });
 
   factory LiveClientMessage.fromJson(Map<String, dynamic> json) =>

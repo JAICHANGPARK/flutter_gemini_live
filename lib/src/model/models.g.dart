@@ -1,3 +1,4 @@
+// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'models.dart';
@@ -202,10 +203,16 @@ Map<String, dynamic> _$VoiceAudioDataToJson(VoiceAudioData instance) =>
     <String, dynamic>{'data': instance.data, 'mime_type': instance.mimeType};
 
 PromptedVoice _$PromptedVoiceFromJson(Map<String, dynamic> json) =>
-    PromptedVoice(input: json['input'] as String);
+    PromptedVoice(
+      input: json['input'] as String,
+      baseVoice: (json['base_voice'] ?? json['baseVoice']) as String?,
+    );
 
 Map<String, dynamic> _$PromptedVoiceToJson(PromptedVoice instance) =>
-    <String, dynamic>{'input': instance.input};
+    <String, dynamic>{
+      'base_voice': ?instance.baseVoice,
+      'input': instance.input,
+    };
 
 ReplicatedVoice _$ReplicatedVoiceFromJson(
   Map<String, dynamic> json,
@@ -1294,9 +1301,15 @@ Map<String, dynamic> _$McpServerToJson(McpServer instance) => <String, dynamic>{
 };
 
 Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
-  functionDeclarations: (json['function_declarations'] as List<dynamic>?)
-      ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  functionDeclarations:
+      ((json['function_declarations'] ?? json['functionDeclarations'])
+              as List<dynamic>?)
+          ?.map(
+            (e) => e is FunctionDeclaration
+                ? e
+                : FunctionDeclaration.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
   googleSearch: json['google_search'] == null
       ? null
       : GoogleSearch.fromJson(json['google_search'] as Map<String, dynamic>),
@@ -1444,6 +1457,12 @@ LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
           : LiveClientToolResponse.fromJson(
               json['toolResponse'] as Map<String, dynamic>,
             ),
+      contextUpdate: (json['contextUpdate'] ?? json['context_update']) == null
+          ? null
+          : LiveClientContextUpdate.fromJson(
+              (json['contextUpdate'] ?? json['context_update'])
+                  as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$LiveClientMessageToJson(LiveClientMessage instance) =>
@@ -1452,6 +1471,7 @@ Map<String, dynamic> _$LiveClientMessageToJson(LiveClientMessage instance) =>
       'clientContent': ?instance.clientContent,
       'realtimeInput': ?instance.realtimeInput,
       'toolResponse': ?instance.toolResponse,
+      'contextUpdate': ?instance.contextUpdate,
     };
 
 LiveServerSetupComplete _$LiveServerSetupCompleteFromJson(

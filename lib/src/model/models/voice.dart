@@ -43,10 +43,17 @@ class VoiceAudioData {
 /// Parameters for prompted voice generation.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class PromptedVoice {
+  /// Optional. The name or ID of an existing base voice to edit or remix.
+  ///
+  /// Use the voice name for prebuilt voices (e.g., `Puck`) or the voice ID for
+  /// previously created voices (e.g., `voice_abc123`). When present, [input]
+  /// describes relative alterations to make to the base voice.
+  final String? baseVoice;
+
   /// Natural-language prompt describing the desired voice personality, tone, and character.
   final String input;
 
-  PromptedVoice({required this.input});
+  PromptedVoice({required this.input, this.baseVoice});
 
   factory PromptedVoice.fromJson(Map<String, dynamic> json) =>
       _$PromptedVoiceFromJson(json);
@@ -220,6 +227,7 @@ class CreateVoiceRequest {
   /// Factory helper for creating a prompted voice.
   factory CreateVoiceRequest.prompted({
     required String prompt,
+    String? baseVoice,
     String? displayName,
     String? description,
     String? accent,
@@ -234,7 +242,7 @@ class CreateVoiceRequest {
   }) =>
       CreateVoiceRequest(
         type: VoiceType.prompted,
-        prompted: PromptedVoice(input: prompt),
+        prompted: PromptedVoice(input: prompt, baseVoice: baseVoice),
         displayName: displayName,
         description: description,
         accent: accent,

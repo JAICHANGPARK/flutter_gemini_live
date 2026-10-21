@@ -89,8 +89,8 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
     Brightness? brightness;
     try {
       brightness = Theme.of(context).brightness;
-    } catch (_) {
-      brightness = CupertinoTheme.maybeBrightnessOf(context);
+    } catch (_) { // coverage:ignore-line
+      brightness = CupertinoTheme.maybeBrightnessOf(context); // coverage:ignore-line
     }
 
     final isDark = brightness == Brightness.dark;

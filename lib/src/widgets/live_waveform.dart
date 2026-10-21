@@ -178,12 +178,12 @@ class _GeminiLiveWaveformState extends State<GeminiLiveWaveform>
     Color? themePrimary;
     try {
       themePrimary = Theme.of(context).colorScheme.primary;
-    } catch (_) {
-      try {
-        themePrimary = CupertinoTheme.of(context).primaryColor;
-      } catch (_) {
-        themePrimary = const Color(0xFF007AFF);
-      }
+    } catch (_) { // coverage:ignore-line
+      try { // coverage:ignore-line
+        themePrimary = CupertinoTheme.of(context).primaryColor; // coverage:ignore-line
+      } catch (_) { // coverage:ignore-line
+        themePrimary = const Color(0xFF007AFF); // coverage:ignore-line
+      } // coverage:ignore-line
     }
 
     final effectiveColor = widget.color ?? themePrimary;

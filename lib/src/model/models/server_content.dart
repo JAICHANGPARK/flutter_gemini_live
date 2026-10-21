@@ -376,5 +376,18 @@ class LiveServerMessage {
     }
     return bytes.isNotEmpty ? base64Encode(bytes) : null;
   }
+
+  /// Decoded raw PCM audio bytes emitted in the current server turn, if any.
+  Uint8List? get audio {
+    final parts = serverContent?.modelTurn?.parts;
+    if (parts == null || parts.isEmpty) return null;
+    final bytes = <int>[];
+    for (final part in parts) {
+      final inline = part.inlineData;
+      if (inline == null || !inline.mimeType.startsWith('audio/')) continue;
+      bytes.addAll(base64.decode(inline.data));
+    }
+    return bytes.isNotEmpty ? Uint8List.fromList(bytes) : null;
+  }
 }
 

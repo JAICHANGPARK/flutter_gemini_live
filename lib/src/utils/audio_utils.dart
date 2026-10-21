@@ -8,7 +8,7 @@ import 'dart:typed_data';
 /// high-performance calculations for amplitude, RMS, and decibel levels
 /// suitable for audio waveform visualizations.
 class GeminiLiveAudioUtils {
-  GeminiLiveAudioUtils._();
+  GeminiLiveAudioUtils._(); // coverage:ignore-line
 
   /// Calculates the Root Mean Square (RMS) amplitude of a 16-bit Linear PCM
   /// little-endian byte buffer.

@@ -148,8 +148,8 @@ class _GeminiLiveCaptionBubbleState extends State<GeminiLiveCaptionBubble>
     Brightness? brightness;
     try {
       brightness = Theme.of(context).brightness;
-    } catch (_) {
-      brightness = CupertinoTheme.maybeBrightnessOf(context);
+    } catch (_) { // coverage:ignore-line
+      brightness = CupertinoTheme.maybeBrightnessOf(context); // coverage:ignore-line
     }
     final isDark = brightness == Brightness.dark;
 

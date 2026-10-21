@@ -704,6 +704,23 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _session!.sendToolResponse(functionResponses: responses);
   }
 
+  /// Sends an in-session context update (`systemInstruction` and/or `tools`)
+  /// to the active Live session.
+  ///
+  /// Pass `tools: const <Tool>[]` to clear all previously configured tools.
+  void sendContextUpdate({
+    LiveClientContextUpdate? update,
+    Object? systemInstruction,
+    Object? tools,
+  }) {
+    if (_session == null || !isConnected) return;
+    _session!.sendContextUpdate(
+      update: update,
+      systemInstruction: systemInstruction,
+      tools: tools,
+    );
+  }
+
   /// Disconnects the active session cleanly.
   Future<void> disconnect({int? closeCode, String? closeReason}) async {
     _manualDisconnectRequested = true;
