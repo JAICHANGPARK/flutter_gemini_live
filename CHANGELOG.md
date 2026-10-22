@@ -1,3 +1,38 @@
+## 2026.10.7
+
+### Added (Upstream Parity with `js-genai` 2.32.0 & `python-genai`)
+- **In-Session Context Updates (`sendContextUpdate`)**:
+  - Added `LiveClientContextUpdate`, `LiveClientContextUpdateTools`, and `LiveClientMessage.contextUpdate` to dynamically update `systemInstruction` and `tools` mid-session in order with session inputs without reconnecting.
+  - Added `LiveSession.sendContextUpdate()` and `GeminiLiveSessionController.sendContextUpdate()`, supporting `tools: const <Tool>[]` to clear all previously registered tools.
+- **Voice Design Base Voice (`PromptedVoice.baseVoice`)**:
+  - Added `baseVoice` to `PromptedVoice` and `CreateVoiceRequest.prompted()` to adapt an existing voice persona with a natural-language style prompt.
+- **Multimodal Tool Response & Binary Helpers**:
+  - Added `FunctionResponsePart.fromBytes()`, `FunctionResponsePart.fromUri()`, `FunctionResponseBlob.fromBytes()`, `VoiceAudioData.fromBytes()`, and `Blob.fromBytes()` (with `.bytes` getters).
+  - Automatic recursive base64 encoding for raw `Uint8List` values inside `LiveClientToolResponse.toJson()`.
+  - Added snake_case (`inline_data`, `file_data`, `mime_type`, etc.) and raw byte array (`List<int>`) deserialization support to `Part.fromJson()` and `Blob.fromJson()`.
+- **Full Runtime & Union Parameter Parity (`tModel`, `tContents`, `tLiveSpeechConfig`, `LiveConnectConfig`)**:
+  - Added `LiveService.normalizeModelName()` matching upstream `tModel` validation (rejecting empty model strings or `..`/`?`/`&`, and preserving `models/` and `tunedModels/` prefixes) across `LiveService` and `LiveMusicService`.
+  - Added top-level generation parameters (`responseModalities`, `temperature`, `topP`, `topK`, `maxOutputTokens`, `mediaResolution`, `seed`, `speechConfig` accepting `SpeechConfig` or voice name `String`, `thinkingConfig`, and `enableAffectiveDialog`) directly on `LiveConnectParameters`.
+  - Enforced upstream `multiSpeakerVoiceConfig` rejection (`UnsupportedError`) in `LiveService.buildSetupMessage()`.
+  - Widened `LiveSession.sendClientContent()` (`turns` union accepting `String`, `Part`, `Content`, `Map`, or `List` with automatic `Part` accumulation into a single user `Content` turn, mixed `Content`/`Part` rejection, and unwrapped `functionCall`/`functionResponse` part rejection).
+  - Widened `LiveSession.sendRealtimeInput()` (`media`, `audio`, `video` accepting `Blob` or `Map`, and `activityStart`/`activityEnd` accepting `true`, `{}`, or `ActivityStart`/`ActivityEnd`) and `LiveSession.sendToolResponse()` (accepting single `FunctionResponse`, `Map`, or `List`).
+  - Added enterprise tool validation (`retrieval`, `enterpriseWebSearch`, `exaAiSearch`, `parallelAiSearch`) and automatic `mcp_used/unknown` client header injection when `Tool.mcpServers` is present.
+  - Bumped internal SDK client version header to `2.32.0` across `LiveService` and `LiveMusicService`.
+
+### Added (New Pre-Built Widgets & Controller Enhancements)
+- **`GeminiLiveThinkingIndicator`**:
+  - System-styled status pill and collapsible reasoning drawer for `gemini-3.8-live-extended-thinking` (`Part(thought: true)`), with `.fromController()` factory and built-in integration in `GeminiLiveChatView` (`showThinkingIndicator`, `thinkingIndicatorBuilder`).
+- **`GeminiLiveContextConfigSheet`, `GeminiLiveContextBadge`, & `GeminiLiveContextPreset`**:
+  - Interactive Material 3 bottom sheet (`.show()`) and summary badge for switching persona presets, editing `systemInstruction`, and toggling or clearing session tools mid-call via `sendContextUpdate`.
+- **`GeminiLiveSessionController` Enhancements**:
+  - Added Extended Thinking state tracking (`isThinking`, `latestThought`, `thoughts`).
+  - Added live context state tracking (`activeSystemInstruction`, `activeTools`).
+
+### Documentation & Examples
+- Updated `live_api`, `math_tutor`, and `function_calling` example demos to showcase `sendContextUpdate` and upstream union parameters.
+- Applied Effective Dart documentation guidelines across public Live API classes and widgets.
+- Updated and synchronized all AI Agent Skills (`skills/`, `.agents/`, `.claude/`, `.codex/`, `.gemini/`, `.hermes/`, `.pi/`).
+
 ## 2026.10.6
 
 ### Added (Upstream Parity with `js-genai` 2.30.0 & `python-genai` 2.31.0)
