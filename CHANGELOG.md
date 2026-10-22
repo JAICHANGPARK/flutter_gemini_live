@@ -1,4 +1,4 @@
-## 2026.10.7
+## 2026.10.22
 
 ### Added (Upstream Parity with `js-genai` 2.32.0 & `python-genai`)
 - **In-Session Context Updates (`sendContextUpdate`)**:
