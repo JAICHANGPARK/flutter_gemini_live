@@ -24,6 +24,7 @@ class GeminiLiveThinkingIndicator extends StatefulWidget {
   final String? thoughtText;
 
   /// Optional explicit header label override.
+  ///
   /// Defaults to `'Thinking…'` while [isThinking] is `true`, or `'Thought process'`
   /// when idle with a recorded [thoughtText].
   final String? label;
@@ -37,15 +38,21 @@ class GeminiLiveThinkingIndicator extends StatefulWidget {
   /// Optional builder for customizing the header label widget.
   final GeminiLiveThinkingLabelBuilder? labelBuilder;
 
-  /// Whether tapping the pill expands/collapses the reasoning text drawer
-  /// when [thoughtText] is non-empty. Defaults to `true`.
+  /// Whether tapping the pill expands or collapses the reasoning text drawer
+  /// when [thoughtText] is non-empty.
+  ///
+  /// Defaults to `true`.
   final bool expandable;
 
-  /// Whether the reasoning text drawer starts expanded. Defaults to `false`.
+  /// Whether the reasoning text drawer starts expanded.
+  ///
+  /// Defaults to `false`.
   final bool initiallyExpanded;
 
   /// Whether to collapse (`SizedBox.shrink()`) when [isThinking] is `false`
-  /// and [thoughtText] is null or empty. Defaults to `true`.
+  /// and [thoughtText] is `null` or empty.
+  ///
+  /// Defaults to `true`.
   final bool hideWhenIdle;
 
   /// Optional tap callback invoked when the header pill is tapped.
@@ -61,13 +68,16 @@ class GeminiLiveThinkingIndicator extends StatefulWidget {
   final Color? accentColor;
 
   /// Maximum height of the expanded thought text area before scrolling.
+  ///
   /// Defaults to `140.0`.
   final double maxExpandedHeight;
 
   /// Padding inside the header capsule.
   final EdgeInsetsGeometry padding;
 
-  /// Corner radius of the indicator container. Defaults to `16.0`.
+  /// Corner radius of the indicator container.
+  ///
+  /// Defaults to `16.0`.
   final double borderRadius;
 
   /// Creates an Extended Thinking status pill and collapsible reasoning drawer.

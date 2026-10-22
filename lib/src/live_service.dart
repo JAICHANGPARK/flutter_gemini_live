@@ -17,6 +17,7 @@ import './platform/runtime_info_stub.dart'
 import 'model/models.dart';
 import 'music_service.dart';
 
+/// Signature for establishing a WebSocket channel to [uri] with [headers].
 typedef WebSocketConnector =
     Future<WebSocketChannel> Function(Uri uri, Map<String, dynamic> headers);
 
@@ -24,13 +25,21 @@ typedef WebSocketConnector =
 // Live API Callbacks
 // ============================================================================
 
-/// Callbacks for Live API events
+/// Callbacks for Live API WebSocket lifecycle and message events.
 class LiveCallbacks {
+  /// Callback invoked when the WebSocket connection opens.
   final void Function()? onOpen;
+
+  /// Callback invoked when a [LiveServerMessage] is received from the server.
   final void Function(LiveServerMessage message)? onMessage;
+
+  /// Callback invoked when a connection or message parsing error occurs.
   final void Function(Object error, StackTrace stackTrace)? onError;
+
+  /// Callback invoked when the WebSocket connection closes.
   final void Function(int? closeCode, String? closeReason)? onClose;
 
+  /// Creates a set of [LiveCallbacks] for a Live API session.
   const LiveCallbacks({this.onOpen, this.onMessage, this.onError, this.onClose});
 }
 
@@ -43,24 +52,50 @@ class LiveCallbacks {
 /// Use [LiveModels.gemini38Live] for default low-latency voice interactions,
 /// or [LiveModels.gemini38LiveExtendedThinking] for high-reasoning tasks.
 class LiveConnectParameters {
+  /// The target Gemini Live model identifier.
   final String model;
+
+  /// Lifecycle and message callbacks for the session.
   final LiveCallbacks callbacks;
+
+  /// Optional nested generation configuration.
   final GenerationConfig? config;
+
+  /// System instruction guiding the model's persona and behavior.
   final Content? systemInstruction;
+
+  /// Tools and function declarations available to the model.
   final List<Tool>? tools;
 
-  // New configuration options
+  /// Configuration for realtime audio/video input and voice activity detection.
   final RealtimeInputConfig? realtimeInputConfig;
+
+  /// Configuration for session resumption across reconnects.
   final SessionResumptionConfig? sessionResumption;
+
+  /// Configuration for sliding-window context compression in long sessions.
   final ContextWindowCompressionConfig? contextWindowCompression;
+
+  /// Configuration for user input audio transcription.
   final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// Configuration for model output audio transcription.
   final AudioTranscriptionConfig? outputAudioTranscription;
+
+  /// Proactivity configuration controlling when the model speaks up.
   final ProactivityConfig? proactivity;
+
+  /// Whether explicit voice activity detection signals are enabled.
   final bool? explicitVadSignal;
+
+  /// Avatar configuration for visual avatar streaming.
   final AvatarConfig? avatarConfig;
+
+  /// Safety settings applied to model generation.
   final List<SafetySetting>? safetySettings;
 
-  /// Configures the exchange of history between the client and the server.
+  /// Configuration for exchanging prior conversation history with the server.
+  ///
   /// See [HistoryConfig] for details.
   final HistoryConfig? historyConfig;
 
@@ -70,19 +105,37 @@ class LiveConnectParameters {
   /// Optional translation configuration for realtime bidirectional translation.
   final TranslationConfig? translationConfig;
 
-  /// Direct top-level generation parameters (matching `LiveConnectConfig` in
-  /// the upstream JS and Python SDKs).
+  /// Requested response modalities (defaults to `[Modality.AUDIO]`).
   final List<Modality>? responseModalities;
+
+  /// Sampling temperature controlling randomness in generation.
   final double? temperature;
+
+  /// Nucleus sampling probability threshold.
   final double? topP;
+
+  /// Top-K sampling token count threshold.
   final int? topK;
+
+  /// Maximum number of output tokens per turn.
   final int? maxOutputTokens;
+
+  /// Media resolution used when tokenizing visual inputs.
   final MediaResolution? mediaResolution;
+
+  /// Random seed for deterministic generation.
   final int? seed;
+
+  /// Speech synthesis and voice persona configuration.
   final SpeechConfig? speechConfig;
+
+  /// Extended thinking and reasoning budget configuration.
   final ThinkingConfig? thinkingConfig;
+
+  /// Whether affective dialog (emotion-aware prosody) is enabled.
   final bool? enableAffectiveDialog;
 
+  /// Creates [LiveConnectParameters] for a Gemini Live session.
   LiveConnectParameters({
     required this.model,
     this.callbacks = const LiveCallbacks(),
@@ -164,10 +217,14 @@ class LiveConnectParameters {
 // Live Service
 // ============================================================================
 
-/// Service for connecting to the Gemini Live API via WebSocket
+/// Service for connecting to the Gemini Live API via WebSocket.
 class LiveService {
   static const _sdkVersion = '2.32.0';
+
+  /// The Gemini Developer API key or ephemeral client auth token.
   final String apiKey;
+
+  /// The target API version path segment (defaults to `'v1beta'`).
   final String apiVersion;
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
@@ -182,13 +239,16 @@ class LiveService {
   final Duration _setupTimeout;
   final String Function() _dartVersionProvider;
 
-  /// Optional logger for WebSocket traffic. When null (default), logging is
-  /// disabled. Set to `print` to restore the previous verbose behavior.
+  /// Optional logger for WebSocket traffic.
+  ///
+  /// When `null` (default), logging is disabled. Set to `print` to log raw
+  /// WebSocket frames.
   final void Function(String message)? logger;
 
   /// Service for generating realtime music streams (Lyria Live).
   late final LiveMusicService music;
 
+  /// Creates a [LiveService] client configured with [apiKey] and [apiVersion].
   LiveService({
     required this.apiKey,
     this.apiVersion = 'v1beta',
@@ -209,7 +269,7 @@ class LiveService {
     );
   }
 
-  /// Returns the current Dart version
+  /// Returns the current Dart runtime version string.
   static String dartVersion() {
     return runtime_info.dartVersion();
   }
@@ -265,6 +325,7 @@ class LiveService {
     return 'models/$model';
   }
 
+  /// Builds and validates the initial [LiveClientMessage] setup payload for [params].
   static LiveClientMessage buildSetupMessage(LiveConnectParameters params) {
     if (params.sessionResumption?.transparent == true) {
       throw UnsupportedError(
@@ -334,6 +395,8 @@ class LiveService {
     }
   }
 
+  /// Validates that every item in [functionResponses] has a non-empty `name`,
+  /// `response`, and `id`.
   static List<FunctionResponse> validateFunctionResponses(
     List<FunctionResponse> functionResponses,
   ) {
@@ -356,6 +419,7 @@ class LiveService {
     return functionResponses;
   }
 
+  /// Validates that [blob] has a MIME type starting with [expectedPrefix].
   static void validateRealtimeBlob(
     Blob blob, {
     required String expectedPrefix,
@@ -411,11 +475,12 @@ class LiveService {
     }
   }
 
+  /// Processes incoming WebSocket [data] through [callbacks] for unit testing.
   void handleWebSocketDataForTesting(dynamic data, LiveCallbacks callbacks) {
     _handleWebSocketData(data, callbacks);
   }
 
-  /// Establishes a WebSocket connection to the Live API
+  /// Establishes a WebSocket connection to the Live API using [params].
   Future<LiveSession> connect(LiveConnectParameters params) async {
     final usesEphemeralToken = apiKey.startsWith('auth_tokens/');
     if (usesEphemeralToken && apiVersion != 'v1alpha') {
@@ -535,10 +600,14 @@ class LiveService {
   }
 }
 
-/// Exception for timeout errors
+/// Exception thrown when a Live API operation exceeds its timeout.
 class TimeoutException implements Exception {
+  /// Description of the timeout failure.
   final String message;
+
+  /// Creates a [TimeoutException] with the given [message].
   TimeoutException(this.message);
+
   @override
   String toString() => "TimeoutException: $message";
 }
@@ -547,22 +616,25 @@ class TimeoutException implements Exception {
 // Live Session
 // ============================================================================
 
-/// Represents an active Live API session
+/// Represents an active Live API WebSocket session.
 class LiveSession {
   final WebSocketChannel _channel;
   final void Function(String)? _logger;
 
-  /// The setup acknowledgement returned by the server, populated once the
-  /// initial `setupComplete` message arrives during [LiveService.connect].
+  /// The setup acknowledgement returned by the server.
+  ///
+  /// Populated once the initial `setupComplete` message arrives during
+  /// [LiveService.connect].
   LiveServerSetupComplete? setupComplete;
 
   LiveSession._(this._channel, {void Function(String)? logger})
     : _logger = logger;
 
+  /// Creates a [LiveSession] backed by [channel] for unit testing.
   factory LiveSession.forTesting(WebSocketChannel channel) =>
       LiveSession._(channel);
 
-  /// Sends a message to the server
+  /// Sends a raw [LiveClientMessage] over the WebSocket channel.
   void sendMessage(LiveClientMessage message) {
     if (_channel.closeCode != null) {
       _logger?.call(
@@ -575,7 +647,7 @@ class LiveSession {
     _channel.sink.add(jsonString);
   }
 
-  /// Sends text content to the server
+  /// Sends a user text turn with [text] and marks the turn complete.
   void sendText(String text) {
     final message = LiveClientMessage(
       clientContent: LiveClientContent(
@@ -588,7 +660,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends audio data to the server
+  /// Sends 16-bit PCM [audioBytes] to the server as realtime audio input.
   void sendAudio(List<int> audioBytes) {
     final base64Audio = base64Encode(audioBytes);
     final blob = Blob(mimeType: 'audio/pcm', data: base64Audio);
@@ -600,7 +672,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends video data to the server
+  /// Sends encoded image frame [videoBytes] with [mimeType] as realtime video input.
   void sendVideo(List<int> videoBytes, {String mimeType = 'image/jpeg'}) {
     final base64Video = base64Encode(videoBytes);
     final blob = Blob(mimeType: mimeType, data: base64Video);
@@ -816,7 +888,7 @@ class LiveSession {
     }
   }
 
-  /// Sends media chunks for realtime input
+  /// Sends [mediaChunks] for realtime input.
   void sendMediaChunks(List<Blob> mediaChunks) {
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(mediaChunks: mediaChunks),
@@ -824,7 +896,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends a signal indicating the end of audio stream
+  /// Sends a signal indicating the end of the audio stream.
   void sendAudioStreamEnd() {
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(audioStreamEnd: true),
@@ -832,7 +904,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends realtime text input
+  /// Sends realtime [text] input over the session.
   void sendRealtimeText(String text) {
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(text: text),
@@ -840,7 +912,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Marks the start of user activity (when automatic VAD is disabled)
+  /// Marks the start of user speech activity when automatic VAD is disabled.
   void sendActivityStart() {
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(activityStart: ActivityStart()),
@@ -848,7 +920,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Marks the end of user activity (when automatic VAD is disabled)
+  /// Marks the end of user speech activity when automatic VAD is disabled.
   void sendActivityEnd() {
     final message = LiveClientMessage(
       realtimeInput: LiveClientRealtimeInput(activityEnd: ActivityEnd()),
@@ -897,7 +969,7 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends a single function response
+  /// Sends a single function response with [id], [name], and [response].
   void sendFunctionResponse({
     required String id,
     required String name,
@@ -940,11 +1012,11 @@ class LiveSession {
     sendMessage(LiveClientMessage(contextUpdate: resolved));
   }
 
-  /// Closes the WebSocket connection
+  /// Closes the WebSocket connection.
   Future<void> close() async {
     await _channel.sink.close();
   }
 
-  /// Returns true if the connection is closed
+  /// Whether the WebSocket connection is closed.
   bool get isClosed => _channel.closeCode != null;
 }

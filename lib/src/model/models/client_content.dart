@@ -240,7 +240,9 @@ class LiveClientContextUpdate {
   final Content? systemInstruction;
 
   /// An updated list of tools the model may use to generate subsequent
-  /// responses. Pass `LiveClientContextUpdateTools(tools: [])` (or `tools: <Tool>[]`)
+  /// responses.
+  ///
+  /// Pass `LiveClientContextUpdateTools(tools: [])` (or `tools: <Tool>[]`)
   /// to clear all tools.
   final LiveClientContextUpdateTools? tools;
 

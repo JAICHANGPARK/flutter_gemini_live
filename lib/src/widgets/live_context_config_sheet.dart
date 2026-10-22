@@ -22,6 +22,7 @@ class GeminiLiveContextPreset {
   final Object systemInstruction;
 
   /// Optional list of [Tool]s applied when this preset is selected.
+  ///
   /// Pass `const <Tool>[]` to clear all tools when switching to this preset.
   final List<Tool>? tools;
 
@@ -61,7 +62,9 @@ class GeminiLiveContextBadge extends StatelessWidget {
   /// Optional explicit label override.
   final String? label;
 
-  /// Optional number of active tools. When null, derived from [controller].
+  /// Optional number of active tools.
+  ///
+  /// When `null`, derived from [controller].
   final int? activeToolCount;
 
   /// Optional tap callback.
@@ -192,6 +195,7 @@ class GeminiLiveContextConfigSheet extends StatefulWidget {
   final List<GeminiLiveContextPreset> presets;
 
   /// Optional catalog of named tools that the user can toggle on or off.
+  ///
   /// Keys are human-readable tool labels (e.g. `'Google Search'`, `'Weather API'`)
   /// and values are the corresponding [Tool] definitions.
   final Map<String, Tool> availableTools;
@@ -203,16 +207,21 @@ class GeminiLiveContextConfigSheet extends StatefulWidget {
   /// [LiveClientContextUpdate].
   final ValueChanged<LiveClientContextUpdate>? onApply;
 
-  /// Sheet title text. Defaults to `'Live Context Update'`.
+  /// Sheet title text.
+  ///
+  /// Defaults to `'Live Context Update'`.
   final String title;
 
   /// Subtitle explaining that updates take effect in-order without reconnecting.
   final String subtitle;
 
-  /// Label for the primary apply button. Defaults to `'Apply Context Update'`.
+  /// Label for the primary apply button.
+  ///
+  /// Defaults to `'Apply Context Update'`.
   final String applyButtonLabel;
 
   /// Whether to close the modal sheet (`Navigator.pop`) when Apply is pressed.
+  ///
   /// Defaults to `false` when embedded directly, or `true` when opened via
   /// [GeminiLiveContextConfigSheet.show].
   final bool closeOnApply;
