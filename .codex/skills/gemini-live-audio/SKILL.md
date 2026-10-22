@@ -149,6 +149,20 @@ final speechConfig = SpeechConfig.fromLiveVoice(
 // Convenience enum helper
 final speechConfig = GeminiLiveVoice.kore.toSpeechConfig();
 
+// Or pass voice name string shorthand directly on LiveConnectParameters:
+final params = LiveConnectParameters(
+  model: LiveModels.gemini38Live,
+  speechConfig: 'Puck',
+  responseModalities: const [Modality.AUDIO],
+);
+
+// Voice Design / Prompted Voice with optional baseVoice (v2.32.0+)
+final voiceReq = CreateVoiceRequest.prompted(
+  prompt: 'A warm, calm audiobook narrator with a slight British accent.',
+  baseVoice: 'Puck',
+  displayName: 'Warm Narrator',
+);
+
 // Inspecting active voice properties
 final active = speechConfig.liveVoice;
 if (active != null) {

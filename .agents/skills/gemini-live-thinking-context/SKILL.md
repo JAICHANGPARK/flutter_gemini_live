@@ -33,9 +33,20 @@ await controller.connect(
 );
 ```
 
-### Handling Internal Thought Parts vs. Spoken Output
+### Handling Internal Thought Parts & `GeminiLiveThinkingIndicator`
 
-`GeminiLiveSessionController` automatically filters out `part.thought == true` from `controller.transcripts` so internal chain-of-thought text never pollutes your user-facing subtitles. If using low-level `LiveCallbacks.onMessage`, inspect `part.thought`:
+`GeminiLiveSessionController` automatically filters out `part.thought == true` from `controller.transcripts` so internal chain-of-thought text never pollutes your user-facing subtitles, while tracking `controller.isThinking`, `controller.latestThought`, and `controller.thoughts`.
+
+Use `GeminiLiveThinkingIndicator` (also built into `GeminiLiveChatView` via `showThinkingIndicator: true`) to render a system-styled expandable reasoning pill:
+
+```dart
+GeminiLiveThinkingIndicator.fromController(
+  controller: controller,
+  expandable: true, // Tapping expands/collapses the live thought stream
+)
+```
+
+If using low-level `LiveCallbacks.onMessage`, inspect `part.thought`:
 
 ```dart
 for (final part in message.serverContent?.modelTurn?.parts ?? const <Part>[]) {
@@ -113,6 +124,22 @@ controller.sendContextUpdate(
 
 // Clear all tools mid-session by passing an empty list
 controller.sendContextUpdate(tools: const <Tool>[]);
+
+// Or present the pre-built interactive Material 3 bottom sheet:
+await GeminiLiveContextConfigSheet.show(
+  context: context,
+  controller: controller,
+  presets: const [
+    GeminiLiveContextPreset(
+      id: 'socratic',
+      title: 'Socratic Tutor',
+      systemInstruction: 'Ask guiding questions instead of giving direct answers.',
+    ),
+  ],
+  availableTools: {
+    'Google Search': Tool(googleSearch: GoogleSearch()),
+  },
+);
 ```
 
 ---

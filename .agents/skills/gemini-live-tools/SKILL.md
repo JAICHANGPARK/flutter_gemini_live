@@ -100,9 +100,9 @@ void handleServerMessage(LiveSession session, LiveServerMessage message) async {
       }
     }
 
-    // Send completed responses back to the model
+    // Send completed responses back to the model (accepts single FunctionResponse, List<FunctionResponse>, or Map)
     if (responses.isNotEmpty) {
-      await session.sendToolResponse(responses);
+      session.sendToolResponse(functionResponses: responses);
     }
   }
 
@@ -157,6 +157,29 @@ await controller.connect(
     ],
   ),
 );
+```
+
+### Multimodal Tool Responses (`FunctionResponsePart`) & Mid-Session Tool Updates
+
+You can attach inline binary blobs (`Uint8List`) or file URIs directly inside a `FunctionResponse` using `FunctionResponsePart.fromBytes` and `FunctionResponsePart.fromUri`, and dynamically update or clear tools mid-session via `sendContextUpdate`:
+
+```dart
+session.sendToolResponse(
+  functionResponses: FunctionResponse(
+    id: call.id,
+    name: call.name,
+    response: {'output': 'Captured chart snapshot.'},
+    parts: [
+      FunctionResponsePart.fromBytes(
+        data: pngBytes,
+        mimeType: 'image/png',
+      ),
+    ],
+  ),
+);
+
+// Dynamically clear all registered tools mid-session:
+session.sendContextUpdate(tools: const <Tool>[]);
 ```
 
 ---

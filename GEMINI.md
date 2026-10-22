@@ -45,6 +45,11 @@ lib/
         ├── live_control_bar.dart        # Floating call interaction control bar
         ├── live_vision_overlay.dart     # Computer vision viewfinder HUD overlay
         ├── live_voice_selector.dart     # Voice persona bottom sheet selector
+        ├── live_tool_activity_chip.dart # Tool/function call execution status pill
+        ├── live_thinking_indicator.dart # Extended Thinking expandable reasoning pill
+        ├── live_context_config_sheet.dart # Live sendContextUpdate persona & tool sheet
+        ├── live_audio_route_button.dart # Speaker / Earpiece / Bluetooth route selector
+        ├── live_translate_split_view.dart # Dual-pane face-to-face live interpreter UI
         ├── cupertino_live_mic_button.dart    # iOS native mic button
         ├── cupertino_live_status_badge.dart  # iOS native status badge
         └── cupertino_live_usage_badge.dart   # iOS native token usage badge
