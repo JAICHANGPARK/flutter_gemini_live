@@ -658,5 +658,206 @@ void main() {
         'Make the voice slightly warmer and slower.',
       );
     });
+
+    test('FunctionResponsePart.fromBytes/fromUri and VoiceAudioData.fromBytes encode bytes as base64', () {
+      final pngBytes = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A]);
+      final response = FunctionResponse(
+        id: 'call-1',
+        name: 'take_photo',
+        response: {'output': 'Photo taken.', 'raw': pngBytes},
+        parts: [
+          FunctionResponsePart.fromBytes(
+            data: pngBytes,
+            mimeType: 'image/png',
+          ),
+          FunctionResponsePart.fromUri(
+            fileUri: 'gs://bucket/photo.png',
+            mimeType: 'image/png',
+          ),
+        ],
+      );
+
+      final toolRes = LiveClientToolResponse(functionResponses: [response]);
+      final toolJson = toolRes.toJson();
+      final first =
+          (toolJson['functionResponses'] as List).first as Map<String, dynamic>;
+      expect((first['response'] as Map)['raw'], isA<String>());
+      final parts = first['parts'] as List;
+      expect((parts[0]['inline_data'] as Map)['mime_type'], 'image/png');
+      expect((parts[0]['inline_data'] as Map)['data'], isA<String>());
+      expect(
+        (parts[1]['file_data'] as Map)['file_uri'],
+        'gs://bucket/photo.png',
+      );
+
+      final restored = FunctionResponse.fromJson(first);
+      expect(restored.parts?.first.inlineData?.bytes, pngBytes);
+      expect(restored.parts?[1].fileData?.fileUri, 'gs://bucket/photo.png');
+
+      final audio = VoiceAudioData.fromBytes(
+        bytes: pngBytes,
+        mimeType: 'audio/wav',
+      );
+      expect(audio.bytes, pngBytes);
+      final audioFromRawJson = VoiceAudioData.fromJson({
+        'data': pngBytes,
+        'mime_type': 'audio/wav',
+      });
+      expect(audioFromRawJson.bytes, pngBytes);
+    });
+
+    testWidgets(
+      'GeminiLiveThinkingIndicator renders thought stream and expands/collapses drawer',
+      (tester) async {
+        final genAI = GoogleGenAI(apiKey: 'test-key');
+        final controller = GeminiLiveSessionController(liveService: genAI.live);
+
+        // Simulate streaming thought part
+        controller.handleServerMessageForTesting(
+          LiveServerMessage(
+            serverContent: LiveServerContent(
+              modelTurn: Content(
+                parts: [
+                  Part(
+                    thought: true,
+                    text: 'Analyzing user math equation step by step...',
+                  ),
+                ],
+              ),
+              turnComplete: false,
+            ),
+          ),
+        );
+
+        expect(controller.isThinking, isTrue);
+        expect(
+          controller.latestThought,
+          'Analyzing user math equation step by step...',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GeminiLiveThinkingIndicator.fromController(
+                controller: controller,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Thinking…'), findsOneWidget);
+        expect(
+          find.text('Analyzing user math equation step by step...'),
+          findsNothing,
+        );
+
+        // Tap to expand reasoning drawer
+        await tester.tap(find.text('Thinking…'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Analyzing user math equation step by step...'),
+          findsOneWidget,
+        );
+
+        // Simulate non-thought model response -> isThinking transitions to false
+        controller.handleServerMessageForTesting(
+          LiveServerMessage(
+            serverContent: LiveServerContent(
+              modelTurn: Content(
+                parts: [Part(text: 'The answer is x = 4.')],
+              ),
+              turnComplete: true,
+            ),
+          ),
+        );
+        expect(controller.isThinking, isFalse);
+        expect(controller.thoughts, hasLength(1));
+
+        controller.dispose();
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveContextBadge and GeminiLiveContextConfigSheet apply live sendContextUpdate',
+      (tester) async {
+        final genAI = GoogleGenAI(apiKey: 'test-key');
+        final controller = GeminiLiveSessionController(liveService: genAI.live);
+        LiveClientContextUpdate? appliedUpdate;
+
+        final searchTool = Tool(googleSearch: GoogleSearch());
+        final weatherTool = Tool(
+          functionDeclarations: [FunctionDeclaration(name: 'get_weather')],
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  GeminiLiveContextBadge(
+                    controller: controller,
+                    onTap: () {},
+                  ),
+                  Expanded(
+                    child: GeminiLiveContextConfigSheet(
+                      controller: controller,
+                      presets: const [
+                        GeminiLiveContextPreset(
+                          id: 'concise',
+                          title: 'Concise Mode',
+                          systemInstruction: 'Reply in one short sentence.',
+                        ),
+                      ],
+                      availableTools: {
+                        'Google Search': searchTool,
+                        'Weather API': weatherTool,
+                      },
+                      onApply: (update) {
+                        appliedUpdate = update;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Session Context'), findsOneWidget);
+        expect(find.text('0 tools'), findsOneWidget);
+
+        // Select the 'Concise Mode' preset chip
+        await tester.tap(find.text('Concise Mode'));
+        await tester.pumpAndSettle();
+
+        // Tap 'Apply Context Update'
+        await tester.tap(find.text('Apply Context Update'));
+        await tester.pumpAndSettle();
+
+        expect(appliedUpdate, isNotNull);
+        expect(
+          appliedUpdate!.systemInstruction?.parts?.first.text,
+          'Reply in one short sentence.',
+        );
+        expect(appliedUpdate!.tools?.tools, hasLength(2));
+        expect(controller.activeTools, hasLength(2));
+        expect(
+          controller.activeSystemInstruction?.parts?.first.text,
+          'Reply in one short sentence.',
+        );
+
+        // Now tap 'Clear All Tools' and apply
+        await tester.tap(find.text('Clear All Tools'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Apply Context Update'));
+        await tester.pumpAndSettle();
+
+        expect(appliedUpdate!.tools?.tools, isEmpty);
+        expect(controller.activeTools, isEmpty);
+
+        controller.dispose();
+      },
+    );
   });
 }

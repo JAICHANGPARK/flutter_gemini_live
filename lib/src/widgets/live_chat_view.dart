@@ -6,6 +6,7 @@ import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
 import 'live_mic_button.dart';
 import 'live_status_badge.dart';
+import 'live_thinking_indicator.dart';
 import 'live_tool_activity_chip.dart';
 import 'live_waveform.dart';
 
@@ -123,6 +124,13 @@ class GeminiLiveChatView extends StatefulWidget {
     List<FunctionCall> activeCalls,
   )? toolActivityBuilder;
 
+  /// Custom builder for Extended Thinking (`Part(thought: true)`) reasoning indicator.
+  final Widget Function(
+    BuildContext context,
+    bool isThinking,
+    String? latestThought,
+  )? thinkingIndicatorBuilder;
+
   /// Callback when the user taps the image / attachment button.
   /// If null, default attachment button is omitted unless custom builder provides it.
   final Future<void> Function(BuildContext context, GeminiLiveSessionController controller)?
@@ -155,6 +163,9 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Whether to show a compact status chip when tools/functions are executing. Defaults to `true`.
   final bool showToolActivity;
 
+  /// Whether to show an expandable Extended Thinking indicator when the model streams `thought: true` parts. Defaults to `true`.
+  final bool showThinkingIndicator;
+
   /// Input hint text for the text field. Defaults to `'Ask Gemini Live...'`.
   final String inputHint;
 
@@ -184,6 +195,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.streamingIndicatorBuilder,
     this.waveformBuilder,
     this.toolActivityBuilder,
+    this.thinkingIndicatorBuilder,
     this.onAttachPressed,
     this.onConnectPressed,
     this.onDisconnectPressed,
@@ -194,6 +206,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showStatusBadge = true,
     this.showWaveform = true,
     this.showToolActivity = true,
+    this.showThinkingIndicator = true,
     this.inputHint = 'Ask Gemini Live...',
     this.debugLogging = false,
     this.logger,
@@ -426,6 +439,24 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
                       _buildDefaultEmpty(context))
                   : _buildMessageList(context),
             ),
+
+            // Extended Thinking reasoning indicator
+            if (widget.showThinkingIndicator &&
+                (_controller.isThinking || _controller.latestThought != null))
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14.0,
+                  vertical: 4.0,
+                ),
+                child: widget.thinkingIndicatorBuilder?.call(
+                      context,
+                      _controller.isThinking,
+                      _controller.latestThought,
+                    ) ??
+                    GeminiLiveThinkingIndicator.fromController(
+                      controller: _controller,
+                    ),
+              ),
 
             // Active tool / function call status chip
             if (widget.showToolActivity && _controller.isExecutingTool)

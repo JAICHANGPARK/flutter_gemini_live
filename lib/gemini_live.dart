@@ -32,4 +32,6 @@ export 'src/utils/reconnect_policy.dart';
 export 'src/widgets/live_tool_activity_chip.dart';
 export 'src/widgets/live_audio_route_button.dart';
 export 'src/widgets/live_translate_split_view.dart';
+export 'src/widgets/live_thinking_indicator.dart';
+export 'src/widgets/live_context_config_sheet.dart';
 

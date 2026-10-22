@@ -114,6 +114,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
   bool _isModelSpeaking = false;
   bool _isUserSpeaking = false;
   bool _isInterrupted = false;
+  bool _isThinking = false;
   bool _manualDisconnectRequested = false;
   bool _isReconnecting = false;
   int _reconnectAttempt = 0;
@@ -123,6 +124,13 @@ class GeminiLiveSessionController extends ChangeNotifier {
   String? _latestSessionHandle;
   bool _isSessionResumable = false;
   LiveServerGoAway? _lastGoAway;
+
+  Content? _activeSystemInstruction;
+  List<Tool> _activeTools = const [];
+
+  final List<String> _thoughts = [];
+  String? _latestThought;
+  bool _currentTurnThoughtActive = false;
 
   final List<FunctionCall> _activeToolCalls = [];
   final GeminiLiveAudioBuffer _currentTurnAudioBuffer = GeminiLiveAudioBuffer(
@@ -162,6 +170,21 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
   /// Whether the model was interrupted by user speech during the current turn.
   bool get isInterrupted => _isInterrupted;
+
+  /// Whether the model is currently streaming internal Extended Thinking (`thought: true`) parts.
+  bool get isThinking => _isThinking;
+
+  /// Latest reasoning/thought text emitted by the model during Extended Thinking.
+  String? get latestThought => _latestThought;
+
+  /// History of model reasoning/thought texts recorded across turns.
+  List<String> get thoughts => List.unmodifiable(_thoughts);
+
+  /// Currently active system instruction (initialized on [connect] and updated via [sendContextUpdate]).
+  Content? get activeSystemInstruction => _activeSystemInstruction;
+
+  /// Currently active tools registered in the session (initialized on [connect] and updated via [sendContextUpdate]).
+  List<Tool> get activeTools => List.unmodifiable(_activeTools);
 
   /// Whether the controller is currently attempting an automatic reconnection.
   bool get isReconnecting => _isReconnecting;
@@ -265,6 +288,9 @@ class GeminiLiveSessionController extends ChangeNotifier {
           )
         : params.sessionResumption;
 
+    _activeSystemInstruction = params.systemInstruction;
+    _activeTools = params.tools != null ? List<Tool>.from(params.tools!) : const [];
+
     final wrappedParams = LiveConnectParameters(
       model: params.model,
       callbacks: wrappedCallbacks,
@@ -283,6 +309,16 @@ class GeminiLiveSessionController extends ChangeNotifier {
       historyConfig: params.historyConfig,
       labels: params.labels,
       translationConfig: params.translationConfig,
+      responseModalities: params.responseModalities,
+      temperature: params.temperature,
+      topP: params.topP,
+      topK: params.topK,
+      maxOutputTokens: params.maxOutputTokens,
+      mediaResolution: params.mediaResolution,
+      seed: params.seed,
+      speechConfig: params.speechConfig,
+      thinkingConfig: params.thinkingConfig,
+      enableAffectiveDialog: params.enableAffectiveDialog,
     );
 
     try {
@@ -350,6 +386,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
       if (serverContent.interrupted == true) {
         _isInterrupted = true;
         _isModelSpeaking = false;
+        _isThinking = false;
+        _currentTurnThoughtActive = false;
         _currentTurnAudioBuffer.clear();
         _finalizeStreamingTranscripts();
         notifyListeners();
@@ -358,9 +396,22 @@ class GeminiLiveSessionController extends ChangeNotifier {
       final modelTurn = serverContent.modelTurn;
       if (modelTurn?.parts != null) {
         for (final part in modelTurn!.parts!) {
+          // Extended Thinking thought part
+          if (part.thought == true && part.text != null && part.text!.isNotEmpty) {
+            _isThinking = true;
+            if (_currentTurnThoughtActive && _thoughts.isNotEmpty) {
+              _thoughts[_thoughts.length - 1] = _thoughts.last + part.text!;
+            } else {
+              _currentTurnThoughtActive = true;
+              _thoughts.add(part.text!);
+            }
+            _latestThought = _thoughts.last;
+          }
+
           // Audio chunk
           if (part.inlineData != null &&
               part.inlineData!.mimeType.startsWith('audio/')) {
+            _isThinking = false;
             _isModelSpeaking = true;
             _isInterrupted = false;
             try {
@@ -374,6 +425,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
           if (part.text != null &&
               part.text!.isNotEmpty &&
               part.thought != true) {
+            _isThinking = false;
             _appendOrUpdateTranscript(
               role: 'model',
               text: part.text!,
@@ -434,6 +486,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
       if (serverContent.turnComplete == true ||
           serverContent.isInteractionComplete) {
         _isModelSpeaking = false;
+        _isThinking = false;
+        _currentTurnThoughtActive = false;
         if (_currentTurnAudioBuffer.isNotEmpty) {
           _lastCompletedTurnWav = _currentTurnAudioBuffer.toWavBytes();
           _currentTurnAudioBuffer.clear();
@@ -713,12 +767,22 @@ class GeminiLiveSessionController extends ChangeNotifier {
     Object? systemInstruction,
     Object? tools,
   }) {
+    final resolved =
+        update ??
+        LiveClientContextUpdate(
+          systemInstruction: systemInstruction,
+          tools: tools,
+        );
+    if (resolved.systemInstruction != null) {
+      _activeSystemInstruction = resolved.systemInstruction;
+    }
+    if (resolved.tools != null) {
+      _activeTools = List<Tool>.from(resolved.tools!.tools ?? const <Tool>[]);
+    }
+    notifyListeners();
+
     if (_session == null || !isConnected) return;
-    _session!.sendContextUpdate(
-      update: update,
-      systemInstruction: systemInstruction,
-      tools: tools,
-    );
+    _session!.sendContextUpdate(update: resolved);
   }
 
   /// Disconnects the active session cleanly.
@@ -738,6 +802,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _session = null;
     _isModelSpeaking = false;
     _isUserSpeaking = false;
+    _isThinking = false;
+    _currentTurnThoughtActive = false;
     _activeToolCalls.clear();
     _currentTurnAudioBuffer.clear();
     _setState(LiveSessionState.disconnected);
@@ -746,6 +812,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// Clears the recorded transcripts and resets the token tracker.
   void clearHistory() {
     _transcripts.clear();
+    _thoughts.clear();
+    _latestThought = null;
+    _isThinking = false;
+    _currentTurnThoughtActive = false;
     _latestTranscript = null;
     _latestTranscriptRole = null;
     _lastCompletedTurnWav = null;
