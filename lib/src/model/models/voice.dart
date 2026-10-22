@@ -34,6 +34,15 @@ class VoiceAudioData {
 
   VoiceAudioData({required this.data, required this.mimeType});
 
+  /// Creates [VoiceAudioData] by base64-encoding raw audio [bytes].
+  factory VoiceAudioData.fromBytes({
+    required List<int> bytes,
+    required String mimeType,
+  }) => VoiceAudioData(data: base64Encode(bytes), mimeType: mimeType);
+
+  /// Decodes the base64 [data] into raw audio bytes.
+  Uint8List get bytes => base64Decode(data);
+
   factory VoiceAudioData.fromJson(Map<String, dynamic> json) =>
       _$VoiceAudioDataFromJson(json);
 

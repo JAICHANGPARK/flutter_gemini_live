@@ -166,11 +166,28 @@ class LiveClientToolResponse {
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     if (functionResponses != null) {
-      final list = functionResponses!.map((e) => e.toJson()).toList();
+      final list = functionResponses!
+          .map((e) => _encodeBinaryValues(e.toJson()) as Map<String, dynamic>)
+          .toList();
       json['functionResponses'] = list;
       json['function_responses'] = list;
     }
     return json;
+  }
+
+  static Object? _encodeBinaryValues(Object? value) {
+    if (value is Uint8List) {
+      return base64Encode(value);
+    }
+    if (value is Map) {
+      return value.map<String, dynamic>(
+        (k, v) => MapEntry(k.toString(), _encodeBinaryValues(v)),
+      );
+    }
+    if (value is List) {
+      return value.map(_encodeBinaryValues).toList();
+    }
+    return value;
   }
 }
 

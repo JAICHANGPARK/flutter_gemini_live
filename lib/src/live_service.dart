@@ -70,11 +70,24 @@ class LiveConnectParameters {
   /// Optional translation configuration for realtime bidirectional translation.
   final TranslationConfig? translationConfig;
 
+  /// Direct top-level generation parameters (matching `LiveConnectConfig` in
+  /// the upstream JS and Python SDKs).
+  final List<Modality>? responseModalities;
+  final double? temperature;
+  final double? topP;
+  final int? topK;
+  final int? maxOutputTokens;
+  final MediaResolution? mediaResolution;
+  final int? seed;
+  final SpeechConfig? speechConfig;
+  final ThinkingConfig? thinkingConfig;
+  final bool? enableAffectiveDialog;
+
   LiveConnectParameters({
     required this.model,
     this.callbacks = const LiveCallbacks(),
     this.config,
-    this.systemInstruction,
+    Object? systemInstruction,
     this.tools,
     this.realtimeInputConfig,
     this.sessionResumption,
@@ -88,7 +101,63 @@ class LiveConnectParameters {
     this.historyConfig,
     this.labels,
     this.translationConfig,
-  });
+    this.responseModalities,
+    this.temperature,
+    this.topP,
+    this.topK,
+    this.maxOutputTokens,
+    this.mediaResolution,
+    this.seed,
+    Object? speechConfig,
+    this.thinkingConfig,
+    this.enableAffectiveDialog,
+  }) : systemInstruction = _parseSystemInstruction(systemInstruction),
+       speechConfig = _parseSpeechConfig(speechConfig);
+
+  static Content? _parseSystemInstruction(Object? value) {
+    if (value == null) return null;
+    if (value is Content) return value;
+    if (value is String) {
+      return Content(parts: [Part(text: value)], role: 'user');
+    }
+    if (value is Part) {
+      return Content(parts: [value], role: 'user');
+    }
+    if (value is List<Part>) {
+      return Content(parts: value, role: 'user');
+    }
+    if (value is Map<String, dynamic>) {
+      if (value.containsKey('parts') || value.containsKey('role')) {
+        return Content.fromJson(value);
+      }
+      return Content(parts: [Part.fromJson(value)], role: 'user');
+    }
+    throw ArgumentError.value(
+      value,
+      'systemInstruction',
+      'Must be a Content, String, Part, List<Part>, or Map<String, dynamic>.',
+    );
+  }
+
+  static SpeechConfig? _parseSpeechConfig(Object? value) {
+    if (value == null) return null;
+    if (value is SpeechConfig) return value;
+    if (value is String) {
+      return SpeechConfig(
+        voiceConfig: VoiceConfig(
+          prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: value),
+        ),
+      );
+    }
+    if (value is Map<String, dynamic>) {
+      return SpeechConfig.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'speechConfig',
+      'Must be a SpeechConfig, String (voiceName), or Map<String, dynamic>.',
+    );
+  }
 }
 
 // ============================================================================
@@ -97,7 +166,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket
 class LiveService {
-  static const _sdkVersion = '2.30.0';
+  static const _sdkVersion = '2.32.0';
   final String apiKey;
   final String apiVersion;
   static const _functionResponseRequiresId =
@@ -146,37 +215,54 @@ class LiveService {
   }
 
   static GenerationConfig _normalizeGenerationConfig(
-    GenerationConfig? config, [
-    TranslationConfig? fallbackTranslationConfig,
-  ]) {
+    LiveConnectParameters params,
+  ) {
+    final config = params.config;
     final effectiveTranslationConfig =
-        config?.translationConfig ?? fallbackTranslationConfig;
-    final responseModalities = config?.responseModalities;
-    if (responseModalities != null &&
-        responseModalities.isNotEmpty &&
-        (config?.translationConfig != null ||
-            fallbackTranslationConfig == null)) {
-      return config!;
+        params.translationConfig ?? config?.translationConfig;
+    final effectiveSpeechConfig = params.speechConfig ?? config?.speechConfig;
+    if (effectiveSpeechConfig?.multiSpeakerVoiceConfig != null) {
+      throw UnsupportedError(
+        'multiSpeakerVoiceConfig is not supported in the live API.',
+      );
     }
 
+    final responseModalities =
+        params.responseModalities ?? config?.responseModalities;
+
     return GenerationConfig(
-      temperature: config?.temperature,
-      topK: config?.topK,
-      topP: config?.topP,
-      maxOutputTokens: config?.maxOutputTokens,
-      responseModalities: (responseModalities != null &&
-              responseModalities.isNotEmpty)
+      temperature: params.temperature ?? config?.temperature,
+      topK: params.topK ?? config?.topK,
+      topP: params.topP ?? config?.topP,
+      maxOutputTokens: params.maxOutputTokens ?? config?.maxOutputTokens,
+      responseModalities:
+          (responseModalities != null && responseModalities.isNotEmpty)
           ? responseModalities
           : const [Modality.AUDIO],
-      mediaResolution: config?.mediaResolution,
-      seed: config?.seed,
-      speechConfig: config?.speechConfig,
-      thinkingConfig: config?.thinkingConfig,
-      enableAffectiveDialog: config?.enableAffectiveDialog,
+      mediaResolution: params.mediaResolution ?? config?.mediaResolution,
+      seed: params.seed ?? config?.seed,
+      speechConfig: effectiveSpeechConfig,
+      thinkingConfig: params.thinkingConfig ?? config?.thinkingConfig,
+      enableAffectiveDialog:
+          params.enableAffectiveDialog ?? config?.enableAffectiveDialog,
       translationConfig: effectiveTranslationConfig,
       audioTranscriptionConfig: config?.audioTranscriptionConfig,
       labels: config?.labels,
     );
+  }
+
+  /// Normalizes and validates a model identifier matching upstream `tModel`.
+  static String normalizeModelName(String model) {
+    if (model.isEmpty) {
+      throw ArgumentError('model is required and must be a non-empty string');
+    }
+    if (model.contains('..') || model.contains('?') || model.contains('&')) {
+      throw ArgumentError('invalid model parameter');
+    }
+    if (model.startsWith('models/') || model.startsWith('tunedModels/')) {
+      return model;
+    }
+    return 'models/$model';
   }
 
   static LiveClientMessage buildSetupMessage(LiveConnectParameters params) {
@@ -198,33 +284,14 @@ class LiveService {
       throw _unsupportedSafetyMethodError();
     }
 
-    if ((params.tools ?? const <Tool>[]).any(
-      (tool) => tool.exaAiSearch != null,
-    )) {
-      throw UnsupportedError(
-        'exaAiSearch parameter is not supported in Gemini API.',
-      );
-    }
+    validateTools(params.tools);
 
-    if ((params.tools ?? const <Tool>[]).any(
-      (tool) => tool.parallelAiSearch != null,
-    )) {
-      throw UnsupportedError(
-        'parallelAiSearch parameter is not supported in Gemini API.',
-      );
-    }
-
-    final modelName = params.model.startsWith('models/')
-        ? params.model
-        : 'models/${params.model}';
+    final modelName = normalizeModelName(params.model);
 
     return LiveClientMessage(
       setup: LiveClientSetup(
         model: modelName,
-        generationConfig: _normalizeGenerationConfig(
-          params.config,
-          params.translationConfig,
-        ),
+        generationConfig: _normalizeGenerationConfig(params),
         systemInstruction: params.systemInstruction,
         tools: params.tools,
         realtimeInputConfig: params.realtimeInputConfig,
@@ -239,6 +306,32 @@ class LiveService {
         labels: params.labels ?? params.config?.labels,
       ),
     );
+  }
+
+  /// Validates that [tools] do not use Vertex/Enterprise-only search parameters
+  /// unsupported in the Gemini Developer API.
+  static void validateTools(List<Tool>? tools) {
+    final list = tools ?? const <Tool>[];
+    if (list.any((tool) => tool.retrieval != null)) {
+      throw UnsupportedError(
+        'retrieval parameter is not supported in Gemini API.',
+      );
+    }
+    if (list.any((tool) => tool.enterpriseWebSearch != null)) {
+      throw UnsupportedError(
+        'enterpriseWebSearch parameter is not supported in Gemini API.',
+      );
+    }
+    if (list.any((tool) => tool.exaAiSearch != null)) {
+      throw UnsupportedError(
+        'exaAiSearch parameter is not supported in Gemini API.',
+      );
+    }
+    if (list.any((tool) => tool.parallelAiSearch != null)) {
+      throw UnsupportedError(
+        'parallelAiSearch parameter is not supported in Gemini API.',
+      );
+    }
   }
 
   static List<FunctionResponse> validateFunctionResponses(
@@ -346,6 +439,12 @@ class LiveService {
 
     final userAgent =
         'google-genai-sdk/$_sdkVersion dart/${_dartVersionProvider()}';
+    final hasMcpTools = (params.tools ?? const <Tool>[]).any(
+      (tool) => tool.mcpServers != null && tool.mcpServers!.isNotEmpty,
+    );
+    final apiClientHeader = hasMcpTools
+        ? '$userAgent mcp_used/unknown'
+        : userAgent;
 
     logger?.call('🔌 Connecting to WebSocket at $websocketUri');
 
@@ -353,7 +452,7 @@ class LiveService {
       final headers = {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
-        'x-goog-api-client': userAgent,
+        'x-goog-api-client': apiClientHeader,
         'user-agent': userAgent,
       };
       final channel = await _connector(websocketUri, headers);
@@ -517,51 +616,197 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends client content with optional turns and turn completion flag
-  void sendClientContent({List<Content>? turns, bool turnComplete = true}) {
+  /// Sends client content with optional turns and turn completion flag.
+  ///
+  /// [turns] accepts a [String], [Part], [Content], or a `List` of any of
+  /// those types (matching `ContentListUnion` in the reference JS/Python SDKs).
+  void sendClientContent({Object? turns, bool turnComplete = true}) {
+    final normalizedTurns = _normalizeTurns(turns);
     final message = LiveClientMessage(
       clientContent: LiveClientContent(
-        turns: turns,
+        turns: normalizedTurns,
         turnComplete: turnComplete,
       ),
     );
     sendMessage(message);
   }
 
-  /// Sends realtime input with various media types
+  static void _validateRawPart(Part part) {
+    if (part.functionCall != null || part.functionResponse != null) {
+      throw ArgumentError(
+        'To specify functionCall or functionResponse parts, please wrap them in a Content object, specifying the role for them',
+      );
+    }
+  }
+
+  static List<Content>? _normalizeTurns(Object? turns) {
+    if (turns == null) return null;
+    if (turns is List<Content>) return turns;
+    if (turns is Content) return [turns];
+    if (turns is String) {
+      return [
+        Content(role: 'user', parts: [Part(text: turns)]),
+      ];
+    }
+    if (turns is Part) {
+      _validateRawPart(turns);
+      return [
+        Content(role: 'user', parts: [turns]),
+      ];
+    }
+    if (turns is Map<String, dynamic>) {
+      if (turns.containsKey('parts') || turns.containsKey('role')) {
+        return [Content.fromJson(turns)];
+      }
+      final part = Part.fromJson(turns);
+      _validateRawPart(part);
+      return [
+        Content(role: 'user', parts: [part]),
+      ];
+    }
+    if (turns is List) {
+      if (turns.isEmpty) return <Content>[];
+      var hasContent = false;
+      var hasPart = false;
+      final contents = <Content>[];
+      final accumulatedParts = <Part>[];
+
+      for (final item in turns) {
+        if (item is Content) {
+          hasContent = true;
+          contents.add(item);
+        } else if (item is String) {
+          hasPart = true;
+          accumulatedParts.add(Part(text: item));
+        } else if (item is Part) {
+          hasPart = true;
+          _validateRawPart(item);
+          accumulatedParts.add(item);
+        } else if (item is Map<String, dynamic>) {
+          if (item.containsKey('parts') || item.containsKey('role')) {
+            hasContent = true;
+            contents.add(Content.fromJson(item));
+          } else {
+            hasPart = true;
+            final part = Part.fromJson(item);
+            _validateRawPart(part);
+            accumulatedParts.add(part);
+          }
+        } else {
+          throw ArgumentError.value(
+            item,
+            'turns',
+            'Each turn must be a Content, Part, String, or Map<String, dynamic>.',
+          );
+        }
+
+        if (hasContent && hasPart) {
+          throw ArgumentError(
+            'Mixing Content and Parts is not supported, please group the parts into the appropriate Content objects and specify the roles for them',
+          );
+        }
+      }
+
+      if (hasPart) {
+        return [Content(role: 'user', parts: accumulatedParts)];
+      }
+      return contents;
+    }
+    throw ArgumentError.value(
+      turns,
+      'turns',
+      'Must be a Content, Part, String, or List.',
+    );
+  }
+
+  static Blob _parseBlob(Object value, String argumentName) {
+    if (value is Blob) return value;
+    if (value is Map<String, dynamic>) return Blob.fromJson(value);
+    throw ArgumentError.value(
+      value,
+      argumentName,
+      'Must be a Blob or Map<String, dynamic>.',
+    );
+  }
+
+  /// Sends realtime input with various media types.
+  ///
+  /// [media] accepts a single [Blob] (or `Map<String, dynamic>`) or
+  /// `List<Blob>` (mapped to `mediaChunks` on the wire, matching
+  /// `sendRealtimeInput({media})` in the reference SDKs).
+  /// [audio] and [video] accept a [Blob] or `Map<String, dynamic>`.
+  /// [activityStart] and [activityEnd] accept `true`, `{}` (`Map`), or an
+  /// [ActivityStart] / [ActivityEnd] instance.
   void sendRealtimeInput({
+    Object? media,
     List<Blob>? mediaChunks,
-    Blob? audio,
-    Blob? video,
+    Object? audio,
+    Object? video,
     String? text,
     bool? audioStreamEnd,
-    bool? activityStart,
-    bool? activityEnd,
+    Object? activityStart,
+    Object? activityEnd,
   }) {
-    if (audio != null) {
-      LiveService.validateRealtimeBlob(audio, expectedPrefix: 'audio/');
+    final resolvedAudio = audio != null ? _parseBlob(audio, 'audio') : null;
+    final resolvedVideo = video != null ? _parseBlob(video, 'video') : null;
+    if (resolvedAudio != null) {
+      LiveService.validateRealtimeBlob(resolvedAudio, expectedPrefix: 'audio/');
     }
-    if (video != null) {
-      LiveService.validateRealtimeBlob(video, expectedPrefix: 'image/');
+    if (resolvedVideo != null) {
+      LiveService.validateRealtimeBlob(resolvedVideo, expectedPrefix: 'image/');
     }
+
+    List<Blob>? resolvedChunks = mediaChunks;
+    if (media != null) {
+      final List<Blob> mediaList;
+      if (media is Blob) {
+        mediaList = <Blob>[media];
+      } else if (media is Map<String, dynamic>) {
+        mediaList = <Blob>[Blob.fromJson(media)];
+      } else if (media is List<Blob>) {
+        mediaList = media;
+      } else if (media is List) {
+        mediaList = media
+            .map<Blob>((item) => _parseBlob(item as Object, 'media'))
+            .toList();
+      } else {
+        throw ArgumentError.value(
+          media,
+          'media',
+          'Must be a Blob, Map<String, dynamic>, or List<Blob>.',
+        );
+      }
+      resolvedChunks = resolvedChunks == null
+          ? mediaList
+          : <Blob>[...resolvedChunks, ...mediaList];
+    }
+
+    final resolvedActivityStart = activityStart is ActivityStart
+        ? activityStart
+        : ((activityStart == true || activityStart is Map)
+              ? ActivityStart()
+              : null);
+    final resolvedActivityEnd = activityEnd is ActivityEnd
+        ? activityEnd
+        : ((activityEnd == true || activityEnd is Map) ? ActivityEnd() : null);
 
     LiveClientRealtimeInput? realtimeInput;
 
-    if (mediaChunks != null ||
-        audio != null ||
-        video != null ||
+    if (resolvedChunks != null ||
+        resolvedAudio != null ||
+        resolvedVideo != null ||
         text != null ||
         audioStreamEnd != null ||
-        activityStart != null ||
-        activityEnd != null) {
+        resolvedActivityStart != null ||
+        resolvedActivityEnd != null) {
       realtimeInput = LiveClientRealtimeInput(
-        mediaChunks: mediaChunks,
-        audio: audio,
-        video: video,
+        mediaChunks: resolvedChunks,
+        audio: resolvedAudio,
+        video: resolvedVideo,
         text: text,
         audioStreamEnd: audioStreamEnd,
-        activityStart: activityStart == true ? ActivityStart() : null,
-        activityEnd: activityEnd == true ? ActivityEnd() : null,
+        activityStart: resolvedActivityStart,
+        activityEnd: resolvedActivityEnd,
       );
     }
 
@@ -611,11 +856,39 @@ class LiveSession {
     sendMessage(message);
   }
 
-  /// Sends a tool response to the server
-  void sendToolResponse({required List<FunctionResponse> functionResponses}) {
-    final validatedResponses = LiveService.validateFunctionResponses(
-      functionResponses,
-    );
+  /// Sends a tool response to the server.
+  ///
+  /// [functionResponses] accepts a single [FunctionResponse], a
+  /// `Map<String, dynamic>`, or a `List` of [FunctionResponse] /
+  /// `Map<String, dynamic>`, matching the reference JS and Python SDKs.
+  void sendToolResponse({required Object functionResponses}) {
+    final List<FunctionResponse> list;
+    if (functionResponses is FunctionResponse) {
+      list = [functionResponses];
+    } else if (functionResponses is Map<String, dynamic>) {
+      list = [FunctionResponse.fromJson(functionResponses)];
+    } else if (functionResponses is List<FunctionResponse>) {
+      list = functionResponses;
+    } else if (functionResponses is List) {
+      list = functionResponses.map<FunctionResponse>((item) {
+        if (item is FunctionResponse) return item;
+        if (item is Map<String, dynamic>) {
+          return FunctionResponse.fromJson(item);
+        }
+        throw ArgumentError.value(
+          item,
+          'functionResponses',
+          'Each item must be a FunctionResponse or Map<String, dynamic>.',
+        );
+      }).toList();
+    } else {
+      throw ArgumentError.value(
+        functionResponses,
+        'functionResponses',
+        'Must be a FunctionResponse, Map<String, dynamic>, or List.',
+      );
+    }
+    final validatedResponses = LiveService.validateFunctionResponses(list);
     final message = LiveClientMessage(
       toolResponse: LiveClientToolResponse(
         functionResponses: validatedResponses,
@@ -663,6 +936,7 @@ class LiveSession {
         'At least one of `systemInstruction` or `tools` must be set.',
       );
     }
+    LiveService.validateTools(resolved.tools?.tools);
     sendMessage(LiveClientMessage(contextUpdate: resolved));
   }
 

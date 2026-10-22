@@ -93,6 +93,20 @@ class FunctionResponseBlob {
 
   FunctionResponseBlob({this.mimeType, this.data, this.displayName});
 
+  /// Creates a [FunctionResponseBlob] by base64-encoding raw [bytes].
+  factory FunctionResponseBlob.fromBytes({
+    required List<int> bytes,
+    required String mimeType,
+    String? displayName,
+  }) => FunctionResponseBlob(
+    mimeType: mimeType,
+    data: base64Encode(bytes),
+    displayName: displayName,
+  );
+
+  /// Decodes the base64 [data] payload into raw bytes, if present.
+  Uint8List? get bytes => data == null ? null : base64Decode(data!);
+
   factory FunctionResponseBlob.fromJson(Map<String, dynamic> json) =>
       _$FunctionResponseBlobFromJson(json);
 
@@ -121,6 +135,32 @@ class FunctionResponsePart {
   final FunctionResponseFileData? fileData;
 
   FunctionResponsePart({this.inlineData, this.fileData});
+
+  /// Creates an inline binary [FunctionResponsePart] by base64-encoding [data].
+  factory FunctionResponsePart.fromBytes({
+    required List<int> data,
+    required String mimeType,
+    String? displayName,
+  }) => FunctionResponsePart(
+    inlineData: FunctionResponseBlob.fromBytes(
+      bytes: data,
+      mimeType: mimeType,
+      displayName: displayName,
+    ),
+  );
+
+  /// Creates a URI-referenced [FunctionResponsePart] pointing to [fileUri].
+  factory FunctionResponsePart.fromUri({
+    required String fileUri,
+    String? mimeType,
+    String? displayName,
+  }) => FunctionResponsePart(
+    fileData: FunctionResponseFileData(
+      fileUri: fileUri,
+      mimeType: mimeType,
+      displayName: displayName,
+    ),
+  );
 
   factory FunctionResponsePart.fromJson(Map<String, dynamic> json) =>
       _$FunctionResponsePartFromJson(json);

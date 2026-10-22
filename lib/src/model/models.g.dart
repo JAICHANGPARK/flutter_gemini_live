@@ -195,8 +195,10 @@ Map<String, dynamic> _$ContentToJson(Content instance) => <String, dynamic>{
 
 VoiceAudioData _$VoiceAudioDataFromJson(Map<String, dynamic> json) =>
     VoiceAudioData(
-      data: json['data'] as String,
-      mimeType: json['mime_type'] as String,
+      data: json['data'] is List<int>
+          ? base64Encode(json['data'] as List<int>)
+          : json['data'] as String,
+      mimeType: (json['mime_type'] ?? json['mimeType']) as String,
     );
 
 Map<String, dynamic> _$VoiceAudioDataToJson(VoiceAudioData instance) =>
@@ -1013,9 +1015,11 @@ Map<String, dynamic> _$ToolResponseToJson(ToolResponse instance) =>
 FunctionResponseBlob _$FunctionResponseBlobFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponseBlob(
-  mimeType: json['mime_type'] as String?,
-  data: json['data'] as String?,
-  displayName: json['display_name'] as String?,
+  mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
+  data: json['data'] is List<int>
+      ? base64Encode(json['data'] as List<int>)
+      : json['data'] as String?,
+  displayName: (json['display_name'] ?? json['displayName']) as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseBlobToJson(
@@ -1029,9 +1033,9 @@ Map<String, dynamic> _$FunctionResponseBlobToJson(
 FunctionResponseFileData _$FunctionResponseFileDataFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponseFileData(
-  fileUri: json['file_uri'] as String?,
-  mimeType: json['mime_type'] as String?,
-  displayName: json['display_name'] as String?,
+  fileUri: (json['file_uri'] ?? json['fileUri']) as String?,
+  mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
+  displayName: (json['display_name'] ?? json['displayName']) as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseFileDataToJson(
@@ -1045,23 +1049,30 @@ Map<String, dynamic> _$FunctionResponseFileDataToJson(
 FunctionResponsePart _$FunctionResponsePartFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponsePart(
-  inlineData: json['inline_data'] == null
+  inlineData: (json['inline_data'] ?? json['inlineData']) == null
       ? null
-      : FunctionResponseBlob.fromJson(
-          json['inline_data'] as Map<String, dynamic>,
-        ),
-  fileData: json['file_data'] == null
+      : ((json['inline_data'] ?? json['inlineData']) is FunctionResponseBlob
+            ? (json['inline_data'] ?? json['inlineData'])
+                  as FunctionResponseBlob
+            : FunctionResponseBlob.fromJson(
+                (json['inline_data'] ?? json['inlineData'])
+                    as Map<String, dynamic>,
+              )),
+  fileData: (json['file_data'] ?? json['fileData']) == null
       ? null
-      : FunctionResponseFileData.fromJson(
-          json['file_data'] as Map<String, dynamic>,
-        ),
+      : ((json['file_data'] ?? json['fileData']) is FunctionResponseFileData
+            ? (json['file_data'] ?? json['fileData'])
+                  as FunctionResponseFileData
+            : FunctionResponseFileData.fromJson(
+                (json['file_data'] ?? json['fileData']) as Map<String, dynamic>,
+              )),
 );
 
 Map<String, dynamic> _$FunctionResponsePartToJson(
   FunctionResponsePart instance,
 ) => <String, dynamic>{
-  'inline_data': ?instance.inlineData,
-  'file_data': ?instance.fileData,
+  'inline_data': ?instance.inlineData?.toJson(),
+  'file_data': ?instance.fileData?.toJson(),
 };
 
 FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
@@ -1069,13 +1080,18 @@ FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String?,
       name: json['name'] as String?,
       response: json['response'] as Map<String, dynamic>?,
-      willContinue: json['will_continue'] as bool?,
+      willContinue:
+          (json['will_continue'] ?? json['willContinue']) as bool?,
       scheduling: $enumDecodeNullable(
         _$FunctionResponseSchedulingEnumMap,
         json['scheduling'],
       ),
       parts: (json['parts'] as List<dynamic>?)
-          ?.map((e) => FunctionResponsePart.fromJson(e as Map<String, dynamic>))
+          ?.map(
+            (e) => e is FunctionResponsePart
+                ? e
+                : FunctionResponsePart.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
 
@@ -1086,7 +1102,7 @@ Map<String, dynamic> _$FunctionResponseToJson(FunctionResponse instance) =>
       'response': ?instance.response,
       'will_continue': ?instance.willContinue,
       'scheduling': ?_$FunctionResponseSchedulingEnumMap[instance.scheduling],
-      'parts': ?instance.parts,
+      'parts': ?instance.parts?.map((e) => e.toJson()).toList(),
     };
 
 const _$FunctionResponseSchedulingEnumMap = {

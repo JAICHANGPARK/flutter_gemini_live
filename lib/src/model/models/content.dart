@@ -100,7 +100,37 @@ class Part {
     this.speechMetadata,
   });
 
-  factory Part.fromJson(Map<String, dynamic> json) => _$PartFromJson(json);
+  factory Part.fromJson(Map<String, dynamic> json) {
+    final normalized = <String, dynamic>{
+      ...json,
+      if (!json.containsKey('inlineData') && json.containsKey('inline_data'))
+        'inlineData': json['inline_data'],
+      if (!json.containsKey('fileData') && json.containsKey('file_data'))
+        'fileData': json['file_data'],
+      if (!json.containsKey('videoMetadata') &&
+          json.containsKey('video_metadata'))
+        'videoMetadata': json['video_metadata'],
+      if (!json.containsKey('functionCall') &&
+          json.containsKey('function_call'))
+        'functionCall': json['function_call'],
+      if (!json.containsKey('functionResponse') &&
+          json.containsKey('function_response'))
+        'functionResponse': json['function_response'],
+      if (!json.containsKey('mediaResolution') &&
+          json.containsKey('media_resolution'))
+        'mediaResolution': json['media_resolution'],
+      if (!json.containsKey('thoughtSignature') &&
+          json.containsKey('thought_signature'))
+        'thoughtSignature': json['thought_signature'],
+      if (!json.containsKey('executableCode') &&
+          json.containsKey('executable_code'))
+        'executableCode': json['executable_code'],
+      if (!json.containsKey('codeExecutionResult') &&
+          json.containsKey('code_execution_result'))
+        'codeExecutionResult': json['code_execution_result'],
+    };
+    return _$PartFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$PartToJson(this);
 }
@@ -114,7 +144,34 @@ class Blob {
 
   Blob({required this.mimeType, required this.data, this.displayName});
 
-  factory Blob.fromJson(Map<String, dynamic> json) => _$BlobFromJson(json);
+  /// Creates an inline [Blob] from raw [bytes], automatically encoding them as
+  /// base64.
+  factory Blob.fromBytes({
+    required String mimeType,
+    required List<int> bytes,
+    String? displayName,
+  }) =>
+      Blob(
+        mimeType: mimeType,
+        data: base64Encode(bytes),
+        displayName: displayName,
+      );
+
+  /// Decodes the base64 [data] payload into raw bytes.
+  Uint8List get bytes => base64Decode(data);
+
+  factory Blob.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
+    final encodedData = rawData is List<int>
+        ? base64Encode(rawData)
+        : rawData as String;
+    return _$BlobFromJson(<String, dynamic>{
+      'mimeType': (json['mimeType'] ?? json['mime_type']) as String,
+      'data': encodedData,
+      if (json['displayName'] != null || json['display_name'] != null)
+        'displayName': (json['displayName'] ?? json['display_name']) as String?,
+    });
+  }
 
   Map<String, dynamic> toJson() => _$BlobToJson(this);
 }

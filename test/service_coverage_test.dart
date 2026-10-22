@@ -400,9 +400,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.30.0 dart/9.9',
+          'google-genai-sdk/2.32.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.30.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.32.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -721,6 +721,280 @@ void main() {
 
       expect(channel.sinkCloseCalls, 1);
       expect(session.isClosed, true);
+    });
+
+    test('LiveSession supports reference SDK union parameters (String turns, media Blob, single FunctionResponse, sendContextUpdate)', () {
+      final channel = FakeWebSocketChannel();
+      final session = LiveSession.forTesting(channel);
+
+      // 1. sendClientContent with String turns & single Content
+      session.sendClientContent(turns: 'Hello from string!');
+      session.sendClientContent(
+        turns: Content(parts: [Part(text: 'Single content')]),
+      );
+
+      // 2. sendRealtimeInput with media Blob and ActivityStart/ActivityEnd objects
+      session.sendRealtimeInput(
+        media: Blob(mimeType: 'audio/pcm;rate=16000', data: 'AQID'),
+        activityStart: ActivityStart(),
+        activityEnd: ActivityEnd(),
+      );
+
+      // 3. sendToolResponse with single FunctionResponse
+      session.sendToolResponse(
+        functionResponses: FunctionResponse(
+          id: 'call-99',
+          name: 'turn_on_lights',
+          response: {'result': 'ok'},
+        ),
+      );
+
+      // 4. sendContextUpdate
+      session.sendContextUpdate(
+        systemInstruction: 'Be concise.',
+        tools: const <Tool>[],
+      );
+
+      final decoded = channel.sentMessages
+          .map(
+            (message) => jsonDecode(message as String) as Map<String, dynamic>,
+          )
+          .toList();
+
+      expect(decoded, hasLength(5));
+      expect(
+        decoded[0]['clientContent']['turns'][0]['parts'][0]['text'],
+        'Hello from string!',
+      );
+      expect(decoded[0]['clientContent']['turns'][0]['role'], 'user');
+      expect(
+        decoded[1]['clientContent']['turns'][0]['parts'][0]['text'],
+        'Single content',
+      );
+      expect(
+        decoded[2]['realtimeInput']['mediaChunks'][0]['data'],
+        'AQID',
+      );
+      expect(
+        decoded[2]['realtimeInput']['activityStart'],
+        isA<Map<String, dynamic>>(),
+      );
+      expect(
+        decoded[3]['toolResponse']['functionResponses'][0]['name'],
+        'turn_on_lights',
+      );
+      expect(
+        decoded[4]['contextUpdate']['systemInstruction']['parts'][0]['text'],
+        'Be concise.',
+      );
+      expect(decoded[4]['contextUpdate']['tools'], {'tools': []});
+    });
+
+    test('LiveConnectParameters accepts String systemInstruction and validates enterprise-only tools', () {
+      final params = LiveConnectParameters(
+        model: 'gemini-live-test',
+        systemInstruction: 'You are a helpful voice assistant.',
+      );
+      final setup = LiveService.buildSetupMessage(params);
+      expect(
+        setup.setup?.systemInstruction?.parts?.first.text,
+        'You are a helpful voice assistant.',
+      );
+
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            tools: [Tool(retrieval: {'source': 'vertex'})],
+          ),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            tools: [Tool(enterpriseWebSearch: const {})],
+          ),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('upstream parity: tModel validation, multiSpeakerVoiceConfig rejection, and top-level LiveConnectParameters config fields', () {
+      // 1. tModel validation
+      expect(
+        () => LiveService.normalizeModelName(''),
+        throwsArgumentError,
+      );
+      expect(
+        () => LiveService.normalizeModelName('models/../secret'),
+        throwsArgumentError,
+      );
+      expect(
+        () => LiveService.normalizeModelName('gemini-live?foo=bar'),
+        throwsArgumentError,
+      );
+      expect(
+        () => LiveService.normalizeModelName('gemini-live&foo=bar'),
+        throwsArgumentError,
+      );
+      expect(
+        LiveService.normalizeModelName('tunedModels/my-custom-model'),
+        'tunedModels/my-custom-model',
+      );
+      expect(
+        LiveService.normalizeModelName('gemini-2.5-flash'),
+        'models/gemini-2.5-flash',
+      );
+
+      // 2. multiSpeakerVoiceConfig rejection in Live API
+      expect(
+        () => LiveService.buildSetupMessage(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            speechConfig: SpeechConfig(
+              multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig(),
+            ),
+          ),
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+
+      // 3. Top-level generation config fields & speechConfig String shorthand
+      final setup = LiveService.buildSetupMessage(
+        LiveConnectParameters(
+          model: 'tunedModels/custom-voice',
+          responseModalities: const [Modality.TEXT],
+          temperature: 0.4,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 256,
+          mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
+          seed: 42,
+          speechConfig: 'Puck',
+          thinkingConfig: ThinkingConfig(thinkingBudget: 512),
+          enableAffectiveDialog: true,
+        ),
+      );
+      expect(setup.setup?.model, 'tunedModels/custom-voice');
+      final gen = setup.setup?.generationConfig;
+      expect(gen?.responseModalities, const [Modality.TEXT]);
+      expect(gen?.temperature, 0.4);
+      expect(gen?.topP, 0.8);
+      expect(gen?.topK, 20);
+      expect(gen?.maxOutputTokens, 256);
+      expect(gen?.mediaResolution, MediaResolution.MEDIA_RESOLUTION_LOW);
+      expect(gen?.seed, 42);
+      expect(
+        gen?.speechConfig?.voiceConfig?.prebuiltVoiceConfig?.voiceName,
+        'Puck',
+      );
+      expect(gen?.thinkingConfig?.thinkingBudget, 512);
+      expect(gen?.enableAffectiveDialog, true);
+    });
+
+    test('upstream parity: tContents part accumulation, mixed Content/Part rejection, unwrapped functionCall rejection, and dict inputs', () {
+      final channel = FakeWebSocketChannel();
+      final session = LiveSession.forTesting(channel);
+
+      // 1. List of Parts/Strings accumulates into a single Content turn
+      session.sendClientContent(
+        turns: [
+          'First part',
+          Part(text: 'Second part'),
+          {
+            'inline_data': {
+              'data': [1, 2, 3],
+              'mime_type': 'audio/pcm',
+            },
+          },
+        ],
+      );
+
+      // 2. Mixing Content and Part throws ArgumentError
+      expect(
+        () => session.sendClientContent(
+          turns: [
+            Content(role: 'user', parts: [Part(text: 'turn 1')]),
+            Part(text: 'orphan part'),
+          ],
+        ),
+        throwsArgumentError,
+      );
+
+      // 3. Raw unwrapped functionCall / functionResponse Part throws ArgumentError
+      expect(
+        () => session.sendClientContent(
+          turns: Part(functionCall: FunctionCall(name: 'fn', args: const {})),
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => session.sendClientContent(
+          turns: [
+            Part(
+              functionResponse: FunctionResponse(
+                id: '1',
+                name: 'fn',
+                response: const {'ok': true},
+              ),
+            ),
+          ],
+        ),
+        throwsArgumentError,
+      );
+
+      // 4. sendRealtimeInput with Map blobs (including raw byte list) and {} activity markers
+      session.sendRealtimeInput(
+        media: {
+          'data': [4, 5, 6],
+          'mime_type': 'audio/pcm',
+        },
+        activityStart: const <String, dynamic>{},
+        activityEnd: const <String, dynamic>{},
+      );
+
+      // 5. sendToolResponse with Map input
+      session.sendToolResponse(
+        functionResponses: {
+          'id': 'call-dict-1',
+          'name': 'get_weather',
+          'response': {'temp': 22},
+        },
+      );
+
+      final decoded = channel.sentMessages
+          .map(
+            (message) => jsonDecode(message as String) as Map<String, dynamic>,
+          )
+          .toList();
+
+      expect(decoded, hasLength(3));
+      final turns = decoded[0]['clientContent']['turns'] as List<dynamic>;
+      expect(turns, hasLength(1));
+      final parts = turns[0]['parts'] as List<dynamic>;
+      expect(parts, hasLength(3));
+      expect(parts[0]['text'], 'First part');
+      expect(parts[1]['text'], 'Second part');
+      expect(parts[2]['inlineData']['data'], 'AQID');
+      expect(parts[2]['inlineData']['mimeType'], 'audio/pcm');
+
+      expect(decoded[1]['realtimeInput']['mediaChunks'][0]['data'], 'BAUG');
+      expect(
+        decoded[1]['realtimeInput']['activityStart'],
+        isA<Map<String, dynamic>>(),
+      );
+      expect(
+        decoded[1]['realtimeInput']['activityEnd'],
+        isA<Map<String, dynamic>>(),
+      );
+
+      expect(
+        decoded[2]['toolResponse']['functionResponses'][0]['id'],
+        'call-dict-1',
+      );
     });
 
     test('send methods reject invalid realtime mime types', () {

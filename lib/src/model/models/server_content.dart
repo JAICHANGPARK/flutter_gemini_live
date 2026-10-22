@@ -350,18 +350,21 @@ class LiveServerMessage {
   factory LiveServerMessage.fromJson(Map<String, dynamic> json) =>
       _$LiveServerMessageFromJson(json);
 
-  /// The concatenated non-thought text emitted in the current server turn.
+  /// The concatenated non-thought text emitted in the current server turn,
+  /// or the output audio transcription text if no text parts are present.
   String? get text {
     final parts = serverContent?.modelTurn?.parts;
-    if (parts == null || parts.isEmpty) return null;
-    final chunks = <String>[];
-    for (final part in parts) {
-      final text = part.text;
-      if (text == null) continue;
-      if (part.thought == true) continue;
-      chunks.add(text);
+    if (parts != null && parts.isNotEmpty) {
+      final chunks = <String>[];
+      for (final part in parts) {
+        final text = part.text;
+        if (text == null) continue;
+        if (part.thought == true) continue;
+        chunks.add(text);
+      }
+      if (chunks.isNotEmpty) return chunks.join();
     }
-    return chunks.isEmpty ? null : chunks.join();
+    return serverContent?.outputTranscription?.text;
   }
 
   /// The concatenated inline binary payload emitted in the current server turn.

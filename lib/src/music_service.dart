@@ -150,7 +150,7 @@ class LiveMusicSession {
 
 /// Service for connecting to Gemini Realtime Music generation (Lyria Live).
 class LiveMusicService {
-  static const _sdkVersion = '2.30.0';
+  static const _sdkVersion = '2.32.0';
 
   /// The Gemini API key used for authentication.
   final String apiKey;
@@ -282,9 +282,7 @@ class LiveMusicService {
 
       params.callbacks.onOpen?.call();
 
-      final modelName = params.model.startsWith('models/')
-          ? params.model
-          : 'models/${params.model}';
+      final modelName = LiveService.normalizeModelName(params.model);
 
       final setupMessage = LiveMusicClientMessage(
         setup: LiveMusicClientSetup(model: modelName),
