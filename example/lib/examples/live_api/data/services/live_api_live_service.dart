@@ -34,14 +34,8 @@ class LiveApiLiveService {
       LiveConnectParameters(
         model: modelToUse,
         config: buildExampleAudioGenerationConfig(temperature: 0.7),
-        systemInstruction: Content(
-          parts: [
-            Part(
-              text:
-                  'You are a helpful AI assistant demonstrating advanced features.',
-            ),
-          ],
-        ),
+        systemInstruction:
+            'You are a helpful AI assistant demonstrating advanced features.',
         // Realtime input configuration
         realtimeInputConfig: enableRealtimeConfig
             ? RealtimeInputConfig(
@@ -129,6 +123,15 @@ class LiveApiLiveService {
   void sendActivityStart() => _session!.sendActivityStart();
 
   void sendActivityEnd() => _session!.sendActivityEnd();
+
+  /// Sends an in-session context update (`LiveClientContextUpdate`) to update
+  /// `systemInstruction` or `tools` dynamically without reconnecting.
+  void sendContextUpdate({String? systemInstruction, List<Tool>? tools}) {
+    _session!.sendContextUpdate(
+      systemInstruction: systemInstruction,
+      tools: tools,
+    );
+  }
 
   void close() => _session?.close();
 }

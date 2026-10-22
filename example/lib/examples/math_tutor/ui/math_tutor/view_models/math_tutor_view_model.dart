@@ -292,7 +292,8 @@ class MathTutorViewModel extends ChangeNotifier {
     transcriptUpdateNotifier.value++;
   }
 
-  /// Saves and applies a new system instruction, reconnecting if connected.
+  /// Saves and applies a new system instruction in-session via
+  /// `sendContextUpdate` when connected.
   Future<void> applySystemInstruction(String newText) async {
     if (newText.isEmpty) return;
     _customSystemInstruction = newText;
@@ -300,13 +301,21 @@ class MathTutorViewModel extends ChangeNotifier {
     await _siRepo.save(newText);
 
     if (_disposed) return;
-    if (_isConnected) {
-      _notice(
-        '새 System Instruction을 적용하여 세션을 재연결합니다...',
-        MathTutorNoticeKind.sync,
+    if (_live.hasSession && _isConnected) {
+      final updatedInstruction = MathTutorLiveService.buildSystemInstruction(
+        customInstruction: _customSystemInstruction,
+        language: AppLanguageController.instance.currentLanguage,
+        curriculum: _curriculumLevel,
       );
-      _live.close();
-      await connectSession();
+      _live.sendContextUpdate(systemInstruction: updatedInstruction);
+      _transcriptRepo.addSystem(
+        '🔄 실시간 컨텍스트 업데이트(sendContextUpdate)로 새 System Instruction이 즉시 반영되었습니다.',
+      );
+      transcriptUpdateNotifier.value++;
+      _notice(
+        '세션 재연결 없이 새 System Instruction이 즉시 적용되었습니다.',
+        MathTutorNoticeKind.success,
+      );
     } else {
       _notice('System Instruction이 저장되었습니다.', MathTutorNoticeKind.success);
     }
@@ -945,13 +954,15 @@ class MathTutorViewModel extends ChangeNotifier {
     _curriculumLevel = level;
     notifyListeners();
 
-    // Prompt context update via sendClientContent
+    // Update preamble in-session via sendContextUpdate
     if (_live.hasSession && _isConnected) {
       try {
-        _live.sendUserText(
-          '[Student Notice]: Curriculum focus preference updated to "${level.labelKo}". '
-          '${level.promptHint}',
+        final updatedInstruction = MathTutorLiveService.buildSystemInstruction(
+          customInstruction: _customSystemInstruction,
+          language: AppLanguageController.instance.currentLanguage,
+          curriculum: _curriculumLevel,
         );
+        _live.sendContextUpdate(systemInstruction: updatedInstruction);
       } catch (e) {
         debugPrint('Failed to update curriculum level: $e');
       }

@@ -48,6 +48,16 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
           appBar: AppBar(
             title: const Text('Function Calling Demo'),
             actions: [
+              if (vm.isConnected)
+                IconButton(
+                  icon: Icon(
+                    vm.toolsEnabled ? Icons.build : Icons.build_circle_outlined,
+                  ),
+                  tooltip: vm.toolsEnabled
+                      ? 'Clear tools in-session (sendContextUpdate)'
+                      : 'Restore tools in-session (sendContextUpdate)',
+                  onPressed: vm.toggleToolsInSession,
+                ),
               if (vm.pendingFunctionCalls.isNotEmpty)
                 Badge(
                   label: Text('${vm.pendingFunctionCalls.length}'),

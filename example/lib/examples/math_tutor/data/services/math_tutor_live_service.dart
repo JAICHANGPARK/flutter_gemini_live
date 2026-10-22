@@ -76,7 +76,7 @@ class MathTutorLiveService {
                 )
               : null,
         ),
-        systemInstruction: Content(parts: [Part(text: systemInstruction)]),
+        systemInstruction: systemInstruction,
         inputAudioTranscription: AudioTranscriptionConfig(
           languageCodes: const ['ko-KR', 'en-US', 'ja-JP'],
         ),
@@ -132,14 +132,15 @@ class MathTutorLiveService {
 
   void sendUserText(String text) {
     _session!.sendClientContent(
-      turns: [
-        Content(
-          role: 'user',
-          parts: [Part(text: text)],
-        ),
-      ],
+      turns: text,
       turnComplete: true,
     );
+  }
+
+  /// Dynamically updates the session's system instruction in-place without
+  /// reconnecting the WebSocket (`LiveClientContextUpdate`).
+  void sendContextUpdate({required String systemInstruction}) {
+    _session!.sendContextUpdate(systemInstruction: systemInstruction);
   }
 
   Blob _jpegBlob(Uint8List bytes) =>

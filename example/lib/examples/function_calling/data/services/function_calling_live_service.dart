@@ -14,6 +14,93 @@ class FunctionCallingLiveService {
 
   bool get hasSession => _session != null;
 
+  static final List<Tool> defaultTools = [
+    Tool(
+      functionDeclarations: [
+        FunctionDeclaration(
+          name: 'get_weather',
+          description:
+              'Get weather by location with optional unit (celsius/fahrenheit).',
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'location': {'type': 'STRING'},
+              'unit': {
+                'type': 'STRING',
+                'enum': ['celsius', 'fahrenheit'],
+              },
+            },
+            'required': ['location'],
+          },
+        ),
+        FunctionDeclaration(
+          name: 'get_current_time',
+          description: 'Get current time for a timezone.',
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'timezone': {'type': 'STRING'},
+            },
+          },
+        ),
+        FunctionDeclaration(
+          name: 'get_exchange_rate',
+          description: 'Get FX rate for a currency pair.',
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'base_currency': {'type': 'STRING'},
+              'quote_currency': {'type': 'STRING'},
+            },
+            'required': ['base_currency', 'quote_currency'],
+          },
+        ),
+        FunctionDeclaration(
+          name: 'convert_currency',
+          description: 'Convert money from one currency to another.',
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'amount': {'type': 'NUMBER'},
+              'from_currency': {'type': 'STRING'},
+              'to_currency': {'type': 'STRING'},
+            },
+            'required': ['amount', 'from_currency', 'to_currency'],
+          },
+        ),
+        FunctionDeclaration(
+          name: 'search_places',
+          description:
+              'Search places by query and optional city. Returns ranked results.',
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'query': {'type': 'STRING'},
+              'city': {'type': 'STRING'},
+              'limit': {'type': 'INTEGER'},
+            },
+            'required': ['query'],
+          },
+        ),
+        FunctionDeclaration(
+          name: 'create_reminder',
+          description:
+              'Create a reminder with title, datetime and timezone.',
+          behavior: Behavior.NON_BLOCKING,
+          parameters: {
+            'type': 'OBJECT',
+            'properties': {
+              'title': {'type': 'STRING'},
+              'datetime': {'type': 'STRING'},
+              'timezone': {'type': 'STRING'},
+            },
+            'required': ['title', 'datetime'],
+          },
+        ),
+      ],
+    ),
+  ];
+
   /// Opens a session. Does NOT store it; call [attach] with the result so the
   /// caller controls ordering relative to its own state updates.
   Future<LiveSession> connect({
@@ -31,102 +118,11 @@ class FunctionCallingLiveService {
         model: modelToUse,
         config: buildExampleAudioGenerationConfig(temperature: 0.7),
         outputAudioTranscription: AudioTranscriptionConfig(),
-        systemInstruction: Content(
-          parts: [
-            Part(
-              text:
-                  'You are a helpful assistant with tool access. '
-                  'Prefer tool calls for weather, time, exchange rate, currency conversion, place search, and reminders. '
-                  'If a user asks for multiple actions, call tools as needed and then summarize clearly.',
-            ),
-          ],
-        ),
-        tools: [
-          Tool(
-            functionDeclarations: [
-              FunctionDeclaration(
-                name: 'get_weather',
-                description:
-                    'Get weather by location with optional unit (celsius/fahrenheit).',
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'location': {'type': 'STRING'},
-                    'unit': {
-                      'type': 'STRING',
-                      'enum': ['celsius', 'fahrenheit'],
-                    },
-                  },
-                  'required': ['location'],
-                },
-              ),
-              FunctionDeclaration(
-                name: 'get_current_time',
-                description: 'Get current time for a timezone.',
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'timezone': {'type': 'STRING'},
-                  },
-                },
-              ),
-              FunctionDeclaration(
-                name: 'get_exchange_rate',
-                description: 'Get FX rate for a currency pair.',
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'base_currency': {'type': 'STRING'},
-                    'quote_currency': {'type': 'STRING'},
-                  },
-                  'required': ['base_currency', 'quote_currency'],
-                },
-              ),
-              FunctionDeclaration(
-                name: 'convert_currency',
-                description: 'Convert money from one currency to another.',
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'amount': {'type': 'NUMBER'},
-                    'from_currency': {'type': 'STRING'},
-                    'to_currency': {'type': 'STRING'},
-                  },
-                  'required': ['amount', 'from_currency', 'to_currency'],
-                },
-              ),
-              FunctionDeclaration(
-                name: 'search_places',
-                description:
-                    'Search places by query and optional city. Returns ranked results.',
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'query': {'type': 'STRING'},
-                    'city': {'type': 'STRING'},
-                    'limit': {'type': 'INTEGER'},
-                  },
-                  'required': ['query'],
-                },
-              ),
-              FunctionDeclaration(
-                name: 'create_reminder',
-                description:
-                    'Create a reminder with title, datetime and timezone.',
-                behavior: Behavior.NON_BLOCKING,
-                parameters: {
-                  'type': 'OBJECT',
-                  'properties': {
-                    'title': {'type': 'STRING'},
-                    'datetime': {'type': 'STRING'},
-                    'timezone': {'type': 'STRING'},
-                  },
-                  'required': ['title', 'datetime'],
-                },
-              ),
-            ],
-          ),
-        ],
+        systemInstruction:
+            'You are a helpful assistant with tool access. '
+            'Prefer tool calls for weather, time, exchange rate, currency conversion, place search, and reminders. '
+            'If a user asks for multiple actions, call tools as needed and then summarize clearly.',
+        tools: defaultTools,
         callbacks: LiveCallbacks(
           onOpen: onOpen,
           onMessage: onMessage,
@@ -149,16 +145,21 @@ class FunctionCallingLiveService {
   ) {
     if (_session != null && call.id != null && call.name != null) {
       _session!.sendToolResponse(
-        functionResponses: [
-          FunctionResponse(
-            id: call.id!,
-            name: call.name!,
-            response: result,
-            scheduling: scheduling,
-          ),
-        ],
+        functionResponses: FunctionResponse(
+          id: call.id!,
+          name: call.name!,
+          response: result,
+          scheduling: scheduling,
+        ),
       );
     }
+  }
+
+  /// Dynamically replaces or clears tools in-session (`sendContextUpdate`).
+  void updateTools({required bool enabled}) {
+    _session?.sendContextUpdate(
+      tools: enabled ? defaultTools : const <Tool>[],
+    );
   }
 
   void close() => _session?.close();

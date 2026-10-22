@@ -35,9 +35,11 @@ class FunctionCallingViewModel extends ChangeNotifier {
 
   bool _isConnected = false;
   bool _isConnecting = false;
+  bool _toolsEnabled = true;
 
   bool get isConnected => _isConnected;
   bool get isConnecting => _isConnecting;
+  bool get toolsEnabled => _toolsEnabled;
 
   final List<ChatMessage> _messages = [];
   final List<FunctionCall> _pendingFunctionCalls = [];
@@ -63,7 +65,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
     _isConnecting = true;
     notifyListeners();
     _addSystemMessage(
-      'Connecting with function calling enabled on Gemini 2.5 Flash Live compatibility...',
+      'Connecting with function calling enabled on Gemini 3.8 Live...',
     );
     await _audio.stop();
 
@@ -192,5 +194,18 @@ class FunctionCallingViewModel extends ChangeNotifier {
 
     _addMessage('user', text);
     _live.sendText(text);
+  }
+
+  /// Dynamically clears or restores session tools via `sendContextUpdate`.
+  void toggleToolsInSession() {
+    if (!_live.hasSession || !_isConnected) return;
+    _toolsEnabled = !_toolsEnabled;
+    _live.updateTools(enabled: _toolsEnabled);
+    _addSystemMessage(
+      _toolsEnabled
+          ? '🔄 Tools re-enabled in-session via sendContextUpdate(tools: defaultTools)'
+          : '🔄 All tools cleared in-session via sendContextUpdate(tools: [])',
+    );
+    notifyListeners();
   }
 }

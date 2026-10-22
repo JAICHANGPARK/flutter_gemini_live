@@ -7,12 +7,14 @@ class ActionButtons extends StatelessWidget {
     required this.onSendClientContent,
     required this.onSendRealtimeInput,
     required this.onToggleActivity,
+    this.onSendContextUpdate,
   });
 
   final VoidCallback onSendText;
   final VoidCallback onSendClientContent;
   final VoidCallback onSendRealtimeInput;
   final void Function(bool isStart) onToggleActivity;
+  final VoidCallback? onSendContextUpdate;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,13 @@ class ActionButtons extends StatelessWidget {
               child: const Text('Realtime Input'),
             ),
             const SizedBox(width: 8),
+            if (onSendContextUpdate != null) ...[
+              ElevatedButton(
+                onPressed: onSendContextUpdate,
+                child: const Text('Context Update'),
+              ),
+              const SizedBox(width: 8),
+            ],
             ElevatedButton(
               onPressed: () => onToggleActivity(true),
               child: const Text('Activity Start'),

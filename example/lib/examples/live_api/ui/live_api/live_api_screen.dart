@@ -76,6 +76,7 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
                   onSendClientContent: vm.sendClientContent,
                   onSendRealtimeInput: vm.sendRealtimeInput,
                   onToggleActivity: vm.toggleActivity,
+                  onSendContextUpdate: vm.sendContextUpdate,
                 ),
               const Divider(),
               // Logs

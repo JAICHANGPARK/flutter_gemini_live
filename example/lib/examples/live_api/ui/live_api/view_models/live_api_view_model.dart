@@ -116,7 +116,7 @@ class LiveApiViewModel extends ChangeNotifier {
     notifyListeners();
     _addLog(
       'SYSTEM',
-      'Connecting to Gemini Live API with Gemini 2.5 Flash Live compatibility...',
+      'Connecting to Gemini 3.8 Live API...',
     );
     await _audio.stop();
 
@@ -247,9 +247,16 @@ class LiveApiViewModel extends ChangeNotifier {
     // Handle usage
     if (message.usageMetadata != null) {
       final u = message.usageMetadata!;
+      final extras = <String>[
+        if (u.initialPromptTokenCount != null)
+          'init: ${u.initialPromptTokenCount}',
+        if (u.toolUsePromptTokenCount != null)
+          'tool: ${u.toolUsePromptTokenCount}',
+      ];
+      final extraSuffix = extras.isEmpty ? '' : ', ${extras.join(", ")}';
       _addLog(
         'USAGE',
-        '📊 Tokens: ${u.totalTokenCount} (prompt: ${u.promptTokenCount}, response: ${u.responseTokenCount})',
+        '📊 Tokens: ${u.totalTokenCount} (prompt: ${u.promptTokenCount}, response: ${u.responseTokenCount}$extraSuffix)',
       );
     }
 
@@ -287,6 +294,18 @@ class LiveApiViewModel extends ChangeNotifier {
 
     _addLog('USER', '🎙️ [Realtime input with media]');
     _live.sendRealtimeInput();
+  }
+
+  void sendContextUpdate() {
+    if (!_live.hasSession || !_isConnected) {
+      _addLog('ERROR', '❌ Not connected');
+      return;
+    }
+
+    const updatedInstruction =
+        'You are now a concise technical expert. Keep every answer to 1-2 short sentences.';
+    _addLog('USER', '🔄 [Context Update: systemInstruction]');
+    _live.sendContextUpdate(systemInstruction: updatedInstruction);
   }
 
   void toggleActivity(bool isStart) {
