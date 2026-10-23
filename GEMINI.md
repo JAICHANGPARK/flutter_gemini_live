@@ -60,6 +60,7 @@ lib/
 ## AI Agent Skill Reference
 
 A dedicated Agent Skill is maintained for this package at:
+- Default Coding System Prompt (`@google/genai` parity): [`codegen_instructions.md`](codegen_instructions.md)
 - Standard / Hermes: [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) & [`.hermes/skills/`](.hermes/skills/flutter-gemini-live/SKILL.md)
 - Pi Agent: [`.pi/skills/`](.pi/skills/flutter-gemini-live/SKILL.md) & [`.agents/skills/`](.agents/skills/flutter-gemini-live/SKILL.md)
 - Gemini CLI / Antigravity Native: [`.gemini/skills/flutter-gemini-live/SKILL.md`](.gemini/skills/flutter-gemini-live/SKILL.md)

@@ -70,7 +70,7 @@ class GeminiLiveChatView extends StatefulWidget {
 
   /// Default system instruction applied when [systemInstruction] is omitted or null.
   static final Content defaultSystemInstruction = Content(
-    role: 'system',
+    role: 'user',
     parts: [
       Part(
         text:
@@ -343,18 +343,8 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
 
   Future<void> _connectSession() async {
     try {
-      final Content effectiveSystemInstruction;
-      final rawInstruction = widget.systemInstruction;
-      if (rawInstruction is String) {
-        effectiveSystemInstruction = Content(
-          role: 'system',
-          parts: [Part(text: rawInstruction)],
-        );
-      } else if (rawInstruction is Content) {
-        effectiveSystemInstruction = rawInstruction;
-      } else {
-        effectiveSystemInstruction = GeminiLiveChatView.defaultSystemInstruction;
-      }
+      final Object effectiveSystemInstruction =
+          widget.systemInstruction ?? GeminiLiveChatView.defaultSystemInstruction;
 
       await _controller.connect(
         LiveConnectParameters(

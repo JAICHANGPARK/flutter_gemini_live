@@ -45,6 +45,11 @@ lib/
         ├── live_control_bar.dart        # Floating call interaction control bar
         ├── live_vision_overlay.dart     # Computer vision viewfinder HUD overlay
         ├── live_voice_selector.dart     # Voice persona bottom sheet selector
+        ├── live_tool_activity_chip.dart # Tool/function call execution status pill
+        ├── live_thinking_indicator.dart # Extended Thinking expandable reasoning pill
+        ├── live_context_config_sheet.dart # Live sendContextUpdate persona & tool sheet
+        ├── live_audio_route_button.dart # Speaker / Earpiece / Bluetooth route selector
+        ├── live_translate_split_view.dart # Dual-pane face-to-face live interpreter UI
         ├── cupertino_live_mic_button.dart    # iOS native mic button
         ├── cupertino_live_status_badge.dart  # iOS native status badge
         └── cupertino_live_usage_badge.dart   # iOS native token usage badge
@@ -55,6 +60,7 @@ lib/
 ## AI Agent Skill Reference
 
 A dedicated Agent Skill is maintained for this package at:
+- Default Coding System Prompt (`@google/genai` parity): [`codegen_instructions.md`](codegen_instructions.md)
 - Standard / Hermes: [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md) & [`.hermes/skills/`](.hermes/skills/flutter-gemini-live/SKILL.md)
 - Pi Agent: [`.pi/skills/`](.pi/skills/flutter-gemini-live/SKILL.md) & [`.agents/skills/`](.agents/skills/flutter-gemini-live/SKILL.md)
 - Codex Native: [`.codex/skills/flutter-gemini-live/SKILL.md`](.codex/skills/flutter-gemini-live/SKILL.md)
@@ -66,6 +72,16 @@ A dedicated Agent Skill is maintained for this package at:
 Refer to this skill whenever generating code, implementing UI features, adding tools/grounding, or handling Live API errors.
 
 ### Additional Specialized Skills
+- **Audio & Voice Chat**: [`skills/gemini-live-audio/SKILL.md`](skills/gemini-live-audio/SKILL.md) (16kHz mic, 24kHz speaker, SoLoud/record, barge-in, VAD, GeminiLiveVoice)
+- **Computer Vision**: [`skills/gemini-live-vision/SKILL.md`](skills/gemini-live-vision/SKILL.md) (1-2 FPS camera streaming, GeminiLiveVisionOverlay HUD)
+- **Function Calling & Tools**: [`skills/gemini-live-tools/SKILL.md`](skills/gemini-live-tools/SKILL.md) (Tools, Behavior.NON_BLOCKING, partialArgs, Google Maps/Search grounding)
+- **Realtime Music (Lyria)**: [`skills/gemini-live-music/SKILL.md`](skills/gemini-live-music/SKILL.md) (Lyria Realtime, 48kHz stereo, weighted prompts, BPM/Scale)
+- **Session Resumption & Auth**: [`skills/gemini-live-session-auth/SKILL.md`](skills/gemini-live-session-auth/SKILL.md) (Ephemeral tokens, SessionResumptionConfig, backoff)
+- **Live Translation**: [`skills/gemini-live-translate/SKILL.md`](skills/gemini-live-translate/SKILL.md) (gemini-3.5-live-translate-preview, TranslationConfig, face-to-face UI)
+- **Observability, Cost & Logging**: [`skills/gemini-live-observability/SKILL.md`](skills/gemini-live-observability/SKILL.md) (GeminiTokenUsageTracker, USD/KRW cost estimation, GeminiLiveLogger)
+- **Extended Thinking & Context**: [`skills/gemini-live-thinking-context/SKILL.md`](skills/gemini-live-thinking-context/SKILL.md) (ThinkingConfig, ContextWindowCompressionConfig, HistoryConfig, sendContextUpdate)
+- **Unit & Widget Testing**: [`skills/gemini-live-testing/SKILL.md`](skills/gemini-live-testing/SKILL.md) (handleServerMessageForTesting, deterministic WebSocket simulation, WidgetTester rules)
 - **UI Widgets**: [`skills/gemini-live-widgets/SKILL.md`](skills/gemini-live-widgets/SKILL.md) (parameters, wiring, visualizers)
 - **Firebase Migration**: [`skills/gemini-live-firebase-migration/SKILL.md`](skills/gemini-live-firebase-migration/SKILL.md) (1:1 translation between `firebase_ai` and `gemini_live`)
 - **Reference Guide**: [`doc/firebase_ai_compat.md`](doc/firebase_ai_compat.md)
+- **Two-way Compile Check**: `tool/check_firebase_ai_compat.sh`

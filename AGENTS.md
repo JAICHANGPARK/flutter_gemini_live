@@ -75,6 +75,7 @@ lib/
 ## AI Agent Skills Reference
 
 A dedicated Agent Skill specification conforming to the open [agents.md](https://agents.md/) standard is maintained in:
+- Default Coding System Prompt (`@google/genai` parity): [`codegen_instructions.md`](codegen_instructions.md)
 - Universal Root: [`SKILL.md`](SKILL.md)
 - Standard Skills Directory: [`skills/flutter-gemini-live/SKILL.md`](skills/flutter-gemini-live/SKILL.md)
 - Hermes Agent: [`.hermes/skills/flutter-gemini-live/SKILL.md`](.hermes/skills/flutter-gemini-live/SKILL.md)
