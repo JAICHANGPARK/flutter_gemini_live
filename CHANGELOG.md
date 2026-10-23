@@ -1,6 +1,26 @@
+## 2026.10.23
+
+### Added (Upstream Parity with `js-genai` 2.31.0 & `python-genai` 2.33.0)
+- **`LiveConnectConfig` & Session `labels` Support**:
+  - Added `LiveConnectConfig` combining `GenerationConfig` parameters and all Live session setup fields (`systemInstruction`, `tools`, `realtimeInputConfig`, `sessionResumption`, `contextWindowCompression`, `inputAudioTranscription`, `outputAudioTranscription`, `proactivity`, `explicitVadSignal`, `avatarConfig`, `safetySettings`, `historyConfig`, `translationConfig`, `generationConfig`, `labels`).
+  - Supported passing `config` as either a `LiveConnectConfig`, `GenerationConfig`, or `Map<String, dynamic>` in both `LiveConnectParameters` and `LiveConnectConstraints` (`AuthTokensService`), mapping `labels` directly to `setup.labels` (`bidiGenerateContentSetup.labels`).
+- **`CallableTool` & `CallableToolConfig` Support**:
+  - Added `CallableTool` and `CallableToolConfig` with automatic asynchronous tool declaration resolution via `LiveService.buildSetupMessageAsync()` and `LiveService.connect()`.
+- **Async Session Stream & Turn Iteration (`LiveSession.receive()` & `sessionId`)**:
+  - Added `LiveSession.sessionId` (alias for `setupComplete?.sessionId`), `LiveSession.messages`, and turn-scoped `LiveSession.receive()` (yielding server messages until `serverContent.turnComplete == true`, matching `AsyncSession.session_id` and `AsyncSession.receive()` in `python-genai`).
+  - Added `LiveMusicSession.messages` and `LiveMusicSession.receive()` on `LiveMusicSession`.
+- **Realtime Input & Live Music Parameter Classes**:
+  - Added `LiveSendRealtimeInputParameters.media`, `LiveMusicSetWeightedPromptsParameters`, and `LiveMusicSetConfigParameters`, and widened `LiveMusicSession.setWeightedPrompts()` and `LiveMusicSession.setMusicGenerationConfig()` to accept typed parameter objects or maps.
+  - Updated `SlidingWindow.targetTokens` and `ContextWindowCompressionConfig.triggerTokens` to accept both `int` and `String` token counts.
+  - Added `GeminiLiveVoice.id` and `GeminiLiveVoice.characterDescription` convenience getters.
+- **Default Coding System Prompt (`codegen_instructions.md`) & `tContent` Alignment**:
+  - Ported upstream `codegen_instructions.md` (`# Gemini Live API Coding Guidelines`) to the repository root and synchronized `AGENTS.md`, `GEMINI.md`, `CLAUDE.md`, and `CODEX.md`.
+  - Aligned `GeminiLiveChatView.defaultSystemInstruction` with upstream `tContent` (`role: 'user'`) and unified `systemInstruction` union parsing.
+  - Bumped internal SDK client version header to `2.33.0` across `LiveService` and `LiveMusicService`.
+
 ## 2026.10.22
 
-### Added (Upstream Parity with `js-genai` 2.32.0 & `python-genai`)
+### Added (Upstream Parity with `js-genai` 2.30.0+ & `python-genai` 2.32.0)
 - **In-Session Context Updates (`sendContextUpdate`)**:
   - Added `LiveClientContextUpdate`, `LiveClientContextUpdateTools`, and `LiveClientMessage.contextUpdate` to dynamically update `systemInstruction` and `tools` mid-session in order with session inputs without reconnecting.
   - Added `LiveSession.sendContextUpdate()` and `GeminiLiveSessionController.sendContextUpdate()`, supporting `tools: const <Tool>[]` to clear all previously registered tools.
@@ -10,7 +30,7 @@
   - Added `FunctionResponsePart.fromBytes()`, `FunctionResponsePart.fromUri()`, `FunctionResponseBlob.fromBytes()`, `VoiceAudioData.fromBytes()`, and `Blob.fromBytes()` (with `.bytes` getters).
   - Automatic recursive base64 encoding for raw `Uint8List` values inside `LiveClientToolResponse.toJson()`.
   - Added snake_case (`inline_data`, `file_data`, `mime_type`, etc.) and raw byte array (`List<int>`) deserialization support to `Part.fromJson()` and `Blob.fromJson()`.
-- **Full Runtime & Union Parameter Parity (`tModel`, `tContents`, `tLiveSpeechConfig`, `LiveConnectConfig`)**:
+- **Full Runtime & Union Parameter Parity (`tModel`, `tContents`, `tLiveSpeechConfig`)**:
   - Added `LiveService.normalizeModelName()` matching upstream `tModel` validation (rejecting empty model strings or `..`/`?`/`&`, and preserving `models/` and `tunedModels/` prefixes) across `LiveService` and `LiveMusicService`.
   - Added top-level generation parameters (`responseModalities`, `temperature`, `topP`, `topK`, `maxOutputTokens`, `mediaResolution`, `seed`, `speechConfig` accepting `SpeechConfig` or voice name `String`, `thinkingConfig`, and `enableAffectiveDialog`) directly on `LiveConnectParameters`.
   - Enforced upstream `multiSpeakerVoiceConfig` rejection (`UnsupportedError`) in `LiveService.buildSetupMessage()`.
