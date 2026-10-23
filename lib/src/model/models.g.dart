@@ -1,4 +1,3 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'models.dart';
@@ -183,7 +182,7 @@ const _$PartMediaResolutionLevelEnumMap = {
 
 Content _$ContentFromJson(Map<String, dynamic> json) => Content(
   parts: (json['parts'] as List<dynamic>?)
-      ?.map((e) => e is Part ? e : Part.fromJson(e as Map<String, dynamic>))
+      ?.map((e) => Part.fromJson(e as Map<String, dynamic>))
       .toList(),
   role: json['role'] as String?,
 );
@@ -195,10 +194,8 @@ Map<String, dynamic> _$ContentToJson(Content instance) => <String, dynamic>{
 
 VoiceAudioData _$VoiceAudioDataFromJson(Map<String, dynamic> json) =>
     VoiceAudioData(
-      data: json['data'] is List<int>
-          ? base64Encode(json['data'] as List<int>)
-          : json['data'] as String,
-      mimeType: (json['mime_type'] ?? json['mimeType']) as String,
+      data: json['data'] as String,
+      mimeType: json['mime_type'] as String,
     );
 
 Map<String, dynamic> _$VoiceAudioDataToJson(VoiceAudioData instance) =>
@@ -207,7 +204,7 @@ Map<String, dynamic> _$VoiceAudioDataToJson(VoiceAudioData instance) =>
 PromptedVoice _$PromptedVoiceFromJson(Map<String, dynamic> json) =>
     PromptedVoice(
       input: json['input'] as String,
-      baseVoice: (json['base_voice'] ?? json['baseVoice']) as String?,
+      baseVoice: json['base_voice'] as String?,
     );
 
 Map<String, dynamic> _$PromptedVoiceToJson(PromptedVoice instance) =>
@@ -683,7 +680,7 @@ Map<String, dynamic> _$SessionResumptionConfigToJson(
 };
 
 SlidingWindow _$SlidingWindowFromJson(Map<String, dynamic> json) =>
-    SlidingWindow(targetTokens: json['target_tokens'] as String?);
+    SlidingWindow(targetTokens: json['target_tokens']);
 
 Map<String, dynamic> _$SlidingWindowToJson(SlidingWindow instance) =>
     <String, dynamic>{'target_tokens': ?instance.targetTokens};
@@ -691,7 +688,7 @@ Map<String, dynamic> _$SlidingWindowToJson(SlidingWindow instance) =>
 ContextWindowCompressionConfig _$ContextWindowCompressionConfigFromJson(
   Map<String, dynamic> json,
 ) => ContextWindowCompressionConfig(
-  triggerTokens: json['trigger_tokens'] as String?,
+  triggerTokens: json['trigger_tokens'],
   slidingWindow: json['sliding_window'] == null
       ? null
       : SlidingWindow.fromJson(json['sliding_window'] as Map<String, dynamic>),
@@ -1015,11 +1012,9 @@ Map<String, dynamic> _$ToolResponseToJson(ToolResponse instance) =>
 FunctionResponseBlob _$FunctionResponseBlobFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponseBlob(
-  mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
-  data: json['data'] is List<int>
-      ? base64Encode(json['data'] as List<int>)
-      : json['data'] as String?,
-  displayName: (json['display_name'] ?? json['displayName']) as String?,
+  mimeType: json['mime_type'] as String?,
+  data: json['data'] as String?,
+  displayName: json['display_name'] as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseBlobToJson(
@@ -1033,9 +1028,9 @@ Map<String, dynamic> _$FunctionResponseBlobToJson(
 FunctionResponseFileData _$FunctionResponseFileDataFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponseFileData(
-  fileUri: (json['file_uri'] ?? json['fileUri']) as String?,
-  mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
-  displayName: (json['display_name'] ?? json['displayName']) as String?,
+  fileUri: json['file_uri'] as String?,
+  mimeType: json['mime_type'] as String?,
+  displayName: json['display_name'] as String?,
 );
 
 Map<String, dynamic> _$FunctionResponseFileDataToJson(
@@ -1049,23 +1044,16 @@ Map<String, dynamic> _$FunctionResponseFileDataToJson(
 FunctionResponsePart _$FunctionResponsePartFromJson(
   Map<String, dynamic> json,
 ) => FunctionResponsePart(
-  inlineData: (json['inline_data'] ?? json['inlineData']) == null
+  inlineData: json['inline_data'] == null
       ? null
-      : ((json['inline_data'] ?? json['inlineData']) is FunctionResponseBlob
-            ? (json['inline_data'] ?? json['inlineData'])
-                  as FunctionResponseBlob
-            : FunctionResponseBlob.fromJson(
-                (json['inline_data'] ?? json['inlineData'])
-                    as Map<String, dynamic>,
-              )),
-  fileData: (json['file_data'] ?? json['fileData']) == null
+      : FunctionResponseBlob.fromJson(
+          json['inline_data'] as Map<String, dynamic>,
+        ),
+  fileData: json['file_data'] == null
       ? null
-      : ((json['file_data'] ?? json['fileData']) is FunctionResponseFileData
-            ? (json['file_data'] ?? json['fileData'])
-                  as FunctionResponseFileData
-            : FunctionResponseFileData.fromJson(
-                (json['file_data'] ?? json['fileData']) as Map<String, dynamic>,
-              )),
+      : FunctionResponseFileData.fromJson(
+          json['file_data'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$FunctionResponsePartToJson(
@@ -1080,18 +1068,13 @@ FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String?,
       name: json['name'] as String?,
       response: json['response'] as Map<String, dynamic>?,
-      willContinue:
-          (json['will_continue'] ?? json['willContinue']) as bool?,
+      willContinue: json['will_continue'] as bool?,
       scheduling: $enumDecodeNullable(
         _$FunctionResponseSchedulingEnumMap,
         json['scheduling'],
       ),
       parts: (json['parts'] as List<dynamic>?)
-          ?.map(
-            (e) => e is FunctionResponsePart
-                ? e
-                : FunctionResponsePart.fromJson(e as Map<String, dynamic>),
-          )
+          ?.map((e) => FunctionResponsePart.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
@@ -1155,28 +1138,23 @@ Map<String, dynamic> _$IntervalToJson(Interval instance) => <String, dynamic>{
   'end_time': ?instance.endTime?.toIso8601String(),
 };
 
-WebSearch _$WebSearchFromJson(Map<String, dynamic> json) => const WebSearch();
+WebSearch _$WebSearchFromJson(Map<String, dynamic> json) => WebSearch();
 
 Map<String, dynamic> _$WebSearchToJson(WebSearch instance) =>
     <String, dynamic>{};
 
-ImageSearch _$ImageSearchFromJson(Map<String, dynamic> json) =>
-    const ImageSearch();
+ImageSearch _$ImageSearchFromJson(Map<String, dynamic> json) => ImageSearch();
 
 Map<String, dynamic> _$ImageSearchToJson(ImageSearch instance) =>
     <String, dynamic>{};
 
 SearchTypes _$SearchTypesFromJson(Map<String, dynamic> json) => SearchTypes(
-  webSearch: (json['web_search'] ?? json['webSearch']) == null
+  webSearch: json['web_search'] == null
       ? null
-      : WebSearch.fromJson(
-          (json['web_search'] ?? json['webSearch']) as Map<String, dynamic>,
-        ),
-  imageSearch: (json['image_search'] ?? json['imageSearch']) == null
+      : WebSearch.fromJson(json['web_search'] as Map<String, dynamic>),
+  imageSearch: json['image_search'] == null
       ? null
-      : ImageSearch.fromJson(
-          (json['image_search'] ?? json['imageSearch']) as Map<String, dynamic>,
-        ),
+      : ImageSearch.fromJson(json['image_search'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$SearchTypesToJson(SearchTypes instance) =>
@@ -1186,30 +1164,22 @@ Map<String, dynamic> _$SearchTypesToJson(SearchTypes instance) =>
     };
 
 GoogleSearch _$GoogleSearchFromJson(Map<String, dynamic> json) => GoogleSearch(
-  excludeDomains:
-      ((json['exclude_domains'] ?? json['excludeDomains']) as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-  timeRangeFilter:
-      (json['time_range_filter'] ?? json['timeRangeFilter']) == null
+  excludeDomains: (json['exclude_domains'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
+  timeRangeFilter: json['time_range_filter'] == null
       ? null
-      : Interval.fromJson(
-          (json['time_range_filter'] ?? json['timeRangeFilter'])
-              as Map<String, dynamic>,
-        ),
-  blockingConfidence:
-      (json['blocking_confidence'] ?? json['blockingConfidence']) as String?,
-  searchTypes: (json['search_types'] ?? json['searchTypes']) == null
+      : Interval.fromJson(json['time_range_filter'] as Map<String, dynamic>),
+  blockingConfidence: json['blocking_confidence'] as String?,
+  searchTypes: json['search_types'] == null
       ? null
-      : SearchTypes.fromJson(
-          (json['search_types'] ?? json['searchTypes']) as Map<String, dynamic>,
-        ),
+      : SearchTypes.fromJson(json['search_types'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$GoogleSearchToJson(GoogleSearch instance) =>
     <String, dynamic>{
       'exclude_domains': ?instance.excludeDomains,
-      'time_range_filter': ?instance.timeRangeFilter,
+      'time_range_filter': ?instance.timeRangeFilter?.toJson(),
       'blocking_confidence': ?instance.blockingConfidence,
       'search_types': ?instance.searchTypes?.toJson(),
     };
@@ -1245,8 +1215,8 @@ Map<String, dynamic> _$GoogleSearchRetrievalToJson(
 };
 
 AuthConfig _$AuthConfigFromJson(Map<String, dynamic> json) => AuthConfig(
-  apiKey: (json['api_key'] ?? json['apiKey']) as String?,
-  authType: (json['auth_type'] ?? json['authType']) as String?,
+  apiKey: json['api_key'] as String?,
+  authType: json['auth_type'] as String?,
 );
 
 Map<String, dynamic> _$AuthConfigToJson(AuthConfig instance) =>
@@ -1256,23 +1226,20 @@ Map<String, dynamic> _$AuthConfigToJson(AuthConfig instance) =>
     };
 
 GoogleMaps _$GoogleMapsFromJson(Map<String, dynamic> json) => GoogleMaps(
-  groundingTypes:
-      ((json['grounding_types'] ?? json['groundingTypes']) as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-  authConfig: (json['auth_config'] ?? json['authConfig']) == null
+  authConfig: json['auth_config'] == null
       ? null
-      : AuthConfig.fromJson(
-          (json['auth_config'] ?? json['authConfig']) as Map<String, dynamic>,
-        ),
-  enableWidget: (json['enable_widget'] ?? json['enableWidget']) as bool?,
+      : AuthConfig.fromJson(json['auth_config'] as Map<String, dynamic>),
+  enableWidget: json['enable_widget'] as bool?,
+  groundingTypes: (json['grounding_types'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
 );
 
 Map<String, dynamic> _$GoogleMapsToJson(GoogleMaps instance) =>
     <String, dynamic>{
-      'grounding_types': ?instance.groundingTypes,
       'auth_config': ?instance.authConfig?.toJson(),
       'enable_widget': ?instance.enableWidget,
+      'grounding_types': ?instance.groundingTypes,
     };
 
 StreamableHttpTransport _$StreamableHttpTransportFromJson(
@@ -1283,10 +1250,8 @@ StreamableHttpTransport _$StreamableHttpTransportFromJson(
     (k, e) => MapEntry(k, e as String),
   ),
   timeout: json['timeout'] as String?,
-  sseReadTimeout: (json['sse_read_timeout'] ?? json['sseReadTimeout'])
-      as String?,
-  terminateOnClose:
-      (json['terminate_on_close'] ?? json['terminateOnClose']) as bool?,
+  sseReadTimeout: json['sse_read_timeout'] as String?,
+  terminateOnClose: json['terminate_on_close'] as bool?,
 );
 
 Map<String, dynamic> _$StreamableHttpTransportToJson(
@@ -1301,13 +1266,10 @@ Map<String, dynamic> _$StreamableHttpTransportToJson(
 
 McpServer _$McpServerFromJson(Map<String, dynamic> json) => McpServer(
   name: json['name'] as String?,
-  streamableHttpTransport:
-      (json['streamable_http_transport'] ?? json['streamableHttpTransport']) ==
-          null
+  streamableHttpTransport: json['streamable_http_transport'] == null
       ? null
       : StreamableHttpTransport.fromJson(
-          (json['streamable_http_transport'] ?? json['streamableHttpTransport'])
-              as Map<String, dynamic>,
+          json['streamable_http_transport'] as Map<String, dynamic>,
         ),
 );
 
@@ -1317,15 +1279,9 @@ Map<String, dynamic> _$McpServerToJson(McpServer instance) => <String, dynamic>{
 };
 
 Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(
-  functionDeclarations:
-      ((json['function_declarations'] ?? json['functionDeclarations'])
-              as List<dynamic>?)
-          ?.map(
-            (e) => e is FunctionDeclaration
-                ? e
-                : FunctionDeclaration.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+  functionDeclarations: (json['function_declarations'] as List<dynamic>?)
+      ?.map((e) => FunctionDeclaration.fromJson(e as Map<String, dynamic>))
+      .toList(),
   googleSearch: json['google_search'] == null
       ? null
       : GoogleSearch.fromJson(json['google_search'] as Map<String, dynamic>),
@@ -1473,11 +1429,10 @@ LiveClientMessage _$LiveClientMessageFromJson(Map<String, dynamic> json) =>
           : LiveClientToolResponse.fromJson(
               json['toolResponse'] as Map<String, dynamic>,
             ),
-      contextUpdate: (json['contextUpdate'] ?? json['context_update']) == null
+      contextUpdate: json['contextUpdate'] == null
           ? null
           : LiveClientContextUpdate.fromJson(
-              (json['contextUpdate'] ?? json['context_update'])
-                  as Map<String, dynamic>,
+              json['contextUpdate'] as Map<String, dynamic>,
             ),
     );
 
@@ -1680,7 +1635,7 @@ VoiceActivity _$VoiceActivityFromJson(Map<String, dynamic> json) =>
     VoiceActivity(
       voiceActivityType: $enumDecodeNullable(
         _$VoiceActivityTypeEnumMap,
-        json['voiceActivityType'] ?? json['type'],
+        json['voiceActivityType'],
       ),
       audioOffset: json['audioOffset'] as String?,
     );
@@ -1712,9 +1667,7 @@ UsageMetadata _$UsageMetadataFromJson(
   initialPromptTokenCount: (json['initialPromptTokenCount'] as num?)?.toInt(),
   promptTokenCount: (json['promptTokenCount'] as num?)?.toInt(),
   cachedContentTokenCount: (json['cachedContentTokenCount'] as num?)?.toInt(),
-  responseTokenCount:
-      ((json['responseTokenCount'] ?? json['candidatesTokenCount']) as num?)
-          ?.toInt(),
+  responseTokenCount: (json['responseTokenCount'] as num?)?.toInt(),
   toolUsePromptTokenCount: (json['toolUsePromptTokenCount'] as num?)?.toInt(),
   thoughtsTokenCount: (json['thoughtsTokenCount'] as num?)?.toInt(),
   totalTokenCount: (json['totalTokenCount'] as num?)?.toInt(),
@@ -1724,11 +1677,9 @@ UsageMetadata _$UsageMetadataFromJson(
   cacheTokensDetails: (json['cacheTokensDetails'] as List<dynamic>?)
       ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
       .toList(),
-  responseTokensDetails:
-      ((json['responseTokensDetails'] ?? json['candidatesTokensDetails'])
-              as List<dynamic>?)
-          ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
-          .toList(),
+  responseTokensDetails: (json['responseTokensDetails'] as List<dynamic>?)
+      ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
+      .toList(),
   toolUsePromptTokensDetails:
       (json['toolUsePromptTokensDetails'] as List<dynamic>?)
           ?.map((e) => ModalityTokenCount.fromJson(e as Map<String, dynamic>))
@@ -1824,87 +1775,58 @@ LiveConnectConstraints _$LiveConnectConstraintsFromJson(
   Map<String, dynamic> json,
 ) => LiveConnectConstraints(
   model: json['model'] as String?,
-  config: json['config'] == null
+  config: json['config'],
+  systemInstruction: json['system_instruction'] == null
       ? null
-      : GenerationConfig.fromJson(json['config'] as Map<String, dynamic>),
-  systemInstruction:
-      (json['system_instruction'] ?? json['systemInstruction']) == null
-      ? null
-      : Content.fromJson(
-          (json['system_instruction'] ?? json['systemInstruction'])
-              as Map<String, dynamic>,
-        ),
+      : Content.fromJson(json['system_instruction'] as Map<String, dynamic>),
   tools: (json['tools'] as List<dynamic>?)
       ?.map((e) => Tool.fromJson(e as Map<String, dynamic>))
       .toList(),
-  realtimeInputConfig:
-      (json['realtime_input_config'] ?? json['realtimeInputConfig']) == null
+  realtimeInputConfig: json['realtime_input_config'] == null
       ? null
       : RealtimeInputConfig.fromJson(
-          (json['realtime_input_config'] ?? json['realtimeInputConfig'])
-              as Map<String, dynamic>,
+          json['realtime_input_config'] as Map<String, dynamic>,
         ),
-  sessionResumption:
-      (json['session_resumption'] ?? json['sessionResumption']) == null
+  sessionResumption: json['session_resumption'] == null
       ? null
       : SessionResumptionConfig.fromJson(
-          (json['session_resumption'] ?? json['sessionResumption'])
-              as Map<String, dynamic>,
+          json['session_resumption'] as Map<String, dynamic>,
         ),
-  contextWindowCompression:
-      (json['context_window_compression'] ??
-              json['contextWindowCompression']) ==
-          null
+  contextWindowCompression: json['context_window_compression'] == null
       ? null
       : ContextWindowCompressionConfig.fromJson(
-          (json['context_window_compression'] ??
-                  json['contextWindowCompression'])
-              as Map<String, dynamic>,
+          json['context_window_compression'] as Map<String, dynamic>,
         ),
-  inputAudioTranscription:
-      (json['input_audio_transcription'] ?? json['inputAudioTranscription']) ==
-          null
+  inputAudioTranscription: json['input_audio_transcription'] == null
       ? null
       : AudioTranscriptionConfig.fromJson(
-          (json['input_audio_transcription'] ?? json['inputAudioTranscription'])
-              as Map<String, dynamic>,
+          json['input_audio_transcription'] as Map<String, dynamic>,
         ),
-  outputAudioTranscription:
-      (json['output_audio_transcription'] ??
-              json['outputAudioTranscription']) ==
-          null
+  outputAudioTranscription: json['output_audio_transcription'] == null
       ? null
       : AudioTranscriptionConfig.fromJson(
-          (json['output_audio_transcription'] ??
-                  json['outputAudioTranscription'])
-              as Map<String, dynamic>,
+          json['output_audio_transcription'] as Map<String, dynamic>,
         ),
   proactivity: json['proactivity'] == null
       ? null
       : ProactivityConfig.fromJson(json['proactivity'] as Map<String, dynamic>),
-  avatarConfig: (json['avatar_config'] ?? json['avatarConfig']) == null
+  avatarConfig: json['avatar_config'] == null
       ? null
-      : AvatarConfig.fromJson(
-          (json['avatar_config'] ?? json['avatarConfig'])
-              as Map<String, dynamic>,
-        ),
-  safetySettings:
-      ((json['safety_settings'] ?? json['safetySettings']) as List<dynamic>?)
-          ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
-          .toList(),
-  historyConfig: (json['history_config'] ?? json['historyConfig']) == null
+      : AvatarConfig.fromJson(json['avatar_config'] as Map<String, dynamic>),
+  safetySettings: (json['safety_settings'] as List<dynamic>?)
+      ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  historyConfig: json['history_config'] == null
       ? null
-      : HistoryConfig.fromJson(
-          (json['history_config'] ?? json['historyConfig'])
-              as Map<String, dynamic>,
-        ),
-  translationConfig:
-      (json['translation_config'] ?? json['translationConfig']) == null
+      : HistoryConfig.fromJson(json['history_config'] as Map<String, dynamic>),
+  translationConfig: json['translation_config'] == null
       ? null
       : TranslationConfig.fromJson(
-          (json['translation_config'] ?? json['translationConfig'])
-              as Map<String, dynamic>,
+          json['translation_config'] as Map<String, dynamic>,
         ),
+  labels: (json['labels'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as String),
+  ),
 );
 
 Map<String, dynamic> _$LiveConnectConstraintsToJson(
@@ -1924,6 +1846,7 @@ Map<String, dynamic> _$LiveConnectConstraintsToJson(
   'safety_settings': ?instance.safetySettings,
   'history_config': ?instance.historyConfig,
   'translation_config': ?instance.translationConfig,
+  'labels': ?instance.labels,
 };
 
 CreateAuthTokenConfig _$CreateAuthTokenConfigFromJson(

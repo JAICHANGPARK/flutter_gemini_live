@@ -108,7 +108,16 @@ class FunctionResponseBlob {
   Uint8List? get bytes => data == null ? null : base64Decode(data!);
 
   factory FunctionResponseBlob.fromJson(Map<String, dynamic> json) =>
-      _$FunctionResponseBlobFromJson(json);
+      _$FunctionResponseBlobFromJson({
+        ...json,
+        if (json['data'] is List<int>)
+          'data': base64Encode(json['data'] as List<int>),
+        if (!json.containsKey('mime_type') && json.containsKey('mimeType'))
+          'mime_type': json['mimeType'],
+        if (!json.containsKey('display_name') &&
+            json.containsKey('displayName'))
+          'display_name': json['displayName'],
+      });
 
   Map<String, dynamic> toJson() => _$FunctionResponseBlobToJson(this);
 }
@@ -123,13 +132,26 @@ class FunctionResponseFileData {
   FunctionResponseFileData({this.fileUri, this.mimeType, this.displayName});
 
   factory FunctionResponseFileData.fromJson(Map<String, dynamic> json) =>
-      _$FunctionResponseFileDataFromJson(json);
+      _$FunctionResponseFileDataFromJson({
+        ...json,
+        if (!json.containsKey('file_uri') && json.containsKey('fileUri'))
+          'file_uri': json['fileUri'],
+        if (!json.containsKey('mime_type') && json.containsKey('mimeType'))
+          'mime_type': json['mimeType'],
+        if (!json.containsKey('display_name') &&
+            json.containsKey('displayName'))
+          'display_name': json['displayName'],
+      });
 
   Map<String, dynamic> toJson() => _$FunctionResponseFileDataToJson(this);
 }
 
 /// A single payload part inside a function response.
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
 class FunctionResponsePart {
   final FunctionResponseBlob? inlineData;
   final FunctionResponseFileData? fileData;
@@ -162,14 +184,31 @@ class FunctionResponsePart {
     ),
   );
 
-  factory FunctionResponsePart.fromJson(Map<String, dynamic> json) =>
-      _$FunctionResponsePartFromJson(json);
+  factory FunctionResponsePart.fromJson(Map<String, dynamic> json) {
+    final rawInline = json['inline_data'] ?? json['inlineData'];
+    final rawFile = json['file_data'] ?? json['fileData'];
+    return _$FunctionResponsePartFromJson({
+      ...json,
+      if (rawInline != null)
+        'inline_data': rawInline is FunctionResponseBlob
+            ? rawInline.toJson()
+            : rawInline,
+      if (rawFile != null)
+        'file_data': rawFile is FunctionResponseFileData
+            ? rawFile.toJson()
+            : rawFile,
+    });
+  }
 
   Map<String, dynamic> toJson() => _$FunctionResponsePartToJson(this);
 }
 
 /// A tool result sent back to the model.
-@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+  fieldRename: FieldRename.snake,
+)
 class FunctionResponse {
   final String? id;
   final String? name;
@@ -188,7 +227,16 @@ class FunctionResponse {
   });
 
   factory FunctionResponse.fromJson(Map<String, dynamic> json) =>
-      _$FunctionResponseFromJson(json);
+      _$FunctionResponseFromJson({
+        ...json,
+        if (!json.containsKey('will_continue') &&
+            json.containsKey('willContinue'))
+          'will_continue': json['willContinue'],
+        if (json['parts'] is List)
+          'parts': (json['parts'] as List)
+              .map((e) => e is FunctionResponsePart ? e.toJson() : e)
+              .toList(),
+      });
 
   Map<String, dynamic> toJson() => _$FunctionResponseToJson(this);
 }
@@ -278,7 +326,14 @@ class SearchTypes {
   const SearchTypes({this.webSearch, this.imageSearch});
 
   factory SearchTypes.fromJson(Map<String, dynamic> json) =>
-      _$SearchTypesFromJson(json);
+      _$SearchTypesFromJson({
+        ...json,
+        if (!json.containsKey('web_search') && json.containsKey('webSearch'))
+          'web_search': json['webSearch'],
+        if (!json.containsKey('image_search') &&
+            json.containsKey('imageSearch'))
+          'image_search': json['imageSearch'],
+      });
 
   Map<String, dynamic> toJson() => _$SearchTypesToJson(this);
 }
@@ -305,7 +360,21 @@ class GoogleSearch {
   });
 
   factory GoogleSearch.fromJson(Map<String, dynamic> json) =>
-      _$GoogleSearchFromJson(json);
+      _$GoogleSearchFromJson({
+        ...json,
+        if (!json.containsKey('exclude_domains') &&
+            json.containsKey('excludeDomains'))
+          'exclude_domains': json['excludeDomains'],
+        if (!json.containsKey('time_range_filter') &&
+            json.containsKey('timeRangeFilter'))
+          'time_range_filter': json['timeRangeFilter'],
+        if (!json.containsKey('blocking_confidence') &&
+            json.containsKey('blockingConfidence'))
+          'blocking_confidence': json['blockingConfidence'],
+        if (!json.containsKey('search_types') &&
+            json.containsKey('searchTypes'))
+          'search_types': json['searchTypes'],
+      });
 
   Map<String, dynamic> toJson() => _$GoogleSearchToJson(this);
 }
@@ -349,7 +418,13 @@ class AuthConfig {
   const AuthConfig({this.apiKey, this.authType});
 
   factory AuthConfig.fromJson(Map<String, dynamic> json) =>
-      _$AuthConfigFromJson(json);
+      _$AuthConfigFromJson({
+        ...json,
+        if (!json.containsKey('api_key') && json.containsKey('apiKey'))
+          'api_key': json['apiKey'],
+        if (!json.containsKey('auth_type') && json.containsKey('authType'))
+          'auth_type': json['authType'],
+      });
 
   Map<String, dynamic> toJson() => _$AuthConfigToJson(this);
 }
@@ -373,7 +448,17 @@ class GoogleMaps {
   const GoogleMaps({this.authConfig, this.enableWidget, this.groundingTypes});
 
   factory GoogleMaps.fromJson(Map<String, dynamic> json) =>
-      _$GoogleMapsFromJson(json);
+      _$GoogleMapsFromJson({
+        ...json,
+        if (!json.containsKey('auth_config') && json.containsKey('authConfig'))
+          'auth_config': json['authConfig'],
+        if (!json.containsKey('enable_widget') &&
+            json.containsKey('enableWidget'))
+          'enable_widget': json['enableWidget'],
+        if (!json.containsKey('grounding_types') &&
+            json.containsKey('groundingTypes'))
+          'grounding_types': json['groundingTypes'],
+      });
 
   Map<String, dynamic> toJson() => _$GoogleMapsToJson(this);
 }
@@ -405,7 +490,15 @@ class StreamableHttpTransport {
   });
 
   factory StreamableHttpTransport.fromJson(Map<String, dynamic> json) =>
-      _$StreamableHttpTransportFromJson(json);
+      _$StreamableHttpTransportFromJson({
+        ...json,
+        if (!json.containsKey('sse_read_timeout') &&
+            json.containsKey('sseReadTimeout'))
+          'sse_read_timeout': json['sseReadTimeout'],
+        if (!json.containsKey('terminate_on_close') &&
+            json.containsKey('terminateOnClose'))
+          'terminate_on_close': json['terminateOnClose'],
+      });
 
   Map<String, dynamic> toJson() => _$StreamableHttpTransportToJson(this);
 }
@@ -426,7 +519,12 @@ class McpServer {
   const McpServer({this.name, this.streamableHttpTransport});
 
   factory McpServer.fromJson(Map<String, dynamic> json) =>
-      _$McpServerFromJson(json);
+      _$McpServerFromJson({
+        ...json,
+        if (!json.containsKey('streamable_http_transport') &&
+            json.containsKey('streamableHttpTransport'))
+          'streamable_http_transport': json['streamableHttpTransport'],
+      });
 
   Map<String, dynamic> toJson() => _$McpServerToJson(this);
 }
@@ -474,7 +572,18 @@ class Tool {
   List<McpServer>? get typedMcpServers =>
       mcpServers?.map(McpServer.fromJson).toList();
 
-  factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson(json);
+  factory Tool.fromJson(Map<String, dynamic> json) => _$ToolFromJson({
+    ...json,
+    if (!json.containsKey('function_declarations') &&
+        json.containsKey('functionDeclarations'))
+      'function_declarations': (json['functionDeclarations'] as List)
+          .map((e) => e is FunctionDeclaration ? e.toJson() : e)
+          .toList()
+    else if (json['function_declarations'] is List)
+      'function_declarations': (json['function_declarations'] as List)
+          .map((e) => e is FunctionDeclaration ? e.toJson() : e)
+          .toList(),
+  });
 
   Map<String, dynamic> toJson() => _$ToolToJson(this);
 }

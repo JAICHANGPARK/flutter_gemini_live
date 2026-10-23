@@ -61,6 +61,11 @@ class FakeChannel implements WebSocketChannel {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Valid 1x1 transparent PNG bytes for Image.memory widget tests.
+final Uint8List kTransparentPng = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+);
+
 GeminiLiveSessionController createMockController({
   FakeChannel? fakeChannel,
   bool autoSetup = true,
@@ -71,11 +76,11 @@ GeminiLiveSessionController createMockController({
     connector: (uri, headers) async {
       if (autoSetup) {
         unawaited(
-          Future<void>.delayed(Duration.zero, () {
+          Future<void>.microtask(() => Future<void>.microtask(() {
             channel.emitServerJson({
               'setupComplete': {'sessionId': 'mock-session-123'},
             });
-          }),
+          })),
         );
       }
       return channel;
@@ -441,21 +446,23 @@ void main() {
     testWidgets('autoConnect: true invokes _connectSession with different systemInstruction formats', (tester) async {
       // 1. String systemInstruction
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: GeminiLiveChatView(
-            apiKey: 'test-api-key',
+            key: const ValueKey('chat_str'),
+            controller: createMockController(),
             systemInstruction: 'Custom instruction string',
             autoConnect: true,
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // 2. Content systemInstruction
       await tester.pumpWidget(
         MaterialApp(
           home: GeminiLiveChatView(
-            apiKey: 'test-api-key',
+            key: const ValueKey('chat_content'),
+            controller: createMockController(),
             systemInstruction: Content(
               role: 'system',
               parts: [Part(text: 'Structured prompt')],
@@ -464,19 +471,20 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       // 3. Default fallback systemInstruction
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: GeminiLiveChatView(
-            apiKey: 'test-api-key',
+            key: const ValueKey('chat_default'),
+            controller: createMockController(),
             systemInstruction: null,
             autoConnect: true,
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
     });
 
     testWidgets('didUpdateWidget swaps controllers and disposes owned controller', (tester) async {
@@ -536,7 +544,7 @@ void main() {
       );
 
       final dynamic state = tester.state(find.byType(GeminiLiveChatView));
-      final testBytes = Uint8List.fromList([1, 2, 3, 4]);
+      final testBytes = kTransparentPng;
 
       // Attach image
       state.attachImage(testBytes, mimeType: 'image/png');
@@ -581,7 +589,7 @@ void main() {
       );
 
       final dynamic state = tester.state(find.byType(GeminiLiveChatView));
-      final testBytes = Uint8List.fromList([1, 2, 3, 4]);
+      final testBytes = kTransparentPng;
 
       // 1. Send with image and text
       state.attachImage(testBytes);
@@ -634,7 +642,8 @@ void main() {
       fakeChannel.emitServerJson({
         'setupComplete': {'sessionId': 'session-123'},
       });
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
       expect(controller.isConnected, isTrue);
 
       // 2. Tap disconnect button
@@ -836,7 +845,7 @@ void main() {
       );
 
       // Send user turn with image and streaming true
-      final testBytes = Uint8List.fromList([1, 2, 3, 4]);
+      final testBytes = kTransparentPng;
       controller.sendRealtimeTurn(
         text: 'User prompt text',
         imageBytes: testBytes,

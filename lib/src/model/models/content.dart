@@ -229,7 +229,13 @@ class Content {
   Content({this.parts, this.role});
 
   factory Content.fromJson(Map<String, dynamic> json) =>
-      _$ContentFromJson(json);
+      _$ContentFromJson({
+        ...json,
+        if (json['parts'] is List)
+          'parts': (json['parts'] as List)
+              .map((e) => e is Part ? e.toJson() : e)
+              .toList(),
+      });
 
   Map<String, dynamic> toJson() => _$ContentToJson(this);
 }

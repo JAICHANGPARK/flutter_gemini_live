@@ -243,7 +243,16 @@ class VoiceActivity {
   VoiceActivity({this.voiceActivityType, this.audioOffset});
 
   factory VoiceActivity.fromJson(Map<String, dynamic> json) =>
-      _$VoiceActivityFromJson(json);
+      _$VoiceActivityFromJson({
+        ...json,
+        if (!json.containsKey('voiceActivityType') &&
+            (json.containsKey('voice_activity_type') ||
+                json.containsKey('type')))
+          'voiceActivityType': json['voice_activity_type'] ?? json['type'],
+        if (!json.containsKey('audioOffset') &&
+            json.containsKey('audio_offset'))
+          'audioOffset': json['audio_offset'],
+      });
 
   /// Whether speech is currently considered active.
   bool? get speechActive {
@@ -300,7 +309,43 @@ class UsageMetadata {
   });
 
   factory UsageMetadata.fromJson(Map<String, dynamic> json) =>
-      _$UsageMetadataFromJson(json);
+      _$UsageMetadataFromJson({
+        ...json,
+        if (!json.containsKey('initialPromptTokenCount') &&
+            json.containsKey('initial_prompt_token_count'))
+          'initialPromptTokenCount': json['initial_prompt_token_count'],
+        if (!json.containsKey('promptTokenCount') &&
+            json.containsKey('prompt_token_count'))
+          'promptTokenCount': json['prompt_token_count'],
+        if (!json.containsKey('cachedContentTokenCount') &&
+            json.containsKey('cached_content_token_count'))
+          'cachedContentTokenCount': json['cached_content_token_count'],
+        if (!json.containsKey('responseTokenCount') &&
+            (json.containsKey('response_token_count') ||
+                json.containsKey('candidatesTokenCount') ||
+                json.containsKey('candidates_token_count')))
+          'responseTokenCount':
+              json['response_token_count'] ??
+              json['candidatesTokenCount'] ??
+              json['candidates_token_count'],
+        if (!json.containsKey('toolUsePromptTokenCount') &&
+            json.containsKey('tool_use_prompt_token_count'))
+          'toolUsePromptTokenCount': json['tool_use_prompt_token_count'],
+        if (!json.containsKey('thoughtsTokenCount') &&
+            json.containsKey('thoughts_token_count'))
+          'thoughtsTokenCount': json['thoughts_token_count'],
+        if (!json.containsKey('totalTokenCount') &&
+            json.containsKey('total_token_count'))
+          'totalTokenCount': json['total_token_count'],
+        if (!json.containsKey('responseTokensDetails') &&
+            (json.containsKey('response_tokens_details') ||
+                json.containsKey('candidatesTokensDetails') ||
+                json.containsKey('candidates_tokens_details')))
+          'responseTokensDetails':
+              json['response_tokens_details'] ??
+              json['candidatesTokensDetails'] ??
+              json['candidates_tokens_details'],
+      });
 }
 
 /// An error returned by the Live API server.

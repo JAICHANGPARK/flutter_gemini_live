@@ -122,9 +122,41 @@ class LiveConnectConstraints {
   }
 
   factory LiveConnectConstraints.fromJson(Map<String, dynamic> json) {
-    final parsed = _$LiveConnectConstraintsFromJson(json);
+    final normalized = <String, dynamic>{
+      ...json,
+      if (!json.containsKey('system_instruction') &&
+          json.containsKey('systemInstruction'))
+        'system_instruction': json['systemInstruction'],
+      if (!json.containsKey('realtime_input_config') &&
+          json.containsKey('realtimeInputConfig'))
+        'realtime_input_config': json['realtimeInputConfig'],
+      if (!json.containsKey('session_resumption') &&
+          json.containsKey('sessionResumption'))
+        'session_resumption': json['sessionResumption'],
+      if (!json.containsKey('context_window_compression') &&
+          json.containsKey('contextWindowCompression'))
+        'context_window_compression': json['contextWindowCompression'],
+      if (!json.containsKey('input_audio_transcription') &&
+          json.containsKey('inputAudioTranscription'))
+        'input_audio_transcription': json['inputAudioTranscription'],
+      if (!json.containsKey('output_audio_transcription') &&
+          json.containsKey('outputAudioTranscription'))
+        'output_audio_transcription': json['outputAudioTranscription'],
+      if (!json.containsKey('avatar_config') &&
+          json.containsKey('avatarConfig'))
+        'avatar_config': json['avatarConfig'],
+      if (!json.containsKey('safety_settings') &&
+          json.containsKey('safetySettings'))
+        'safety_settings': json['safetySettings'],
+      if (!json.containsKey('history_config') &&
+          json.containsKey('historyConfig'))
+        'history_config': json['historyConfig'],
+      if (!json.containsKey('translation_config') &&
+          json.containsKey('translationConfig'))
+        'translation_config': json['translationConfig'],
+    };
+    final parsed = _$LiveConnectConstraintsFromJson(normalized);
     final rawConfig = json['config'];
-    final rawLabels = json['labels'] as Map<String, dynamic>?;
     return LiveConnectConstraints(
       model: parsed.model,
       config: rawConfig is Map<String, dynamic>
@@ -142,17 +174,11 @@ class LiveConnectConstraints {
       safetySettings: parsed.safetySettings,
       historyConfig: parsed.historyConfig,
       translationConfig: parsed.translationConfig,
-      labels: rawLabels?.map((k, v) => MapEntry(k, v as String)),
+      labels: parsed.labels,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    final json = _$LiveConnectConstraintsToJson(this);
-    if (labels != null) {
-      json['labels'] = labels;
-    }
-    return json;
-  }
+  Map<String, dynamic> toJson() => _$LiveConnectConstraintsToJson(this);
 }
 
 /// Configuration parameters for creating an ephemeral authentication token.

@@ -44,7 +44,13 @@ class VoiceAudioData {
   Uint8List get bytes => base64Decode(data);
 
   factory VoiceAudioData.fromJson(Map<String, dynamic> json) =>
-      _$VoiceAudioDataFromJson(json);
+      _$VoiceAudioDataFromJson({
+        ...json,
+        if (json['data'] is List<int>)
+          'data': base64Encode(json['data'] as List<int>),
+        if (!json.containsKey('mime_type') && json.containsKey('mimeType'))
+          'mime_type': json['mimeType'],
+      });
 
   Map<String, dynamic> toJson() => _$VoiceAudioDataToJson(this);
 }
@@ -65,7 +71,11 @@ class PromptedVoice {
   PromptedVoice({required this.input, this.baseVoice});
 
   factory PromptedVoice.fromJson(Map<String, dynamic> json) =>
-      _$PromptedVoiceFromJson(json);
+      _$PromptedVoiceFromJson({
+        ...json,
+        if (!json.containsKey('base_voice') && json.containsKey('baseVoice'))
+          'base_voice': json['baseVoice'],
+      });
 
   Map<String, dynamic> toJson() => _$PromptedVoiceToJson(this);
 }

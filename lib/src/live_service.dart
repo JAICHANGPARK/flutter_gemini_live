@@ -702,9 +702,22 @@ class LiveService {
       queryParameters: {keyName: apiKey},
     );
 
+    List<Tool>? resolvedToolsOverride;
+    if (params.callableTools != null && params.callableTools!.isNotEmpty) {
+      final resolvedFromCallables = await Future.wait(
+        params.callableTools!.map((ct) => Future<Tool>.value(ct.tool())),
+      );
+      resolvedToolsOverride = <Tool>[
+        ...(params.tools ?? const <Tool>[]),
+        ...resolvedFromCallables,
+      ];
+    }
+
     final userAgent =
         'google-genai-sdk/$_sdkVersion dart/${_dartVersionProvider()}';
-    final hasMcpTools = (params.tools ?? const <Tool>[]).any(
+    final effectiveToolsForHeaders =
+        resolvedToolsOverride ?? params.tools ?? const <Tool>[];
+    final hasMcpTools = effectiveToolsForHeaders.any(
       (tool) => tool.mcpServers != null && tool.mcpServers!.isNotEmpty,
     );
     final apiClientHeader = hasMcpTools
@@ -777,7 +790,10 @@ class LiveService {
       );
 
       params.callbacks.onOpen?.call();
-      final setupMessage = await LiveService.buildSetupMessageAsync(params);
+      final setupMessage = LiveService.buildSetupMessage(
+        params,
+        resolvedToolsOverride: resolvedToolsOverride,
+      );
       session.sendMessage(setupMessage);
 
       await setupCompleter.future.timeout(
@@ -875,7 +891,7 @@ class LiveSession {
   }
 
   void _emitError(Object error, StackTrace stackTrace) {
-    if (!_messageController.isClosed) {
+    if (!_messageController.isClosed && _messageController.hasListener) {
       _messageController.addError(error, stackTrace);
     }
   }
@@ -889,7 +905,7 @@ class LiveSession {
   /// Receives model responses from the server for the current turn.
   ///
   /// Yields incoming [LiveServerMessage] events and completes once a message
-  /// with `serverContent.turnComplete == true` is emitted, matching
+  /// with `serverContent.isInteractionComplete == true` is emitted, matching
   /// `AsyncSession.receive()` in the upstream Python SDK.
   Stream<LiveServerMessage> receive() {
     late final StreamController<LiveServerMessage> controller;
@@ -900,7 +916,7 @@ class LiveSession {
         subscription = _messageController.stream.listen(
           (message) {
             controller.add(message);
-            if (message.serverContent?.turnComplete == true) {
+            if (message.serverContent?.isInteractionComplete == true) {
               unawaited(subscription?.cancel());
               unawaited(controller.close());
             }

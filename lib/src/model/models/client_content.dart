@@ -248,8 +248,10 @@ class LiveClientContextUpdate {
 
   /// Creates an in-session context update.
   ///
-  /// [systemInstruction] accepts either a [String] or a [Content] object.
-  /// [tools] accepts either a [LiveClientContextUpdateTools] or a `List<Tool>`.
+  /// [systemInstruction] accepts a [String], [Part], [Content], `List<Part>`,
+  /// `List<String>`, or `Map<String, dynamic>`.
+  /// [tools] accepts a [LiveClientContextUpdateTools], `List<Tool>`, or
+  /// `List<Map<String, dynamic>>`.
   LiveClientContextUpdate({
     Object? systemInstruction,
     Object? tools,
@@ -262,10 +264,32 @@ class LiveClientContextUpdate {
     if (value is String) {
       return Content(parts: [Part(text: value)], role: 'user');
     }
+    if (value is Part) {
+      return Content(parts: [value], role: 'user');
+    }
+    if (value is Map<String, dynamic>) {
+      if (value.containsKey('parts') || value.containsKey('role')) {
+        return Content.fromJson(value);
+      }
+      return Content(parts: [Part.fromJson(value)], role: 'user');
+    }
+    if (value is List) {
+      final parts = value.map<Part>((item) {
+        if (item is Part) return item;
+        if (item is String) return Part(text: item);
+        if (item is Map<String, dynamic>) return Part.fromJson(item);
+        throw ArgumentError.value(
+          item,
+          'systemInstruction',
+          'Each part in systemInstruction must be a Part, String, or Map<String, dynamic>.',
+        );
+      }).toList();
+      return Content(parts: parts, role: 'user');
+    }
     throw ArgumentError.value(
       value,
       'systemInstruction',
-      'Must be a String or Content.',
+      'Must be a String, Part, List<Part>, Map<String, dynamic>, or Content.',
     );
   }
 
@@ -273,6 +297,22 @@ class LiveClientContextUpdate {
     if (value == null) return null;
     if (value is LiveClientContextUpdateTools) return value;
     if (value is List<Tool>) return LiveClientContextUpdateTools(tools: value);
+    if (value is Map<String, dynamic>) {
+      return LiveClientContextUpdateTools.fromJson(value);
+    }
+    if (value is List) {
+      return LiveClientContextUpdateTools(
+        tools: value.map<Tool>((item) {
+          if (item is Tool) return item;
+          if (item is Map<String, dynamic>) return Tool.fromJson(item);
+          throw ArgumentError.value(
+            item,
+            'tools',
+            'Each tool must be a Tool or Map<String, dynamic>.',
+          );
+        }).toList(),
+      );
+    }
     throw ArgumentError.value(
       value,
       'tools',
@@ -345,7 +385,12 @@ class LiveClientMessage {
   });
 
   factory LiveClientMessage.fromJson(Map<String, dynamic> json) =>
-      _$LiveClientMessageFromJson(json);
+      _$LiveClientMessageFromJson({
+        ...json,
+        if (!json.containsKey('contextUpdate') &&
+            json.containsKey('context_update'))
+          'contextUpdate': json['context_update'],
+      });
 
   Map<String, dynamic> toJson() => _$LiveClientMessageToJson(this);
 }
