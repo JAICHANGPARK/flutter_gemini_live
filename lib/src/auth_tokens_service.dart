@@ -29,6 +29,9 @@ class AuthTokensService {
     final constraints = config.liveConnectConstraints;
     Map<String, dynamic>? bidiSetup;
     if (constraints != null) {
+      final liveConfig = constraints.config is LiveConnectConfig
+          ? constraints.config as LiveConnectConfig
+          : null;
       bidiSetup = <String, dynamic>{};
       if (constraints.model != null) {
         final model = constraints.model!.startsWith('models/')
@@ -36,58 +39,89 @@ class AuthTokensService {
             : 'models/${constraints.model!}';
         bidiSetup['model'] = model;
       }
-      if (constraints.config != null || constraints.translationConfig != null) {
+      final effectiveTranslation =
+          constraints.translationConfig ?? liveConfig?.translationConfig;
+      if (constraints.config != null || effectiveTranslation != null) {
         final genConfigJson = constraints.config != null
-            ? Map<String, dynamic>.from(constraints.config!.toJson())
+            ? <String, dynamic>{
+                if (liveConfig?.generationConfig != null)
+                  ...liveConfig!.generationConfig!.toJson(),
+                ...superGenerationJson(constraints.config!),
+              }
             : <String, dynamic>{};
-        if (constraints.translationConfig != null &&
+        if (effectiveTranslation != null &&
             genConfigJson['translation_config'] == null &&
             genConfigJson['translationConfig'] == null) {
-          genConfigJson['translationConfig'] =
-              constraints.translationConfig!.toJson();
+          genConfigJson['translationConfig'] = effectiveTranslation.toJson();
         }
-        bidiSetup['generationConfig'] = genConfigJson;
+        if (genConfigJson.isNotEmpty) {
+          bidiSetup['generationConfig'] = genConfigJson;
+        }
       }
-      if (constraints.systemInstruction != null) {
-        bidiSetup['systemInstruction'] =
-            constraints.systemInstruction!.toJson();
+      final effectiveSystemInstruction =
+          constraints.systemInstruction ?? liveConfig?.systemInstruction;
+      if (effectiveSystemInstruction != null) {
+        bidiSetup['systemInstruction'] = effectiveSystemInstruction.toJson();
       }
-      if (constraints.tools != null) {
-        bidiSetup['tools'] =
-            constraints.tools!.map((t) => t.toJson()).toList();
+      final effectiveTools = constraints.tools ?? liveConfig?.tools;
+      if (effectiveTools != null) {
+        bidiSetup['tools'] = effectiveTools.map((t) => t.toJson()).toList();
       }
-      if (constraints.realtimeInputConfig != null) {
-        bidiSetup['realtimeInputConfig'] =
-            constraints.realtimeInputConfig!.toJson();
+      final effectiveRealtimeInput =
+          constraints.realtimeInputConfig ?? liveConfig?.realtimeInputConfig;
+      if (effectiveRealtimeInput != null) {
+        bidiSetup['realtimeInputConfig'] = effectiveRealtimeInput.toJson();
       }
-      if (constraints.sessionResumption != null) {
-        bidiSetup['sessionResumption'] =
-            constraints.sessionResumption!.toJson();
+      final effectiveSessionResumption =
+          constraints.sessionResumption ?? liveConfig?.sessionResumption;
+      if (effectiveSessionResumption != null) {
+        bidiSetup['sessionResumption'] = effectiveSessionResumption.toJson();
       }
-      if (constraints.contextWindowCompression != null) {
-        bidiSetup['contextWindowCompression'] =
-            constraints.contextWindowCompression!.toJson();
+      final effectiveCompression =
+          constraints.contextWindowCompression ??
+          liveConfig?.contextWindowCompression;
+      if (effectiveCompression != null) {
+        bidiSetup['contextWindowCompression'] = effectiveCompression.toJson();
       }
-      if (constraints.inputAudioTranscription != null) {
-        bidiSetup['inputAudioTranscription'] =
-            constraints.inputAudioTranscription!.toJson();
+      final effectiveInputTrans =
+          constraints.inputAudioTranscription ??
+          liveConfig?.inputAudioTranscription;
+      if (effectiveInputTrans != null) {
+        bidiSetup['inputAudioTranscription'] = effectiveInputTrans.toJson();
       }
-      if (constraints.outputAudioTranscription != null) {
-        bidiSetup['outputAudioTranscription'] =
-            constraints.outputAudioTranscription!.toJson();
+      final effectiveOutputTrans =
+          constraints.outputAudioTranscription ??
+          liveConfig?.outputAudioTranscription;
+      if (effectiveOutputTrans != null) {
+        bidiSetup['outputAudioTranscription'] = effectiveOutputTrans.toJson();
       }
-      if (constraints.proactivity != null) {
-        bidiSetup['proactivity'] = constraints.proactivity!.toJson();
+      final effectiveProactivity =
+          constraints.proactivity ?? liveConfig?.proactivity;
+      if (effectiveProactivity != null) {
+        bidiSetup['proactivity'] = effectiveProactivity.toJson();
       }
-      if (constraints.avatarConfig != null) {
-        bidiSetup['avatarConfig'] = constraints.avatarConfig!.toJson();
+      final effectiveAvatar =
+          constraints.avatarConfig ?? liveConfig?.avatarConfig;
+      if (effectiveAvatar != null) {
+        bidiSetup['avatarConfig'] = effectiveAvatar.toJson();
       }
-      if (constraints.safetySettings != null) {
+      final effectiveSafety =
+          constraints.safetySettings ?? liveConfig?.safetySettings;
+      if (effectiveSafety != null) {
         bidiSetup['safetySettings'] =
-            constraints.safetySettings!.map((s) => s.toJson()).toList();
+            effectiveSafety.map((s) => s.toJson()).toList();
       }
-      if (constraints.historyConfig != null) {
-        bidiSetup['historyConfig'] = constraints.historyConfig!.toJson();
+      final effectiveHistory =
+          constraints.historyConfig ?? liveConfig?.historyConfig;
+      if (effectiveHistory != null) {
+        bidiSetup['historyConfig'] = effectiveHistory.toJson();
+      }
+      final effectiveLabels =
+          constraints.labels ??
+          constraints.config?.labels ??
+          liveConfig?.generationConfig?.labels;
+      if (effectiveLabels != null) {
+        bidiSetup['labels'] = effectiveLabels;
       }
       body['bidiGenerateContentSetup'] = bidiSetup;
     }
@@ -134,5 +168,22 @@ class AuthTokensService {
     );
 
     return AuthToken.fromJson(response);
+  }
+
+  static Map<String, dynamic> superGenerationJson(GenerationConfig config) {
+    return GenerationConfig(
+      temperature: config.temperature,
+      topK: config.topK,
+      topP: config.topP,
+      maxOutputTokens: config.maxOutputTokens,
+      responseModalities: config.responseModalities,
+      mediaResolution: config.mediaResolution,
+      seed: config.seed,
+      speechConfig: config.speechConfig,
+      thinkingConfig: config.thinkingConfig,
+      enableAffectiveDialog: config.enableAffectiveDialog,
+      translationConfig: config.translationConfig,
+      audioTranscriptionConfig: config.audioTranscriptionConfig,
+    ).toJson();
   }
 }

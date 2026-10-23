@@ -111,6 +111,73 @@ class LiveMusicClientContent {
   Map<String, dynamic> toJson() => _$LiveMusicClientContentToJson(this);
 }
 
+/// Parameters for setting weighted prompts on an active [LiveMusicSession].
+///
+/// Mirrors `LiveMusicSetWeightedPromptsParameters` in the upstream SDKs.
+class LiveMusicSetWeightedPromptsParameters {
+  /// Weighted prompts to send to the model; weights are normalized to sum to 1.0.
+  final List<WeightedPrompt> weightedPrompts;
+
+  /// Creates [LiveMusicSetWeightedPromptsParameters] with [weightedPrompts].
+  LiveMusicSetWeightedPromptsParameters({required this.weightedPrompts});
+
+  /// Creates [LiveMusicSetWeightedPromptsParameters] from a JSON map.
+  factory LiveMusicSetWeightedPromptsParameters.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final raw =
+        (json['weightedPrompts'] ?? json['weighted_prompts']) as List<dynamic>?;
+    return LiveMusicSetWeightedPromptsParameters(
+      weightedPrompts: raw
+              ?.map(
+                (e) => e is WeightedPrompt
+                    ? e
+                    : WeightedPrompt.fromJson(e as Map<String, dynamic>),
+              )
+              .toList() ??
+          const <WeightedPrompt>[],
+    );
+  }
+
+  /// Converts these parameters to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'weightedPrompts': weightedPrompts.map((e) => e.toJson()).toList(),
+      };
+}
+
+/// Parameters for updating the music generation configuration on an active
+/// [LiveMusicSession].
+///
+/// Mirrors `LiveMusicSetConfigParameters` in the upstream SDKs.
+class LiveMusicSetConfigParameters {
+  /// Music generation configuration to apply. Passing `null` or an empty config
+  /// resets the configuration to server defaults.
+  final LiveMusicGenerationConfig? musicGenerationConfig;
+
+  /// Creates [LiveMusicSetConfigParameters] with [musicGenerationConfig].
+  LiveMusicSetConfigParameters({this.musicGenerationConfig});
+
+  /// Creates [LiveMusicSetConfigParameters] from a JSON map.
+  factory LiveMusicSetConfigParameters.fromJson(Map<String, dynamic> json) {
+    final raw = json['musicGenerationConfig'] ?? json['music_generation_config'];
+    return LiveMusicSetConfigParameters(
+      musicGenerationConfig: raw == null
+          ? null
+          : (raw is LiveMusicGenerationConfig
+                ? raw
+                : LiveMusicGenerationConfig.fromJson(
+                    raw as Map<String, dynamic>,
+                  )),
+    );
+  }
+
+  /// Converts these parameters to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        if (musicGenerationConfig != null)
+          'musicGenerationConfig': musicGenerationConfig!.toJson(),
+      };
+}
+
 /// Messages sent from the client over the Live Music WebSocket.
 @JsonSerializable(includeIfNull: false)
 class LiveMusicClientMessage {

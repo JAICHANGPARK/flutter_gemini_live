@@ -70,41 +70,115 @@ class LiveMusicConnectParameters {
 class LiveMusicSession {
   final WebSocketChannel _channel;
   final void Function(String message)? _logger;
+  final StreamController<LiveMusicServerMessage> _messageController =
+      StreamController<LiveMusicServerMessage>.broadcast(sync: true);
 
   StreamSubscription? _subscription;
 
   /// The setup confirmation message received from the server, if any.
   LiveMusicServerSetupComplete? setupComplete;
 
+  /// Broadcast stream of all [LiveMusicServerMessage] events received on this session.
+  Stream<LiveMusicServerMessage> get messages => _messageController.stream;
+
   LiveMusicSession._(
     this._channel, {
     void Function(String message)? logger,
   }) : _logger = logger;
 
+  void _emitServerMessage(LiveMusicServerMessage message) {
+    if (!_messageController.isClosed) {
+      _messageController.add(message);
+    }
+  }
+
+  void _emitError(Object error, StackTrace stackTrace) {
+    if (!_messageController.isClosed) {
+      _messageController.addError(error, stackTrace);
+    }
+  }
+
+  Future<void> _closeMessageController() async {
+    if (!_messageController.isClosed) {
+      await _messageController.close();
+    }
+  }
+
+  /// Receives music server messages as an async stream.
+  ///
+  /// Mirrors `AsyncMusicSession.receive()` in the upstream Python SDK.
+  Stream<LiveMusicServerMessage> receive() => _messageController.stream;
+
   /// Sets or updates the weighted text prompts to steer music generation.
   ///
+  /// Accepts a `List<WeightedPrompt>`, a
+  /// [LiveMusicSetWeightedPromptsParameters] instance, or a
+  /// `Map<String, dynamic>` (matching both the JS and Python reference SDKs).
   /// At least one prompt is required. The server automatically normalizes
   /// weights across prompts.
-  void setWeightedPrompts(List<WeightedPrompt> weightedPrompts) {
-    if (weightedPrompts.isEmpty) {
+  void setWeightedPrompts(Object promptsOrParams) {
+    final List<WeightedPrompt> resolved;
+    if (promptsOrParams is List<WeightedPrompt>) {
+      resolved = promptsOrParams;
+    } else if (promptsOrParams is LiveMusicSetWeightedPromptsParameters) {
+      resolved = promptsOrParams.weightedPrompts;
+    } else if (promptsOrParams is Map<String, dynamic>) {
+      resolved = LiveMusicSetWeightedPromptsParameters.fromJson(
+        promptsOrParams,
+      ).weightedPrompts;
+    } else {
+      throw ArgumentError.value(
+        promptsOrParams,
+        'promptsOrParams',
+        'Must be a List<WeightedPrompt>, LiveMusicSetWeightedPromptsParameters, or Map<String, dynamic>.',
+      );
+    }
+    if (resolved.isEmpty) {
       throw ArgumentError(
         'Weighted prompts must be set and contain at least one entry.',
       );
     }
     _send(
       LiveMusicClientMessage(
-        clientContent: LiveMusicClientContent(weightedPrompts: weightedPrompts),
+        clientContent: LiveMusicClientContent(weightedPrompts: resolved),
       ),
     );
   }
 
   /// Sets or updates the music generation configuration (BPM, scale, variance, etc.).
   ///
-  /// Passing an empty config or `null` resets the configuration to server defaults.
-  void setMusicGenerationConfig([LiveMusicGenerationConfig? config]) {
+  /// Accepts either a [LiveMusicGenerationConfig], a
+  /// [LiveMusicSetConfigParameters] instance, or `null` (which resets the
+  /// configuration to server defaults).
+  void setMusicGenerationConfig([Object? config]) {
+    final LiveMusicGenerationConfig resolved;
+    if (config == null) {
+      resolved = LiveMusicGenerationConfig();
+    } else if (config is LiveMusicGenerationConfig) {
+      resolved = config;
+    } else if (config is LiveMusicSetConfigParameters) {
+      resolved = config.musicGenerationConfig ?? LiveMusicGenerationConfig();
+    } else if (config is Map<String, dynamic>) {
+      if (config.containsKey('musicGenerationConfig') ||
+          config.containsKey('music_generation_config')) {
+        resolved =
+            LiveMusicSetConfigParameters.fromJson(
+              config,
+            ).musicGenerationConfig ??
+            LiveMusicGenerationConfig();
+      } else {
+        resolved = LiveMusicGenerationConfig.fromJson(config);
+      }
+    } else {
+      throw ArgumentError.value(
+        config,
+        'config',
+        'Must be a LiveMusicGenerationConfig, LiveMusicSetConfigParameters, Map<String, dynamic>, or null.',
+      );
+    }
     _send(
       LiveMusicClientMessage(
-        musicGenerationConfig: config ?? LiveMusicGenerationConfig(),
+        musicGenerationConfig: resolved,
       ),
     );
   }
@@ -139,6 +213,7 @@ class LiveMusicSession {
 
   /// Terminates the music generation WebSocket session.
   Future<void> close() async {
+    await _closeMessageController();
     await _subscription?.cancel();
     await _channel.sink.close();
   }
@@ -150,7 +225,7 @@ class LiveMusicSession {
 
 /// Service for connecting to Gemini Realtime Music generation (Lyria Live).
 class LiveMusicService {
-  static const _sdkVersion = '2.32.0';
+  static const _sdkVersion = '2.33.0';
 
   /// The Gemini API key used for authentication.
   final String apiKey;
@@ -249,6 +324,7 @@ class LiveMusicService {
                 }
               }
               if (sessionResolved) {
+                session._emitServerMessage(message);
                 params.callbacks.onMessage?.call(message);
               } else {
                 messageQueue.add(message);
@@ -261,6 +337,7 @@ class LiveMusicService {
           if (!setupCompleter.isCompleted) {
             setupCompleter.completeError(error, stackTrace);
           }
+          session._emitError(error, stackTrace);
           params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
@@ -272,6 +349,7 @@ class LiveMusicService {
               StateError('WebSocket closed before setup completed.'),
             );
           }
+          unawaited(session._closeMessageController());
           params.callbacks.onClose?.call(
             channel.closeCode,
             channel.closeReason,
@@ -301,6 +379,7 @@ class LiveMusicService {
 
       sessionResolved = true;
       for (final msg in messageQueue) {
+        session._emitServerMessage(msg);
         params.callbacks.onMessage?.call(msg);
       }
       messageQueue.clear();

@@ -400,9 +400,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.32.0 dart/9.9',
+          'google-genai-sdk/2.33.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.32.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.33.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -997,6 +997,189 @@ void main() {
       );
     });
 
+    test('upstream parity: LiveConnectConfig, CallableTool, LiveSession.sessionId/receive, and LiveMusic parameter classes', () async {
+      // 1. LiveConnectConfig in LiveConnectParameters & CallableTool
+      final callable = _TestCallableTool();
+      final params = LiveConnectParameters(
+        model: 'gemini-3.8-live-preview',
+        config: LiveConnectConfig(
+          temperature: 0.3,
+          speechConfig: 'Aoede',
+          systemInstruction: 'You are a helpful AI.',
+          tools: [
+            Tool(googleSearch: const GoogleSearch()),
+            callable,
+          ],
+          sessionResumption: SessionResumptionConfig(handle: 'res-123'),
+          proactivity: ProactivityConfig(proactiveAudio: true),
+          historyConfig: HistoryConfig(initialHistoryInClientContent: true),
+          generationConfig: GenerationConfig(maxOutputTokens: 512),
+        ),
+      );
+
+      final setupMsg = await LiveService.buildSetupMessageAsync(params);
+      expect(
+        setupMsg.setup?.systemInstruction?.parts?.first.text,
+        'You are a helpful AI.',
+      );
+      expect(setupMsg.setup?.generationConfig?.temperature, 0.3);
+      expect(setupMsg.setup?.generationConfig?.maxOutputTokens, 512);
+      expect(
+        setupMsg
+            .setup
+            ?.generationConfig
+            ?.speechConfig
+            ?.voiceConfig
+            ?.prebuiltVoiceConfig
+            ?.voiceName,
+        'Aoede',
+      );
+      expect(setupMsg.setup?.sessionResumption?.handle, 'res-123');
+      expect(setupMsg.setup?.proactivity?.proactiveAudio, true);
+      expect(
+        setupMsg.setup?.historyConfig?.initialHistoryInClientContent,
+        true,
+      );
+      expect(setupMsg.setup?.tools, hasLength(2));
+      expect(
+        setupMsg.setup?.tools?[1].functionDeclarations?.first.name,
+        'callable_fn',
+      );
+      final callParts = await callable.callTool([
+        FunctionCall(id: 'c1', name: 'callable_fn', args: const {'x': 1}),
+      ]);
+      expect(callParts.first.functionResponse?.name, 'callable_fn');
+
+      // 2. LiveSession.sessionId and receive()
+      final channel = FakeWebSocketChannel();
+      final session = LiveSession.forTesting(channel);
+      channel.emit(
+        jsonEncode({
+          'setupComplete': {'sessionId': 'sess-abc-999'},
+        }),
+      );
+      expect(session.sessionId, 'sess-abc-999');
+
+      final turnFuture = session.receive().toList();
+      channel.emit(
+        jsonEncode({
+          'serverContent': {
+            'modelTurn': {
+              'parts': [
+                {'text': 'Chunk 1'},
+              ],
+            },
+            'turnComplete': false,
+          },
+        }),
+      );
+      channel.emit(
+        jsonEncode({
+          'serverContent': {
+            'modelTurn': {
+              'parts': [
+                {'text': 'Chunk 2'},
+              ],
+            },
+            'turnComplete': true,
+          },
+        }),
+      );
+      final turnMessages = await turnFuture;
+      expect(turnMessages, hasLength(2));
+      expect(turnMessages.last.serverContent?.turnComplete, isTrue);
+
+      // 3. LiveSendRealtimeInputParameters.media & LiveMusic parameter classes
+      final rtParams = LiveSendRealtimeInputParameters(
+        media: Blob.fromBytes(bytes: [1, 2], mimeType: 'audio/pcm'),
+      );
+      expect(rtParams.media?.mimeType, 'audio/pcm');
+
+      final wpParams = LiveMusicSetWeightedPromptsParameters(
+        weightedPrompts: [WeightedPrompt(text: 'Jazz piano', weight: 1.0)],
+      );
+      expect(
+        LiveMusicSetWeightedPromptsParameters.fromJson(
+          wpParams.toJson(),
+        ).weightedPrompts.first.text,
+        'Jazz piano',
+      );
+
+      final cfgParams = LiveMusicSetConfigParameters(
+        musicGenerationConfig: LiveMusicGenerationConfig(bpm: 120),
+      );
+      expect(
+        LiveMusicSetConfigParameters.fromJson(
+          cfgParams.toJson(),
+        ).musicGenerationConfig?.bpm,
+        120,
+      );
+
+      // 4. LiveConnectConfig & Map config labels in setup and AuthTokensService
+      final setupFromDict =
+          jsonDecode(
+                jsonEncode(
+                  LiveService.buildSetupMessage(
+                    LiveConnectParameters(
+                      model: 'test_model',
+                      config: const {
+                        'labels': {'team': 'sdk'},
+                      },
+                    ),
+                  ).toJson(),
+                ),
+              )
+              as Map<String, dynamic>;
+      expect(setupFromDict['setup']['model'], 'models/test_model');
+      expect(setupFromDict['setup']['labels'], {'team': 'sdk'});
+      expect(
+        (setupFromDict['setup']['generationConfig'] as Map<String, dynamic>)
+            .containsKey('labels'),
+        isFalse,
+      );
+
+      final setupFromTyped =
+          jsonDecode(
+                jsonEncode(
+                  LiveService.buildSetupMessage(
+                    LiveConnectParameters(
+                      model: 'test_model',
+                      config: LiveConnectConfig(labels: const {'team': 'sdk'}),
+                    ),
+                  ).toJson(),
+                ),
+              )
+              as Map<String, dynamic>;
+      expect(setupFromTyped['setup']['labels'], {'team': 'sdk'});
+
+      final httpClient = RecordingHttpClient(
+        responder: (_) async => http.Response(
+          jsonEncode({'name': 'auth_tokens/tok-labels'}),
+          200,
+        ),
+      );
+      final apiClient = ApiClient(apiKey: 'secret', httpClient: httpClient);
+      final authService = AuthTokensService(apiClient);
+      await authService.create(
+        CreateAuthTokenConfig(
+          liveConnectConstraints: LiveConnectConstraints(
+            model: 'test_model',
+            config: LiveConnectConfig(labels: const {'team': 'sdk'}),
+          ),
+        ),
+      );
+      final tokenReqBody =
+          jsonDecode(httpClient.requests.single.body) as Map<String, dynamic>;
+      expect(
+        tokenReqBody['bidiGenerateContentSetup']['labels'],
+        {'team': 'sdk'},
+      );
+      expect(
+        tokenReqBody['bidiGenerateContentSetup']['generationConfig'],
+        isNull,
+      );
+    });
+
     test('send methods reject invalid realtime mime types', () {
       final channel = FakeWebSocketChannel();
       final session = LiveSession.forTesting(channel);
@@ -1176,3 +1359,28 @@ Future<void> pumpEventQueue() async {
   await Future<void>.delayed(Duration.zero);
   await Future<void>.delayed(Duration.zero);
 }
+
+class _TestCallableTool extends CallableTool {
+  @override
+  FutureOr<Tool> tool() async => Tool(
+    functionDeclarations: [
+      FunctionDeclaration(
+        name: 'callable_fn',
+        description: 'A callable tool declaration',
+      ),
+    ],
+  );
+
+  @override
+  FutureOr<List<Part>> callTool(List<FunctionCall> functionCalls) async => [
+    for (final call in functionCalls)
+      Part(
+        functionResponse: FunctionResponse(
+          id: call.id,
+          name: call.name,
+          response: const {'ok': true},
+        ),
+      ),
+  ];
+}
+

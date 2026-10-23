@@ -16,6 +16,8 @@ class LiveSendClientContentParameters {
 
 /// Parameters for sending realtime media or text input.
 class LiveSendRealtimeInputParameters {
+  /// Realtime media chunk or stream payload.
+  final Blob? media;
   final List<Blob>? mediaChunks;
   final Blob? audio;
   final Blob? video;
@@ -25,6 +27,7 @@ class LiveSendRealtimeInputParameters {
   final bool? activityEnd;
 
   LiveSendRealtimeInputParameters({
+    this.media,
     this.mediaChunks,
     this.audio,
     this.video,

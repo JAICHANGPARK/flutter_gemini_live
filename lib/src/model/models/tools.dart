@@ -543,3 +543,28 @@ class ComputerUse {
   Map<String, dynamic> toJson() => _$ComputerUseToJson(this);
 }
 
+/// Configuration options for a [CallableTool].
+class CallableToolConfig {
+  /// Creates a [CallableToolConfig].
+  const CallableToolConfig();
+
+  /// Creates a [CallableToolConfig] from a JSON map.
+  factory CallableToolConfig.fromJson(Map<String, dynamic> json) =>
+      const CallableToolConfig();
+
+  /// Converts this configuration to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{};
+}
+
+/// A tool that provides its [Tool] declaration and can execute [FunctionCall]s.
+///
+/// Mirrors the `CallableTool` interface in the upstream `@google/genai` SDK.
+abstract class CallableTool {
+  /// Returns the [Tool] declaration to include in the session setup.
+  FutureOr<Tool> tool();
+
+  /// Executes [functionCalls] and returns the resulting [Part] list.
+  FutureOr<List<Part>> callTool(List<FunctionCall> functionCalls);
+}
+
+

@@ -67,6 +67,9 @@ class LiveConnectParameters {
   /// Tools and function declarations available to the model.
   final List<Tool>? tools;
 
+  /// Asynchronous [CallableTool] instances provided in `tools`.
+  final List<CallableTool>? callableTools;
+
   /// Configuration for realtime audio/video input and voice activity detection.
   final RealtimeInputConfig? realtimeInputConfig;
 
@@ -136,24 +139,85 @@ class LiveConnectParameters {
   final bool? enableAffectiveDialog;
 
   /// Creates [LiveConnectParameters] for a Gemini Live session.
-  LiveConnectParameters({
+  factory LiveConnectParameters({
+    required String model,
+    LiveCallbacks callbacks = const LiveCallbacks(),
+    Object? config,
+    Object? systemInstruction,
+    List<Object>? tools,
+    RealtimeInputConfig? realtimeInputConfig,
+    SessionResumptionConfig? sessionResumption,
+    ContextWindowCompressionConfig? contextWindowCompression,
+    AudioTranscriptionConfig? inputAudioTranscription,
+    AudioTranscriptionConfig? outputAudioTranscription,
+    ProactivityConfig? proactivity,
+    bool? explicitVadSignal,
+    AvatarConfig? avatarConfig,
+    List<SafetySetting>? safetySettings,
+    HistoryConfig? historyConfig,
+    Map<String, String>? labels,
+    TranslationConfig? translationConfig,
+    List<Modality>? responseModalities,
+    double? temperature,
+    double? topP,
+    int? topK,
+    int? maxOutputTokens,
+    MediaResolution? mediaResolution,
+    int? seed,
+    Object? speechConfig,
+    ThinkingConfig? thinkingConfig,
+    bool? enableAffectiveDialog,
+  }) {
+    final parsedConfig = _parseConnectConfig(config);
+    return LiveConnectParameters._(
+      model: model,
+      callbacks: callbacks,
+      config: parsedConfig,
+      systemInstruction: systemInstruction,
+      tools: tools,
+      realtimeInputConfig: realtimeInputConfig,
+      sessionResumption: sessionResumption,
+      contextWindowCompression: contextWindowCompression,
+      inputAudioTranscription: inputAudioTranscription,
+      outputAudioTranscription: outputAudioTranscription,
+      proactivity: proactivity,
+      explicitVadSignal: explicitVadSignal,
+      avatarConfig: avatarConfig,
+      safetySettings: safetySettings,
+      historyConfig: historyConfig,
+      labels: labels,
+      translationConfig: translationConfig,
+      responseModalities: responseModalities,
+      temperature: temperature,
+      topP: topP,
+      topK: topK,
+      maxOutputTokens: maxOutputTokens,
+      mediaResolution: mediaResolution,
+      seed: seed,
+      speechConfig: speechConfig,
+      thinkingConfig: thinkingConfig,
+      enableAffectiveDialog: enableAffectiveDialog,
+    );
+  }
+
+  LiveConnectParameters._({
     required this.model,
     this.callbacks = const LiveCallbacks(),
     this.config,
     Object? systemInstruction,
-    this.tools,
-    this.realtimeInputConfig,
-    this.sessionResumption,
-    this.contextWindowCompression,
-    this.inputAudioTranscription,
-    this.outputAudioTranscription,
-    this.proactivity,
-    this.explicitVadSignal,
-    this.avatarConfig,
-    this.safetySettings,
-    this.historyConfig,
-    this.labels,
-    this.translationConfig,
+    List<Object>? tools,
+    RealtimeInputConfig? realtimeInputConfig,
+    SessionResumptionConfig? sessionResumption,
+    ContextWindowCompressionConfig? contextWindowCompression,
+    AudioTranscriptionConfig? inputAudioTranscription,
+    AudioTranscriptionConfig? outputAudioTranscription,
+    ProactivityConfig? proactivity,
+    bool? explicitVadSignal,
+    AvatarConfig? avatarConfig,
+    List<SafetySetting>? safetySettings,
+    HistoryConfig? historyConfig,
+    Map<String, String>? labels,
+    TranslationConfig? translationConfig,
     this.responseModalities,
     this.temperature,
     this.topP,
@@ -164,8 +228,97 @@ class LiveConnectParameters {
     Object? speechConfig,
     this.thinkingConfig,
     this.enableAffectiveDialog,
-  }) : systemInstruction = _parseSystemInstruction(systemInstruction),
+  }) : systemInstruction =
+           _parseSystemInstruction(systemInstruction) ??
+           (config is LiveConnectConfig ? config.systemInstruction : null),
+       tools =
+           _extractSyncTools(tools) ??
+           (config is LiveConnectConfig ? config.tools : null),
+       callableTools =
+           _extractCallableTools(tools) ??
+           (config is LiveConnectConfig ? config.callableTools : null),
+       realtimeInputConfig =
+           realtimeInputConfig ??
+           (config is LiveConnectConfig ? config.realtimeInputConfig : null),
+       sessionResumption =
+           sessionResumption ??
+           (config is LiveConnectConfig ? config.sessionResumption : null),
+       contextWindowCompression =
+           contextWindowCompression ??
+           (config is LiveConnectConfig
+               ? config.contextWindowCompression
+               : null),
+       inputAudioTranscription =
+           inputAudioTranscription ??
+           (config is LiveConnectConfig
+               ? config.inputAudioTranscription
+               : null),
+       outputAudioTranscription =
+           outputAudioTranscription ??
+           (config is LiveConnectConfig
+               ? config.outputAudioTranscription
+               : null),
+       proactivity =
+           proactivity ??
+           (config is LiveConnectConfig ? config.proactivity : null),
+       explicitVadSignal =
+           explicitVadSignal ??
+           (config is LiveConnectConfig ? config.explicitVadSignal : null),
+       avatarConfig =
+           avatarConfig ??
+           (config is LiveConnectConfig ? config.avatarConfig : null),
+       safetySettings =
+           safetySettings ??
+           (config is LiveConnectConfig ? config.safetySettings : null),
+       historyConfig =
+           historyConfig ??
+           (config is LiveConnectConfig ? config.historyConfig : null),
+       labels =
+           labels ??
+           config?.labels ??
+           (config is LiveConnectConfig
+               ? config.generationConfig?.labels
+               : null),
+       translationConfig = translationConfig ?? config?.translationConfig,
        speechConfig = _parseSpeechConfig(speechConfig);
+
+  static GenerationConfig? _parseConnectConfig(Object? value) {
+    if (value == null) return null;
+    if (value is GenerationConfig) return value;
+    if (value is Map<String, dynamic>) {
+      return LiveConnectConfig.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'config',
+      'Must be a LiveConnectConfig, GenerationConfig, or Map<String, dynamic>.',
+    );
+  }
+
+  static List<Tool>? _extractSyncTools(List<Object>? rawTools) {
+    if (rawTools == null) return null;
+    final list = <Tool>[];
+    for (final item in rawTools) {
+      if (item is Tool) {
+        list.add(item);
+      } else if (item is Map<String, dynamic>) {
+        list.add(Tool.fromJson(item));
+      } else if (item is! CallableTool) {
+        throw ArgumentError.value(
+          item,
+          'tools',
+          'Each tool must be a Tool, CallableTool, or Map<String, dynamic>.',
+        );
+      }
+    }
+    return list;
+  }
+
+  static List<CallableTool>? _extractCallableTools(List<Object>? rawTools) {
+    if (rawTools == null) return null;
+    final list = rawTools.whereType<CallableTool>().toList();
+    return list.isEmpty ? null : list;
+  }
 
   static Content? _parseSystemInstruction(Object? value) {
     if (value == null) return null;
@@ -219,7 +372,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket.
 class LiveService {
-  static const _sdkVersion = '2.32.0';
+  static const _sdkVersion = '2.33.0';
 
   /// The Gemini Developer API key or ephemeral client auth token.
   final String apiKey;
@@ -278,9 +431,14 @@ class LiveService {
     LiveConnectParameters params,
   ) {
     final config = params.config;
+    final nestedGen =
+        config is LiveConnectConfig ? config.generationConfig : null;
     final effectiveTranslationConfig =
-        params.translationConfig ?? config?.translationConfig;
-    final effectiveSpeechConfig = params.speechConfig ?? config?.speechConfig;
+        params.translationConfig ??
+        config?.translationConfig ??
+        nestedGen?.translationConfig;
+    final effectiveSpeechConfig =
+        params.speechConfig ?? config?.speechConfig ?? nestedGen?.speechConfig;
     if (effectiveSpeechConfig?.multiSpeakerVoiceConfig != null) {
       throw UnsupportedError(
         'multiSpeakerVoiceConfig is not supported in the live API.',
@@ -288,26 +446,41 @@ class LiveService {
     }
 
     final responseModalities =
-        params.responseModalities ?? config?.responseModalities;
+        params.responseModalities ??
+        config?.responseModalities ??
+        nestedGen?.responseModalities;
 
     return GenerationConfig(
-      temperature: params.temperature ?? config?.temperature,
-      topK: params.topK ?? config?.topK,
-      topP: params.topP ?? config?.topP,
-      maxOutputTokens: params.maxOutputTokens ?? config?.maxOutputTokens,
+      temperature:
+          params.temperature ?? config?.temperature ?? nestedGen?.temperature,
+      topK: params.topK ?? config?.topK ?? nestedGen?.topK,
+      topP: params.topP ?? config?.topP ?? nestedGen?.topP,
+      maxOutputTokens:
+          params.maxOutputTokens ??
+          config?.maxOutputTokens ??
+          nestedGen?.maxOutputTokens,
       responseModalities:
           (responseModalities != null && responseModalities.isNotEmpty)
           ? responseModalities
           : const [Modality.AUDIO],
-      mediaResolution: params.mediaResolution ?? config?.mediaResolution,
-      seed: params.seed ?? config?.seed,
+      mediaResolution:
+          params.mediaResolution ??
+          config?.mediaResolution ??
+          nestedGen?.mediaResolution,
+      seed: params.seed ?? config?.seed ?? nestedGen?.seed,
       speechConfig: effectiveSpeechConfig,
-      thinkingConfig: params.thinkingConfig ?? config?.thinkingConfig,
+      thinkingConfig:
+          params.thinkingConfig ??
+          config?.thinkingConfig ??
+          nestedGen?.thinkingConfig,
       enableAffectiveDialog:
-          params.enableAffectiveDialog ?? config?.enableAffectiveDialog,
+          params.enableAffectiveDialog ??
+          config?.enableAffectiveDialog ??
+          nestedGen?.enableAffectiveDialog,
       translationConfig: effectiveTranslationConfig,
-      audioTranscriptionConfig: config?.audioTranscriptionConfig,
-      labels: config?.labels,
+      audioTranscriptionConfig:
+          config?.audioTranscriptionConfig ??
+          nestedGen?.audioTranscriptionConfig,
     );
   }
 
@@ -325,8 +498,30 @@ class LiveService {
     return 'models/$model';
   }
 
+  /// Resolves any asynchronous [CallableTool] instances in [params] and builds
+  /// the initial [LiveClientMessage] setup payload.
+  static Future<LiveClientMessage> buildSetupMessageAsync(
+    LiveConnectParameters params,
+  ) async {
+    final callables = params.callableTools;
+    if (callables == null || callables.isEmpty) {
+      return buildSetupMessage(params);
+    }
+    final resolvedFromCallables = await Future.wait(
+      callables.map((ct) => Future<Tool>.value(ct.tool())),
+    );
+    final mergedTools = <Tool>[
+      ...(params.tools ?? const <Tool>[]),
+      ...resolvedFromCallables,
+    ];
+    return buildSetupMessage(params, resolvedToolsOverride: mergedTools);
+  }
+
   /// Builds and validates the initial [LiveClientMessage] setup payload for [params].
-  static LiveClientMessage buildSetupMessage(LiveConnectParameters params) {
+  static LiveClientMessage buildSetupMessage(
+    LiveConnectParameters params, {
+    List<Tool>? resolvedToolsOverride,
+  }) {
     if (params.sessionResumption?.transparent == true) {
       throw UnsupportedError(
         'transparent parameter is not supported in Gemini API.',
@@ -345,7 +540,8 @@ class LiveService {
       throw _unsupportedSafetyMethodError();
     }
 
-    validateTools(params.tools);
+    final effectiveTools = resolvedToolsOverride ?? params.tools;
+    validateTools(effectiveTools);
 
     final modelName = normalizeModelName(params.model);
 
@@ -354,7 +550,11 @@ class LiveService {
         model: modelName,
         generationConfig: _normalizeGenerationConfig(params),
         systemInstruction: params.systemInstruction,
-        tools: params.tools,
+        tools: (effectiveTools != null && effectiveTools.isEmpty &&
+                params.tools == null &&
+                resolvedToolsOverride == null)
+            ? null
+            : effectiveTools,
         realtimeInputConfig: params.realtimeInputConfig,
         sessionResumption: params.sessionResumption,
         contextWindowCompression: params.contextWindowCompression,
@@ -546,6 +746,7 @@ class LiveService {
                 }
               }
               if (sessionResolved) {
+                session._emitServerMessage(message);
                 params.callbacks.onMessage?.call(message);
               } else {
                 messageQueue.add(message);
@@ -558,12 +759,14 @@ class LiveService {
           if (!setupCompleter.isCompleted) {
             setupCompleter.completeError(error, stackTrace);
           }
+          session._emitError(error, stackTrace);
           params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
           logger?.call(
             '🔒 WebSocket connection closed (code: ${channel.closeCode}, reason: ${channel.closeReason})',
           );
+          unawaited(session._closeMessageController());
           params.callbacks.onClose?.call(
             channel.closeCode,
             channel.closeReason,
@@ -574,7 +777,7 @@ class LiveService {
       );
 
       params.callbacks.onOpen?.call();
-      final setupMessage = LiveService.buildSetupMessage(params);
+      final setupMessage = await LiveService.buildSetupMessageAsync(params);
       session.sendMessage(setupMessage);
 
       await setupCompleter.future.timeout(
@@ -588,6 +791,7 @@ class LiveService {
 
       sessionResolved = true;
       for (final message in messageQueue) {
+        session._emitServerMessage(message);
         params.callbacks.onMessage?.call(message);
       }
       messageQueue.clear();
@@ -620,6 +824,8 @@ class TimeoutException implements Exception {
 class LiveSession {
   final WebSocketChannel _channel;
   final void Function(String)? _logger;
+  final StreamController<LiveServerMessage> _messageController =
+      StreamController<LiveServerMessage>.broadcast(sync: true);
 
   /// The setup acknowledgement returned by the server.
   ///
@@ -627,12 +833,86 @@ class LiveSession {
   /// [LiveService.connect].
   LiveServerSetupComplete? setupComplete;
 
+  /// The server-assigned session identifier from [setupComplete], if available.
+  ///
+  /// Mirrors `AsyncSession.session_id` in the upstream Python SDK.
+  String? get sessionId => setupComplete?.sessionId;
+
+  /// Broadcast stream of all [LiveServerMessage] events received on this session.
+  Stream<LiveServerMessage> get messages => _messageController.stream;
+
   LiveSession._(this._channel, {void Function(String)? logger})
     : _logger = logger;
 
   /// Creates a [LiveSession] backed by [channel] for unit testing.
-  factory LiveSession.forTesting(WebSocketChannel channel) =>
-      LiveSession._(channel);
+  factory LiveSession.forTesting(WebSocketChannel channel) {
+    final session = LiveSession._(channel);
+    channel.stream.listen(
+      (data) {
+        final jsonStr = data is String
+            ? data
+            : (data is List<int> ? utf8.decode(data) : null);
+        if (jsonStr != null) {
+          final parsed = LiveServerMessage.fromJson(
+            jsonDecode(jsonStr) as Map<String, dynamic>,
+          );
+          if (parsed.setupComplete != null && session.setupComplete == null) {
+            session.setupComplete = parsed.setupComplete;
+          }
+          session._emitServerMessage(parsed);
+        }
+      },
+      onError: session._emitError,
+      onDone: () => unawaited(session._closeMessageController()),
+    );
+    return session;
+  }
+
+  void _emitServerMessage(LiveServerMessage message) {
+    if (!_messageController.isClosed) {
+      _messageController.add(message);
+    }
+  }
+
+  void _emitError(Object error, StackTrace stackTrace) {
+    if (!_messageController.isClosed) {
+      _messageController.addError(error, stackTrace);
+    }
+  }
+
+  Future<void> _closeMessageController() async {
+    if (!_messageController.isClosed) {
+      await _messageController.close();
+    }
+  }
+
+  /// Receives model responses from the server for the current turn.
+  ///
+  /// Yields incoming [LiveServerMessage] events and completes once a message
+  /// with `serverContent.turnComplete == true` is emitted, matching
+  /// `AsyncSession.receive()` in the upstream Python SDK.
+  Stream<LiveServerMessage> receive() {
+    late final StreamController<LiveServerMessage> controller;
+    StreamSubscription<LiveServerMessage>? subscription;
+    controller = StreamController<LiveServerMessage>(
+      sync: true,
+      onListen: () {
+        subscription = _messageController.stream.listen(
+          (message) {
+            controller.add(message);
+            if (message.serverContent?.turnComplete == true) {
+              unawaited(subscription?.cancel());
+              unawaited(controller.close());
+            }
+          },
+          onError: controller.addError,
+          onDone: () => unawaited(controller.close()),
+        );
+      },
+      onCancel: () => subscription?.cancel(),
+    );
+    return controller.stream;
+  }
 
   /// Sends a raw [LiveClientMessage] over the WebSocket channel.
   void sendMessage(LiveClientMessage message) {
@@ -1014,6 +1294,7 @@ class LiveSession {
 
   /// Closes the WebSocket connection.
   Future<void> close() async {
+    await _closeMessageController();
     await _channel.sink.close();
   }
 

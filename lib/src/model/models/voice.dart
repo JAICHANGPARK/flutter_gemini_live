@@ -433,8 +433,14 @@ enum GeminiLiveVoice {
   /// The official name string sent to Google Gemini API (e.g. "Puck", "Charon").
   final String voiceName;
 
+  /// Alias for [voiceName] matching `VoiceResource.id`.
+  String get id => voiceName;
+
   /// The characteristic tonal style and persona description.
   final String tone;
+
+  /// Alias for [tone] describing the voice's character profile.
+  String get characterDescription => tone;
 
   /// The perceived vocal pitch or gender profile.
   final String gender;

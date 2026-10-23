@@ -87,9 +87,12 @@ class LiveConnectConstraints {
   /// Stream translation settings locked in the ephemeral token.
   final TranslationConfig? translationConfig;
 
+  /// User-defined metadata labels locked in the ephemeral token.
+  final Map<String, String>? labels;
+
   LiveConnectConstraints({
     this.model,
-    this.config,
+    Object? config,
     this.systemInstruction,
     this.tools,
     this.realtimeInputConfig,
@@ -102,12 +105,54 @@ class LiveConnectConstraints {
     this.safetySettings,
     this.historyConfig,
     this.translationConfig,
-  });
+    this.labels,
+  }) : config = _parseConstraintsConfig(config);
 
-  factory LiveConnectConstraints.fromJson(Map<String, dynamic> json) =>
-      _$LiveConnectConstraintsFromJson(json);
+  static GenerationConfig? _parseConstraintsConfig(Object? value) {
+    if (value == null) return null;
+    if (value is GenerationConfig) return value;
+    if (value is Map<String, dynamic>) {
+      return LiveConnectConfig.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'config',
+      'Must be a LiveConnectConfig, GenerationConfig, or Map<String, dynamic>.',
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$LiveConnectConstraintsToJson(this);
+  factory LiveConnectConstraints.fromJson(Map<String, dynamic> json) {
+    final parsed = _$LiveConnectConstraintsFromJson(json);
+    final rawConfig = json['config'];
+    final rawLabels = json['labels'] as Map<String, dynamic>?;
+    return LiveConnectConstraints(
+      model: parsed.model,
+      config: rawConfig is Map<String, dynamic>
+          ? LiveConnectConfig.fromJson(rawConfig)
+          : parsed.config,
+      systemInstruction: parsed.systemInstruction,
+      tools: parsed.tools,
+      realtimeInputConfig: parsed.realtimeInputConfig,
+      sessionResumption: parsed.sessionResumption,
+      contextWindowCompression: parsed.contextWindowCompression,
+      inputAudioTranscription: parsed.inputAudioTranscription,
+      outputAudioTranscription: parsed.outputAudioTranscription,
+      proactivity: parsed.proactivity,
+      avatarConfig: parsed.avatarConfig,
+      safetySettings: parsed.safetySettings,
+      historyConfig: parsed.historyConfig,
+      translationConfig: parsed.translationConfig,
+      labels: rawLabels?.map((k, v) => MapEntry(k, v as String)),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = _$LiveConnectConstraintsToJson(this);
+    if (labels != null) {
+      json['labels'] = labels;
+    }
+    return json;
+  }
 }
 
 /// Configuration parameters for creating an ephemeral authentication token.

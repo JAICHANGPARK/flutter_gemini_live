@@ -153,10 +153,19 @@ class SessionResumptionConfig {
 class SlidingWindow {
   final String? targetTokens;
 
-  SlidingWindow({this.targetTokens});
+  /// Creates a [SlidingWindow] configuration.
+  ///
+  /// [targetTokens] accepts an `int` or `String` token count.
+  SlidingWindow({Object? targetTokens})
+    : targetTokens = targetTokens?.toString();
 
   factory SlidingWindow.fromJson(Map<String, dynamic> json) =>
-      _$SlidingWindowFromJson(json);
+      _$SlidingWindowFromJson({
+        ...json,
+        if ((json['target_tokens'] ?? json['targetTokens']) != null)
+          'target_tokens':
+              (json['target_tokens'] ?? json['targetTokens']).toString(),
+      });
 
   Map<String, dynamic> toJson() => _$SlidingWindowToJson(this);
 }
@@ -167,10 +176,21 @@ class ContextWindowCompressionConfig {
   final String? triggerTokens;
   final SlidingWindow? slidingWindow;
 
-  ContextWindowCompressionConfig({this.triggerTokens, this.slidingWindow});
+  /// Creates a [ContextWindowCompressionConfig].
+  ///
+  /// [triggerTokens] accepts an `int` or `String` token threshold.
+  ContextWindowCompressionConfig({Object? triggerTokens, this.slidingWindow})
+    : triggerTokens = triggerTokens?.toString();
 
   factory ContextWindowCompressionConfig.fromJson(Map<String, dynamic> json) =>
-      _$ContextWindowCompressionConfigFromJson(json);
+      _$ContextWindowCompressionConfigFromJson({
+        ...json,
+        if ((json['trigger_tokens'] ?? json['triggerTokens']) != null)
+          'trigger_tokens':
+              (json['trigger_tokens'] ?? json['triggerTokens']).toString(),
+        if (json['slidingWindow'] != null && json['sliding_window'] == null)
+          'sliding_window': json['slidingWindow'],
+      });
 
   Map<String, dynamic> toJson() => _$ContextWindowCompressionConfigToJson(this);
 }
@@ -426,4 +446,285 @@ class LiveClientSetup {
     return json;
   }
 }
+
+/// Session configuration for Live API connections.
+///
+/// Mirrors `LiveConnectConfig` in the upstream `@google/genai` (JS/TS) and
+/// `google-genai` (Python) SDKs. Combines [GenerationConfig] fields with
+/// session-level settings such as [systemInstruction], [tools],
+/// [realtimeInputConfig], [sessionResumption], [contextWindowCompression],
+/// [inputAudioTranscription], [outputAudioTranscription], [proactivity],
+/// [explicitVadSignal], [avatarConfig], [safetySettings], and [historyConfig].
+class LiveConnectConfig extends GenerationConfig {
+  /// Optional nested generation configuration.
+  final GenerationConfig? generationConfig;
+
+  /// System instruction guiding the model's persona and behavior.
+  final Content? systemInstruction;
+
+  /// Tools and function declarations available to the model.
+  final List<Tool>? tools;
+
+  /// Asynchronous [CallableTool] instances provided in `tools`.
+  final List<CallableTool>? callableTools;
+
+  /// Configuration for realtime audio/video input and voice activity detection.
+  final RealtimeInputConfig? realtimeInputConfig;
+
+  /// Configuration for session resumption across reconnects.
+  final SessionResumptionConfig? sessionResumption;
+
+  /// Configuration for sliding-window context compression in long sessions.
+  final ContextWindowCompressionConfig? contextWindowCompression;
+
+  /// Configuration for user input audio transcription.
+  final AudioTranscriptionConfig? inputAudioTranscription;
+
+  /// Configuration for model output audio transcription.
+  final AudioTranscriptionConfig? outputAudioTranscription;
+
+  /// Proactivity configuration controlling when the model speaks up.
+  final ProactivityConfig? proactivity;
+
+  /// Whether explicit voice activity detection signals are enabled.
+  final bool? explicitVadSignal;
+
+  /// Avatar configuration for visual avatar streaming.
+  final AvatarConfig? avatarConfig;
+
+  /// Safety settings applied to model generation.
+  final List<SafetySetting>? safetySettings;
+
+  /// Configuration for exchanging prior conversation history with the server.
+  final HistoryConfig? historyConfig;
+
+  /// Creates a [LiveConnectConfig] for a Gemini Live session.
+  LiveConnectConfig({
+    this.generationConfig,
+    super.temperature,
+    super.topK,
+    super.topP,
+    super.maxOutputTokens,
+    super.responseModalities,
+    super.mediaResolution,
+    super.seed,
+    Object? speechConfig,
+    super.thinkingConfig,
+    super.enableAffectiveDialog,
+    super.translationConfig,
+    super.audioTranscriptionConfig,
+    super.labels,
+    Object? systemInstruction,
+    List<Object>? tools,
+    this.realtimeInputConfig,
+    this.sessionResumption,
+    this.contextWindowCompression,
+    this.inputAudioTranscription,
+    this.outputAudioTranscription,
+    this.proactivity,
+    this.explicitVadSignal,
+    this.avatarConfig,
+    this.safetySettings,
+    this.historyConfig,
+  }) : systemInstruction = _parseConfigSystemInstruction(systemInstruction),
+       tools = _extractTools(tools),
+       callableTools = _extractCallableTools(tools),
+       super(speechConfig: _parseConfigSpeechConfig(speechConfig));
+
+  static Content? _parseConfigSystemInstruction(Object? value) {
+    if (value == null) return null;
+    if (value is Content) return value;
+    if (value is String) {
+      return Content(parts: [Part(text: value)], role: 'user');
+    }
+    if (value is Part) {
+      return Content(parts: [value], role: 'user');
+    }
+    if (value is List<Part>) {
+      return Content(parts: value, role: 'user');
+    }
+    if (value is Map<String, dynamic>) {
+      if (value.containsKey('parts') || value.containsKey('role')) {
+        return Content.fromJson(value);
+      }
+      return Content(parts: [Part.fromJson(value)], role: 'user');
+    }
+    throw ArgumentError.value(
+      value,
+      'systemInstruction',
+      'Must be a Content, String, Part, List<Part>, or Map<String, dynamic>.',
+    );
+  }
+
+  static SpeechConfig? _parseConfigSpeechConfig(Object? value) {
+    if (value == null) return null;
+    if (value is SpeechConfig) return value;
+    if (value is String) {
+      return SpeechConfig(
+        voiceConfig: VoiceConfig(
+          prebuiltVoiceConfig: PrebuiltVoiceConfig(voiceName: value),
+        ),
+      );
+    }
+    if (value is Map<String, dynamic>) {
+      return SpeechConfig.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'speechConfig',
+      'Must be a SpeechConfig, String (voiceName), or Map<String, dynamic>.',
+    );
+  }
+
+  static List<Tool>? _extractTools(List<Object>? rawTools) {
+    if (rawTools == null) return null;
+    final list = <Tool>[];
+    for (final item in rawTools) {
+      if (item is Tool) {
+        list.add(item);
+      } else if (item is Map<String, dynamic>) {
+        list.add(Tool.fromJson(item));
+      } else if (item is! CallableTool) {
+        throw ArgumentError.value(
+          item,
+          'tools',
+          'Each tool must be a Tool, CallableTool, or Map<String, dynamic>.',
+        );
+      }
+    }
+    return list;
+  }
+
+  static List<CallableTool>? _extractCallableTools(List<Object>? rawTools) {
+    if (rawTools == null) return null;
+    final list = rawTools.whereType<CallableTool>().toList();
+    return list.isEmpty ? null : list;
+  }
+
+  /// Creates a [LiveConnectConfig] from a JSON payload.
+  factory LiveConnectConfig.fromJson(Map<String, dynamic> json) {
+    final base = _$GenerationConfigFromJson(json);
+    final rawGen = json['generationConfig'] ?? json['generation_config'];
+    final rawSys = json['systemInstruction'] ?? json['system_instruction'];
+    final rawTools = json['tools'] as List<dynamic>?;
+    final rawRealtime =
+        json['realtimeInputConfig'] ?? json['realtime_input_config'];
+    final rawResumption =
+        json['sessionResumption'] ?? json['session_resumption'];
+    final rawCompression =
+        json['contextWindowCompression'] ?? json['context_window_compression'];
+    final rawInputTrans =
+        json['inputAudioTranscription'] ?? json['input_audio_transcription'];
+    final rawOutputTrans =
+        json['outputAudioTranscription'] ?? json['output_audio_transcription'];
+    final rawProactivity = json['proactivity'];
+    final rawVad = json['explicitVadSignal'] ?? json['explicit_vad_signal'];
+    final rawAvatar = json['avatarConfig'] ?? json['avatar_config'];
+    final rawSafety =
+        (json['safetySettings'] ?? json['safety_settings']) as List<dynamic>?;
+    final rawHistory = json['historyConfig'] ?? json['history_config'];
+    return LiveConnectConfig(
+      generationConfig: rawGen == null
+          ? null
+          : GenerationConfig.fromJson(rawGen as Map<String, dynamic>),
+      temperature: base.temperature,
+      topK: base.topK,
+      topP: base.topP,
+      maxOutputTokens: base.maxOutputTokens,
+      responseModalities: base.responseModalities,
+      mediaResolution: base.mediaResolution,
+      seed: base.seed,
+      speechConfig: base.speechConfig,
+      thinkingConfig: base.thinkingConfig,
+      enableAffectiveDialog: base.enableAffectiveDialog,
+      translationConfig: base.translationConfig,
+      audioTranscriptionConfig: base.audioTranscriptionConfig,
+      labels: base.labels,
+      systemInstruction: rawSys,
+      tools: rawTools?.cast<Object>(),
+      realtimeInputConfig: rawRealtime == null
+          ? null
+          : RealtimeInputConfig.fromJson(rawRealtime as Map<String, dynamic>),
+      sessionResumption: rawResumption == null
+          ? null
+          : SessionResumptionConfig.fromJson(
+              rawResumption as Map<String, dynamic>,
+            ),
+      contextWindowCompression: rawCompression == null
+          ? null
+          : ContextWindowCompressionConfig.fromJson(
+              rawCompression as Map<String, dynamic>,
+            ),
+      inputAudioTranscription: rawInputTrans == null
+          ? null
+          : AudioTranscriptionConfig.fromJson(
+              rawInputTrans as Map<String, dynamic>,
+            ),
+      outputAudioTranscription: rawOutputTrans == null
+          ? null
+          : AudioTranscriptionConfig.fromJson(
+              rawOutputTrans as Map<String, dynamic>,
+            ),
+      proactivity: rawProactivity == null
+          ? null
+          : ProactivityConfig.fromJson(rawProactivity as Map<String, dynamic>),
+      explicitVadSignal: rawVad as bool?,
+      avatarConfig: rawAvatar == null
+          ? null
+          : AvatarConfig.fromJson(rawAvatar as Map<String, dynamic>),
+      safetySettings: rawSafety
+          ?.map((e) => SafetySetting.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      historyConfig: rawHistory == null
+          ? null
+          : HistoryConfig.fromJson(rawHistory as Map<String, dynamic>),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      if (generationConfig != null) ...generationConfig!.toJson(),
+      ...super.toJson(),
+    };
+    if (systemInstruction != null) {
+      json['systemInstruction'] = systemInstruction!.toJson();
+    }
+    if (tools != null) {
+      json['tools'] = tools!.map((t) => t.toJson()).toList();
+    }
+    if (realtimeInputConfig != null) {
+      json['realtimeInputConfig'] = realtimeInputConfig!.toJson();
+    }
+    if (sessionResumption != null) {
+      json['sessionResumption'] = sessionResumption!.toJson();
+    }
+    if (contextWindowCompression != null) {
+      json['contextWindowCompression'] = contextWindowCompression!.toJson();
+    }
+    if (inputAudioTranscription != null) {
+      json['inputAudioTranscription'] = inputAudioTranscription!.toJson();
+    }
+    if (outputAudioTranscription != null) {
+      json['outputAudioTranscription'] = outputAudioTranscription!.toJson();
+    }
+    if (proactivity != null) {
+      json['proactivity'] = proactivity!.toJson();
+    }
+    if (explicitVadSignal != null) {
+      json['explicitVadSignal'] = explicitVadSignal;
+    }
+    if (avatarConfig != null) {
+      json['avatarConfig'] = avatarConfig!.toJson();
+    }
+    if (safetySettings != null) {
+      json['safetySettings'] = safetySettings!.map((s) => s.toJson()).toList();
+    }
+    if (historyConfig != null) {
+      json['historyConfig'] = historyConfig!.toJson();
+    }
+    return json;
+  }
+}
+
 
