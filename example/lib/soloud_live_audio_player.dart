@@ -21,6 +21,9 @@ class SoloudLiveAudioPlayer {
   /// Initializes the audio engine.
   Future<void> init() => _impl.init();
 
+  /// Sets real-time vocal pitch shift (`1.0` = original, `1.15` = +2.4 semitones anime voice).
+  void setPitchShift(double shift) => _impl.setPitchShift(shift);
+
   /// Appends a base64-encoded PCM chunk received from Gemini Live or Lyria.
   void appendBase64Chunk(String base64Chunk) =>
       _impl.appendBase64Chunk(base64Chunk);

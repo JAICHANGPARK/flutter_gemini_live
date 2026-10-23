@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
@@ -20,11 +21,16 @@ class LiveStreamPlayerImpl {
   bool _isPlaying = false;
   final List<web.AudioBufferSourceNode> _activeSources = [];
   Float32List? _latestWave;
+  double _pitchShift = 1.0;
 
   LiveStreamPlayerImpl({this.sampleRate = 24000, dynamic channels})
     : channels = channels is int ? channels : 1;
 
   bool get isPlaying => _isPlaying;
+
+  void setPitchShift(double shift) {
+    _pitchShift = shift.clamp(0.6, 1.8);
+  }
 
   Future<void> init() async {
     try {
@@ -106,6 +112,9 @@ class LiveStreamPlayerImpl {
 
       final source = ctx.createBufferSource();
       source.buffer = audioBuffer;
+      if ((_pitchShift - 1.0).abs() > 0.01) {
+        source.detune.value = 1200.0 * (math.log(_pitchShift) / math.ln2);
+      }
       final analyser = _analyser;
       if (analyser != null) {
         source.connect(analyser);

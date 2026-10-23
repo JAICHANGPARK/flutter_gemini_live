@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'api_key_store.dart';
 import 'app_settings_dialog.dart';
 import 'app_translations.dart';
+import 'examples/anime_vn_navigator/ui/anime_vn_navigator_screen.dart';
 import 'examples/chat/ui/chat/chat_screen.dart';
 import 'examples/function_calling/ui/function_calling/function_calling_screen.dart';
 import 'examples/live_api/ui/live_api/live_api_screen.dart';
@@ -102,9 +103,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _openDemoPage(BuildContext context, Widget page) {
+  void _openDemoPage(
+    BuildContext context,
+    Widget page, {
+    bool allowWithoutApiKey = false,
+  }) {
     final t = AppLanguageController.instance.t;
-    if (!ApiKeyStore.hasApiKey) {
+    if (!allowWithoutApiKey && !ApiKeyStore.hasApiKey) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(t.apiKeyMissingWarning),
@@ -357,6 +362,15 @@ class _HomePageState extends State<HomePage> {
     return [
       _buildDemoCard(
         context: context,
+        title: t.animeVnTitle,
+        subtitle: t.animeVnSubtitle,
+        icon: Icons.favorite_rounded,
+        color: const Color(0xFFEC4899),
+        page: const AnimeVnNavigatorPage(),
+        allowWithoutApiKey: true,
+      ),
+      _buildDemoCard(
+        context: context,
         title: t.liveTranslationTitle,
         subtitle: t.liveTranslationSubtitle,
         icon: Icons.translate_rounded,
@@ -594,6 +608,7 @@ class _HomePageState extends State<HomePage> {
     required IconData icon,
     required Color color,
     required Widget page,
+    bool allowWithoutApiKey = false,
   }) {
     return Card(
       elevation: 1.5,
@@ -607,7 +622,11 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       child: InkWell(
-        onTap: () => _openDemoPage(context, page),
+        onTap: () => _openDemoPage(
+          context,
+          page,
+          allowWithoutApiKey: allowWithoutApiKey,
+        ),
         borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

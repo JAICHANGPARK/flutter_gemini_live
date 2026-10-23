@@ -829,6 +829,32 @@ class AppTranslations {
         return 'Cancel';
     }
   }
+
+  String get animeVnTitle {
+    switch (language) {
+      case AppLanguage.ko:
+        return '🌸 도키메키☆Gemini Live (미연시 일본어 보이스 내비게이터)';
+      case AppLanguage.ja:
+        return '🌸 ときめき☆Gemini Live (美少女AIボイスナビゲーター)';
+      case AppLanguage.zh:
+        return '🌸 心动☆Gemini Live (美少女视觉小说语音导航)';
+      case AppLanguage.en:
+        return '🌸 Tokimeki☆Gemini Live (Anime Visual Novel Voice Navigator)';
+    }
+  }
+
+  String get animeVnSubtitle {
+    switch (language) {
+      case AppLanguage.ko:
+        return '살아 움직이는 일본 미소녀 히카리(ヒカリ)가 일본어 음성·립싱크·감정 변화와 함께 패키지를 소개하는 미연시 예제';
+      case AppLanguage.ja:
+        return '生きているように動く美少女「ヒカリ」が日本語ボイス・口パク・非同期ツール呼び出しでSDKを解説するノベルゲーム';
+      case AppLanguage.zh:
+        return '栩栩如生的日本美少女“光(Hikari)”用日语语音、实时口型同步与工具调用为您讲解SDK';
+      case AppLanguage.en:
+        return 'Live2D-style animated anime heroine Hikari explains flutter_gemini_live in Japanese voice with real-time lip-sync & tool calls.';
+    }
+  }
 }
 
 /// Inherited widget for reactive language propagation down the widget tree.

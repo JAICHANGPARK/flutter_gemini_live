@@ -18,6 +18,7 @@ class LiveStreamPlayerImpl {
   Float32List? _latestWave;
   Float32List? _latestFft;
   bool _turnIsEnded = false;
+  double _pitchShift = 1.0;
 
   LiveStreamPlayerImpl({this.sampleRate = 24000, dynamic channels})
     : channels = channels is Channels
@@ -56,8 +57,36 @@ class LiveStreamPlayerImpl {
         });
       } catch (_) {}
       _isInitialized = true;
+      _applyPitchShiftFilter();
     } catch (e) {
       debugPrint('SoLoud init error: $e');
+    }
+  }
+
+  /// Sets real-time vocal pitch shift (`1.0` = original, `1.15` = +2.4 semitones cute anime voice).
+  void setPitchShift(double shift) {
+    _pitchShift = shift.clamp(0.6, 1.8);
+    _applyPitchShiftFilter();
+  }
+
+  void _applyPitchShiftFilter() {
+    if (!_isInitialized || !SoLoud.instance.isInitialized) return;
+    try {
+      final filter = SoLoud.instance.filters.pitchShiftFilter;
+      if ((_pitchShift - 1.0).abs() < 0.01) {
+        if (filter.isActive) {
+          filter.shift.value = 1.0;
+          filter.deactivate();
+        }
+      } else {
+        if (!filter.isActive) {
+          filter.activate();
+        }
+        filter.wet.value = 1.0;
+        filter.shift.value = _pitchShift;
+      }
+    } catch (e) {
+      debugPrint('SoLoud pitchShiftFilter error: $e');
     }
   }
 
