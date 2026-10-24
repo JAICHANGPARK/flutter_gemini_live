@@ -89,13 +89,20 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
   double _bustSpringVel = 0.0;
   double _prevBodyY = 0.0;
 
-  // ZZZ Volume-Preserving Squash & Stretch Spring
+  // Per-Heroine Squash & Stretch Springs & Motion Timers
   double _squashSpringPos = 0.0;
   double _squashSpringVel = 0.0;
+  double _hikariSquashPos = 0.0;
+  double _hikariSquashVel = 0.0;
+  double _reinaSquashPos = 0.0;
+  double _reinaSquashVel = 0.0;
 
-  // Triggered stage motion state
+  // Triggered stage motion state (per heroine & global)
   int _lastHandledMotionTick = 0;
-  double _motionStartTime = -10.0;
+  int _lastHandledHikariMotionTick = 0;
+  int _lastHandledReinaMotionTick = 0;
+  double _hikariMotionStartTime = -10.0;
+  double _reinaMotionStartTime = -10.0;
   VnStageMotion _activeMotion = VnStageMotion.idle;
   VnCharacterEmotion _lastEmotion = VnCharacterEmotion.normal;
   VnHeroineCharacter _lastHeroine = VnHeroineCharacter.reina;
@@ -105,9 +112,11 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
   double _cameraDutchAngle = 0.0;
   Offset _cameraFocusOffset = Offset.zero;
 
-  // Heart burst particles on headpat / affection gain
-  int _lastHandledHeartTick = 0;
-  final List<_FloatingHeartParticle> _hearts = [];
+  // Per-Heroine Heart burst particles on headpat / affection gain
+  int _lastHandledHikariHeartTick = 0;
+  int _lastHandledReinaHeartTick = 0;
+  final List<_FloatingHeartParticle> _hikariHearts = [];
+  final List<_FloatingHeartParticle> _reinaHearts = [];
 
   // Interactive pointer / drag parallax (-1..1) & Eye Gaze Tracking
   Offset _pointerParallax = Offset.zero;
@@ -124,7 +133,18 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
   void initState() {
     super.initState();
     _lastHandledMotionTick = widget.viewModel.motionTriggerTick;
-    _lastHandledHeartTick = widget.viewModel.heartBurstTick;
+    _lastHandledHikariMotionTick = widget.viewModel.motionTickFor(
+      VnHeroineCharacter.hikari,
+    );
+    _lastHandledReinaMotionTick = widget.viewModel.motionTickFor(
+      VnHeroineCharacter.reina,
+    );
+    _lastHandledHikariHeartTick = widget.viewModel.heartBurstTickFor(
+      VnHeroineCharacter.hikari,
+    );
+    _lastHandledReinaHeartTick = widget.viewModel.heartBurstTickFor(
+      VnHeroineCharacter.reina,
+    );
     _lastEmotion = widget.viewModel.currentEmotion;
     _lastHeroine = widget.viewModel.selectedHeroine;
     _loadAllSpriteTextures();
@@ -185,8 +205,17 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     return emotion.closedAssetPathFor(heroine);
   }
 
-  void _triggerSquashImpulse(double velocityImpulse) {
+  void _triggerSquashImpulse(
+    double velocityImpulse, {
+    VnHeroineCharacter? targetHeroine,
+  }) {
     _squashSpringVel += velocityImpulse;
+    if (targetHeroine == null || targetHeroine == VnHeroineCharacter.hikari) {
+      _hikariSquashVel += velocityImpulse;
+    }
+    if (targetHeroine == null || targetHeroine == VnHeroineCharacter.reina) {
+      _reinaSquashVel += velocityImpulse;
+    }
     _wingFlapVel += velocityImpulse * 1.4;
   }
 
@@ -215,27 +244,52 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
       }
     }
 
-    // 3. Check for newly triggered stage motion (ONLY when user directly taps character or explicit motion tool)
-    if (vm.motionTriggerTick != _lastHandledMotionTick) {
-      _lastHandledMotionTick = vm.motionTriggerTick;
+    // 3. Check for newly triggered stage motion per heroine
+    final hikariMotTick = vm.motionTickFor(VnHeroineCharacter.hikari);
+    if (hikariMotTick != _lastHandledHikariMotionTick) {
+      _lastHandledHikariMotionTick = hikariMotTick;
       _activeMotion = vm.lastMotion;
-      _motionStartTime = nowSec;
-      _headShakeImpulse = _activeMotion == VnStageMotion.flusteredShake
-          ? 0.65
-          : 0.25;
+      _hikariMotionStartTime = nowSec;
       _triggerSquashImpulse(
         _activeMotion == VnStageMotion.jump ? 0.85 : 0.45,
+        targetHeroine: VnHeroineCharacter.hikari,
       );
+    }
+
+    final reinaMotTick = vm.motionTickFor(VnHeroineCharacter.reina);
+    if (reinaMotTick != _lastHandledReinaMotionTick) {
+      _lastHandledReinaMotionTick = reinaMotTick;
+      _activeMotion = vm.lastMotion;
+      _reinaMotionStartTime = nowSec;
+      _triggerSquashImpulse(
+        _activeMotion == VnStageMotion.jump ? 0.85 : 0.45,
+        targetHeroine: VnHeroineCharacter.reina,
+      );
+    }
+
+    if (vm.motionTriggerTick != _lastHandledMotionTick) {
+      _lastHandledMotionTick = vm.motionTriggerTick;
+      _headShakeImpulse = _activeMotion == VnStageMotion.flusteredShake
+          ? 0.55
+          : 0.22;
       _triggerBlink(nowSec, doubleBlink: false);
     }
 
-    // 4. Check for affection / headpat heart bursts
-    if (vm.heartBurstTick != _lastHandledHeartTick) {
-      _lastHandledHeartTick = vm.heartBurstTick;
-      _spawnHeartBurst(nowSec);
+    // 4. Check for per-heroine affection / headpat heart bursts
+    final hikariHeartTick = vm.heartBurstTickFor(VnHeroineCharacter.hikari);
+    if (hikariHeartTick != _lastHandledHikariHeartTick) {
+      _lastHandledHikariHeartTick = hikariHeartTick;
+      _spawnHeartBurst(nowSec, VnHeroineCharacter.hikari);
     }
 
-    _hearts.removeWhere((h) => (nowSec - h.spawnTime) > 1.8);
+    final reinaHeartTick = vm.heartBurstTickFor(VnHeroineCharacter.reina);
+    if (reinaHeartTick != _lastHandledReinaHeartTick) {
+      _lastHandledReinaHeartTick = reinaHeartTick;
+      _spawnHeartBurst(nowSec, VnHeroineCharacter.reina);
+    }
+
+    _hikariHearts.removeWhere((h) => (nowSec - h.spawnTime) > 1.8);
+    _reinaHearts.removeWhere((h) => (nowSec - h.spawnTime) > 1.8);
 
     // 5. Smooth pointer parallax & Eye Gaze Tracking
     _smoothedParallax = Offset.lerp(
@@ -344,12 +398,27 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     _bustSpringVel += bustAccel * dt;
     _bustSpringPos = (_bustSpringPos + _bustSpringVel * dt).clamp(-8.0, 8.0);
 
-    // 8d. Volume-Preserving Squash & Stretch Spring (only when explicitly triggered, never during normal speech/clicks)
+    // 8d. Volume-Preserving Squash & Stretch Spring (per-heroine & global)
     const kSquash = 240.0;
     const dSquash = 14.0;
     final squashAccel = -kSquash * _squashSpringPos - dSquash * _squashSpringVel;
     _squashSpringVel += squashAccel * dt;
     _squashSpringPos = (_squashSpringPos + _squashSpringVel * dt).clamp(
+      -0.06,
+      0.06,
+    );
+
+    final hikariSqAccel =
+        -kSquash * _hikariSquashPos - dSquash * _hikariSquashVel;
+    _hikariSquashVel += hikariSqAccel * dt;
+    _hikariSquashPos = (_hikariSquashPos + _hikariSquashVel * dt).clamp(
+      -0.06,
+      0.06,
+    );
+
+    final reinaSqAccel = -kSquash * _reinaSquashPos - dSquash * _reinaSquashVel;
+    _reinaSquashVel += reinaSqAccel * dt;
+    _reinaSquashPos = (_reinaSquashPos + _reinaSquashVel * dt).clamp(
       -0.06,
       0.06,
     );
@@ -410,20 +479,33 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     super.dispose();
   }
 
-  void _spawnHeartBurst(double nowSec) {
-    final rng = math.Random(nowSec.microsecondsSinceEpochSafe);
+  void _spawnHeartBurst(double nowSec, VnHeroineCharacter heroine) {
+    final rng = math.Random(
+      nowSec.microsecondsSinceEpochSafe ^ heroine.index,
+    );
+    final targetList = heroine == VnHeroineCharacter.reina
+        ? _reinaHearts
+        : _hikariHearts;
     for (var i = 0; i < 7; i++) {
-      _hearts.add(
+      targetList.add(
         _FloatingHeartParticle(
           spawnTime: nowSec,
-          dxOffset: (rng.nextDouble() - 0.5) * 160.0,
+          dxOffset: (rng.nextDouble() - 0.5) * 150.0,
           dyStart: -40.0 + (rng.nextDouble() - 0.5) * 60.0,
           speedY: 75.0 + rng.nextDouble() * 55.0,
           scale: 0.75 + rng.nextDouble() * 0.65,
           isTextPopup: i == 0,
+          heroine: heroine,
         ),
       );
     }
+  }
+
+  void _handleHeroineTap(VnHeroineCharacter actor, double rawTime) {
+    _headShakeImpulse = 0.65;
+    _triggerSquashImpulse(0.95, targetHeroine: actor);
+    _triggerBlink(rawTime, doubleBlink: true);
+    widget.viewModel.onHeroineTapped(actor);
   }
 
   @override
@@ -433,53 +515,167 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     final emotion = vm.currentEmotion;
     final rawTime = _elapsedSeconds;
 
-    // Optional ZZZ Stepped Interpolation Mode (12fps "2-koma" anime timing vs 60fps smooth)
+    // Optional Stepped Interpolation Mode (12fps "2-koma" anime timing vs 60fps smooth)
     final t = vm.isSteppedAnimationMode
         ? (rawTime * 12.0).floorToDouble() / 12.0
         : rawTime;
 
-    // Triggered Stage Motion Spring Impulse + ZZZ Volume-Preserving Squash & Stretch
-    double impulseX = 0.0;
-    double impulseY = 0.0;
-    double impulseRotate = 0.0;
-
-    final motionAge = t - _motionStartTime;
-    if (motionAge >= 0.0 && motionAge < 1.15) {
-      final decay = math.exp(-3.8 * motionAge);
-      switch (_activeMotion) {
-        case VnStageMotion.jump:
-          impulseY = -math.sin(motionAge * 14.0).abs() * 28.0 * decay;
-        case VnStageMotion.nod:
-          impulseY = math.sin(motionAge * 16.0) * 13.0 * decay;
-          impulseRotate = math.sin(motionAge * 8.0) * 0.024 * decay;
-        case VnStageMotion.flusteredShake:
-          impulseX = math.sin(motionAge * 38.0) * 15.0 * decay;
-          impulseRotate = math.sin(motionAge * 38.0) * 0.038 * decay;
-        case VnStageMotion.bow:
-          impulseY = math.sin(motionAge * math.pi).clamp(0.0, 1.0) * 22.0;
-          impulseRotate =
-              math.sin(motionAge * math.pi).clamp(0.0, 1.0) * 0.048;
-        case VnStageMotion.tilt:
-          impulseRotate = math.sin(motionAge * 5.0) * 0.058 * decay;
-        case VnStageMotion.idle:
-          break;
-      }
-    }
-
-    // Volume-preserving Squash & Stretch: scaleX = 1 / sqrt(scaleY)
-    final squashStretchY = (1.0 + _squashSpringPos).clamp(0.91, 1.10);
+    // Default squash/stretch values for the Rig Inspector display
+    final activeSquashPos =
+        vm.activeSpeakingHeroine == VnHeroineCharacter.reina
+        ? _reinaSquashPos
+        : _hikariSquashPos;
+    final squashStretchY = (1.0 + activeSquashPos).clamp(0.91, 1.10);
     final squashStretchX = (1.0 / math.sqrt(squashStretchY)).clamp(0.94, 1.06);
-
-    final heroine = vm.selectedHeroine;
-    final activePath = _resolveActiveSpritePath(heroine, emotion, rawTime);
-    final activeGpuImage =
-        _decodedSprites[activePath] ??
-        _decodedSprites[emotion.closedAssetPathFor(heroine)] ??
-        _decodedSprites[emotion.assetPathFor(heroine)];
 
     final screenHeight = MediaQuery.of(context).size.height;
     final charHeight = screenHeight * 0.86;
     final charWidth = charHeight * (768.0 / 1024.0);
+    final isDual = vm.isDualHeroineMode;
+    final activeSpeaker = vm.activeSpeakingHeroine;
+
+    Widget buildHeroineActor(
+      VnHeroineCharacter actor, {
+      required Alignment alignment,
+      required bool isSpeakingThisTurn,
+      required double scaleFactor,
+    }) {
+      final actorLipEnergy = isSpeakingThisTurn ? _lipSyncEnergy : 0.0;
+      final actorEmotion = vm.emotionFor(actor);
+      final actorMotionStart = actor == VnHeroineCharacter.reina
+          ? _reinaMotionStartTime
+          : _hikariMotionStartTime;
+      final actorSquash = actor == VnHeroineCharacter.reina
+          ? _reinaSquashPos
+          : _hikariSquashPos;
+      final actorHearts = actor == VnHeroineCharacter.reina
+          ? _reinaHearts
+          : _hikariHearts;
+
+      double actorImpulseX = 0.0;
+      double actorImpulseY = 0.0;
+      double actorImpulseRotate = 0.0;
+
+      final motionAge = t - actorMotionStart;
+      if (motionAge >= 0.0 && motionAge < 1.15) {
+        final decay = math.exp(-3.8 * motionAge);
+        switch (_activeMotion) {
+          case VnStageMotion.jump:
+            actorImpulseY = -math.sin(motionAge * 14.0).abs() * 28.0 * decay;
+          case VnStageMotion.nod:
+            actorImpulseY = math.sin(motionAge * 16.0) * 13.0 * decay;
+            actorImpulseRotate = math.sin(motionAge * 8.0) * 0.024 * decay;
+          case VnStageMotion.flusteredShake:
+            actorImpulseX = math.sin(motionAge * 38.0) * 15.0 * decay;
+            actorImpulseRotate = math.sin(motionAge * 38.0) * 0.038 * decay;
+          case VnStageMotion.bow:
+            actorImpulseY = math.sin(motionAge * math.pi).clamp(0.0, 1.0) * 22.0;
+            actorImpulseRotate =
+                math.sin(motionAge * math.pi).clamp(0.0, 1.0) * 0.048;
+          case VnStageMotion.tilt:
+            actorImpulseRotate = math.sin(motionAge * 5.0) * 0.058 * decay;
+          case VnStageMotion.idle:
+            break;
+        }
+      }
+
+      final actorScaleY = (1.0 + actorSquash).clamp(0.91, 1.10);
+      final actorScaleX = (1.0 / math.sqrt(actorScaleY)).clamp(0.94, 1.06);
+
+      final spritePath = isSpeakingThisTurn
+          ? _resolveActiveSpritePath(actor, actorEmotion, rawTime)
+          : (_blinkAmount > 0.42
+                ? actorEmotion.blinkAssetPathFor(actor)
+                : actorEmotion.closedAssetPathFor(actor));
+      final gpuImg =
+          _decodedSprites[spritePath] ??
+          _decodedSprites[actorEmotion.closedAssetPathFor(actor)] ??
+          _decodedSprites[actorEmotion.assetPathFor(actor)];
+
+      return Align(
+        alignment: alignment,
+        child: GestureDetector(
+          behavior: HitTestBehavior.deferToChild,
+          onTap: isDual ? null : () => _handleHeroineTap(actor, rawTime),
+          onPanUpdate: (details) {
+            final dx = (details.delta.dx / 60.0).clamp(-0.6, 0.6);
+            final dy = (details.delta.dy / 60.0).clamp(-0.6, 0.6);
+            _pointerParallax = Offset(
+              (_pointerParallax.dx + dx).clamp(-1.0, 1.0),
+              (_pointerParallax.dy + dy).clamp(-0.85, 0.85),
+            );
+          },
+          onPanEnd: (_) {
+            _pointerParallax = Offset.zero;
+          },
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 280),
+            opacity: isSpeakingThisTurn ? 1.0 : 0.88,
+            child: Transform(
+              alignment: Alignment.bottomCenter,
+              transform: Matrix4.identity()
+                ..translateByDouble(
+                  actorImpulseX + _smoothedParallax.dx * 10.0,
+                  actorImpulseY + _smoothedParallax.dy * 5.0,
+                  0.0,
+                  1.0,
+                )
+                ..rotateZ(actorImpulseRotate)
+                ..scaleByDouble(
+                  actorScaleX * scaleFactor,
+                  actorScaleY * scaleFactor,
+                  1.0,
+                  1.0,
+                ),
+              child: SizedBox(
+                width: charWidth,
+                height: charHeight,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (gpuImg != null)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _Live2dMultiPartCharacterPainter(
+                            activeImage: gpuImg,
+                            time:
+                                t +
+                                (actor == VnHeroineCharacter.reina ? 0.7 : 0.0),
+                            lipSyncEnergy: actorLipEnergy,
+                            headYaw: _headYaw,
+                            headPitch: _headPitch,
+                            headRoll: _headRoll,
+                            blinkAmount: _blinkAmount,
+                            hairMidSpringX: _hairMidSpringX,
+                            hairTipSpringX: _hairTipSpringX,
+                            wingFlapPos: _wingFlapPos,
+                            bustSpringY: _bustSpringPos,
+                            parallax: _smoothedParallax,
+                            eyeGaze: _eyeGazeOffset,
+                            affectionPoints: vm.affectionFor(actor),
+                            emotion: actorEmotion,
+                            showRigInspector:
+                                vm.isRigInspectorVisible && isSpeakingThisTurn,
+                          ),
+                        ),
+                      )
+                    else
+                      Image.asset(
+                        spritePath,
+                        fit: BoxFit.contain,
+                        height: charHeight,
+                      ),
+                    for (final h in actorHearts)
+                      _buildHeartParticle(h, rawTime, vm.isKorean),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return MouseRegion(
       onHover: (event) {
@@ -573,92 +769,98 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                   ),
                 ),
 
-                // 3. Option A — 6-Part 2.5D Decomposed Character Rig + Z-Parallax + Squash & Stretch
-                Align(
-                  alignment: widget.characterAlignment,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      _headShakeImpulse = 0.80;
-                      _triggerSquashImpulse(1.65);
-                      _triggerBlink(rawTime, doubleBlink: true);
-                      vm.onCharacterTapped();
-                    },
-                    onPanUpdate: (details) {
-                      final dx = (details.delta.dx / 60.0).clamp(-0.6, 0.6);
-                      final dy = (details.delta.dy / 60.0).clamp(-0.6, 0.6);
-                      _pointerParallax = Offset(
-                        (_pointerParallax.dx + dx).clamp(-1.0, 1.0),
-                        (_pointerParallax.dy + dy).clamp(-0.85, 0.85),
-                      );
-                    },
-                    onPanEnd: (_) {
-                      _pointerParallax = Offset.zero;
-                      _headShakeImpulse = 0.60;
-                      _triggerSquashImpulse(0.85);
-                    },
-                    child: Transform(
-                      alignment: Alignment.bottomCenter,
-                      transform: Matrix4.identity()
-                        ..translateByDouble(
-                          impulseX + _smoothedParallax.dx * 10.0,
-                          impulseY + _smoothedParallax.dy * 5.0,
-                          0.0,
-                          1.0,
-                        )
-                        ..rotateZ(impulseRotate)
-                        ..scaleByDouble(
-                          squashStretchX,
-                          squashStretchY,
-                          1.0,
-                          1.0,
+                // 3. Option A — 6-Part 2.5D Decomposed Character Rig (Dual Heroines or Solo)
+                if (isDual) ...[
+                  // Draw listening heroine slightly behind, and speaking heroine in front!
+                  if (activeSpeaker == VnHeroineCharacter.reina) ...[
+                    buildHeroineActor(
+                      VnHeroineCharacter.hikari,
+                      alignment: const Alignment(-0.52, 1.0),
+                      isSpeakingThisTurn: false,
+                      scaleFactor: 0.90,
+                    ),
+                    buildHeroineActor(
+                      VnHeroineCharacter.reina,
+                      alignment: const Alignment(0.50, 1.0),
+                      isSpeakingThisTurn: true,
+                      scaleFactor: 0.96,
+                    ),
+                  ] else ...[
+                    buildHeroineActor(
+                      VnHeroineCharacter.reina,
+                      alignment: const Alignment(0.50, 1.0),
+                      isSpeakingThisTurn: false,
+                      scaleFactor: 0.90,
+                    ),
+                    buildHeroineActor(
+                      VnHeroineCharacter.hikari,
+                      alignment: const Alignment(-0.52, 1.0),
+                      isSpeakingThisTurn: true,
+                      scaleFactor: 0.96,
+                    ),
+                  ],
+                  // Non-overlapping Left (Hikari) / Right (Reina) Touch Zones in Dual Mode
+                  Positioned.fill(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => _handleHeroineTap(
+                              VnHeroineCharacter.hikari,
+                              rawTime,
+                            ),
+                            onPanUpdate: (details) {
+                              final dx = (details.delta.dx / 60.0).clamp(
+                                -0.6,
+                                0.6,
+                              );
+                              final dy = (details.delta.dy / 60.0).clamp(
+                                -0.6,
+                                0.6,
+                              );
+                              _pointerParallax = Offset(
+                                (_pointerParallax.dx + dx).clamp(-1.0, 1.0),
+                                (_pointerParallax.dy + dy).clamp(-0.85, 0.85),
+                              );
+                            },
+                            onPanEnd: (_) => _pointerParallax = Offset.zero,
+                          ),
                         ),
-                      child: SizedBox(
-                        width: charWidth,
-                        height: charHeight,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          clipBehavior: Clip.none,
-                          children: [
-                            if (activeGpuImage != null)
-                              Positioned.fill(
-                                child: CustomPaint(
-                                  painter: _Live2dMultiPartCharacterPainter(
-                                    activeImage: activeGpuImage,
-                                    time: t,
-                                    lipSyncEnergy: _lipSyncEnergy,
-                                    headYaw: _headYaw,
-                                    headPitch: _headPitch,
-                                    headRoll: _headRoll,
-                                    blinkAmount: _blinkAmount,
-                                    hairMidSpringX: _hairMidSpringX,
-                                    hairTipSpringX: _hairTipSpringX,
-                                    wingFlapPos: _wingFlapPos,
-                                    bustSpringY: _bustSpringPos,
-                                    parallax: _smoothedParallax,
-                                    eyeGaze: _eyeGazeOffset,
-                                    affectionPoints: vm.affectionPoints,
-                                    emotion: emotion,
-                                    showRigInspector: vm.isRigInspectorVisible,
-                                  ),
-                                ),
-                              )
-                            else
-                              Image.asset(
-                                activePath,
-                                fit: BoxFit.contain,
-                                height: charHeight,
-                              ),
-
-                            // Floating Heart Burst & "+好感度 UP!" popups on headpat
-                            for (final h in _hearts)
-                              _buildHeartParticle(h, rawTime),
-                          ],
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => _handleHeroineTap(
+                              VnHeroineCharacter.reina,
+                              rawTime,
+                            ),
+                            onPanUpdate: (details) {
+                              final dx = (details.delta.dx / 60.0).clamp(
+                                -0.6,
+                                0.6,
+                              );
+                              final dy = (details.delta.dy / 60.0).clamp(
+                                -0.6,
+                                0.6,
+                              );
+                              _pointerParallax = Offset(
+                                (_pointerParallax.dx + dx).clamp(-1.0, 1.0),
+                                (_pointerParallax.dy + dy).clamp(-0.85, 0.85),
+                              );
+                            },
+                            onPanEnd: (_) => _pointerParallax = Offset.zero,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ),
+                ] else
+                  buildHeroineActor(
+                    vm.selectedHeroine,
+                    alignment: widget.characterAlignment,
+                    isSpeakingThisTurn: true,
+                    scaleFactor: 1.0,
+                  ),
 
                 // 4. Foreground Sakura Petals & Depth-of-Field Bokeh (Z = +1.5)
                 IgnorePointer(
@@ -859,12 +1061,23 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     );
   }
 
-  Widget _buildHeartParticle(_FloatingHeartParticle h, double nowSec) {
+  Widget _buildHeartParticle(
+    _FloatingHeartParticle h,
+    double nowSec,
+    bool isKorean,
+  ) {
     final age = (nowSec - h.spawnTime).clamp(0.0, 1.8);
     final progress = age / 1.8;
     final opacity = (1.0 - progress).clamp(0.0, 1.0);
     final dy = h.dyStart - age * h.speedY;
     final dx = h.dxOffset + math.sin(age * 6.0 + h.dxOffset) * 12.0;
+    final isReina = h.heroine == VnHeroineCharacter.reina;
+    final badgeColor = isReina
+        ? const Color(0xEEF59E0B)
+        : const Color(0xEEEC4899);
+    final popupText = isReina
+        ? (isKorean ? '🌺 레이나 호감도 UP! +4%' : '🌺 レイナ 好感度 UP! +4%')
+        : (isKorean ? '🌸 히카리 호감도 UP! +4%' : '🌸 ヒカリ 好感度 UP! +4%');
 
     return Positioned(
       top: MediaQuery.of(context).size.height * 0.18 + dy,
@@ -881,19 +1094,22 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xEEEC4899),
+                      color: badgeColor,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Text(
-                      '💖 好感度 UP! +TOKIMEKI',
-                      style: TextStyle(
+                    child: Text(
+                      popupText,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 11,
                       ),
                     ),
                   )
-                : const Text('💖', style: TextStyle(fontSize: 24)),
+                : Text(
+                    isReina ? '🧡' : '💖',
+                    style: const TextStyle(fontSize: 24),
+                  ),
           ),
         ),
       ),
@@ -1320,6 +1536,7 @@ class _FloatingHeartParticle {
   final double speedY;
   final double scale;
   final bool isTextPopup;
+  final VnHeroineCharacter heroine;
 
   const _FloatingHeartParticle({
     required this.spawnTime,
@@ -1328,6 +1545,7 @@ class _FloatingHeartParticle {
     required this.speedY,
     required this.scale,
     required this.isTextPopup,
+    required this.heroine,
   });
 }
 

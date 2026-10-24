@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_tokens_service.dart';
 import 'client/api_client.dart';
 import 'live_service.dart';
+import 'model/models.dart';
 import 'music_service.dart';
 import 'voices_service.dart';
 
@@ -55,6 +56,10 @@ class GoogleGenAI {
   /// API version used by the live module.
   final String apiVersion;
 
+  /// Optional client-level HTTP and WebSocket transport options (`baseUrl`,
+  /// `apiVersion`, `headers`).
+  final HttpOptions? httpOptions;
+
   /// An optional custom HTTP client for making network requests.
   ///
   /// This is useful for advanced scenarios, such as:
@@ -98,20 +103,31 @@ class GoogleGenAI {
   ///
   /// [apiKey] is your Google AI API key, which is required for all requests.
   /// [httpClient] is an optional client to use for making HTTP requests.
+  /// [httpOptions] is an optional [HttpOptions] or `Map<String, dynamic>` for
+  /// configuring `baseUrl`, `apiVersion`, and default `headers`.
   /// [logger] is an optional logging callback for network & WebSocket events.
   GoogleGenAI({
     required this.apiKey,
     this.httpClient,
-    this.apiVersion = 'v1beta',
+    String apiVersion = 'v1beta',
+    Object? httpOptions,
     this.logger,
-  }) {
+  }) : httpOptions = _parseHttpOptions(httpOptions),
+       apiVersion = _parseHttpOptions(httpOptions)?.apiVersion ?? apiVersion {
     // Initialize the internal API client with the provided credentials and HTTP client.
-    _apiClient = ApiClient(apiKey: apiKey, httpClient: httpClient);
+    _apiClient = ApiClient(
+      apiKey: apiKey,
+      baseUrl: this.httpOptions?.baseUrl,
+      apiVersion: this.apiVersion,
+      headers: this.httpOptions?.headers,
+      httpClient: httpClient,
+    );
 
     // Initialize the LiveService, which handles real-time interactions.
     live = LiveService(
       apiKey: apiKey,
-      apiVersion: apiVersion,
+      apiVersion: this.apiVersion,
+      httpOptions: this.httpOptions,
       logger: logger,
     );
 
@@ -120,6 +136,19 @@ class GoogleGenAI {
 
     // Initialize the AuthTokensService for ephemeral token generation.
     authTokens = AuthTokensService(_apiClient);
+  }
+
+  static HttpOptions? _parseHttpOptions(Object? value) {
+    if (value == null) return null;
+    if (value is HttpOptions) return value;
+    if (value is Map<String, dynamic>) {
+      return HttpOptions.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'httpOptions',
+      'Must be an HttpOptions or Map<String, dynamic>.',
+    );
   }
 
   /// Releases any resources held by the client.

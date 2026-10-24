@@ -37,15 +37,12 @@ void main() {
       expect(vm.currentBeatIndex, 0);
       expect(vm.isChoiceOverlayOpen, isFalse);
 
-      // Advancing dialogue steps through beats (0 -> 1 -> 2 -> 3 -> Choice Overlay)
-      vm.advanceDialogue();
-      expect(vm.currentBeatIndex, 1);
-      expect(vm.isChoiceOverlayOpen, isFalse);
-
-      vm.advanceDialogue();
-      expect(vm.currentBeatIndex, 2);
-      vm.advanceDialogue();
-      expect(vm.currentBeatIndex, 3);
+      // Advancing dialogue steps through all beats in Chapter 1 -> Choice Overlay
+      for (var i = 1; i < vm.totalBeatsInChapter; i++) {
+        vm.advanceDialogue();
+        expect(vm.currentBeatIndex, i);
+        expect(vm.isChoiceOverlayOpen, isFalse);
+      }
       expect(vm.currentBeatIndex, vm.totalBeatsInChapter - 1);
 
       // Advancing on the final beat opens the centered choice overlay
@@ -67,8 +64,8 @@ void main() {
       expect(vm.currentScene, VnSceneBackground.sakuraSunset);
 
       // Showcase lookup
-      final toolsShowcase = VnScenarioCatalog.showcaseById('tools');
-      expect(toolsShowcase.topicId, 'tools');
+      final toolsShowcase = VnScenarioCatalog.showcaseById('ch6_tool_declare');
+      expect(toolsShowcase.topicId, 'ch6_tool_declare');
     },
   );
 
@@ -87,8 +84,16 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.textContaining('히카리'), findsWidgets);
-      expect(find.textContaining('STEP 1 / 4'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is Text &&
+              w.data != null &&
+              (w.data!.contains('히카리') || w.data!.contains('ヒカリ')),
+        ),
+        findsWidgets,
+      );
+      expect(find.textContaining('STEP 1 /'), findsWidgets);
       expect(find.text('CHOICE'), findsOneWidget);
       expect(find.text('LOG'), findsOneWidget);
     },

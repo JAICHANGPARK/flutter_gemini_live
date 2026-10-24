@@ -70,13 +70,22 @@ class LiveApiLiveService {
         sessionResumption: enableSessionResumption && sessionHandle != null
             ? SessionResumptionConfig(handle: sessionHandle)
             : null,
-        // Context window compression
+        // Context window compression (supports int or String token counts)
         contextWindowCompression: enableContextCompression
             ? ContextWindowCompressionConfig(
-                triggerTokens: '10000',
-                slidingWindow: SlidingWindow(targetTokens: '5000'),
+                triggerTokens: 10000,
+                slidingWindow: SlidingWindow(targetTokens: 5000),
               )
             : null,
+        // Custom billing / observability labels
+        labels: const {
+          'app': 'gemini_live_example',
+          'screen': 'live_api',
+        },
+        // Session-level HTTP / WebSocket transport options
+        httpOptions: const HttpOptions(
+          headers: {'x-example-screen': 'live_api'},
+        ),
         callbacks: LiveCallbacks(
           onOpen: onOpen,
           onMessage: onMessage,

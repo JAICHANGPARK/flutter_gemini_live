@@ -80,8 +80,9 @@ class AnimeVnViewModel extends ChangeNotifier {
   bool _isConnected = false;
   bool _isConnecting = false;
   bool _isMicRecording = false;
-  // Heroine selection: Hikari (Pure Moe) vs Reina (Shibuya Tech-Gyaru)
+  // Heroine selection: Hikari (Pure Moe) vs Reina (Shibuya Tech-Gyaru) + Dual Stage Mode
   VnHeroineCharacter _selectedHeroine = VnHeroineCharacter.reina;
+  bool _isDualHeroineMode = true;
   bool _isGyaruVoiceStyle = true;
   // Default to heroine's recommended voice ('Autonoe' for Reina, 'Leda' for Hikari)
   String _selectedVoice = GeminiLiveVoice.autonoe.id;
@@ -91,7 +92,20 @@ class AnimeVnViewModel extends ChangeNotifier {
   bool get isMicRecording => _isMicRecording;
   bool get isAiSpeaking => _audio.isAiSpeaking;
   VnHeroineCharacter get selectedHeroine => _selectedHeroine;
-  bool get isGyaruVoiceStyle => _isGyaruVoiceStyle;
+  bool get isDualHeroineMode => _isDualHeroineMode;
+
+  /// Returns the heroine who is speaking the current dialogue beat.
+  /// In Dual Heroine Mode (`_isDualHeroineMode == true`), Reina (Gyaru) and
+  /// Hikari (Pure Moe) take turns beat-by-beat!
+  VnHeroineCharacter get activeSpeakingHeroine {
+    if (!_isDualHeroineMode) return _selectedHeroine;
+    return (_currentBeatIndex % 2 == 0)
+        ? VnHeroineCharacter.reina
+        : VnHeroineCharacter.hikari;
+  }
+
+  bool get isGyaruVoiceStyle =>
+      activeSpeakingHeroine == VnHeroineCharacter.reina || _isGyaruVoiceStyle;
   String get selectedVoice => _selectedVoice;
   double get voicePitchShift => _audio.pitchShift;
 
@@ -104,17 +118,33 @@ class AnimeVnViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> selectHeroine(VnHeroineCharacter heroine) async {
-    if (_selectedHeroine == heroine) {
-      // Even if tapped again, replay current beat with bounce
-      _triggerMotion(VnStageMotion.jump);
+  Future<void> enableDualHeroineMode() async {
+    _isDualHeroineMode = true;
+    final speaker = activeSpeakingHeroine;
+    _selectedHeroine = speaker;
+    _isGyaruVoiceStyle = speaker == VnHeroineCharacter.reina;
+    _audio.setPitchShift(speaker.defaultPitchShift);
+    _refreshCurrentBeatDisplay();
+    notifyListeners();
+    if (_isConnected) {
       speakCurrentBeat();
-      return;
+    } else {
+      _audio.triggerSimulatedSpeechBurst(
+        duration: const Duration(milliseconds: 2400),
+      );
+    }
+  }
+
+  Future<void> selectHeroine(
+    VnHeroineCharacter heroine, {
+    bool soloMode = true,
+  }) async {
+    if (soloMode) {
+      _isDualHeroineMode = false;
     }
     _selectedHeroine = heroine;
     _isGyaruVoiceStyle = heroine == VnHeroineCharacter.reina;
     _audio.setPitchShift(heroine.defaultPitchShift);
-    _triggerMotion(VnStageMotion.jump);
     _heartBurstTick++;
     _refreshCurrentBeatDisplay();
     notifyListeners();
@@ -142,11 +172,18 @@ class AnimeVnViewModel extends ChangeNotifier {
   Timer? _autoAdvanceTimer;
 
   VnCharacterEmotion _currentEmotion = VnCharacterEmotion.happy;
+  VnCharacterEmotion _hikariEmotion = VnCharacterEmotion.normal;
+  VnCharacterEmotion _reinaEmotion = VnCharacterEmotion.happy;
   VnStageMotion _lastMotion = VnStageMotion.jump;
   int _motionTriggerTick = 0;
+  int _hikariMotionTick = 0;
+  int _reinaMotionTick = 0;
   int _heartBurstTick = 0;
+  int _hikariHeartBurstTick = 0;
+  int _reinaHeartBurstTick = 0;
   VnSceneBackground _currentScene = VnSceneBackground.tokyoConf;
-  int _affectionPoints = 70; // 0..100
+  int _hikariAffection = 70; // 0..100
+  int _reinaAffection = 70; // 0..100
 
   late VnSdkShowcaseData _currentShowcase =
       VnScenarioCatalog.chapters.first.showcase;
@@ -155,11 +192,22 @@ class AnimeVnViewModel extends ChangeNotifier {
   bool _isSteppedAnimationMode = false;
 
   VnCharacterEmotion get currentEmotion => _currentEmotion;
+  VnCharacterEmotion emotionFor(VnHeroineCharacter h) =>
+      h == VnHeroineCharacter.reina ? _reinaEmotion : _hikariEmotion;
   VnStageMotion get lastMotion => _lastMotion;
   int get motionTriggerTick => _motionTriggerTick;
+  int motionTickFor(VnHeroineCharacter h) =>
+      h == VnHeroineCharacter.reina ? _reinaMotionTick : _hikariMotionTick;
   int get heartBurstTick => _heartBurstTick;
+  int heartBurstTickFor(VnHeroineCharacter h) => h == VnHeroineCharacter.reina
+      ? _reinaHeartBurstTick
+      : _hikariHeartBurstTick;
   VnSceneBackground get currentScene => _currentScene;
-  int get affectionPoints => _affectionPoints;
+  int get hikariAffectionPoints => _hikariAffection;
+  int get reinaAffectionPoints => _reinaAffection;
+  int affectionFor(VnHeroineCharacter h) =>
+      h == VnHeroineCharacter.reina ? _reinaAffection : _hikariAffection;
+  int get affectionPoints => affectionFor(activeSpeakingHeroine);
 
   int get currentChapterIndex => _currentChapterIndex;
   VnSdkChapter get currentChapter =>
@@ -186,13 +234,19 @@ class AnimeVnViewModel extends ChangeNotifier {
   bool get isKorean =>
       AppLanguageController.instance.currentLanguage == AppLanguage.ko;
 
-  String get defaultSpeakerLabel => isKorean
-      ? '${_selectedHeroine.badgeEmoji} ${_selectedHeroine.nameKo} (${_selectedHeroine.nameJa})'
-      : '${_selectedHeroine.badgeEmoji} ${_selectedHeroine.nameJa}';
+  String get defaultSpeakerLabel {
+    final h = activeSpeakingHeroine;
+    return isKorean
+        ? '${h.badgeEmoji} ${h.nameKo} (${h.nameJa})'
+        : '${h.badgeEmoji} ${h.nameJa}';
+  }
+
   String get userSpeakerLabel => isKorean ? '선배 (You)' : '先輩 (You)';
 
   String _resolveBeatTextJa(VnDialogueBeat beat) {
-    if (_selectedHeroine == VnHeroineCharacter.reina || _isGyaruVoiceStyle) {
+    final speaker = activeSpeakingHeroine;
+    if (speaker == VnHeroineCharacter.reina ||
+        (!_isDualHeroineMode && _isGyaruVoiceStyle)) {
       return VnHeroineCharacter.toGyaruDialogueJa(
         beat.textJa,
         chapterNumber: currentChapter.chapterNumber,
@@ -203,7 +257,9 @@ class AnimeVnViewModel extends ChangeNotifier {
   }
 
   String _resolveBeatTextKo(VnDialogueBeat beat) {
-    if (_selectedHeroine == VnHeroineCharacter.reina || _isGyaruVoiceStyle) {
+    final speaker = activeSpeakingHeroine;
+    if (speaker == VnHeroineCharacter.reina ||
+        (!_isDualHeroineMode && _isGyaruVoiceStyle)) {
       return VnHeroineCharacter.toGyaruDialogueKo(
         beat.textKo,
         chapterNumber: currentChapter.chapterNumber,
@@ -227,9 +283,10 @@ class AnimeVnViewModel extends ChangeNotifier {
   }
 
   String get affectionRankLabelJa {
-    if (_affectionPoints >= 90) return 'Lv.MAX 運命の相棒 💖';
-    if (_affectionPoints >= 75) return 'Lv.4 大好きセンパイ 💕';
-    if (_affectionPoints >= 50) return 'Lv.3 仲良しナビ ✨';
+    final pts = affectionPoints;
+    if (pts >= 90) return 'Lv.MAX 運命の相棒 💖';
+    if (pts >= 75) return 'Lv.4 大好きセンパイ 💕';
+    if (pts >= 50) return 'Lv.3 仲良しナビ ✨';
     return 'Lv.2 はじめまして 🌸';
   }
 
@@ -320,6 +377,11 @@ class AnimeVnViewModel extends ChangeNotifier {
 
     _isSpeakingScriptedBeat = true;
     _currentEmotion = beat.emotion;
+    if (activeSpeakingHeroine == VnHeroineCharacter.reina) {
+      _reinaEmotion = beat.emotion;
+    } else {
+      _hikariEmotion = beat.emotion;
+    }
 
     // Resolve the most recent showcaseOverride up to _currentBeatIndex so the
     // study note card evolves step-by-step with each dialogue beat!
@@ -364,7 +426,11 @@ class AnimeVnViewModel extends ChangeNotifier {
     _isSpeakingScriptedBeat = true;
 
     final useGyaruTone =
-        _selectedHeroine == VnHeroineCharacter.reina || _isGyaruVoiceStyle;
+        activeSpeakingHeroine == VnHeroineCharacter.reina ||
+        (!_isDualHeroineMode && _isGyaruVoiceStyle);
+    if (_isDualHeroineMode) {
+      _audio.setPitchShift(activeSpeakingHeroine.defaultPitchShift);
+    }
 
     final actingDirection = useGyaruTone
         ? switch (beat.emotion) {
@@ -396,6 +462,8 @@ class AnimeVnViewModel extends ChangeNotifier {
       _live.sendText(
         '【アニメ声優演技指示：落ち着いたナレーター声は禁止！$actingDirection、前置きや返事は一切言わず、次の鉤括弧内のセリフだけをそのまま演じて発話してください】：「$spokenJa」',
       );
+    } else if (!_isConnecting && ApiKeyStore.hasApiKey) {
+      unawaited(connectSession(sendInitialGreeting: true));
     } else {
       _audio.triggerSimulatedSpeechBurst(
         duration: const Duration(milliseconds: 2800),
@@ -522,6 +590,14 @@ class AnimeVnViewModel extends ChangeNotifier {
           _isConnected = false;
           _isConnecting = false;
           notifyListeners();
+          // Automatically recover if the server closed the session unexpectedly (e.g. 1008/1006)
+          if (code != null && code != 1000 && ApiKeyStore.hasApiKey) {
+            Future<void>.delayed(const Duration(milliseconds: 450), () {
+              if (!_disposed && !_isConnected && !_isConnecting) {
+                unawaited(connectSession(sendInitialGreeting: false));
+              }
+            });
+          }
         },
       );
 
@@ -573,14 +649,27 @@ class AnimeVnViewModel extends ChangeNotifier {
     final serverContent = message.serverContent;
     if (serverContent == null) return;
 
-    // 2. Handle Instant Barge-In Interruption
+    // 2. Handle Instant Barge-In Interruption (ONLY when microphone is actively recording!)
+    // When the microphone is OFF (!_isMicRecording), `serverContent.interrupted == true`
+    // is just the server acknowledging that a new scripted beat's `sendText` superseded
+    // the previous beat's turn. Ignoring it when Mic is OFF prevents false barge-in
+    // messages and prevents cutting off the newly started beat's audio.
     if (serverContent.interrupted == true) {
+      if (!_isMicRecording) {
+        return;
+      }
       _audio.clear();
       _currentEmotion = VnCharacterEmotion.surprised;
+      if (activeSpeakingHeroine == VnHeroineCharacter.reina) {
+        _reinaEmotion = VnCharacterEmotion.surprised;
+      } else {
+        _hikariEmotion = VnCharacterEmotion.surprised;
+      }
       _triggerMotion(VnStageMotion.flusteredShake);
       speakerNameNotifier.value = defaultSpeakerLabel;
       final useGyaru =
-          _selectedHeroine == VnHeroineCharacter.reina || _isGyaruVoiceStyle;
+          activeSpeakingHeroine == VnHeroineCharacter.reina ||
+          _isGyaruVoiceStyle;
       if (useGyaru) {
         subtitleNotifier.value = isKorean
             ? '앗! 💦 미안 미안 선배~☆ 선배가 말하려던 참이었지?! 편하게 말해줘~💖'
@@ -654,9 +743,8 @@ class AnimeVnViewModel extends ChangeNotifier {
       }
     }
 
-    // 6. Turn Complete
-    if (serverContent.turnComplete == true ||
-        serverContent.generationComplete == true) {
+    // 6. Turn Complete (wait for turnComplete so trailing audio chunks are never cut off early)
+    if (serverContent.turnComplete == true) {
       _audio.onTurnComplete();
       if (_currentTurnTextBuffer.isNotEmpty) {
         final fullText = _currentTurnTextBuffer.toString().trim();
@@ -723,7 +811,7 @@ class AnimeVnViewModel extends ChangeNotifier {
           response: {
             'status': 'ok',
             'current_emotion': _currentEmotion.id,
-            'affection': _affectionPoints,
+            'affection': affectionPoints,
           },
         );
       }
@@ -877,23 +965,43 @@ class AnimeVnViewModel extends ChangeNotifier {
     }
   }
 
-  /// Called when the user taps directly on Hikari's character illustration!
-  void onCharacterTapped() {
-    _addAffection(4);
-    _heartBurstTick++;
-    if (_currentEmotion == VnCharacterEmotion.normal) {
-      _currentEmotion = VnCharacterEmotion.happy;
-    } else if (_currentEmotion == VnCharacterEmotion.happy) {
-      _currentEmotion = VnCharacterEmotion.surprised;
+  /// Called when the user taps directly on a specific heroine's illustration!
+  void onHeroineTapped(VnHeroineCharacter heroine) {
+    _addAffectionFor(heroine, 4);
+    final prevEmotion = emotionFor(heroine);
+    final nextEmotion = switch (prevEmotion) {
+      VnCharacterEmotion.normal => VnCharacterEmotion.happy,
+      VnCharacterEmotion.happy => VnCharacterEmotion.surprised,
+      _ => VnCharacterEmotion.happy,
+    };
+
+    if (heroine == VnHeroineCharacter.reina) {
+      _reinaEmotion = nextEmotion;
+      _reinaMotionTick++;
     } else {
-      _currentEmotion = VnCharacterEmotion.happy;
+      _hikariEmotion = nextEmotion;
+      _hikariMotionTick++;
     }
-    _triggerMotion(VnStageMotion.jump);
+    _currentEmotion = nextEmotion;
+    _lastMotion = VnStageMotion.jump;
+    _motionTriggerTick++;
     notifyListeners();
+  }
+
+  /// Legacy single-character tap entrypoint.
+  void onCharacterTapped() {
+    onHeroineTapped(activeSpeakingHeroine);
   }
 
   void setEmotionManually(VnCharacterEmotion emotion) {
     _currentEmotion = emotion;
+    if (activeSpeakingHeroine == VnHeroineCharacter.reina) {
+      _reinaEmotion = emotion;
+      _reinaMotionTick++;
+    } else {
+      _hikariEmotion = emotion;
+      _hikariMotionTick++;
+    }
     if (!isAiSpeaking) {
       _audio.triggerSimulatedSpeechBurst(
         duration: const Duration(milliseconds: 1400),
@@ -935,12 +1043,30 @@ class AnimeVnViewModel extends ChangeNotifier {
   void _triggerMotion(VnStageMotion motion) {
     _lastMotion = motion;
     _motionTriggerTick++;
+    if (activeSpeakingHeroine == VnHeroineCharacter.reina) {
+      _reinaMotionTick++;
+    } else {
+      _hikariMotionTick++;
+    }
   }
 
   void _addAffection(int delta) {
-    _affectionPoints = (_affectionPoints + delta).clamp(0, 100);
-    if (delta > 0) {
-      _heartBurstTick++;
+    _addAffectionFor(activeSpeakingHeroine, delta);
+  }
+
+  void _addAffectionFor(VnHeroineCharacter heroine, int delta) {
+    if (heroine == VnHeroineCharacter.reina) {
+      _reinaAffection = (_reinaAffection + delta).clamp(0, 100);
+      if (delta > 0) {
+        _reinaHeartBurstTick++;
+        _heartBurstTick++;
+      }
+    } else {
+      _hikariAffection = (_hikariAffection + delta).clamp(0, 100);
+      if (delta > 0) {
+        _hikariHeartBurstTick++;
+        _heartBurstTick++;
+      }
     }
   }
 

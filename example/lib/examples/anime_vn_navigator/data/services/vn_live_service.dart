@@ -12,6 +12,7 @@ import '../../domain/models/vn_sdk_chapter.dart';
 class VnLiveService {
   LiveSession? _session;
   String _activeModel = '';
+  int _sessionGeneration = 0;
 
   bool get isConnected => _session != null && !_session!.isClosed;
   String get activeModel => _activeModel;
@@ -107,6 +108,7 @@ class VnLiveService {
     required void Function(int? code, String? reason) onClose,
   }) async {
     close();
+    final currentGen = ++_sessionGeneration;
     final genAI = GoogleGenAI(
       apiKey: ApiKeyStore.apiKey,
       logger: (msg) => debugPrint('[AnimeVnWS] $msg'),
@@ -154,13 +156,19 @@ class VnLiveService {
                 ),
               ],
             ),
-            tools: vnTools,
             inputAudioTranscription: AudioTranscriptionConfig(),
             outputAudioTranscription: AudioTranscriptionConfig(),
             callbacks: LiveCallbacks(
-              onOpen: onOpen,
-              onMessage: onMessage,
+              onOpen: () {
+                if (currentGen != _sessionGeneration) return;
+                onOpen();
+              },
+              onMessage: (msg) {
+                if (currentGen != _sessionGeneration) return;
+                onMessage(msg);
+              },
               onError: (err, st) {
+                if (currentGen != _sessionGeneration) return;
                 if (!handshakeCompleted && !earlyCloseCompleter.isCompleted) {
                   earlyCloseCompleter.completeError(err, st);
                   return;
@@ -168,6 +176,7 @@ class VnLiveService {
                 onError(err, st);
               },
               onClose: (code, reason) {
+                if (currentGen != _sessionGeneration) return;
                 if (!handshakeCompleted && !earlyCloseCompleter.isCompleted) {
                   earlyCloseCompleter.completeError(
                     Exception(
@@ -239,6 +248,7 @@ class VnLiveService {
   }
 
   void close() {
+    _sessionGeneration++;
     try {
       _session?.close();
     } catch (_) {}

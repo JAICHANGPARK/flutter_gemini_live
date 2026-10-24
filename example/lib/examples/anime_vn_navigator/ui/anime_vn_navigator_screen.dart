@@ -163,6 +163,44 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
     return KeyEventResult.ignored;
   }
 
+  Widget _buildHeroineModeButton({
+    required String label,
+    required bool isSelected,
+    required Color activeColor,
+    required bool isCompact,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 7 : 10,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? activeColor.withValues(alpha: 0.35)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? activeColor : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontSize: isCompact ? 10.5 : 11.5,
+            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Focus(
@@ -268,38 +306,73 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                               ),
                               SizedBox(width: isCompact ? 6 : 10),
 
-                              // Quick Heroine Switcher Pill (🌺 레이나(갸루) <-> 🌸 히카리(청순))
-                              ActionChip(
-                                visualDensity: isCompact
-                                    ? VisualDensity.compact
-                                    : VisualDensity.standard,
-                                backgroundColor: vm.selectedHeroine.accentColor
-                                    .withValues(alpha: 0.25),
-                                side: BorderSide(
-                                  color: vm.selectedHeroine.accentColor,
+                              // 3-Way Character Stage Selector: [👯 2인 동시] [🌺 레이나(갸루)] [🌸 히카리(청순)]
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 3,
                                 ),
-                                label: Text(
-                                  vm.isKorean
-                                      ? (isCompact
-                                            ? '${vm.selectedHeroine.badgeEmoji} ${vm.selectedHeroine.nameKo}'
-                                            : '${vm.selectedHeroine.badgeEmoji} ${vm.selectedHeroine.nameKo} (${vm.selectedHeroine == VnHeroineCharacter.reina ? "갸루" : "청순"})')
-                                      : (isCompact
-                                            ? '${vm.selectedHeroine.badgeEmoji} ${vm.selectedHeroine.nameJa}'
-                                            : '${vm.selectedHeroine.badgeEmoji} ${vm.selectedHeroine.nameJa} (${vm.selectedHeroine == VnHeroineCharacter.reina ? "ギャル" : "清楚"})'),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isCompact ? 11 : 11.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white24),
                                 ),
-                                onPressed: () {
-                                  final next =
-                                      vm.selectedHeroine ==
-                                          VnHeroineCharacter.reina
-                                      ? VnHeroineCharacter.hikari
-                                      : VnHeroineCharacter.reina;
-                                  vm.selectHeroine(next);
-                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildHeroineModeButton(
+                                      label: vm.isKorean
+                                          ? (isCompact ? '👯 2인' : '👯 2인 동시')
+                                          : (isCompact ? '👯 2人' : '👯 2人同時'),
+                                      isSelected: vm.isDualHeroineMode,
+                                      activeColor: const Color(0xFFA855F7),
+                                      isCompact: isCompact,
+                                      onTap: vm.enableDualHeroineMode,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    _buildHeroineModeButton(
+                                      label: vm.isKorean
+                                          ? (isCompact
+                                                ? '🌺 레이나'
+                                                : '🌺 레이나(갸루)')
+                                          : (isCompact
+                                                ? '🌺 レイナ'
+                                                : '🌺 レイナ(ギャル)'),
+                                      isSelected:
+                                          !vm.isDualHeroineMode &&
+                                          vm.selectedHeroine ==
+                                              VnHeroineCharacter.reina,
+                                      activeColor:
+                                          VnHeroineCharacter.reina.accentColor,
+                                      isCompact: isCompact,
+                                      onTap: () => vm.selectHeroine(
+                                        VnHeroineCharacter.reina,
+                                        soloMode: true,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    _buildHeroineModeButton(
+                                      label: vm.isKorean
+                                          ? (isCompact
+                                                ? '🌸 히카리'
+                                                : '🌸 히카리(청순)')
+                                          : (isCompact
+                                                ? '🌸 ヒカリ'
+                                                : '🌸 ヒカリ(清楚)'),
+                                      isSelected:
+                                          !vm.isDualHeroineMode &&
+                                          vm.selectedHeroine ==
+                                              VnHeroineCharacter.hikari,
+                                      activeColor:
+                                          VnHeroineCharacter.hikari.accentColor,
+                                      isCompact: isCompact,
+                                      onTap: () => vm.selectHeroine(
+                                        VnHeroineCharacter.hikari,
+                                        soloMode: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               SizedBox(width: isCompact ? 6 : 8),
 
@@ -331,41 +404,151 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                               ),
                               SizedBox(width: isCompact ? 6 : 8),
 
-                              // Affection Indicator Pill
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isCompact ? 8 : 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: Colors.white24),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.favorite_rounded,
-                                      color: Color(0xFFF472B6),
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isCompact
-                                          ? '${vm.affectionPoints}%'
-                                          : (vm.isKorean
-                                                ? '호감도 ${vm.affectionPoints}%'
-                                                : '好感度 ${vm.affectionPoints}%'),
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: isCompact ? 11 : 12,
-                                        fontWeight: FontWeight.bold,
+                              // Affection Indicator Pill (Individual Heroine Affection in Dual Mode)
+                              if (vm.isDualHeroineMode)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isCompact ? 8 : 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        onTap: () => vm.onHeroineTapped(
+                                          VnHeroineCharacter.hikari,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 1,
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.favorite_rounded,
+                                                color: Color(0xFFF472B6),
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                isCompact
+                                                    ? '🌸 ${vm.hikariAffectionPoints}%'
+                                                    : (vm.isKorean
+                                                          ? '🌸 히카리 ${vm.hikariAffectionPoints}%'
+                                                          : '🌸 ヒカリ ${vm.hikariAffectionPoints}%'),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: isCompact
+                                                      ? 10.5
+                                                      : 11.5,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
+                                      Container(
+                                        width: 1,
+                                        height: 12,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                        ),
+                                        color: Colors.white24,
+                                      ),
+                                      InkWell(
+                                        onTap: () => vm.onHeroineTapped(
+                                          VnHeroineCharacter.reina,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 1,
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.favorite_rounded,
+                                                color: Color(0xFFF59E0B),
+                                                size: 13,
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                isCompact
+                                                    ? '🌺 ${vm.reinaAffectionPoints}%'
+                                                    : (vm.isKorean
+                                                          ? '🌺 레이나 ${vm.reinaAffectionPoints}%'
+                                                          : '🌺 レイナ ${vm.reinaAffectionPoints}%'),
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: isCompact
+                                                      ? 10.5
+                                                      : 11.5,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                InkWell(
+                                  onTap: () => vm.onHeroineTapped(
+                                    vm.selectedHeroine,
+                                  ),
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isCompact ? 8 : 12,
+                                      vertical: 6,
                                     ),
-                                  ],
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: Colors.white24),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.favorite_rounded,
+                                          color:
+                                              vm.selectedHeroine ==
+                                                  VnHeroineCharacter.reina
+                                              ? const Color(0xFFF59E0B)
+                                              : const Color(0xFFF472B6),
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isCompact
+                                              ? '${vm.affectionPoints}%'
+                                              : (vm.isKorean
+                                                    ? '호감도 ${vm.affectionPoints}%'
+                                                    : '好感度 ${vm.affectionPoints}%'),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: isCompact ? 11 : 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         );

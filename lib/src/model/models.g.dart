@@ -936,6 +936,31 @@ Map<String, dynamic> _$LiveClientSetupToJson(LiveClientSetup instance) =>
       'labels': ?instance.labels,
     };
 
+HttpOptions _$HttpOptionsFromJson(Map<String, dynamic> json) => HttpOptions(
+  baseUrl: json['base_url'] as String?,
+  apiVersion: json['api_version'] as String?,
+  headers: (json['headers'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as String),
+  ),
+  timeout: (json['timeout'] as num?)?.toInt(),
+  extraBody: json['extra_body'] as Map<String, dynamic>?,
+  retryOptions: json['retry_options'] as Map<String, dynamic>?,
+  clientArgs: json['client_args'] as Map<String, dynamic>?,
+  asyncClientArgs: json['async_client_args'] as Map<String, dynamic>?,
+);
+
+Map<String, dynamic> _$HttpOptionsToJson(HttpOptions instance) =>
+    <String, dynamic>{
+      'base_url': ?instance.baseUrl,
+      'api_version': ?instance.apiVersion,
+      'headers': ?instance.headers,
+      'timeout': ?instance.timeout,
+      'extra_body': ?instance.extraBody,
+      'retry_options': ?instance.retryOptions,
+      'client_args': ?instance.clientArgs,
+      'async_client_args': ?instance.asyncClientArgs,
+    };
+
 PartialArg _$PartialArgFromJson(Map<String, dynamic> json) => PartialArg(
   boolValue: json['bool_value'] as bool?,
   jsonPath: json['json_path'] as String?,
@@ -1863,6 +1888,9 @@ CreateAuthTokenConfig _$CreateAuthTokenConfigFromJson(
   lockAdditionalFields: (json['lock_additional_fields'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
+  httpOptions: json['http_options'] == null
+      ? null
+      : HttpOptions.fromJson(json['http_options'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$CreateAuthTokenConfigToJson(
@@ -1873,6 +1901,7 @@ Map<String, dynamic> _$CreateAuthTokenConfigToJson(
   'uses': ?instance.uses,
   'live_connect_constraints': ?instance.liveConnectConstraints,
   'lock_additional_fields': ?instance.lockAdditionalFields,
+  'http_options': ?instance.httpOptions,
 };
 
 WeightedPrompt _$WeightedPromptFromJson(Map<String, dynamic> json) =>

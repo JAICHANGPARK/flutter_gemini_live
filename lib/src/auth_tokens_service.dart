@@ -165,6 +165,7 @@ class AuthTokensService {
       'authTokens',
       body,
       apiVersion: 'v1alpha',
+      httpOptions: config.httpOptions,
     );
 
     return AuthToken.fromJson(response);

@@ -634,6 +634,198 @@ void main() {
         expect(received[2].serverContent?.turnComplete, true);
       },
     );
+
+    test(
+      'connect supports session-level httpOptions (baseUrl, apiVersion, headers) overriding client-level httpOptions',
+      () async {
+        Uri? seenUri;
+        Map<String, dynamic>? seenHeaders;
+        final channel = FakeWebSocketChannel();
+        final service = LiveService(
+          apiKey: 'TEST_API_KEY',
+          httpOptions: const HttpOptions(
+            headers: {'x-client-header': 'client-value'},
+          ),
+          connector: (uri, headers) async {
+            seenUri = uri;
+            seenHeaders = headers;
+            unawaited(
+              Future<void>.delayed(
+                Duration.zero,
+                () => channel.emit(
+                  '{"setupComplete":{"sessionId":"test_session_id"}}',
+                ),
+              ),
+            );
+            return channel;
+          },
+        );
+
+        final session = await service.connect(
+          LiveConnectParameters(
+            model: 'test-model',
+            config: LiveConnectConfig(
+              httpOptions: const HttpOptions(
+                baseUrl: 'https://session-base-url.com',
+                apiVersion: 'v1alpha',
+                headers: {
+                  'x-client-header': 'session-value',
+                  'x-session-header': 'session-value',
+                },
+              ),
+            ),
+          ),
+        );
+
+        expect(
+          seenUri.toString(),
+          'wss://session-base-url.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=TEST_API_KEY',
+        );
+        expect(seenHeaders?['x-goog-api-key'], 'TEST_API_KEY');
+        expect(seenHeaders?['x-client-header'], 'session-value');
+        expect(seenHeaders?['x-session-header'], 'session-value');
+        // Client-level httpOptions must not be mutated
+        expect(service.httpOptions?.headers?['x-client-header'], 'client-value');
+        expect(
+          service.httpOptions?.headers?.containsKey('x-session-header'),
+          isFalse,
+        );
+        // httpOptions must not be sent in the setup message payload
+        final sentSetup = channel.sentMessages.single as String;
+        expect(sentSetup.contains('x-session-header'), isFalse);
+        expect(session.sessionId, 'test_session_id');
+      },
+    );
+
+    test(
+      'connect keeps client baseUrl when session httpOptions only overrides headers',
+      () async {
+        Uri? seenUri;
+        Map<String, dynamic>? seenHeaders;
+        final channel = FakeWebSocketChannel();
+        final service = LiveService(
+          apiKey: 'TEST_API_KEY',
+          httpOptions: {'base_url': 'https://client-base-url.com'},
+          connector: (uri, headers) async {
+            seenUri = uri;
+            seenHeaders = headers;
+            unawaited(
+              Future<void>.delayed(
+                Duration.zero,
+                () => channel.emit('{"setupComplete":{"sessionId":"id"}}'),
+              ),
+            );
+            return channel;
+          },
+        );
+
+        await service.connect(
+          LiveConnectParameters(
+            model: 'test-model',
+            config: LiveConnectConfig(
+              httpOptions: const HttpOptions(
+                headers: {'x-session-header': 'session-value'},
+              ),
+            ),
+          ),
+        );
+
+        expect(
+          seenUri.toString(),
+          'wss://client-base-url.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=TEST_API_KEY',
+        );
+        expect(seenHeaders?['x-session-header'], 'session-value');
+      },
+    );
+
+    test(
+      'connect with empty apiKey and custom baseUrl uses custom URL directly with custom Authorization header',
+      () async {
+        Uri? seenUri;
+        Map<String, dynamic>? seenHeaders;
+        final channel = FakeWebSocketChannel();
+        final service = LiveService(
+          apiKey: '',
+          httpOptions: const HttpOptions(
+            baseUrl: 'https://custom-base-url.com',
+            headers: {'Authorization': 'Bearer custom_test_token'},
+          ),
+          connector: (uri, headers) async {
+            seenUri = uri;
+            seenHeaders = headers;
+            unawaited(
+              Future<void>.delayed(
+                Duration.zero,
+                () => channel.emit('{"setupComplete":{"sessionId":"proxy"}}'),
+              ),
+            );
+            return channel;
+          },
+        );
+
+        await service.connect(
+          LiveConnectParameters(
+            model: 'test-model',
+            config: LiveConnectConfig(
+              httpOptions: const HttpOptions(
+                baseUrl: 'https://session-base-url.com',
+                headers: {'Authorization': 'Bearer session_test_token'},
+              ),
+            ),
+          ),
+        );
+
+        expect(seenUri.toString(), 'https://session-base-url.com');
+        expect(seenHeaders?['Authorization'], 'Bearer session_test_token');
+        expect(seenHeaders?.containsKey('x-goog-api-key'), isFalse);
+      },
+    );
+
+    test(
+      'connect throws ArgumentError on unsupported session httpOptions fields',
+      () async {
+        var connectCalled = false;
+        final service = LiveService(
+          apiKey: 'TEST_API_KEY',
+          connector: (uri, headers) async {
+            connectCalled = true;
+            return FakeWebSocketChannel();
+          },
+        );
+
+        final unsupportedCases = <String, Map<String, dynamic>>{
+          'timeout': {'timeout': 1000},
+          'extra_body': {'extra_body': <String, dynamic>{'setup': <String, dynamic>{}}},
+          'retry_options': {'retry_options': <String, dynamic>{'attempts': 1}},
+          'client_args': {'client_args': <String, dynamic>{'foo': 'bar'}},
+          'async_client_args': {'async_client_args': <String, dynamic>{'open_timeout': 5}},
+        };
+
+        for (final entry in unsupportedCases.entries) {
+          await expectLater(
+            () => service.connect(
+              LiveConnectParameters(
+                model: 'test-model',
+                config: {
+                  'http_options': {
+                    'headers': {'x-header': 'value'},
+                    ...entry.value,
+                  },
+                },
+              ),
+            ),
+            throwsA(
+              isA<ArgumentError>().having(
+                (e) => e.toString(),
+                'message',
+                contains(entry.key),
+              ),
+            ),
+          );
+        }
+        expect(connectCalled, isFalse);
+      },
+    );
   });
 
   group('LiveSession', () {

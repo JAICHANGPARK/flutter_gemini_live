@@ -248,7 +248,7 @@ class _LiveChatWidgetState extends State<LiveChatWidget> {
 
 Use direct `LiveSession` when implementing background services, custom pipelines, or headless CLI/embedded tools.
 
-### Step 1: Initialize Client & Connect
+### Step 1: Initialize Client & Connect (`LiveConnectConfig`, `labels`, & `session.receive()`)
 
 ```dart
 import 'package:gemini_live/gemini_live.dart';
@@ -264,8 +264,12 @@ Future<void> connectLive() async {
   session = await genAI.live.connect(
     LiveConnectParameters(
       model: 'gemini-3.8-live',
-      config: GenerationConfig(
+      // Accepts LiveConnectConfig, GenerationConfig, or Map<String, dynamic>
+      config: LiveConnectConfig(
         responseModalities: [Modality.AUDIO],
+        speechConfig: GeminiLiveVoice.puck,
+        systemInstruction: 'You are a concise voice assistant.',
+        labels: {'env': 'prod', 'team': 'mobile'},
       ),
       callbacks: LiveCallbacks(
         onOpen: () => print('WebSocket opened'),
@@ -275,6 +279,12 @@ Future<void> connectLive() async {
       ),
     ),
   );
+  print('Connected Session ID: ${session?.sessionId}');
+
+  // Optional: Python SDK-style turn-scoped async stream iteration
+  // await for (final message in session!.receive()) {
+  //   handleServerMessage(message);
+  // }
 }
 ```
 

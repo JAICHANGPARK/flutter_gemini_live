@@ -279,16 +279,21 @@ class VnSdkShowcaseCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  'Ch.${viewModel!.currentChapter.chapterNumber}/${VnScenarioCatalog.chapters.length} • STEP ${viewModel!.currentBeatIndex + 1}/${viewModel!.totalBeatsInChapter}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Ch.${viewModel!.currentChapter.chapterNumber}/${VnScenarioCatalog.chapters.length} • STEP ${viewModel!.currentBeatIndex + 1}/${viewModel!.totalBeatsInChapter}',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 6),
                 InkWell(
                   onTap: viewModel!.advanceDialogue,
                   borderRadius: BorderRadius.circular(8),

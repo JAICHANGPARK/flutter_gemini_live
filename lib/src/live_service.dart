@@ -138,6 +138,10 @@ class LiveConnectParameters {
   /// Whether affective dialog (emotion-aware prosody) is enabled.
   final bool? enableAffectiveDialog;
 
+  /// Optional HTTP/WebSocket transport options (`baseUrl`, `apiVersion`, `headers`)
+  /// that override client-level options for this session.
+  final HttpOptions? httpOptions;
+
   /// Creates [LiveConnectParameters] for a Gemini Live session.
   factory LiveConnectParameters({
     required String model,
@@ -167,6 +171,7 @@ class LiveConnectParameters {
     Object? speechConfig,
     ThinkingConfig? thinkingConfig,
     bool? enableAffectiveDialog,
+    Object? httpOptions,
   }) {
     final parsedConfig = _parseConnectConfig(config);
     return LiveConnectParameters._(
@@ -197,6 +202,7 @@ class LiveConnectParameters {
       speechConfig: speechConfig,
       thinkingConfig: thinkingConfig,
       enableAffectiveDialog: enableAffectiveDialog,
+      httpOptions: httpOptions,
     );
   }
 
@@ -228,6 +234,7 @@ class LiveConnectParameters {
     Object? speechConfig,
     this.thinkingConfig,
     this.enableAffectiveDialog,
+    Object? httpOptions,
   }) : systemInstruction =
            _parseSystemInstruction(systemInstruction) ??
            (config is LiveConnectConfig ? config.systemInstruction : null),
@@ -280,7 +287,23 @@ class LiveConnectParameters {
                ? config.generationConfig?.labels
                : null),
        translationConfig = translationConfig ?? config?.translationConfig,
-       speechConfig = _parseSpeechConfig(speechConfig);
+       speechConfig = _parseSpeechConfig(speechConfig),
+       httpOptions =
+           _parseHttpOptions(httpOptions) ??
+           (config is LiveConnectConfig ? config.httpOptions : null);
+
+  static HttpOptions? _parseHttpOptions(Object? value) {
+    if (value == null) return null;
+    if (value is HttpOptions) return value;
+    if (value is Map<String, dynamic>) {
+      return HttpOptions.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'httpOptions',
+      'Must be an HttpOptions or Map<String, dynamic>.',
+    );
+  }
 
   static GenerationConfig? _parseConnectConfig(Object? value) {
     if (value == null) return null;
@@ -348,6 +371,7 @@ class LiveConnectParameters {
   static SpeechConfig? _parseSpeechConfig(Object? value) {
     if (value == null) return null;
     if (value is SpeechConfig) return value;
+    if (value is GeminiLiveVoice) return SpeechConfig.fromLiveVoice(value);
     if (value is String) {
       return SpeechConfig(
         voiceConfig: VoiceConfig(
@@ -361,7 +385,7 @@ class LiveConnectParameters {
     throw ArgumentError.value(
       value,
       'speechConfig',
-      'Must be a SpeechConfig, String (voiceName), or Map<String, dynamic>.',
+      'Must be a SpeechConfig, GeminiLiveVoice, String (voiceName), or Map<String, dynamic>.',
     );
   }
 }
@@ -379,6 +403,11 @@ class LiveService {
 
   /// The target API version path segment (defaults to `'v1beta'`).
   final String apiVersion;
+
+  /// Optional client-level HTTP and WebSocket transport options (`baseUrl`,
+  /// `apiVersion`, `headers`).
+  final HttpOptions? httpOptions;
+
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
 
@@ -401,15 +430,21 @@ class LiveService {
   /// Service for generating realtime music streams (Lyria Live).
   late final LiveMusicService music;
 
-  /// Creates a [LiveService] client configured with [apiKey] and [apiVersion].
+  /// Creates a [LiveService] client configured with [apiKey], [apiVersion],
+  /// and optional [httpOptions].
   LiveService({
     required this.apiKey,
-    this.apiVersion = 'v1beta',
+    String apiVersion = 'v1beta',
+    Object? httpOptions,
     this.logger,
     WebSocketConnector? connector,
     Duration setupTimeout = const Duration(seconds: 10),
     String Function()? dartVersionProvider,
-  }) : _connector = connector ?? ws_connector.connect,
+  }) : httpOptions = LiveConnectParameters._parseHttpOptions(httpOptions),
+       apiVersion =
+           LiveConnectParameters._parseHttpOptions(httpOptions)?.apiVersion ??
+           apiVersion,
+       _connector = connector ?? ws_connector.connect,
        _setupTimeout = setupTimeout,
        _dartVersionProvider = dartVersionProvider ?? dartVersion {
     music = LiveMusicService(
@@ -420,6 +455,57 @@ class LiveService {
       setupTimeout: _setupTimeout,
       dartVersionProvider: _dartVersionProvider,
     );
+  }
+
+  /// Merges [clientHttpOptions] with [sessionHttpOptions] for a Live session.
+  ///
+  /// Only `baseUrl`, `apiVersion`, and `headers` are supported on
+  /// [sessionHttpOptions]. Throws an [ArgumentError] if any other field
+  /// (`timeout`, `extraBody`, `retryOptions`, `clientArgs`, `asyncClientArgs`)
+  /// is set on [sessionHttpOptions].
+  static HttpOptions mergeLiveHttpOptions(
+    HttpOptions? clientHttpOptions,
+    HttpOptions? sessionHttpOptions,
+  ) {
+    final base = clientHttpOptions ?? const HttpOptions();
+    if (sessionHttpOptions == null) {
+      return base;
+    }
+    final unsupportedFields = <String>[
+      if (sessionHttpOptions.timeout != null) 'timeout',
+      if (sessionHttpOptions.extraBody != null) 'extra_body',
+      if (sessionHttpOptions.retryOptions != null) 'retry_options',
+      if (sessionHttpOptions.clientArgs != null) 'client_args',
+      if (sessionHttpOptions.asyncClientArgs != null) 'async_client_args',
+    ];
+    if (unsupportedFields.isNotEmpty) {
+      throw ArgumentError(
+        'LiveService.connect() only supports `baseUrl`, `apiVersion` and '
+        '`headers` in LiveConnectConfig.httpOptions, but got: '
+        '${unsupportedFields.join(", ")}.',
+      );
+    }
+    return base.merge(sessionHttpOptions);
+  }
+
+  /// Computes the WebSocket base URL from [httpOptions], converting `http`/`https`
+  /// schemes to `wss` when authentication is present, or returning the custom
+  /// `baseUrl` as-is when `apiKey` is empty (proxy mode).
+  static String buildWebSocketBaseUrl({
+    required String apiKey,
+    HttpOptions? clientHttpOptions,
+    HttpOptions? sessionHttpOptions,
+  }) {
+    final merged = mergeLiveHttpOptions(clientHttpOptions, sessionHttpOptions);
+    final hasSufficientAuth = apiKey.isNotEmpty;
+    final customBaseUrl = sessionHttpOptions?.baseUrl ?? clientHttpOptions?.baseUrl;
+    if (customBaseUrl != null && !hasSufficientAuth) {
+      return customBaseUrl;
+    }
+    final rawBaseUrl =
+        merged.baseUrl ?? 'https://generativelanguage.googleapis.com';
+    final parsed = Uri.parse(rawBaseUrl);
+    return parsed.replace(scheme: 'wss').toString();
   }
 
   /// Returns the current Dart runtime version string.
@@ -682,10 +768,16 @@ class LiveService {
 
   /// Establishes a WebSocket connection to the Live API using [params].
   Future<LiveSession> connect(LiveConnectParameters params) async {
+    final mergedHttpOptions = mergeLiveHttpOptions(
+      httpOptions,
+      params.httpOptions,
+    );
+    final effectiveApiVersion = mergedHttpOptions.apiVersion ?? apiVersion;
+
     final usesEphemeralToken = apiKey.startsWith('auth_tokens/');
-    if (usesEphemeralToken && apiVersion != 'v1alpha') {
+    if (usesEphemeralToken && effectiveApiVersion != 'v1alpha') {
       logger?.call(
-        '⚠️ Warning: Ephemeral token support is only available on v1alpha. Current apiVersion: $apiVersion',
+        '⚠️ Warning: Ephemeral token support is only available on v1alpha. Current apiVersion: $effectiveApiVersion',
       );
     }
 
@@ -694,13 +786,30 @@ class LiveService {
         : 'BidiGenerateContent';
     final keyName = usesEphemeralToken ? 'access_token' : 'key';
 
-    final websocketUri = Uri(
-      scheme: 'wss',
-      host: 'generativelanguage.googleapis.com',
-      path:
-          '/ws/google.ai.generativelanguage.$apiVersion.GenerativeService.$method',
-      queryParameters: {keyName: apiKey},
+    final wsBaseUrl = buildWebSocketBaseUrl(
+      apiKey: apiKey,
+      clientHttpOptions: httpOptions,
+      sessionHttpOptions: params.httpOptions,
     );
+
+    final Uri websocketUri;
+    if (apiKey.isEmpty &&
+        (params.httpOptions?.baseUrl != null || httpOptions?.baseUrl != null)) {
+      websocketUri = Uri.parse(wsBaseUrl);
+    } else {
+      final baseUri = Uri.parse(wsBaseUrl);
+      final basePath = baseUri.path.endsWith('/')
+          ? baseUri.path.substring(0, baseUri.path.length - 1)
+          : baseUri.path;
+      websocketUri = baseUri.replace(
+        path:
+            '$basePath/ws/google.ai.generativelanguage.$effectiveApiVersion.GenerativeService.$method',
+        queryParameters: {
+          ...baseUri.queryParameters,
+          if (apiKey.isNotEmpty) keyName: apiKey,
+        },
+      );
+    }
 
     List<Tool>? resolvedToolsOverride;
     if (params.callableTools != null && params.callableTools!.isNotEmpty) {
@@ -727,11 +836,12 @@ class LiveService {
     logger?.call('🔌 Connecting to WebSocket at $websocketUri');
 
     try {
-      final headers = {
+      final headers = <String, dynamic>{
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+        if (apiKey.isNotEmpty) 'x-goog-api-key': apiKey,
         'x-goog-api-client': apiClientHeader,
         'user-agent': userAgent,
+        if (mergedHttpOptions.headers != null) ...mergedHttpOptions.headers!,
       };
       final channel = await _connector(websocketUri, headers);
       final session = LiveSession._(channel, logger: logger);

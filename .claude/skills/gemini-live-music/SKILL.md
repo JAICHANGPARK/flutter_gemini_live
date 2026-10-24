@@ -55,10 +55,9 @@ class LiveMusicManager {
         callbacks: LiveMusicCallbacks(
           onOpen: () => print('Music WebSocket connected'),
           onMessage: (LiveMusicServerMessage message) {
-            // Incoming 48kHz stereo PCM chunks
-            if (message.audioChunk != null) {
-              final pcmBytes = message.audioChunk!.bytes;
-              SoLoud.instance.addAudioDataStream(_bufferSource!, pcmBytes);
+            // Incoming 48kHz stereo PCM chunks (also accessible via session.receive() / session.messages)
+            if (message.audioBytes != null) {
+              SoLoud.instance.addAudioDataStream(_bufferSource!, message.audioBytes!);
             }
           },
           onError: (e, st) => print('Live Music Error: $e'),

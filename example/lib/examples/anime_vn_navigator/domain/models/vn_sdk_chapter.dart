@@ -214,12 +214,13 @@ import 'package:gemini_live/gemini_live.dart';
 // 1. 루트 클라이언트 생성
 final genAI = GoogleGenAI(apiKey: 'YOUR_GEMINI_API_KEY');
 
-// 2. WebSocket 실시간 세션 연결
+// 2. WebSocket 실시간 세션 연결 (LiveConnectConfig 또는 GenerationConfig 지원)
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-    config: GenerationConfig(
+    model: 'gemini-3.1-flash-live-preview',
+    config: LiveConnectConfig(
       responseModalities: const [Modality.AUDIO],
+      labels: const {'app': 'tokimeki_gemini_live'},
     ),
     callbacks: LiveCallbacks(
       onOpen: () => print('✅ WebSocket 연결 성공!'),
@@ -228,19 +229,21 @@ final session = await genAI.live.connect(
       onClose: (code, reason) => print('🔌 연결 종료: \$code'),
     ),
   ),
-);''',
+);
+print('세션 ID: \${session.sessionId}');''',
             codeSnippetJa: '''
 import 'package:gemini_live/gemini_live.dart';
 
 // 1. ルートクライアント生成
 final genAI = GoogleGenAI(apiKey: 'YOUR_GEMINI_API_KEY');
 
-// 2. WebSocket リアルタイムセッション接続
+// 2. WebSocket リアルタイムセッション接続 (LiveConnectConfig / GenerationConfig 対応)
 final session = await genAI.live.connect(
   LiveConnectParameters(
-    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-    config: GenerationConfig(
+    model: 'gemini-3.1-flash-live-preview',
+    config: LiveConnectConfig(
       responseModalities: const [Modality.AUDIO],
+      labels: const {'app': 'tokimeki_gemini_live'},
     ),
     callbacks: LiveCallbacks(
       onOpen: () => print('✅ WebSocket 接続完了！'),
@@ -249,14 +252,15 @@ final session = await genAI.live.connect(
       onClose: (code, reason) => print('🔌 切断: \$code'),
     ),
   ),
-);''',
+);
+print('セッションID: \${session.sessionId}');''',
             keyPointsKo: [
-              'genAI.live.connect()는 서버로부터 setupComplete 패킷이 올 때까지 안전하게 대기 후 LiveSession 반환',
-              'LiveCallbacks의 onOpen, onMessage, onError, onClose 4가지 콜백으로 전체 수명주기 제어',
+              'genAI.live.connect()는 서버로부터 setupComplete 패킷이 올 때까지 안전하게 대기 후 LiveSession 반환 (session.sessionId 확인 가능)',
+              'LiveCallbacks 콜백 방식 또는 await for (final msg in session.receive()) 스트림 방식 모두 지원',
             ],
             keyPointsJa: [
-              'genAI.live.connect() はサーバーから setupComplete が届くまで待機してから LiveSession を返却',
-              'LiveCallbacks の4つのコールバック（onOpen, onMessage, onError, onClose）でライフサイクルを管理',
+              'genAI.live.connect() はサーバーから setupComplete が届くまで待機してから LiveSession を返却（session.sessionId 取得可能）',
+              'LiveCallbacks コールバック方式と await for (final msg in session.receive()) ストリーム方式の両方に対応',
             ],
           ),
         ),
@@ -1881,7 +1885,11 @@ final clientGenAI = GoogleGenAI(apiKey: token.name!);
 
 // 🔄 2. 모바일 네트워크 끊김(1006) 및 GoAway 대비 세션 핸들 자동 저장 & 복구
 final params = LiveConnectParameters(
-  model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  model: 'gemini-3.1-flash-live-preview',
+  config: LiveConnectConfig(
+    // 세션 단위 httpOptions로 v1alpha / 커스텀 프록시 baseUrl / headers 오버라이드 가능!
+    httpOptions: const HttpOptions(apiVersion: 'v1alpha'),
+  ),
   sessionResumption: SessionResumptionConfig(
     handle: savedResumeHandle, // 재연결 시 이전 핸들을 넘기면 대화 맥락 100% 복구!
   ),
@@ -1908,7 +1916,11 @@ final clientGenAI = GoogleGenAI(apiKey: token.name!);
 
 // 🔄 2. モバイル回線切断(1006)や GoAway に備えるセッション自動再開 (SessionResumption)
 final params = LiveConnectParameters(
-  model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  model: 'gemini-3.1-flash-live-preview',
+  config: LiveConnectConfig(
+    // セッション単位の httpOptions で v1alpha / カスタム baseUrl / headers を上書き可能！
+    httpOptions: const HttpOptions(apiVersion: 'v1alpha'),
+  ),
   sessionResumption: SessionResumptionConfig(
     handle: savedResumeHandle, // 再接続時にハンドルを渡せば会話履歴を100%引き継ぎ！
   ),
@@ -2042,12 +2054,23 @@ expect(controller.isInterrupted, isTrue);''',
 
   static VnSdkShowcaseData showcaseById(String? topicId) {
     if (topicId == null) return chapters.first.showcase;
+    final resolvedId = switch (topicId) {
+      'intro' => 'ch1_quickstart',
+      'audio_barge_in' => 'ch4_barge_in',
+      'tools' => 'ch6_tool_declare',
+      'widgets_and_more' => 'ch7_controller',
+      _ => topicId,
+    };
     for (final chapter in chapters) {
-      if (chapter.id == topicId || chapter.showcase.topicId == topicId) {
+      if (chapter.id == resolvedId ||
+          chapter.showcase.topicId == resolvedId ||
+          chapter.id == topicId ||
+          chapter.showcase.topicId == topicId) {
         return chapter.showcase;
       }
       for (final beat in chapter.dialogueBeats) {
-        if (beat.showcaseOverride?.topicId == topicId) {
+        if (beat.showcaseOverride?.topicId == resolvedId ||
+            beat.showcaseOverride?.topicId == topicId) {
           return beat.showcaseOverride!;
         }
       }

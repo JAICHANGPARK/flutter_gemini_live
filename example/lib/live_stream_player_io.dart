@@ -108,8 +108,8 @@ class LiveStreamPlayerImpl {
           channels: channels,
           format: BufferType.s16le,
           bufferingType: BufferingType.released,
-          bufferingTimeNeeds: 0.35,
-          maxBufferSizeDuration: const Duration(seconds: 30),
+          bufferingTimeNeeds: 0.08,
+          maxBufferSizeDuration: const Duration(seconds: 60),
           onBuffering: (isBuffering, handle, time) {
             _isPlaying = !isBuffering;
           },
@@ -149,15 +149,8 @@ class LiveStreamPlayerImpl {
   }
 
   void onTurnComplete() {
-    final source = _currentSource;
-    if (source != null && SoLoud.instance.isInitialized) {
-      try {
-        SoLoud.instance.setDataIsEnded(source);
-      } catch (e) {
-        debugPrint('SoLoud setDataIsEnded error: $e');
-      }
-    }
-    _turnIsEnded = true;
+    // Keep the continuous PCM BufferStream open so buffered audio plays out
+    // completely without cutting off trailing syllables or disposing active playback.
   }
 
   void clear() {

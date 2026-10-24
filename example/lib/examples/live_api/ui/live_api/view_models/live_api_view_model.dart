@@ -157,6 +157,9 @@ class LiveApiViewModel extends ChangeNotifier {
       );
 
       _live.attach(session);
+      if (session.sessionId != null) {
+        _addLog('SESSION', '🆔 Session ID: ${session.sessionId}');
+      }
       notifyListeners();
     } catch (e) {
       _addLog('ERROR', '❌ Connection failed: $e');

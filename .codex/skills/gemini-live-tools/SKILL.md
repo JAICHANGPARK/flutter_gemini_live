@@ -182,6 +182,20 @@ session.sendToolResponse(
 session.sendContextUpdate(tools: const <Tool>[]);
 ```
 
+### Asynchronous Tool Discovery (`CallableTool`)
+
+You can also implement `CallableTool` to asynchronously resolve `Tool` declarations when `genAI.live.connect()` builds the setup message:
+
+```dart
+class DynamicPluginTool implements CallableTool {
+  @override
+  Future<Tool> tool() async => weatherTool;
+
+  @override
+  Future<List<Part>> callTool(List<FunctionCall> functionCalls) async => [];
+}
+```
+
 ---
 
 ## 🚨 Critical Rules for AI Agents

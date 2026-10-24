@@ -199,16 +199,37 @@ class CreateAuthTokenConfig {
   /// Additional fields to lock in the effective LiveConnectParameters.
   final List<String>? lockAdditionalFields;
 
+  /// Optional HTTP transport options for this token creation request.
+  final HttpOptions? httpOptions;
+
   CreateAuthTokenConfig({
     this.expireTime,
     this.newSessionExpireTime,
     this.uses,
     this.liveConnectConstraints,
     this.lockAdditionalFields,
+    this.httpOptions,
   });
 
-  factory CreateAuthTokenConfig.fromJson(Map<String, dynamic> json) =>
-      _$CreateAuthTokenConfigFromJson(json);
+  factory CreateAuthTokenConfig.fromJson(Map<String, dynamic> json) {
+    final normalized = <String, dynamic>{
+      ...json,
+      if (!json.containsKey('http_options') && json.containsKey('httpOptions'))
+        'http_options': json['httpOptions'],
+      if (!json.containsKey('expire_time') && json.containsKey('expireTime'))
+        'expire_time': json['expireTime'],
+      if (!json.containsKey('new_session_expire_time') &&
+          json.containsKey('newSessionExpireTime'))
+        'new_session_expire_time': json['newSessionExpireTime'],
+      if (!json.containsKey('live_connect_constraints') &&
+          json.containsKey('liveConnectConstraints'))
+        'live_connect_constraints': json['liveConnectConstraints'],
+      if (!json.containsKey('lock_additional_fields') &&
+          json.containsKey('lockAdditionalFields'))
+        'lock_additional_fields': json['lockAdditionalFields'],
+    };
+    return _$CreateAuthTokenConfigFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$CreateAuthTokenConfigToJson(this);
 }

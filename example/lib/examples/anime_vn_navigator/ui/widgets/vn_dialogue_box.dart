@@ -565,7 +565,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
         clipper: const _VnChamferedBoxClipper(),
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 196, maxHeight: 230),
+          constraints: const BoxConstraints(minHeight: 196, maxHeight: 340),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -590,226 +590,210 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isCompact = constraints.maxWidth < 680;
-                  final showHintInline = constraints.maxWidth >= 860;
-                  final hPad = isCompact ? 14.0 : 36.0;
+                  final hPad = isCompact ? 14.0 : 32.0;
 
                   return Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
+                    padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. Speaker Name Row + Horizontally Scrollable Status Badges (Zero Overflow on Mobile)
-                        Row(
-                          children: [
-                            SizedBox(width: isCompact ? 4 : 18),
-                            ValueListenableBuilder<String>(
-                              valueListenable: vm.speakerNameNotifier,
-                              builder: (context, speaker, _) {
-                                return Text(
-                                  speaker,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isCompact ? 16.5 : 19,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.0,
-                                    shadows: const [
-                                      Shadow(
-                                        color: Colors.black87,
-                                        blurRadius: 6,
-                                        offset: Offset(1, 2),
+                        // 1. Speaker Name + Status Badges (Wrap so every badge is 100% visible without clipping or ellipsis)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            left: isCompact ? 4 : 14,
+                            right: isCompact ? 16 : 28,
+                          ),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              ValueListenableBuilder<String>(
+                                valueListenable: vm.speakerNameNotifier,
+                                builder: (context, speaker, _) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Text(
+                                      speaker,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: isCompact ? 16.5 : 19,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.0,
+                                        shadows: const [
+                                          Shadow(
+                                            color: Colors.black87,
+                                            blurRadius: 6,
+                                            offset: Offset(1, 2),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                            SizedBox(width: isCompact ? 10 : 16),
+                                    ),
+                                  );
+                                },
+                              ),
 
-                            // Horizontally scrollable badges so narrow screens never overflow
-                            Expanded(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Chapter & Beat Step Badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 3,
+                              // Chapter & Beat Step Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0x88B388FF),
+                                  ),
+                                ),
+                                child: Text(
+                                  isCompact
+                                      ? 'Ch.${vm.currentChapter.chapterNumber} • STEP $beatNum/$totalBeats'
+                                      : 'Ch.${vm.currentChapter.chapterNumber} ($chapterTitle)  •  STEP $beatNum / $totalBeats',
+                                  style: const TextStyle(
+                                    color: Color(0xFFE9D5FF),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+
+                              // Heroine Switcher Pill (🌺 갸루: 레이나 <-> 🌸 청순: 히카리)
+                              InkWell(
+                                onTap: () {
+                                  final next =
+                                      vm.selectedHeroine ==
+                                          VnHeroineCharacter.reina
+                                      ? VnHeroineCharacter.hikari
+                                      : VnHeroineCharacter.reina;
+                                  vm.selectHeroine(next);
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: vm.selectedHeroine.accentColor
+                                        .withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: vm.selectedHeroine.accentColor,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isKo
+                                        ? '${vm.selectedHeroine.badgeEmoji} 히로인 전환: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "레이나(갸루) → 히카리" : "히카리(청순) → 레이나(갸루)"}'
+                                        : '${vm.selectedHeroine.badgeEmoji} ヒロイン切替: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "レイナ(ギャル) → ヒカリ" : "ヒカリ(清楚) → レイナ(ギャル)"}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.2,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Moe / Gyaru Voice Pitch & Seiyuu Selector Pill
+                              InkWell(
+                                onTap: () => _showMoeVoiceTunerSheet(context),
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x33EC4899),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: const Color(0xFFF472B6),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isKo
+                                        ? '${vm.isGyaruVoiceStyle ? "🌺 갸루 보이스" : "🎀 미소녀 보이스"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)'
+                                        : '${vm.isGyaruVoiceStyle ? "🌺 ギャルボイス" : "🎀 美少女ボイス"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)',
+                                    style: const TextStyle(
+                                      color: Color(0xFFFBCFE8),
+                                      fontSize: 11.2,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Live Japanese Voice / Replay Status Pill
+                              InkWell(
+                                onTap: () {
+                                  if (!vm.isConnected) {
+                                    vm.connectSession(
+                                      sendInitialGreeting: true,
+                                    );
+                                  } else {
+                                    vm.speakCurrentBeat();
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: vm.isConnected
+                                        ? const Color(0x3310B981)
+                                        : const Color(0x33F59E0B),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: vm.isConnected
+                                          ? const Color(0xFF34D399)
+                                          : const Color(0xFFFBBF24),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        vm.isAiSpeaking
+                                            ? Icons.volume_up_rounded
+                                            : Icons.play_circle_outline_rounded,
+                                        size: 15,
+                                        color: vm.isConnected
+                                            ? const Color(0xFF6EE7B7)
+                                            : const Color(0xFFFDE68A),
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black38,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: const Color(0x88B388FF),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        isCompact
-                                            ? 'Ch.${vm.currentChapter.chapterNumber} • STEP $beatNum/$totalBeats'
-                                            : 'Ch.${vm.currentChapter.chapterNumber} ($chapterTitle)  •  STEP $beatNum / $totalBeats',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        vm.isConnected
+                                            ? (vm.isAiSpeaking
+                                                  ? (isKo
+                                                        ? '🔊 일본어 음성 출력 중 (24kHz)'
+                                                        : '🔊 日本語ボイス出力中 (24kHz)')
+                                                  : (isKo
+                                                        ? '🔊 음성 다시 듣기 (${vm.selectedVoice})'
+                                                        : '🔊 ボイスをもう一度聴く (${vm.selectedVoice})'))
+                                            : (vm.isConnecting
+                                                  ? (isKo
+                                                        ? '⏳ Gemini Live 연결 중...'
+                                                        : '⏳ Gemini Live 接続中...')
+                                                  : (isKo
+                                                        ? '🔌 탭하여 일본어 음성 연결'
+                                                        : '🔌 タップして日本語ボイス接続')),
                                         style: const TextStyle(
-                                          color: Color(0xFFE9D5FF),
+                                          color: Colors.white,
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-
-                                    // Heroine Switcher Pill (🌺 갸루: 레이나 <-> 🌸 청순: 히카리)
-                                    InkWell(
-                                      onTap: () {
-                                        final next =
-                                            vm.selectedHeroine ==
-                                                VnHeroineCharacter.reina
-                                            ? VnHeroineCharacter.hikari
-                                            : VnHeroineCharacter.reina;
-                                        vm.selectHeroine(next);
-                                      },
-                                      borderRadius: BorderRadius.circular(14),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: vm.selectedHeroine.accentColor
-                                              .withValues(alpha: 0.25),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color:
-                                                vm.selectedHeroine.accentColor,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          isKo
-                                              ? '${vm.selectedHeroine.badgeEmoji} 히로인 전환: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "레이나(갸루) → 히카리" : "히카리(청순) → 레이나(갸루)"}'
-                                              : '${vm.selectedHeroine.badgeEmoji} ヒロイン切替: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "レイナ(ギャル) → ヒカリ" : "ヒカリ(清楚) → レイナ(ギャル)"}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11.2,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-
-                                    // Moe / Gyaru Voice Pitch & Seiyuu Selector Pill
-                                    InkWell(
-                                      onTap: () =>
-                                          _showMoeVoiceTunerSheet(context),
-                                      borderRadius: BorderRadius.circular(14),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0x33EC4899),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(0xFFF472B6),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          isKo
-                                              ? '${vm.isGyaruVoiceStyle ? "🌺 갸루 보이스" : "🎀 미소녀 보이스"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)'
-                                              : '${vm.isGyaruVoiceStyle ? "🌺 ギャルボイス" : "🎀 美少女ボイス"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)',
-                                          style: const TextStyle(
-                                            color: Color(0xFFFBCFE8),
-                                            fontSize: 11.2,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-
-                                    // Live Japanese Voice / Replay Status Pill
-                                    InkWell(
-                                      onTap: () {
-                                        if (!vm.isConnected) {
-                                          vm.connectSession(
-                                            sendInitialGreeting: true,
-                                          );
-                                        } else {
-                                          vm.speakCurrentBeat();
-                                        }
-                                      },
-                                      borderRadius: BorderRadius.circular(14),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: vm.isConnected
-                                              ? const Color(0x3310B981)
-                                              : const Color(0x33F59E0B),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: vm.isConnected
-                                                ? const Color(0xFF34D399)
-                                                : const Color(0xFFFBBF24),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              vm.isAiSpeaking
-                                                  ? Icons.volume_up_rounded
-                                                  : Icons
-                                                        .play_circle_outline_rounded,
-                                              size: 15,
-                                              color: vm.isConnected
-                                                  ? const Color(0xFF6EE7B7)
-                                                  : const Color(0xFFFDE68A),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              vm.isConnected
-                                                  ? (vm.isAiSpeaking
-                                                        ? (isKo
-                                                              ? '🔊 일본어 음성 출력 중 (24kHz)'
-                                                              : '🔊 日本語ボイス出力中 (24kHz)')
-                                                        : (isKo
-                                                              ? '🔊 음성 다시 듣기 (${vm.selectedVoice})'
-                                                              : '🔊 ボイスをもう一度聴く (${vm.selectedVoice})'))
-                                                  : (vm.isConnecting
-                                                        ? (isKo
-                                                              ? '⏳ Gemini Live 연결 중...'
-                                                              : '⏳ Gemini Live 接続中...')
-                                                        : (isKo
-                                                              ? '🔌 탭하여 일본어 음성 연결'
-                                                              : '🔌 タップして日本語ボイス接続')),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11.5,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: isCompact ? 16 : 24),
-                          ],
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 6),
@@ -831,26 +815,25 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
 
                         const SizedBox(height: 10),
 
-                        // 3. Main Dialogue Text Area
-                        Expanded(
-                          child: Padding(
+                        // 3. Main Dialogue Text Area (Full text visible without ellipsis truncation)
+                        Flexible(
+                          child: SingleChildScrollView(
                             padding: EdgeInsets.symmetric(
-                              horizontal: isCompact ? 4 : 18,
+                              horizontal: isCompact ? 4 : 14,
                             ),
                             child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 ValueListenableBuilder<String>(
                                   valueListenable: vm.subtitleNotifier,
                                   builder: (context, primaryText, _) {
                                     return RichText(
-                                      maxLines: isCompact ? 3 : 2,
-                                      overflow: TextOverflow.ellipsis,
                                       text: TextSpan(
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: isCompact ? 15.5 : 18.5,
-                                          height: 1.40,
+                                          fontSize: isCompact ? 15.5 : 18.0,
+                                          height: 1.42,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 0.2,
                                           shadows: const [
@@ -910,11 +893,10 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                     }
                                     return Text(
                                       textJa,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: const Color(0xFFBAE6FD),
                                         fontSize: isCompact ? 12.0 : 13.5,
+                                        height: 1.35,
                                         fontWeight: FontWeight.w600,
                                         shadows: const [
                                           Shadow(
@@ -932,109 +914,107 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                           ),
                         ),
 
-                        // 4. Bottom-Right Classic Visual Novel System Menu Bar
-                        //    Horizontally scrollable on narrow/mobile screens so it never overflows!
-                        Row(
-                          children: [
-                            if (showHintInline) ...[
-                              Expanded(
-                                child: Text(
-                                  vm.isChoiceOverlayOpen
-                                      ? (isKo
-                                            ? '👆 화면 중앙의 선택지를 클릭하세요'
-                                            : '👆 画面中央の選択肢をクリックしてください')
-                                      : (isKo
-                                            ? '💡 대화창을 클릭하면 다음 대사($beatNum/$totalBeats)로 넘어갑니다'
-                                            : '💡 ウィンドウをクリックすると次のセリフ($beatNum/$totalBeats)へ進みます'),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 11.5,
+                        const SizedBox(height: 8),
+
+                        // 4. Bottom Visual Novel Hint & System Menu Bar (Wrap so neither hint nor buttons are ever truncated)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isCompact ? 4 : 14,
+                          ),
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                vm.isChoiceOverlayOpen
+                                    ? (isKo
+                                          ? '👆 화면 중앙의 선택지를 클릭하세요'
+                                          : '👆 画面中央の選択肢をクリックしてください')
+                                    : (isKo
+                                          ? '💡 대화창을 클릭하면 다음 대사($beatNum/$totalBeats)로 넘어갑니다'
+                                          : '💡 ウィンドウをクリックすると次のセリフ($beatNum/$totalBeats)へ進みます'),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Wrap(
+                                spacing: 2,
+                                runSpacing: 2,
+                                children: [
+                                  _VnMenuTextButton(
+                                    label: '◀ PREV',
+                                    onTap: vm.previousDialogue,
                                   ),
-                                ),
+                                  _VnMenuTextButton(
+                                    label: 'NEXT ▶',
+                                    onTap: vm.advanceDialogue,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'JUMP',
+                                    onTap: () => _showChapterJumpMenu(context),
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'CHOICE',
+                                    isActive: vm.isChoiceOverlayOpen,
+                                    onTap: vm.toggleChoices,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'CODE',
+                                    isActive: vm.isShowcaseVisible,
+                                    onTap: vm.toggleShowcase,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'RIG',
+                                    isActive: vm.isRigInspectorVisible,
+                                    activeColor: const Color(0xFF4ADE80),
+                                    onTap: vm.toggleRigInspector,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: vm.isMicRecording
+                                        ? '🎙️MIC ON'
+                                        : '🎙️MIC',
+                                    isActive: vm.isMicRecording,
+                                    activeColor: const Color(0xFFF43F5E),
+                                    onTap: vm.toggleMic,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'ASK',
+                                    onTap: () => _showAskDialog(context),
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'SKIP',
+                                    onTap: vm.skipToChoices,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'AUTO',
+                                    isActive: vm.isAutoMode,
+                                    onTap: vm.toggleAutoMode,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'LOG',
+                                    onTap: widget.onOpenBacklog,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'CLOSE',
+                                    onTap: vm.toggleDialogueBoxHidden,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'CONFIG',
+                                    onTap: widget.onOpenSettings,
+                                  ),
+                                  _VnMenuTextButton(
+                                    label: 'QUIT',
+                                    onTap: () =>
+                                        Navigator.of(context).maybePop(),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
                             ],
-                            Expanded(
-                              flex: showHintInline ? 0 : 1,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _VnMenuTextButton(
-                                      label: '◀ PREV',
-                                      onTap: vm.previousDialogue,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'NEXT ▶',
-                                      onTap: vm.advanceDialogue,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'JUMP',
-                                      onTap: () =>
-                                          _showChapterJumpMenu(context),
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'CHOICE',
-                                      isActive: vm.isChoiceOverlayOpen,
-                                      onTap: vm.toggleChoices,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'CODE',
-                                      isActive: vm.isShowcaseVisible,
-                                      onTap: vm.toggleShowcase,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'RIG',
-                                      isActive: vm.isRigInspectorVisible,
-                                      activeColor: const Color(0xFF4ADE80),
-                                      onTap: vm.toggleRigInspector,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: vm.isMicRecording
-                                          ? '🎙️MIC ON'
-                                          : '🎙️MIC',
-                                      isActive: vm.isMicRecording,
-                                      activeColor: const Color(0xFFF43F5E),
-                                      onTap: vm.toggleMic,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'ASK',
-                                      onTap: () => _showAskDialog(context),
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'SKIP',
-                                      onTap: vm.skipToChoices,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'AUTO',
-                                      isActive: vm.isAutoMode,
-                                      onTap: vm.toggleAutoMode,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'LOG',
-                                      onTap: widget.onOpenBacklog,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'CLOSE',
-                                      onTap: vm.toggleDialogueBoxHidden,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'CONFIG',
-                                      onTap: widget.onOpenSettings,
-                                    ),
-                                    _VnMenuTextButton(
-                                      label: 'QUIT',
-                                      onTap: () =>
-                                          Navigator.of(context).maybePop(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

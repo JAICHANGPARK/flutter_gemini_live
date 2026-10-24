@@ -63,8 +63,8 @@ class RealtimeMediaLiveService {
 
   void sendVideo(Uint8List bytes) => session!.sendVideo(bytes);
 
-  /// Sends three tiny dummy PCM blobs via `sendMediaChunks`; returns the
-  /// number of chunks sent.
+  /// Sends three tiny dummy PCM blobs via `sendRealtimeInput(media: ...)`;
+  /// returns the number of chunks sent.
   int sendDemoMediaChunks() {
     final chunks = [
       Blob(mimeType: 'audio/pcm', data: base64Encode([1, 2, 3, 4, 5])),
@@ -72,7 +72,7 @@ class RealtimeMediaLiveService {
       Blob(mimeType: 'audio/pcm', data: base64Encode([11, 12, 13, 14, 15])),
     ];
 
-    session!.sendMediaChunks(chunks);
+    session!.sendRealtimeInput(media: chunks);
     return chunks.length;
   }
 

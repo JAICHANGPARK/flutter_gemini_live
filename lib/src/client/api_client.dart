@@ -4,6 +4,8 @@ import 'dart:convert'; // Required for JSON encoding and decoding.
 
 import 'package:http/http.dart' as http; // The foundation for making HTTP requests.
 
+import '../model/models.dart';
+
 /// A low-level client responsible for making authenticated HTTP requests to the
 /// Google Generative AI API backend.
 ///
@@ -23,6 +25,9 @@ class ApiClient {
   /// The version of the API to target, e.g., 'v1beta'.
   final String apiVersion;
 
+  /// Optional default HTTP headers applied to every request.
+  final Map<String, String>? headers;
+
   /// The underlying HTTP client for making network requests.
   ///
   /// This client is either provided via the constructor or created internally.
@@ -34,12 +39,14 @@ class ApiClient {
   /// [apiKey] is required for all requests.
   /// [baseUrl] can be specified to override the default API endpoint.
   /// [apiVersion] defaults to 'v1beta'.
+  /// [headers] can be specified to include default HTTP headers on requests.
   /// [httpClient] is an optional HTTP client to use for requests. If not
   /// provided, a new `http.Client()` instance is created.
   ApiClient({
     required this.apiKey,
     this.baseUrl,
     this.apiVersion = 'v1beta',
+    this.headers,
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client(); // Use provided client or create a new one.
 
@@ -51,11 +58,15 @@ class ApiClient {
     String path, [
     Map<String, String>? queryParams,
     String? customApiVersion,
+    HttpOptions? httpOptions,
   ]) {
     // Use the provided baseUrl or fall back to the default Google API endpoint.
     final effectiveBaseUrl =
-        baseUrl ?? 'https://generativelanguage.googleapis.com';
-    final effectiveApiVersion = customApiVersion ?? apiVersion;
+        httpOptions?.baseUrl ??
+        baseUrl ??
+        'https://generativelanguage.googleapis.com';
+    final effectiveApiVersion =
+        httpOptions?.apiVersion ?? customApiVersion ?? apiVersion;
     final baseUri = Uri.parse('$effectiveBaseUrl/$effectiveApiVersion/$path');
     final query = Map<String, String>.from(baseUri.queryParameters);
     query['key'] = apiKey;
@@ -65,22 +76,35 @@ class ApiClient {
     return baseUri.replace(queryParameters: query);
   }
 
+  Map<String, String> _buildHeaders(
+    Map<String, String> defaultHeaders, [
+    HttpOptions? httpOptions,
+  ]) {
+    return <String, String>{
+      ...defaultHeaders,
+      ...?headers,
+      ...?httpOptions?.headers,
+    };
+  }
+
   /// Sends a GET request to the specified API [path].
   ///
   /// - [path]: The specific API resource path (e.g., 'voices').
   /// - [queryParams]: Optional query parameters to append.
   /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
+  /// - [httpOptions]: Optional per-request HTTP options override.
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>].
   Future<Map<String, dynamic>> get(
     String path, [
     Map<String, String>? queryParams,
     String? apiVersion,
+    HttpOptions? httpOptions,
   ]) async {
-    final uri = _buildUri(path, queryParams, apiVersion);
+    final uri = _buildUri(path, queryParams, apiVersion, httpOptions);
     final response = await _httpClient.get(
       uri,
-      headers: {'Accept': 'application/json'},
+      headers: _buildHeaders(const {'Accept': 'application/json'}, httpOptions),
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -98,6 +122,7 @@ class ApiClient {
   /// - [path]: The specific API resource path (e.g., 'models/gemini-pro:generateContent').
   /// - [body]: The request payload, which will be JSON-encoded.
   /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
+  /// - [httpOptions]: Optional per-request HTTP options override.
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>] on success.
   ///
@@ -106,12 +131,21 @@ class ApiClient {
     String path,
     Map<String, dynamic> body, {
     String? apiVersion,
+    HttpOptions? httpOptions,
   }) async {
-    final uri = _buildUri(path, null, apiVersion);
+    final uri = _buildUri(path, null, apiVersion, httpOptions);
+    final effectiveBody = httpOptions?.extraBody != null
+        ? <String, dynamic>{...body, ...httpOptions!.extraBody!}
+        : body;
     final response = await _httpClient.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body), // Serialize the request body to a JSON string.
+      headers: _buildHeaders(
+        const {'Content-Type': 'application/json'},
+        httpOptions,
+      ),
+      body: jsonEncode(
+        effectiveBody,
+      ), // Serialize the request body to a JSON string.
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -127,16 +161,18 @@ class ApiClient {
   ///
   /// - [path]: The specific API resource path (e.g., 'voices/voice_123').
   /// - [apiVersion]: Optional API version override (e.g., 'v1alpha').
+  /// - [httpOptions]: Optional per-request HTTP options override.
   ///
   /// Returns the decoded JSON response as a [Map<String, dynamic>].
   Future<Map<String, dynamic>> delete(
     String path, {
     String? apiVersion,
+    HttpOptions? httpOptions,
   }) async {
-    final uri = _buildUri(path, null, apiVersion);
+    final uri = _buildUri(path, null, apiVersion, httpOptions);
     final response = await _httpClient.delete(
       uri,
-      headers: {'Accept': 'application/json'},
+      headers: _buildHeaders(const {'Accept': 'application/json'}, httpOptions),
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {

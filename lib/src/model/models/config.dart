@@ -447,15 +447,108 @@ class LiveClientSetup {
   }
 }
 
+/// HTTP and WebSocket transport options for API requests and Live sessions.
+///
+/// Mirrors `HttpOptions` in the upstream `@google/genai` (JS/TS) and
+/// `google-genai` (Python) SDKs.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class HttpOptions {
+  /// The base URL for the AI platform service endpoint.
+  final String? baseUrl;
+
+  /// Specifies the version of the API to use (e.g. `'v1beta'`, `'v1alpha'`).
+  final String? apiVersion;
+
+  /// Additional HTTP headers to be sent with the request or WebSocket handshake.
+  final Map<String, String>? headers;
+
+  /// Timeout for the request in milliseconds.
+  final int? timeout;
+
+  /// Extra parameters to add to the request body.
+  final Map<String, dynamic>? extraBody;
+
+  /// HTTP retry options for the request.
+  final Map<String, dynamic>? retryOptions;
+
+  /// Args passed to the HTTP client.
+  final Map<String, dynamic>? clientArgs;
+
+  /// Args passed to the async HTTP client.
+  final Map<String, dynamic>? asyncClientArgs;
+
+  /// Creates [HttpOptions].
+  const HttpOptions({
+    this.baseUrl,
+    this.apiVersion,
+    this.headers,
+    this.timeout,
+    this.extraBody,
+    this.retryOptions,
+    this.clientArgs,
+    this.asyncClientArgs,
+  });
+
+  /// Creates [HttpOptions] from a JSON map (supports both `camelCase` and `snake_case`).
+  factory HttpOptions.fromJson(Map<String, dynamic> json) {
+    final normalized = <String, dynamic>{
+      ...json,
+      if (!json.containsKey('base_url') && json.containsKey('baseUrl'))
+        'base_url': json['baseUrl'],
+      if (!json.containsKey('api_version') && json.containsKey('apiVersion'))
+        'api_version': json['apiVersion'],
+      if (!json.containsKey('extra_body') && json.containsKey('extraBody'))
+        'extra_body': json['extraBody'],
+      if (!json.containsKey('retry_options') &&
+          json.containsKey('retryOptions'))
+        'retry_options': json['retryOptions'],
+      if (!json.containsKey('client_args') && json.containsKey('clientArgs'))
+        'client_args': json['clientArgs'],
+      if (!json.containsKey('async_client_args') &&
+          json.containsKey('asyncClientArgs'))
+        'async_client_args': json['asyncClientArgs'],
+    };
+    return _$HttpOptionsFromJson(normalized);
+  }
+
+  /// Serializes this [HttpOptions] to a JSON map.
+  Map<String, dynamic> toJson() => _$HttpOptionsToJson(this);
+
+  /// Returns a new [HttpOptions] patched with non-null fields from [patch].
+  ///
+  /// Header maps from both options are merged, with [patch] headers taking
+  /// precedence over existing headers.
+  HttpOptions merge(HttpOptions? patch) {
+    if (patch == null) return this;
+    final mergedHeaders = (headers != null || patch.headers != null)
+        ? <String, String>{...?headers, ...?patch.headers}
+        : null;
+    return HttpOptions(
+      baseUrl: patch.baseUrl ?? baseUrl,
+      apiVersion: patch.apiVersion ?? apiVersion,
+      headers: mergedHeaders,
+      timeout: patch.timeout ?? timeout,
+      extraBody: patch.extraBody ?? extraBody,
+      retryOptions: patch.retryOptions ?? retryOptions,
+      clientArgs: patch.clientArgs ?? clientArgs,
+      asyncClientArgs: patch.asyncClientArgs ?? asyncClientArgs,
+    );
+  }
+}
+
 /// Session configuration for Live API connections.
 ///
 /// Mirrors `LiveConnectConfig` in the upstream `@google/genai` (JS/TS) and
 /// `google-genai` (Python) SDKs. Combines [GenerationConfig] fields with
-/// session-level settings such as [systemInstruction], [tools],
+/// session-level settings such as [httpOptions], [systemInstruction], [tools],
 /// [realtimeInputConfig], [sessionResumption], [contextWindowCompression],
 /// [inputAudioTranscription], [outputAudioTranscription], [proactivity],
 /// [explicitVadSignal], [avatarConfig], [safetySettings], and [historyConfig].
 class LiveConnectConfig extends GenerationConfig {
+  /// Optional HTTP/WebSocket transport options (`baseUrl`, `apiVersion`, `headers`)
+  /// that override client-level options for this session.
+  final HttpOptions? httpOptions;
+
   /// Optional nested generation configuration.
   final GenerationConfig? generationConfig;
 
@@ -500,6 +593,7 @@ class LiveConnectConfig extends GenerationConfig {
 
   /// Creates a [LiveConnectConfig] for a Gemini Live session.
   LiveConnectConfig({
+    Object? httpOptions,
     this.generationConfig,
     super.temperature,
     super.topK,
@@ -526,10 +620,24 @@ class LiveConnectConfig extends GenerationConfig {
     this.avatarConfig,
     this.safetySettings,
     this.historyConfig,
-  }) : systemInstruction = _parseConfigSystemInstruction(systemInstruction),
+  }) : httpOptions = _parseConfigHttpOptions(httpOptions),
+       systemInstruction = _parseConfigSystemInstruction(systemInstruction),
        tools = _extractTools(tools),
        callableTools = _extractCallableTools(tools),
        super(speechConfig: _parseConfigSpeechConfig(speechConfig));
+
+  static HttpOptions? _parseConfigHttpOptions(Object? value) {
+    if (value == null) return null;
+    if (value is HttpOptions) return value;
+    if (value is Map<String, dynamic>) {
+      return HttpOptions.fromJson(value);
+    }
+    throw ArgumentError.value(
+      value,
+      'httpOptions',
+      'Must be an HttpOptions or Map<String, dynamic>.',
+    );
+  }
 
   static Content? _parseConfigSystemInstruction(Object? value) {
     if (value == null) return null;
@@ -559,6 +667,7 @@ class LiveConnectConfig extends GenerationConfig {
   static SpeechConfig? _parseConfigSpeechConfig(Object? value) {
     if (value == null) return null;
     if (value is SpeechConfig) return value;
+    if (value is GeminiLiveVoice) return SpeechConfig.fromLiveVoice(value);
     if (value is String) {
       return SpeechConfig(
         voiceConfig: VoiceConfig(
@@ -572,7 +681,7 @@ class LiveConnectConfig extends GenerationConfig {
     throw ArgumentError.value(
       value,
       'speechConfig',
-      'Must be a SpeechConfig, String (voiceName), or Map<String, dynamic>.',
+      'Must be a SpeechConfig, GeminiLiveVoice, String (voiceName), or Map<String, dynamic>.',
     );
   }
 
@@ -604,6 +713,7 @@ class LiveConnectConfig extends GenerationConfig {
   /// Creates a [LiveConnectConfig] from a JSON payload.
   factory LiveConnectConfig.fromJson(Map<String, dynamic> json) {
     final base = _$GenerationConfigFromJson(json);
+    final rawHttpOptions = json['httpOptions'] ?? json['http_options'];
     final rawGen = json['generationConfig'] ?? json['generation_config'];
     final rawSys = json['systemInstruction'] ?? json['system_instruction'];
     final rawTools = json['tools'] as List<dynamic>?;
@@ -624,6 +734,9 @@ class LiveConnectConfig extends GenerationConfig {
         (json['safetySettings'] ?? json['safety_settings']) as List<dynamic>?;
     final rawHistory = json['historyConfig'] ?? json['history_config'];
     return LiveConnectConfig(
+      httpOptions: rawHttpOptions == null
+          ? null
+          : HttpOptions.fromJson(rawHttpOptions as Map<String, dynamic>),
       generationConfig: rawGen == null
           ? null
           : GenerationConfig.fromJson(rawGen as Map<String, dynamic>),
