@@ -79,9 +79,9 @@ await controller.connect(
 
 ---
 
-## 📜 3. Seeding Prior Conversation History (`HistoryConfig`)
+## 📜 3. Seeding Prior Conversation History (`HistoryConfig` & `GeminiLiveTranscriptExporter`)
 
-To resume a previous text chat or inject multi-turn context before starting real-time voice streaming, enable `HistoryConfig(initialHistoryInClientContent: true)` and send prior turns ending with `turnComplete: true`:
+To resume a previous text chat or inject multi-turn context before starting real-time voice streaming, enable `HistoryConfig(initialHistoryInClientContent: true)` and send prior turns ending with `turnComplete: true`. You can also convert existing `controller.transcripts` directly via `controller.toHistoryClientContent()`, or export/restore transcripts in Markdown, JSON, WebVTT (`.vtt`), and SubRip (`.srt`) formats using `GeminiLiveTranscriptExporter`:
 
 ```dart
 final session = await genAI.live.connect(

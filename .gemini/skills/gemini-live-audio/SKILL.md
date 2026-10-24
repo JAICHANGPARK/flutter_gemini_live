@@ -163,6 +163,19 @@ final voiceReq = CreateVoiceRequest.prompted(
   displayName: 'Warm Narrator',
 );
 
+// Inline SpeechConfig for PromptedVoice / Voice Remix:
+final remixSpeech = SpeechConfig.withPromptedVoice(
+  input: 'Speak with an energetic, friendly sports commentator tone',
+  baseVoice: 'Puck',
+);
+
+// Or open the interactive Voice Studio modal sheet:
+final selectedSpeechConfig = await GeminiLiveVoiceStudioSheet.show(
+  context,
+  voicesService: genAI.voices,
+  initialBaseVoice: 'Puck',
+);
+
 // Inspecting active voice properties
 final active = speechConfig.liveVoice;
 if (active != null) {

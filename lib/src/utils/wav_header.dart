@@ -58,3 +58,82 @@ Uint8List addWavHeader(
 
   return wavBytes;
 }
+
+/// Metadata and raw PCM payload parsed from a RIFF WAVE (`.wav`) byte buffer.
+class WavAudioInfo {
+  /// Audio sample rate in Hz (e.g. `16000`, `24000`, `48000`).
+  final int sampleRate;
+
+  /// Number of audio channels (`1` = mono, `2` = stereo).
+  final int numChannels;
+
+  /// Bits per sample (e.g. `16`).
+  final int bitsPerSample;
+
+  /// Raw PCM audio payload stripped of its WAV header.
+  final Uint8List pcmBytes;
+
+  /// Creates a parsed [WavAudioInfo] result.
+  const WavAudioInfo({
+    required this.sampleRate,
+    required this.numChannels,
+    required this.bitsPerSample,
+    required this.pcmBytes,
+  });
+
+  /// Playback duration of [pcmBytes].
+  Duration get duration {
+    final bytesPerSecond = (sampleRate * numChannels * bitsPerSample) ~/ 8;
+    if (bytesPerSecond <= 0 || pcmBytes.isEmpty) return Duration.zero;
+    return Duration(
+      microseconds: (pcmBytes.length * 1000000) ~/ bytesPerSecond,
+    );
+  }
+}
+
+/// Parses a standard 44-byte RIFF WAVE header and extracts its [WavAudioInfo]
+/// metadata along with the raw PCM audio payload.
+///
+/// Throws a [FormatException] if [wavBytes] is shorter than 44 bytes or does
+/// not start with `'RIFF'` / `'WAVE'`.
+WavAudioInfo parseWavHeader(Uint8List wavBytes) {
+  if (wavBytes.length < 44) {
+    throw const FormatException('Invalid WAV buffer: shorter than 44 bytes.');
+  }
+  final riff = String.fromCharCodes(wavBytes.sublist(0, 4));
+  final wave = String.fromCharCodes(wavBytes.sublist(8, 12));
+  if (riff != 'RIFF' || wave != 'WAVE') {
+    throw const FormatException('Invalid WAV header: missing RIFF/WAVE magic.');
+  }
+
+  final bd = ByteData.sublistView(wavBytes);
+  final numChannels = bd.getUint16(22, Endian.little);
+  final sampleRate = bd.getUint32(24, Endian.little);
+  final bitsPerSample = bd.getUint16(34, Endian.little);
+  final pcmBytes = Uint8List.sublistView(wavBytes, 44);
+
+  return WavAudioInfo(
+    sampleRate: sampleRate,
+    numChannels: numChannels,
+    bitsPerSample: bitsPerSample,
+    pcmBytes: pcmBytes,
+  );
+}
+
+/// Strips the 44-byte RIFF WAVE header if present, returning only raw PCM bytes.
+/// If [bytes] does not start with a `'RIFF'`/`'WAVE'` header, returns [bytes] unchanged.
+Uint8List stripWavHeader(Uint8List bytes) {
+  if (bytes.length >= 44 &&
+      bytes[0] == 0x52 && // 'R'
+      bytes[1] == 0x49 && // 'I'
+      bytes[2] == 0x46 && // 'F'
+      bytes[3] == 0x46 && // 'F'
+      bytes[8] == 0x57 && // 'W'
+      bytes[9] == 0x41 && // 'A'
+      bytes[10] == 0x56 && // 'V'
+      bytes[11] == 0x45) {
+    return Uint8List.sublistView(bytes, 44);
+  }
+  return bytes;
+}
+

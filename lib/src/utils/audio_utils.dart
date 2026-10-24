@@ -78,4 +78,89 @@ class GeminiLiveAudioUtils {
     if (normalizedAmplitude <= 0.0) return 0.0;
     return math.pow(normalizedAmplitude.clamp(0.0, 1.0), 1.0 / factor).toDouble().clamp(0.0, 1.0);
   }
+
+  /// Returns `true` if the 16-bit PCM buffer's decibel level is below
+  /// [thresholdDb] (useful as a lightweight client-side silence / energy gate).
+  static bool isSilence(
+    Uint8List pcmBytes, {
+    double thresholdDb = -45.0,
+  }) {
+    return calculateDecibels(pcmBytes) <= thresholdDb;
+  }
+
+  /// Downmixes 16-bit Little-Endian stereo PCM (2 channels) into 16-bit mono PCM (1 channel)
+  /// by averaging the left and right channels per frame.
+  static Uint8List stereoToMonoPcm16(Uint8List stereoPcmBytes) {
+    final frameCount = stereoPcmBytes.length ~/ 4;
+    if (frameCount <= 0) return Uint8List(0);
+
+    final src = ByteData.sublistView(stereoPcmBytes);
+    final dstBytes = Uint8List(frameCount * 2);
+    final dst = ByteData.sublistView(dstBytes);
+
+    for (int i = 0; i < frameCount; i++) {
+      final left = src.getInt16(i * 4, Endian.little);
+      final right = src.getInt16(i * 4 + 2, Endian.little);
+      final mono = ((left + right) ~/ 2).clamp(-32768, 32767);
+      dst.setInt16(i * 2, mono, Endian.little);
+    }
+    return dstBytes;
+  }
+
+  /// Upmixes 16-bit Little-Endian mono PCM (1 channel) into 16-bit stereo PCM (2 channels)
+  /// by duplicating each mono sample across left and right channels.
+  static Uint8List monoToStereoPcm16(Uint8List monoPcmBytes) {
+    final sampleCount = monoPcmBytes.length ~/ 2;
+    if (sampleCount <= 0) return Uint8List(0);
+
+    final src = ByteData.sublistView(monoPcmBytes);
+    final dstBytes = Uint8List(sampleCount * 4);
+    final dst = ByteData.sublistView(dstBytes);
+
+    for (int i = 0; i < sampleCount; i++) {
+      final sample = src.getInt16(i * 2, Endian.little);
+      dst.setInt16(i * 4, sample, Endian.little);
+      dst.setInt16(i * 4 + 2, sample, Endian.little);
+    }
+    return dstBytes;
+  }
+
+  /// Resamples 16-bit Little-Endian mono PCM audio from [fromSampleRate] to
+  /// [toSampleRate] using linear interpolation.
+  ///
+  /// Useful when hardware microphones capture at `48000` Hz or `44100` Hz and
+  /// need to be converted to Gemini Live's `16000` Hz input format, or when
+  /// converting `24000` Hz Gemini speech to `48000` Hz output.
+  static Uint8List resamplePcm16Mono(
+    Uint8List pcmBytes, {
+    required int fromSampleRate,
+    required int toSampleRate,
+  }) {
+    assert(fromSampleRate > 0 && toSampleRate > 0);
+    if (pcmBytes.length < 2) return Uint8List(0);
+    if (fromSampleRate == toSampleRate) return Uint8List.fromList(pcmBytes);
+
+    final inSamples = pcmBytes.length ~/ 2;
+    final outSamples = ((inSamples * toSampleRate) / fromSampleRate).round();
+    if (outSamples <= 0) return Uint8List(0);
+
+    final src = ByteData.sublistView(pcmBytes);
+    final dstBytes = Uint8List(outSamples * 2);
+    final dst = ByteData.sublistView(dstBytes);
+    final ratio = fromSampleRate / toSampleRate;
+
+    for (int i = 0; i < outSamples; i++) {
+      final srcPos = i * ratio;
+      final index0 = srcPos.floor().clamp(0, inSamples - 1);
+      final index1 = (index0 + 1).clamp(0, inSamples - 1);
+      final frac = srcPos - index0;
+
+      final s0 = src.getInt16(index0 * 2, Endian.little);
+      final s1 = src.getInt16(index1 * 2, Endian.little);
+      final interpolated = (s0 + (s1 - s0) * frac).round().clamp(-32768, 32767);
+      dst.setInt16(i * 2, interpolated, Endian.little);
+    }
+
+    return dstBytes;
+  }
 }

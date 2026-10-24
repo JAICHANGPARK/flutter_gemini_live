@@ -6,6 +6,7 @@ import '../model/models.dart';
 import 'pcm_audio_buffer.dart';
 import 'reconnect_policy.dart';
 import 'token_usage_tracker.dart';
+import 'transcript_exporter.dart';
 
 /// Connection state of a [GeminiLiveSessionController].
 enum LiveSessionState {
@@ -105,6 +106,12 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// Optional automatic reconnection policy when `GoAway` or abnormal close occurs.
   final GeminiLiveReconnectPolicy? reconnectPolicy;
 
+  /// Whether to automatically invoke registered [CallableTool] instances when
+  /// the server emits a `toolCall` message and send their [Part] responses back.
+  ///
+  /// Defaults to `true`.
+  final bool autoExecuteCallableTools;
+
   LiveSessionState _state = LiveSessionState.disconnected;
   LiveSession? _session;
   LiveConnectParameters? _lastConnectParams;
@@ -127,6 +134,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
   Content? _activeSystemInstruction;
   List<Tool> _activeTools = const [];
+  List<CallableTool> _activeCallableTools = const [];
 
   final List<String> _thoughts = [];
   String? _latestThought;
@@ -154,6 +162,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     required this.liveService,
     GeminiTokenUsageTracker? tokenTracker,
     this.reconnectPolicy,
+    this.autoExecuteCallableTools = true,
   }) : tokenTracker = tokenTracker ?? GeminiTokenUsageTracker();
 
   /// Current session connection state.
@@ -290,13 +299,23 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
     _activeSystemInstruction = params.systemInstruction;
     _activeTools = params.tools != null ? List<Tool>.from(params.tools!) : const [];
+    _activeCallableTools = params.callableTools != null
+        ? List<CallableTool>.from(params.callableTools!)
+        : const [];
+
+    final combinedTools = (params.tools != null || params.callableTools != null)
+        ? <Object>[
+            ...?params.tools,
+            ...?params.callableTools,
+          ]
+        : null;
 
     final wrappedParams = LiveConnectParameters(
       model: params.model,
       callbacks: wrappedCallbacks,
       config: params.config,
       systemInstruction: params.systemInstruction,
-      tools: params.tools,
+      tools: combinedTools,
       realtimeInputConfig: params.realtimeInputConfig,
       sessionResumption: effectiveSessionResumption,
       contextWindowCompression: params.contextWindowCompression,
@@ -319,10 +338,12 @@ class GeminiLiveSessionController extends ChangeNotifier {
       speechConfig: params.speechConfig,
       thinkingConfig: params.thinkingConfig,
       enableAffectiveDialog: params.enableAffectiveDialog,
+      httpOptions: params.httpOptions,
     );
 
     try {
       _session = await liveService.connect(wrappedParams);
+      _sessionId = _session?.sessionId ?? _sessionId;
       _reconnectAttempt = 0;
       _isReconnecting = false;
       _setState(LiveSessionState.connected);
@@ -367,8 +388,12 @@ class GeminiLiveSessionController extends ChangeNotifier {
     // 1d. Tool calls & cancellations
     if (message.toolCall?.functionCalls != null &&
         message.toolCall!.functionCalls!.isNotEmpty) {
-      _activeToolCalls.addAll(message.toolCall!.functionCalls!);
+      final incomingCalls = message.toolCall!.functionCalls!;
+      _activeToolCalls.addAll(incomingCalls);
       notifyListeners();
+      if (autoExecuteCallableTools && _activeCallableTools.isNotEmpty) {
+        unawaited(_executeCallableTools(incomingCalls));
+      }
     }
     if (message.toolCallCancellation?.ids != null &&
         message.toolCallCancellation!.ids!.isNotEmpty) {
@@ -734,6 +759,23 @@ class GeminiLiveSessionController extends ChangeNotifier {
     );
   }
 
+  Future<void> _executeCallableTools(List<FunctionCall> calls) async {
+    final responses = <FunctionResponse>[];
+    for (final callables in _activeCallableTools) {
+      try {
+        final parts = await callables.callTool(calls);
+        for (final part in parts) {
+          if (part.functionResponse != null) {
+            responses.add(part.functionResponse!);
+          }
+        }
+      } catch (_) {}
+    }
+    if (responses.isNotEmpty) {
+      sendToolResponses(responses);
+    }
+  }
+
   /// Sends tool / function call responses back to Gemini.
   void sendToolResponses(List<FunctionResponse> responses) {
     final respondedIds = responses
@@ -822,6 +864,74 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _currentTurnAudioBuffer.clear();
     tokenTracker.reset();
     notifyListeners();
+  }
+
+  /// Converts the current [transcripts] history into a [LiveClientContent]
+  /// payload (with `turns` and `turnComplete`) for seeding a new session when
+  /// `HistoryConfig(initialHistoryInClientContent: true)` is configured.
+  LiveClientContent toHistoryClientContent({
+    bool turnComplete = true,
+    bool includeStreaming = true,
+  }) {
+    return GeminiLiveTranscriptExporter.toHistoryClientContent(
+      _transcripts,
+      turnComplete: turnComplete,
+      includeStreaming: includeStreaming,
+    );
+  }
+
+  /// Exports the current [transcripts] to a formatted Markdown string.
+  String exportTranscriptMarkdown({
+    String title = 'Gemini Live Transcript',
+    bool includeTimestamps = true,
+  }) {
+    return GeminiLiveTranscriptExporter.toMarkdown(
+      _transcripts,
+      title: title,
+      includeTimestamps: includeTimestamps,
+    );
+  }
+
+  /// Serializes the current [transcripts] to a JSON string.
+  String exportTranscriptJson({bool pretty = false}) {
+    return GeminiLiveTranscriptExporter.toJsonString(
+      _transcripts,
+      pretty: pretty,
+    );
+  }
+
+  /// Restores [transcripts] from a JSON string created by [exportTranscriptJson].
+  void restoreTranscriptsFromJson(String jsonStr, {bool clearExisting = true}) {
+    final restored = GeminiLiveTranscriptExporter.fromJsonString(jsonStr);
+    if (clearExisting) {
+      _transcripts.clear();
+    }
+    _transcripts.addAll(restored);
+    if (_transcripts.isNotEmpty) {
+      _latestTranscript = _transcripts.last.text;
+      _latestTranscriptRole = _transcripts.last.role;
+    }
+    notifyListeners();
+  }
+
+  /// Exports the current [transcripts] to WebVTT (`.vtt`) subtitle format.
+  String exportTranscriptWebVtt({
+    Duration defaultCueDuration = const Duration(seconds: 3),
+  }) {
+    return GeminiLiveTranscriptExporter.toWebVtt(
+      _transcripts,
+      defaultCueDuration: defaultCueDuration,
+    );
+  }
+
+  /// Exports the current [transcripts] to SubRip (`.srt`) subtitle format.
+  String exportTranscriptSrt({
+    Duration defaultCueDuration = const Duration(seconds: 3),
+  }) {
+    return GeminiLiveTranscriptExporter.toSrt(
+      _transcripts,
+      defaultCueDuration: defaultCueDuration,
+    );
   }
 
   /// Injects a server message for unit and widget testing purposes.

@@ -859,5 +859,386 @@ void main() {
         controller.dispose();
       },
     );
+
+    testWidgets(
+      'GeminiLiveVoiceSelectorSheet supports Voice Remix (PromptedVoice with baseVoice)',
+      (tester) async {
+        SpeechConfig? selectedSpeechConfig;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GeminiLiveVoiceSelectorSheet(
+                currentVoice: 'Puck',
+                enableVoiceRemix: true,
+                initialRemixPrompt: 'Warm upbeat anime narrator',
+                onVoiceSelected: (_) {},
+                onSpeechConfigSelected: (config) {
+                  selectedSpeechConfig = config;
+                },
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(TextField), findsOneWidget);
+        await tester.tap(find.text('Leda'));
+        await tester.pumpAndSettle();
+
+        expect(selectedSpeechConfig, isNotNull);
+        final prompted =
+            selectedSpeechConfig!.voiceConfig?.promptedVoiceConfig;
+        expect(prompted, isNotNull);
+        expect(prompted!.input, 'Warm upbeat anime narrator');
+        expect(prompted.baseVoice, 'Leda');
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveMusicControlDeck manages weighted prompts, BPM, scale, and playback controls',
+      (tester) async {
+        List<WeightedPrompt>? updatedPrompts;
+        LiveMusicPlaybackControl? lastControl;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: GeminiLiveMusicControlDeck(
+                  initialPrompts: const [
+                    WeightedPrompt(text: 'Synthwave arpeggio', weight: 1.0),
+                  ],
+                  onPromptsChanged: (prompts) => updatedPrompts = prompts,
+                  onPlaybackControl: (control) => lastControl = control,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Lyria Live Music DJ'), findsOneWidget);
+        expect(find.text('Synthwave arpeggio'), findsOneWidget);
+
+        // Add a new prompt
+        await tester.enterText(find.byType(TextField), 'Deep sub bass');
+        await tester.tap(find.byIcon(Icons.add_rounded));
+        await tester.pumpAndSettle();
+
+        expect(updatedPrompts, isNotNull);
+        expect(updatedPrompts!.length, 2);
+        expect(updatedPrompts!.last.text, 'Deep sub bass');
+
+        // Tap Play button
+        await tester.tap(find.text('Play'));
+        await tester.pumpAndSettle();
+        expect(lastControl, LiveMusicPlaybackControl.PLAY);
+        expect(find.text('Pause'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveReconnectBanner renders GoAway warning and custom builders',
+      (tester) async {
+        final genAI = GoogleGenAI(apiKey: 'test-key');
+        final controller = GeminiLiveSessionController(liveService: genAI.live);
+
+        controller.handleServerMessageForTesting(
+          LiveServerMessage(
+            sessionResumptionUpdate: LiveServerSessionResumptionUpdate(
+              newHandle: 'handle-xyz',
+              resumable: true,
+            ),
+            goAway: LiveServerGoAway(timeLeft: '30s'),
+          ),
+        );
+
+        bool reconnectTapped = false;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GeminiLiveReconnectBanner.fromController(
+                controller: controller,
+                onReconnectNow: () => reconnectTapped = true,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.textContaining('30s'), findsOneWidget);
+        expect(find.textContaining('Session handle saved'), findsOneWidget);
+
+        await tester.tap(find.text('Reconnect'));
+        await tester.pumpAndSettle();
+        expect(reconnectTapped, isTrue);
+
+        controller.dispose();
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveVoiceStudioSheet displays custom voices and creates remix SpeechConfig',
+      (tester) async {
+        SpeechConfig? selectedConfig;
+        CreateVoiceRequest? createdRequest;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GeminiLiveVoiceStudioSheet(
+                initialBaseVoice: 'Puck',
+                initialCustomVoices: [
+                  VoiceResource(
+                    id: 'voices/custom-123',
+                    displayName: 'Galactic Host',
+                    description: 'Futuristic sci-fi announcer',
+                  ),
+                ],
+                onCreateVoiceRequest: (req) => createdRequest = req,
+                onSpeechConfigSelected: (config) => selectedConfig = config,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Gemini Voice Studio'), findsOneWidget);
+        expect(find.text('Galactic Host'), findsOneWidget);
+
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Voice Style & Persona Prompt'),
+          'Energetic documentary narrator',
+        );
+        await tester.tap(find.text('Generate / Remix Voice'));
+        await tester.pumpAndSettle();
+
+        expect(createdRequest, isNotNull);
+        expect(createdRequest!.prompted?.input, 'Energetic documentary narrator');
+        expect(createdRequest!.prompted?.baseVoice, 'Puck');
+        expect(selectedConfig, isNotNull);
+        expect(
+          selectedConfig!.voiceConfig?.promptedVoiceConfig?.input,
+          'Energetic documentary narrator',
+        );
+        expect(
+          selectedConfig!.voiceConfig?.promptedVoiceConfig?.baseVoice,
+          'Puck',
+        );
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveSessionInfoBadge and GeminiLiveSessionInfoSheet display session diagnostics',
+      (tester) async {
+        final genAI = GoogleGenAI(apiKey: 'test-key');
+        final controller = GeminiLiveSessionController(liveService: genAI.live);
+
+        controller.handleServerMessageForTesting(
+          LiveServerMessage(
+            sessionResumptionUpdate: LiveServerSessionResumptionUpdate(
+              newHandle: 'resume-handle-999',
+              resumable: true,
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    GeminiLiveSessionInfoBadge(controller: controller),
+                    GeminiLiveSessionInfoSheet(
+                      controller: controller,
+                      httpOptions: const HttpOptions(
+                        apiVersion: 'v1alpha',
+                        headers: {'X-Env': 'staging'},
+                      ),
+                      labels: const {'team': 'mobile-ai'},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Live Session Inspector'), findsOneWidget);
+        expect(find.textContaining('resume-handle-999'), findsOneWidget);
+        expect(find.text('v1alpha'), findsOneWidget);
+        expect(find.text('team=mobile-ai'), findsOneWidget);
+
+        controller.dispose();
+      },
+    );
+
+    test(
+      'GeminiLiveFunctionTool and GeminiLiveToolRegistry declare and execute functions automatically',
+      () async {
+        final weatherTool = GeminiLiveFunctionTool(
+          name: 'get_weather',
+          description: 'Fetches current weather.',
+          behavior: Behavior.NON_BLOCKING,
+          scheduling: FunctionResponseScheduling.WHEN_IDLE,
+          handler: (args) async => {
+            'city': args['city'],
+            'temp_c': 24,
+          },
+        );
+
+        final failTool = GeminiLiveFunctionTool(
+          name: 'failing_tool',
+          description: 'Throws an exception.',
+          handler: (_) => throw StateError('Backend offline'),
+        );
+
+        final registry = GeminiLiveToolRegistry([weatherTool, failTool]);
+        expect(registry.contains('get_weather'), isTrue);
+
+        final declaredTool = await registry.tool();
+        expect(declaredTool.functionDeclarations, hasLength(2));
+
+        final parts = await registry.callTool([
+          FunctionCall(
+            id: 'call-1',
+            name: 'get_weather',
+            args: {'city': 'Seoul'},
+          ),
+          FunctionCall(
+            id: 'call-2',
+            name: 'failing_tool',
+            args: const {},
+          ),
+        ]);
+
+        expect(parts, hasLength(2));
+        expect(parts[0].functionResponse?.id, 'call-1');
+        expect(parts[0].functionResponse?.response?['temp_c'], 24);
+        expect(
+          parts[0].functionResponse?.scheduling,
+          FunctionResponseScheduling.WHEN_IDLE,
+        );
+        expect(
+          parts[1].functionResponse?.response?['error'],
+          contains('Backend offline'),
+        );
+      },
+    );
+
+    test(
+      'GeminiLiveTranscriptExporter converts transcripts to HistoryConfig, Markdown, JSON, WebVTT, and SRT',
+      () {
+        final t0 = DateTime.utc(2026, 10, 24, 12, 0, 0);
+        final items = [
+          LiveTranscriptItem(
+            role: 'user',
+            text: 'Hello Gemini!',
+            timestamp: t0,
+          ),
+          LiveTranscriptItem(
+            role: 'model',
+            text: 'Hi! How can I help you today?',
+            speaker: 'Puck',
+            timestamp: t0.add(const Duration(seconds: 2)),
+          ),
+        ];
+
+        final historyPayload =
+            GeminiLiveTranscriptExporter.toHistoryClientContent(items);
+        expect(historyPayload.turns, hasLength(2));
+        expect(historyPayload.turns!.first.role, 'user');
+        expect(historyPayload.turns!.last.role, 'model');
+        expect(historyPayload.turnComplete, isTrue);
+
+        final md = GeminiLiveTranscriptExporter.toMarkdown(items);
+        expect(md, contains('Hello Gemini!'));
+        expect(md, contains('**Puck**'));
+
+        final jsonStr = GeminiLiveTranscriptExporter.toJsonString(
+          items,
+          pretty: true,
+        );
+        final restored = GeminiLiveTranscriptExporter.fromJsonString(jsonStr);
+        expect(restored, hasLength(2));
+        expect(restored.last.speaker, 'Puck');
+
+        final vtt = GeminiLiveTranscriptExporter.toWebVtt(items);
+        expect(vtt, startsWith('WEBVTT'));
+        expect(vtt, contains('00:00:00.000 --> 00:00:02.000'));
+        expect(vtt, contains('<v Puck>Hi! How can I help you today?'));
+
+        final srt = GeminiLiveTranscriptExporter.toSrt(items);
+        expect(srt, contains('00:00:00,000 --> 00:00:02,000'));
+        expect(srt, contains('[Puck] Hi! How can I help you today?'));
+      },
+    );
+
+    test(
+      'GeminiLiveFrameRateLimiter throttles frame intervals and stream events',
+      () async {
+        final limiter = GeminiLiveFrameRateLimiter<int>(maxFps: 2.0);
+        expect(limiter.maxFps, closeTo(2.0, 0.01));
+
+        final t0 = DateTime.utc(2026, 10, 24, 12, 0, 0);
+        expect(limiter.shouldEmitNow(t0), isTrue);
+        expect(
+          limiter.shouldEmitNow(t0.add(const Duration(milliseconds: 200))),
+          isFalse,
+        );
+        expect(
+          limiter.shouldEmitNow(t0.add(const Duration(milliseconds: 500))),
+          isTrue,
+        );
+
+        limiter.reset();
+        expect(
+          limiter.shouldEmitNow(t0.add(const Duration(milliseconds: 100))),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'GeminiLiveAudioUtils resamples PCM16, converts stereo/mono, detects silence, and parses WAV headers',
+      () {
+        // 100 samples of mono 16kHz silence
+        final silentMono = Uint8List(200);
+        expect(GeminiLiveAudioUtils.isSilence(silentMono), isTrue);
+
+        // Mono <-> Stereo round-trip
+        final monoBytes = Uint8List(4);
+        final monoBd = ByteData.sublistView(monoBytes);
+        monoBd.setInt16(0, 1000, Endian.little);
+        monoBd.setInt16(2, -2000, Endian.little);
+
+        final stereoBytes = GeminiLiveAudioUtils.monoToStereoPcm16(monoBytes);
+        expect(stereoBytes.length, 8);
+        final backToMono = GeminiLiveAudioUtils.stereoToMonoPcm16(stereoBytes);
+        expect(backToMono, equals(monoBytes));
+
+        // Resample 48kHz -> 16kHz (3:1 sample reduction)
+        final pcm48k = Uint8List(480 * 2); // 480 samples
+        final pcm16k = GeminiLiveAudioUtils.resamplePcm16Mono(
+          pcm48k,
+          fromSampleRate: 48000,
+          toSampleRate: 16000,
+        );
+        expect(pcm16k.length, 160 * 2); // 160 samples
+
+        // WAV header parse & strip
+        final wavBytes = addWavHeader(
+          pcm16k,
+          sampleRate: 16000,
+          numChannels: 1,
+          bitsPerSample: 16,
+        );
+        final parsed = parseWavHeader(wavBytes);
+        expect(parsed.sampleRate, 16000);
+        expect(parsed.numChannels, 1);
+        expect(parsed.bitsPerSample, 16);
+        expect(parsed.pcmBytes.length, pcm16k.length);
+        expect(stripWavHeader(wavBytes).length, pcm16k.length);
+      },
+    );
   });
 }

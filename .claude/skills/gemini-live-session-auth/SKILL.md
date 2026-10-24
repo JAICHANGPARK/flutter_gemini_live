@@ -118,7 +118,11 @@ Future<void> reconnectWithHandle(String? handle) async {
 
 ---
 
-## 📈 Resilient Reconnection Pattern (Exponential Backoff)
+## 📈 Resilient Reconnection Pattern & `GeminiLiveReconnectBanner`
+
+Configure `GeminiLiveReconnectPolicy` on `GeminiLiveSessionController` for automatic exponential backoff reconnection when a `GoAway` message or abnormal close (`code != 1000`) occurs, and display `GeminiLiveReconnectBanner.fromController(controller: controller)` in your UI (included automatically in `GeminiLiveChatView`).
+
+You can also pass per-session or per-client `HttpOptions(baseUrl: ..., apiVersion: ..., headers: ...)` on `GoogleGenAI`, `LiveService`, `LiveConnectConfig`, `LiveConnectParameters`, and `CreateAuthTokenParameters` for custom enterprise gateways or proxy headers:
 
 ```dart
 int _reconnectAttempts = 0;

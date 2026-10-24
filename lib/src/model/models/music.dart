@@ -15,7 +15,7 @@ class WeightedPrompt {
   /// Relative weight of the prompt. Weights will be normalized by the server.
   final double? weight;
 
-  WeightedPrompt({this.text, this.weight});
+  const WeightedPrompt({this.text, this.weight});
 
   factory WeightedPrompt.fromJson(Map<String, dynamic> json) =>
       _$WeightedPromptFromJson(json);

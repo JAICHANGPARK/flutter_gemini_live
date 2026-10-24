@@ -546,6 +546,15 @@ class VoiceConfig {
   factory VoiceConfig.fromVoiceId(String voiceId) =>
       VoiceConfig(voice: voiceId);
 
+  /// Convenience constructor to create a [VoiceConfig] with a [PromptedVoice]
+  /// (optionally remixing [baseVoice]).
+  factory VoiceConfig.fromPromptedVoice({
+    required String input,
+    String? baseVoice,
+  }) => VoiceConfig(
+    promptedVoiceConfig: PromptedVoice(input: input, baseVoice: baseVoice),
+  );
+
   /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
   GeminiLiveVoice? get liveVoice =>
       GeminiLiveVoice.fromName(voice ?? prebuiltVoiceConfig?.voiceName);
@@ -655,6 +664,26 @@ class SpeechConfig {
   /// Convenience constructor for single-voice configuration using a [GeminiLiveVoice] enum.
   factory SpeechConfig.fromLiveVoice(GeminiLiveVoice voice, {String? languageCode}) =>
       SpeechConfig.fromVoice(voice.voiceName, languageCode: languageCode);
+
+  /// Convenience constructor for a prebuilt voice by name.
+  factory SpeechConfig.withPrebuiltVoice(
+    String voiceName, {
+    String? languageCode,
+  }) => SpeechConfig.fromVoice(voiceName, languageCode: languageCode);
+
+  /// Convenience constructor for a natural-language prompted or remixed voice
+  /// ([PromptedVoice] with optional [baseVoice]).
+  factory SpeechConfig.withPromptedVoice({
+    required String input,
+    String? baseVoice,
+    String? languageCode,
+  }) => SpeechConfig(
+    voiceConfig: VoiceConfig.fromPromptedVoice(
+      input: input,
+      baseVoice: baseVoice,
+    ),
+    languageCode: languageCode,
+  );
 
   /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
   GeminiLiveVoice? get liveVoice =>

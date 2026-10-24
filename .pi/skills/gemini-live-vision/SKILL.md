@@ -156,8 +156,8 @@ Widget buildCameraHUD(BuildContext context, CameraController camera) {
 
 ## 🚨 Critical Vision Guidelines
 
-1. **Do not use `startImageStream` directly without downsampling/throttling:**
-   `startImageStream` yields 30–60 raw YUV420/BGRA frames per second. Sending uncompressed raw frames will immediately crash the app with Out-of-Memory (OOM) or saturate the WebSocket connection.
+1. **Always throttle high-FPS camera streams with `GeminiLiveFrameRateLimiter`:**
+   `startImageStream` yields 30–60 frames per second. Use `GeminiLiveFrameRateLimiter<Uint8List>(maxFps: 1.0)` on a `Stream` or call `limiter.shouldEmitNow()` inside `startImageStream` to cap frame transmission to 1–2 FPS without backpressure.
 2. **Keep resolution moderate:**
    `ResolutionPreset.medium` (~720x480 or 1280x720) is ideal. High resolution (1080p, 4K) drastically increases latency without improving text or object recognition.
 3. **Always separate audio and video pipelines:**

@@ -30,9 +30,14 @@ lib/
     ├── platform/                 # Web & I/O WebSocket stubs & implementations
     ├── utils/
     │   ├── live_session_controller.dart # Reactive ChangeNotifier UI controller
-    │   ├── audio_utils.dart             # RMS, peak, dBFS, visual scaling
+    │   ├── audio_utils.dart             # RMS, peak, dBFS, resampling, stereo/mono, silence
+    │   ├── pcm_audio_buffer.dart        # Sample-aligned PCM chunker & barge-in buffer
+    │   ├── reconnect_policy.dart        # Exponential backoff reconnection policy
+    │   ├── function_tool_registry.dart  # Inline GeminiLiveFunctionTool & registry
+    │   ├── transcript_exporter.dart     # HistoryConfig, Markdown, JSON, WebVTT, SRT exporter
+    │   ├── frame_rate_limiter.dart      # 1-2 FPS camera stream throttler
     │   ├── token_usage_tracker.dart     # Token accounting tracker
-    │   └── wav_header.dart              # Audio header utility
+    │   └── wav_header.dart              # WAV header builder, parser & stripper
     └── widgets/                  # Pre-built Material 3 & Cupertino UI widgets
         ├── live_chat_view.dart          # High-level pluggable full-screen chat UI
         ├── live_caption_bubble.dart     # Frosted glass subtitle bubble
@@ -44,7 +49,11 @@ lib/
         ├── live_barge_in_banner.dart    # Interruption notification banner
         ├── live_control_bar.dart        # Floating call interaction control bar
         ├── live_vision_overlay.dart     # Computer vision viewfinder HUD overlay
-        ├── live_voice_selector.dart     # Voice persona bottom sheet selector
+        ├── live_voice_selector.dart     # Voice persona & Voice Remix bottom sheet selector
+        ├── live_voice_studio_sheet.dart # Custom Voice Design & Remix studio sheet
+        ├── live_music_control_deck.dart # Lyria Realtime Music Prompt DJ & transport deck
+        ├── live_reconnect_banner.dart   # GoAway countdown & auto-reconnect banner
+        ├── live_session_info_sheet.dart # Session ID badge & diagnostics inspector sheet
         ├── live_tool_activity_chip.dart # Tool/function call execution status pill
         ├── live_thinking_indicator.dart # Extended Thinking expandable reasoning pill
         ├── live_context_config_sheet.dart # Live sendContextUpdate persona & tool sheet

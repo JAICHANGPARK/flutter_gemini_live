@@ -182,9 +182,41 @@ session.sendToolResponse(
 session.sendContextUpdate(tools: const <Tool>[]);
 ```
 
-### Asynchronous Tool Discovery (`CallableTool`)
+### Zero-Boilerplate Inline Callable Tools (`GeminiLiveFunctionTool` & `GeminiLiveToolRegistry`)
 
-You can also implement `CallableTool` to asynchronously resolve `Tool` declarations when `genAI.live.connect()` builds the setup message:
+Instead of manually writing a `CallableTool` subclass or routing `message.toolCall` events by hand, use `GeminiLiveFunctionTool` and `GeminiLiveToolRegistry`. When passed to `GeminiLiveSessionController` (`autoExecuteCallableTools: true`, the default) or `GeminiLiveChatView(tools: [...])`, functions are declared and executed automatically:
+
+```dart
+final weatherTool = GeminiLiveFunctionTool(
+  name: 'get_weather',
+  description: 'Fetch current weather for a city.',
+  parameters: {
+    'type': 'OBJECT',
+    'properties': {'city': {'type': 'STRING'}},
+    'required': ['city'],
+  },
+  behavior: Behavior.NON_BLOCKING,
+  scheduling: FunctionResponseScheduling.WHEN_IDLE,
+  handler: (args) async => {
+    'city': args['city'],
+    'temp_c': 22,
+    'condition': 'Sunny',
+  },
+);
+
+// Bundle multiple function tools into one registry:
+final registry = GeminiLiveToolRegistry([weatherTool]);
+
+// Pass directly to GeminiLiveChatView or LiveConnectParameters:
+GeminiLiveChatView(
+  apiKey: apiKey,
+  tools: [registry],
+);
+```
+
+### Custom Asynchronous Tool Discovery (`CallableTool`)
+
+You can also implement `CallableTool` directly to asynchronously resolve `Tool` declarations when `genAI.live.connect()` builds the setup message:
 
 ```dart
 class DynamicPluginTool implements CallableTool {

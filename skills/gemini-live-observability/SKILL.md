@@ -108,6 +108,18 @@ CupertinoGeminiLiveUsageBadge(
 )
 ```
 
+### Live Session Diagnostics Inspector (`GeminiLiveSessionInfoBadge` & `GeminiLiveSessionInfoSheet`)
+
+```dart
+// Displays active sessionId pill; tapping opens GeminiLiveSessionInfoSheet
+// showing sessionResumption handle status, HttpOptions, labels, active tools, and token/cost metrics.
+GeminiLiveSessionInfoBadge(
+  controller: controller,
+  httpOptions: httpOptions,
+  labels: const {'env': 'prod'},
+)
+```
+
 ---
 
 ## 🔍 3. Structured Diagnostics & Traffic Logging (`GeminiLiveLogger`)

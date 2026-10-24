@@ -12,7 +12,9 @@ import '../model/models.dart';
 /// - Distinct tone & character tag pill display (e.g., "Warm", "Deep", "Energetic")
 /// - Selected checkmark indication
 /// - Instant tap callback with selected voice name or [GeminiLiveVoice] enum
-class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
+/// - Optional Voice Remix (`PromptedVoice` with `baseVoice` + natural-language style prompt)
+///   when [enableVoiceRemix] is `true`.
+class GeminiLiveVoiceSelectorSheet extends StatefulWidget {
   /// The currently selected voice name.
   final String currentVoice;
 
@@ -22,8 +24,21 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
   /// Optional callback when a [GeminiLiveVoice] is selected.
   final ValueChanged<GeminiLiveVoice>? onLiveVoiceSelected;
 
+  /// Optional callback receiving the constructed [SpeechConfig] (either
+  /// [PrebuiltVoiceConfig] or [PromptedVoice] with `baseVoice` when remix prompt
+  /// is provided).
+  final ValueChanged<SpeechConfig>? onSpeechConfigSelected;
+
   /// Optional custom list of voices. If null, uses [defaultLiveVoices].
   final List<GeminiVoiceOption>? voices;
+
+  /// Whether to show a natural-language Voice Remix input field (`PromptedVoice.baseVoice`).
+  ///
+  /// Defaults to `false`.
+  final bool enableVoiceRemix;
+
+  /// Initial natural-language style prompt for Voice Remix (`PromptedVoice.input`).
+  final String? initialRemixPrompt;
 
   /// Creates a voice selector modal sheet highlighting [currentVoice].
   const GeminiLiveVoiceSelectorSheet({
@@ -31,7 +46,10 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
     required this.currentVoice,
     required this.onVoiceSelected,
     this.onLiveVoiceSelected,
+    this.onSpeechConfigSelected,
     this.voices,
+    this.enableVoiceRemix = false,
+    this.initialRemixPrompt,
   });
 
   /// The standard set of popular Gemini Live prebuilt voices.
@@ -84,6 +102,66 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
     return GeminiLiveVoice.fromName(selectedName);
   }
 
+  /// Convenient helper to display this selector with optional Voice Remix (`PromptedVoice.baseVoice`)
+  /// and return the resulting [SpeechConfig].
+  static Future<SpeechConfig?> showSpeechConfig(
+    BuildContext context, {
+    required String currentVoice,
+    String? initialRemixPrompt,
+    bool enableVoiceRemix = true,
+    List<GeminiVoiceOption>? voices,
+  }) {
+    return showModalBottomSheet<SpeechConfig>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GeminiLiveVoiceSelectorSheet(
+        currentVoice: currentVoice,
+        voices: voices,
+        enableVoiceRemix: enableVoiceRemix,
+        initialRemixPrompt: initialRemixPrompt,
+        onVoiceSelected: (_) {},
+        onSpeechConfigSelected: (speechConfig) {
+          Navigator.of(context).pop(speechConfig);
+        },
+      ),
+    );
+  }
+
+  @override
+  State<GeminiLiveVoiceSelectorSheet> createState() =>
+      _GeminiLiveVoiceSelectorSheetState();
+}
+
+class _GeminiLiveVoiceSelectorSheetState
+    extends State<GeminiLiveVoiceSelectorSheet> {
+  late final TextEditingController _remixController;
+
+  @override
+  void initState() {
+    super.initState();
+    _remixController = TextEditingController(
+      text: widget.initialRemixPrompt ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _remixController.dispose();
+    super.dispose();
+  }
+
+  SpeechConfig _buildSpeechConfig(String voiceName) {
+    final remixPrompt = _remixController.text.trim();
+    if (widget.enableVoiceRemix && remixPrompt.isNotEmpty) {
+      return SpeechConfig.withPromptedVoice(
+        input: remixPrompt,
+        baseVoice: voiceName,
+      );
+    }
+    return SpeechConfig.withPrebuiltVoice(voiceName);
+  }
+
   @override
   Widget build(BuildContext context) {
     Brightness? brightness;
@@ -94,7 +172,8 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
     }
 
     final isDark = brightness == Brightness.dark;
-    final effectiveVoices = voices ?? defaultLiveVoices;
+    final effectiveVoices =
+        widget.voices ?? GeminiLiveVoiceSelectorSheet.defaultLiveVoices;
 
     final bgColor = isDark ? const Color(0xFF18181B) : Colors.white;
     final primaryColor = isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
@@ -146,6 +225,38 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
               ),
             ],
           ),
+          if (widget.enableVoiceRemix) ...[
+            const SizedBox(height: 12.0),
+            TextField(
+              controller: _remixController,
+              style: TextStyle(
+                fontSize: 13.0,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText:
+                    'Optional Voice Remix prompt (e.g., Warm upbeat anime narrator)',
+                hintStyle: TextStyle(
+                  fontSize: 12.0,
+                  color: isDark ? Colors.white38 : Colors.black38,
+                ),
+                prefixIcon: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 16.0,
+                  color: primaryColor,
+                ),
+                filled: true,
+                fillColor: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.03),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 14.0),
 
           // Voice list
@@ -156,17 +267,24 @@ class GeminiLiveVoiceSelectorSheet extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(height: 6.0),
               itemBuilder: (context, index) {
                 final option = effectiveVoices[index];
-                final isSelected = option.name.toLowerCase() == currentVoice.toLowerCase();
+                final isSelected =
+                    option.name.toLowerCase() ==
+                    widget.currentVoice.toLowerCase();
 
                 return InkWell(
                   onTap: () {
-                    onVoiceSelected(option.name);
-                    if (onLiveVoiceSelected != null) {
-                      final voice = option.liveVoice ?? GeminiLiveVoice.fromName(option.name);
+                    widget.onVoiceSelected(option.name);
+                    if (widget.onLiveVoiceSelected != null) {
+                      final voice =
+                          option.liveVoice ??
+                          GeminiLiveVoice.fromName(option.name);
                       if (voice != null) {
-                        onLiveVoiceSelected!(voice);
+                        widget.onLiveVoiceSelected!(voice);
                       }
                     }
+                    widget.onSpeechConfigSelected?.call(
+                      _buildSpeechConfig(option.name),
+                    );
                   },
                   borderRadius: BorderRadius.circular(14.0),
                   child: Container(

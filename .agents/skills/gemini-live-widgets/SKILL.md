@@ -1,11 +1,11 @@
 ---
 name: gemini-live-widgets
-description: Build Gemini Live voice, multimodal vision, and translation UIs in Flutter with the 19 pre-built `gemini_live` Material 3 & Cupertino widgets (GeminiLiveChatView, GeminiLiveTranslateSplitView, GeminiLiveStatusBadge, GeminiLiveMicButton, GeminiLiveVoiceIndicator, GeminiLiveCaptionBubble, GeminiLiveWaveform, GeminiLiveUsageBadge, GeminiLiveControlBar, GeminiLiveVisionOverlay, GeminiLiveVoiceSelectorSheet, GeminiLiveBargeInBanner, GeminiLiveToolActivityChip, GeminiLiveThinkingIndicator, GeminiLiveContextConfigSheet, GeminiLiveContextBadge, GeminiLiveAudioRouteButton, and Cupertino counterparts) plus GeminiLiveAudioUtils.
+description: Build Gemini Live voice, multimodal vision, music, and translation UIs in Flutter with the 24 pre-built `gemini_live` Material 3 & Cupertino widgets (GeminiLiveChatView, GeminiLiveTranslateSplitView, GeminiLiveMusicControlDeck, GeminiLiveReconnectBanner, GeminiLiveVoiceStudioSheet, GeminiLiveSessionInfoBadge, GeminiLiveSessionInfoSheet, GeminiLiveStatusBadge, GeminiLiveMicButton, GeminiLiveVoiceIndicator, GeminiLiveCaptionBubble, GeminiLiveWaveform, GeminiLiveUsageBadge, GeminiLiveControlBar, GeminiLiveVisionOverlay, GeminiLiveVoiceSelectorSheet, GeminiLiveBargeInBanner, GeminiLiveToolActivityChip, GeminiLiveThinkingIndicator, GeminiLiveContextConfigSheet, GeminiLiveContextBadge, GeminiLiveAudioRouteButton, and Cupertino counterparts) plus GeminiLiveAudioUtils.
 ---
 
 # Gemini Live Widgets Skill
 
-The `gemini_live` package ships **19 Material 3 & Cupertino UI widgets** for live voice, video, translation, Extended Thinking, and chat screens, plus PCM audio helpers. This skill gives their exact parameters, how to feed them from each session API, and the patterns and pitfalls that matter in real apps.
+The `gemini_live` package ships **24 Material 3 & Cupertino UI widgets** for live voice, video, music, translation, Extended Thinking, session diagnostics, and chat screens, plus PCM audio helpers. This skill gives their exact parameters, how to feed them from each session API, and the patterns and pitfalls that matter in real apps.
 
 Exports come from `package:gemini_live/gemini_live.dart`. Full screen example: the *Quickstart 1* section of the `flutter-gemini-live` skill. Human-readable reference: [`doc/widgets_guide.md`](https://github.com/JAICHANGPARK/flutter_gemini_live/blob/main/doc/widgets_guide.md).
 
@@ -165,7 +165,11 @@ For apps built with `CupertinoApp` or seeking Apple Human Interface Guidelines s
 | **Thinking Indicator** | `GeminiLiveThinkingIndicator` | Expandable Extended Thinking (`Part(thought: true)`) pill & reasoning drawer (`.fromController(controller: controller)` or `isThinking:` / `thoughtText:`). |
 | **Live Context Config Sheet** | `GeminiLiveContextConfigSheet` & `GeminiLiveContextBadge` | Modal bottom sheet (`.show(...)`) and compact badge for mid-session `sendContextUpdate` (`LiveClientContextUpdate`) persona presets, `systemInstruction` editing, and tool toggling/clearing. |
 | **Audio Route Button** | `GeminiLiveAudioRouteButton` | Speaker / Earpiece / Headphones / Bluetooth route selector button (`currentRoute:`, `onRouteChanged:`) designed to slot into `GeminiLiveControlBar.trailing`. |
-| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.showLiveVoice(context, currentVoice:)` or `.show(...)`) for selecting official voices with `GeminiLiveVoice` enum, tone pill badges, and pitch profile tags. Supports all 30 voices catalog via `.allLiveVoices`. |
+| **Voice Selector** | `GeminiLiveVoiceSelectorSheet` | Pre-built modal bottom sheet (`.showLiveVoice(...)`, `.showSpeechConfig(...)`, or `.show(...)`) for selecting official voices with `GeminiLiveVoice` enum, tone pill badges, pitch profile tags, and Voice Remix (`enableVoiceRemix: true` -> `PromptedVoice(input: ..., baseVoice: ...)`). |
+| **Voice Studio Sheet** | `GeminiLiveVoiceStudioSheet` | Custom Voice Design & Voice Remix (`PromptedVoice.baseVoice`) modal studio powered by `GeminiVoicesService` (`.show(context, voicesService: genAI.voices, ...)`), with `headerBuilder` and `voiceItemBuilder` customization. |
+| **Music Control Deck** | `GeminiLiveMusicControlDeck` | Interactive Lyria Realtime Music (`LiveMusicSession`) Prompt DJ mixer & transport deck (`session:`, `initialPrompts:`, `headerBuilder`, `promptItemBuilder`, `transportBuilder`). |
+| **Reconnect Banner** | `GeminiLiveReconnectBanner` | Animated `GoAway` countdown and automatic session resumption / reconnection (`GeminiLiveReconnectPolicy`) banner (`.fromController(controller: controller)`, `contentBuilder`, `actionBuilder`). Built into `GeminiLiveChatView` (`showReconnectBanner: true`). |
+| **Session Info Inspector** | `GeminiLiveSessionInfoBadge` & `GeminiLiveSessionInfoSheet` | Live session diagnostics pill and modal inspector displaying `sessionId`, `sessionResumption` handle status, `HttpOptions`, `labels`, active tools, and token/cost metrics (`rowBuilder`). |
 | **Vision Overlay** | `GeminiLiveVisionOverlay` | Wraps any camera preview with Project Astra style radar scanlines, corner HUD target reticles, and in-flight analysis indicator. |
 
 #### Voice Selector (`GeminiLiveVoiceSelectorSheet`) Usage
@@ -189,7 +193,7 @@ GeminiLiveVoiceSelectorSheet(
 )
 ```
 
-### `GeminiLiveAudioUtils` and `addWavHeader`
+### `GeminiLiveAudioUtils` and `addWavHeader` / `parseWavHeader`
 
 All take 16-bit PCM LE bytes:
 
@@ -199,7 +203,11 @@ All take 16-bit PCM LE bytes:
 | `GeminiLiveAudioUtils.calculatePeak(bytes)` | Peak amplitude `0.0`–`1.0` |
 | `GeminiLiveAudioUtils.calculateDecibels(bytes, minDb: -96.0)` | dBFS, `minDb`–`0.0` |
 | `GeminiLiveAudioUtils.toVisualScale(amplitude, factor: 2.0)` | Log-scaled `0.0`–`1.0` for meters |
+| `GeminiLiveAudioUtils.isSilence(bytes, thresholdDb: -45.0)` | `true` if dBFS is below threshold |
+| `GeminiLiveAudioUtils.resamplePcm16Mono(bytes, fromSampleRate:, toSampleRate:)` | Linear-interpolated resampled 16-bit mono PCM |
+| `GeminiLiveAudioUtils.stereoToMonoPcm16(bytes)` / `monoToStereoPcm16(bytes)` | 16-bit PCM channel conversion (2ch ↔ 1ch) |
 | `addWavHeader(pcm, sampleRate: 24000)` | WAV file bytes (for saving or players that need WAV) |
+| `parseWavHeader(wavBytes)` / `stripWavHeader(wavBytes)` | Parses `WavAudioInfo` metadata or strips the 44-byte WAV header |
 
 ---
 

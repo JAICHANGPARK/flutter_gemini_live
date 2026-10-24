@@ -138,6 +138,9 @@ Supported scales include:
 ### Generation Temperature
 Values from `0.2` (predictable, stable rhythm) to `1.0` (creative, experimental).
 
+### Pre-Built Prompt DJ UI (`GeminiLiveMusicControlDeck`)
+Drop `GeminiLiveMusicControlDeck(session: _session)` into any screen to get a ready-made Prompt DJ mixer with dynamic weighted prompt sliders, BPM slider, `Scale` dropdown, and Play/Pause/Stop/Reset transport controls (customizable via `headerBuilder`, `promptItemBuilder`, and `transportBuilder`).
+
 ---
 
 ## 🚨 Critical Music Rules & Anti-Patterns

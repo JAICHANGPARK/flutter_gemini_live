@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import '../google_genai.dart';
 import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
+import 'live_context_config_sheet.dart';
 import 'live_mic_button.dart';
+import 'live_reconnect_banner.dart';
 import 'live_status_badge.dart';
 import 'live_thinking_indicator.dart';
 import 'live_tool_activity_chip.dart';
@@ -80,8 +82,24 @@ class GeminiLiveChatView extends StatefulWidget {
     ],
   );
 
-  /// Optional tools available to the model (Google Search, function calling).
-  final List<Tool>? tools;
+  /// Optional tools available to the model ([Tool], [CallableTool], or JSON map).
+  final List<Object>? tools;
+
+  /// Optional session-level HTTP/WebSocket transport options (`baseUrl`, `apiVersion`, `headers`).
+  final HttpOptions? httpOptions;
+
+  /// Optional metadata labels for tracking or billing categorization.
+  final Map<String, String>? labels;
+
+  /// Whether to show an in-session context configuration button in the AppBar
+  /// that opens [GeminiLiveContextConfigSheet] (`sendContextUpdate`). Defaults to `false`.
+  final bool showContextConfigButton;
+
+  /// Optional presets displayed when [GeminiLiveContextConfigSheet] is opened from the AppBar.
+  final List<GeminiLiveContextPreset> contextPresets;
+
+  /// Optional catalog of toggleable tools displayed when [GeminiLiveContextConfigSheet] is opened.
+  final Map<String, Tool> availableContextTools;
 
   /// Optional pre-existing [GeminiLiveSessionController].
   /// If null, an internal controller is instantiated and managed automatically.
@@ -131,6 +149,12 @@ class GeminiLiveChatView extends StatefulWidget {
     String? latestThought,
   )? thinkingIndicatorBuilder;
 
+  /// Custom builder for the `GoAway` / auto-reconnect warning banner.
+  final Widget Function(
+    BuildContext context,
+    GeminiLiveSessionController controller,
+  )? reconnectBannerBuilder;
+
   /// Callback when the user taps the image / attachment button.
   /// If null, default attachment button is omitted unless custom builder provides it.
   final Future<void> Function(BuildContext context, GeminiLiveSessionController controller)?
@@ -166,6 +190,9 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Whether to show an expandable Extended Thinking indicator when the model streams `thought: true` parts. Defaults to `true`.
   final bool showThinkingIndicator;
 
+  /// Whether to show a `GoAway` countdown or automatic session resumption banner when applicable. Defaults to `true`.
+  final bool showReconnectBanner;
+
   /// Input hint text for the text field. Defaults to `'Ask Gemini Live...'`.
   final String inputHint;
 
@@ -184,6 +211,11 @@ class GeminiLiveChatView extends StatefulWidget {
     this.config,
     this.systemInstruction,
     this.tools,
+    this.httpOptions,
+    this.labels,
+    this.showContextConfigButton = false,
+    this.contextPresets = const [],
+    this.availableContextTools = const {},
     this.controller,
     this.autoConnect = true,
     this.userBubbleBuilder,
@@ -196,6 +228,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.waveformBuilder,
     this.toolActivityBuilder,
     this.thinkingIndicatorBuilder,
+    this.reconnectBannerBuilder,
     this.onAttachPressed,
     this.onConnectPressed,
     this.onDisconnectPressed,
@@ -207,6 +240,7 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showWaveform = true,
     this.showToolActivity = true,
     this.showThinkingIndicator = true,
+    this.showReconnectBanner = true,
     this.inputHint = 'Ask Gemini Live...',
     this.debugLogging = false,
     this.logger,
@@ -268,6 +302,7 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
 
     final genAI = GoogleGenAI(
       apiKey: widget.apiKey!,
+      httpOptions: widget.httpOptions,
       logger: effectiveLogger,
     );
     return GeminiLiveSessionController(liveService: genAI.live);
@@ -352,6 +387,8 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
           config: widget.config,
           systemInstruction: effectiveSystemInstruction,
           tools: widget.tools,
+          httpOptions: widget.httpOptions,
+          labels: widget.labels,
           callbacks: LiveCallbacks(
             onError: (err, st) {
               if (mounted) {
@@ -417,6 +454,22 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       body: SafeArea(
         child: Column(
           children: [
+            // GoAway / automatic reconnection banner
+            if (widget.showReconnectBanner &&
+                (_controller.isReconnecting ||
+                    _controller.lastGoAway != null))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 4.0),
+                child: widget.reconnectBannerBuilder?.call(
+                      context,
+                      _controller,
+                    ) ??
+                    GeminiLiveReconnectBanner.fromController(
+                      controller: _controller,
+                      onReconnectNow: _connectSession,
+                    ),
+              ),
+
             // Live waveform header bar when connected
             if (widget.showWaveform && _controller.isConnected)
               widget.waveformBuilder?.call(context, _controller) ??
@@ -494,6 +547,19 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
             child: GeminiLiveStatusBadge(
               state: _mapSessionState(_controller.state),
             ),
+          ),
+        if (widget.showContextConfigButton)
+          IconButton(
+            tooltip: 'Configure Live Context',
+            icon: const Icon(Icons.tune_rounded),
+            onPressed: () {
+              GeminiLiveContextConfigSheet.show(
+                context: context,
+                controller: _controller,
+                presets: widget.contextPresets,
+                availableTools: widget.availableContextTools,
+              );
+            },
           ),
         if (widget.showConnectionButton)
           IconButton(

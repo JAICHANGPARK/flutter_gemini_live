@@ -29,9 +29,16 @@ export 'src/auth_tokens_service.dart';
 export 'src/utils/live_logger.dart';
 export 'src/utils/pcm_audio_buffer.dart';
 export 'src/utils/reconnect_policy.dart';
+export 'src/utils/function_tool_registry.dart';
+export 'src/utils/transcript_exporter.dart';
+export 'src/utils/frame_rate_limiter.dart';
 export 'src/widgets/live_tool_activity_chip.dart';
 export 'src/widgets/live_audio_route_button.dart';
 export 'src/widgets/live_translate_split_view.dart';
 export 'src/widgets/live_thinking_indicator.dart';
 export 'src/widgets/live_context_config_sheet.dart';
+export 'src/widgets/live_music_control_deck.dart';
+export 'src/widgets/live_reconnect_banner.dart';
+export 'src/widgets/live_voice_studio_sheet.dart';
+export 'src/widgets/live_session_info_sheet.dart';
 
