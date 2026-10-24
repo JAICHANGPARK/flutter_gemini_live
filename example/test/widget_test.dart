@@ -98,4 +98,65 @@ void main() {
       expect(find.text('LOG'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'AnimeVnNavigatorPage renders cleanly without overflow on mobile portrait and landscape viewports',
+    (WidgetTester tester) async {
+      const mobileSizes = <Size>[
+        Size(320, 568), // iPhone SE (narrowest mobile portrait)
+        Size(360, 640), // Compact Android portrait
+        Size(375, 812), // Standard iPhone portrait
+        Size(667, 375), // Mobile landscape
+      ];
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      for (final size in mobileSizes) {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: AnimeVnNavigatorPage(),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tester.takeException(), isNull, reason: 'No overflow at $size');
+
+        // Toggle CHOICE overlay on mobile
+        await tester.tap(find.text('CHOICE'));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'No overflow with CHOICE open at $size',
+        );
+
+        // Close CHOICE overlay and open RIG inspector on mobile
+        await tester.tap(find.text('CHOICE'));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.tap(find.text('RIG'));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'No overflow with RIG open at $size',
+        );
+        await tester.tap(find.text('RIG'));
+        await tester.pump(const Duration(milliseconds: 50));
+
+        // Open Backlog (LOG) bottom sheet on mobile
+        await tester.tap(find.text('LOG'));
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'No overflow with LOG bottom sheet open at $size',
+        );
+        Navigator.of(tester.element(find.byType(AnimeVnNavigatorPage))).pop();
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+    },
+  );
 }

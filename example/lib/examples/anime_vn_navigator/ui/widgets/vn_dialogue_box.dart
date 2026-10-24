@@ -277,35 +277,42 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                     ('Aoede', '落ち着いたナレーターボイス'),
                   ];
 
+            final sheetWidth = MediaQuery.sizeOf(ctx).width;
+            final isNarrowSheet = sheetWidth < 560;
+
             return SafeArea(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.80,
+                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.82,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    isNarrowSheet ? 14 : 20,
+                    16,
+                    isNarrowSheet ? 14 : 20,
+                    14,
+                  ),
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Expanded(
-                              child: Text(
-                                isKo
-                                    ? '🌺 히로인 캐릭터 & 미소녀/갸루 보이스 튜너'
-                                    : '🌺 ヒロイン選択＆ギャル・美少女ボイスチューナー',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                            Text(
+                              isKo
+                                  ? '🌺 히로인 캐릭터 & 미소녀/갸루 보이스 튜너'
+                                  : '🌺 ヒロイン選択＆ギャル・美少女ボイスチューナー',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isNarrowSheet ? 14.5 : 15.5,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             FilledButton.icon(
                               onPressed: () {
                                 if (!vm.isConnected) {
@@ -315,11 +322,12 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                 }
                               },
                               style: FilledButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
                                 backgroundColor: const Color(0xFFEC4899),
                               ),
                               icon: const Icon(
                                 Icons.volume_up_rounded,
-                                size: 16,
+                                size: 15,
                               ),
                               label: Text(isKo ? '지금 목소리 테스트' : '今の声をテスト'),
                             ),
@@ -346,7 +354,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                 onTap: () => vm.selectHeroine(h),
                                 borderRadius: BorderRadius.circular(14),
                                 child: Container(
-                                  width: 265,
+                                  width: isNarrowSheet ? double.infinity : 265,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 10,
@@ -434,7 +442,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                 },
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
-                                  width: 255,
+                                  width: isNarrowSheet ? double.infinity : 255,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 8,
@@ -558,6 +566,17 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
         ? vm.currentChapter.titleKo
         : vm.currentChapter.titleJa;
 
+    final screenSize = MediaQuery.sizeOf(context);
+    final isShortViewport = screenSize.height < 520;
+    final boxMinHeight = isShortViewport
+        ? 135.0
+        : (screenSize.width < 600 ? 175.0 : 196.0);
+    final boxMaxHeight = isShortViewport
+        ? (screenSize.height * 0.64).clamp(150.0, 260.0)
+        : (screenSize.width < 600
+              ? (screenSize.height * 0.46).clamp(240.0, 360.0)
+              : 340.0);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: vm.advanceDialogue,
@@ -565,7 +584,10 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
         clipper: const _VnChamferedBoxClipper(),
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 196, maxHeight: 340),
+          constraints: BoxConstraints(
+            minHeight: boxMinHeight,
+            maxHeight: boxMaxHeight,
+          ),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -587,439 +609,515 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                 child: CustomPaint(painter: _VnDialoguePatternPainter()),
               ),
 
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isCompact = constraints.maxWidth < 680;
-                  final hPad = isCompact ? 14.0 : 32.0;
+              SafeArea(
+                top: false,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 680;
+                    final hPad = isCompact ? 10.0 : 32.0;
 
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Speaker Name + Status Badges (Wrap so every badge is 100% visible without clipping or ellipsis)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            left: isCompact ? 4 : 14,
-                            right: isCompact ? 16 : 28,
-                          ),
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              ValueListenableBuilder<String>(
-                                valueListenable: vm.speakerNameNotifier,
-                                builder: (context, speaker, _) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: Text(
-                                      speaker,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: isCompact ? 16.5 : 19,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 1.0,
-                                        shadows: const [
-                                          Shadow(
-                                            color: Colors.black87,
-                                            blurRadius: 6,
-                                            offset: Offset(1, 2),
-                                          ),
-                                        ],
-                                      ),
+                    return Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        hPad,
+                        isCompact ? 9 : 12,
+                        hPad,
+                        isCompact ? 6 : 8,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Upper scrollable region (Header Badges + Divider + Full Dialogue Text)
+                          // Guarantees zero vertical RenderFlex overflow on any mobile portrait/landscape screen!
+                          Flexible(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // 1. Speaker Name + Status Badges (Wrap so every badge is 100% visible without clipping or ellipsis)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      left: isCompact ? 4 : 14,
+                                      right: isCompact ? 18 : 28,
                                     ),
-                                  );
-                                },
-                              ),
-
-                              // Chapter & Beat Step Badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black38,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0x88B388FF),
-                                  ),
-                                ),
-                                child: Text(
-                                  isCompact
-                                      ? 'Ch.${vm.currentChapter.chapterNumber} • STEP $beatNum/$totalBeats'
-                                      : 'Ch.${vm.currentChapter.chapterNumber} ($chapterTitle)  •  STEP $beatNum / $totalBeats',
-                                  style: const TextStyle(
-                                    color: Color(0xFFE9D5FF),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-
-                              // Heroine Switcher Pill (🌺 갸루: 레이나 <-> 🌸 청순: 히카리)
-                              InkWell(
-                                onTap: () {
-                                  final next =
-                                      vm.selectedHeroine ==
-                                          VnHeroineCharacter.reina
-                                      ? VnHeroineCharacter.hikari
-                                      : VnHeroineCharacter.reina;
-                                  vm.selectHeroine(next);
-                                },
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: vm.selectedHeroine.accentColor
-                                        .withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: vm.selectedHeroine.accentColor,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    isKo
-                                        ? '${vm.selectedHeroine.badgeEmoji} 히로인 전환: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "레이나(갸루) → 히카리" : "히카리(청순) → 레이나(갸루)"}'
-                                        : '${vm.selectedHeroine.badgeEmoji} ヒロイン切替: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "レイナ(ギャル) → ヒカリ" : "ヒカリ(清楚) → レイナ(ギャル)"}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11.2,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // Moe / Gyaru Voice Pitch & Seiyuu Selector Pill
-                              InkWell(
-                                onTap: () => _showMoeVoiceTunerSheet(context),
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x33EC4899),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: const Color(0xFFF472B6),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    isKo
-                                        ? '${vm.isGyaruVoiceStyle ? "🌺 갸루 보이스" : "🎀 미소녀 보이스"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)'
-                                        : '${vm.isGyaruVoiceStyle ? "🌺 ギャルボイス" : "🎀 美少女ボイス"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)',
-                                    style: const TextStyle(
-                                      color: Color(0xFFFBCFE8),
-                                      fontSize: 11.2,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // Live Japanese Voice / Replay Status Pill
-                              InkWell(
-                                onTap: () {
-                                  if (!vm.isConnected) {
-                                    vm.connectSession(
-                                      sendInitialGreeting: true,
-                                    );
-                                  } else {
-                                    vm.speakCurrentBeat();
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: vm.isConnected
-                                        ? const Color(0x3310B981)
-                                        : const Color(0x33F59E0B),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: vm.isConnected
-                                          ? const Color(0xFF34D399)
-                                          : const Color(0xFFFBBF24),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        vm.isAiSpeaking
-                                            ? Icons.volume_up_rounded
-                                            : Icons.play_circle_outline_rounded,
-                                        size: 15,
-                                        color: vm.isConnected
-                                            ? const Color(0xFF6EE7B7)
-                                            : const Color(0xFFFDE68A),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        vm.isConnected
-                                            ? (vm.isAiSpeaking
-                                                  ? (isKo
-                                                        ? '🔊 일본어 음성 출력 중 (24kHz)'
-                                                        : '🔊 日本語ボイス出力中 (24kHz)')
-                                                  : (isKo
-                                                        ? '🔊 음성 다시 듣기 (${vm.selectedVoice})'
-                                                        : '🔊 ボイスをもう一度聴く (${vm.selectedVoice})'))
-                                            : (vm.isConnecting
-                                                  ? (isKo
-                                                        ? '⏳ Gemini Live 연결 중...'
-                                                        : '⏳ Gemini Live 接続中...')
-                                                  : (isKo
-                                                        ? '🔌 탭하여 일본어 음성 연결'
-                                                        : '🔌 タップして日本語ボイス接続')),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        // 2. Classic Visual Novel Horizontal Divider Line under Speaker Name
-                        Container(
-                          height: 2.0,
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFFD8B4FE),
-                                Color(0xAA9333EA),
-                                Color(0x229333EA),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        // 3. Main Dialogue Text Area (Full text visible without ellipsis truncation)
-                        Flexible(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isCompact ? 4 : 14,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ValueListenableBuilder<String>(
-                                  valueListenable: vm.subtitleNotifier,
-                                  builder: (context, primaryText, _) {
-                                    return RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: isCompact ? 15.5 : 18.0,
-                                          height: 1.42,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.2,
-                                          shadows: const [
-                                            Shadow(
-                                              color: Colors.black,
-                                              blurRadius: 4,
-                                              offset: Offset(1, 1.5),
-                                            ),
-                                          ],
-                                        ),
-                                        children: [
-                                          TextSpan(text: '$primaryText '),
-                                          WidgetSpan(
-                                            alignment:
-                                                PlaceholderAlignment.middle,
-                                            child: FadeTransition(
-                                              opacity: _cursorBlinkController,
-                                              child: Container(
-                                                margin: const EdgeInsets.only(
-                                                  left: 4,
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 5,
-                                                      vertical: 1,
+                                    child: Wrap(
+                                      spacing: isCompact ? 6 : 8,
+                                      runSpacing: isCompact ? 4 : 6,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        ValueListenableBuilder<String>(
+                                          valueListenable:
+                                              vm.speakerNameNotifier,
+                                          builder: (context, speaker, _) {
+                                            return Padding(
+                                              padding: const EdgeInsets.only(
+                                                right: 4,
+                                              ),
+                                              child: Text(
+                                                speaker,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: isCompact
+                                                      ? 15.5
+                                                      : 19,
+                                                  fontWeight: FontWeight.w900,
+                                                  letterSpacing: 1.0,
+                                                  shadows: const [
+                                                    Shadow(
+                                                      color: Colors.black87,
+                                                      blurRadius: 6,
+                                                      offset: Offset(1, 2),
                                                     ),
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                    color: Colors.white,
-                                                    width: 1.4,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(3),
+                                                  ],
                                                 ),
-                                                child: const Text(
-                                                  '▼',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+
+                                        // Chapter & Beat Step Badge
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isCompact ? 8 : 10,
+                                            vertical: isCompact ? 2 : 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black38,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0x88B388FF),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            isCompact
+                                                ? 'Ch.${vm.currentChapter.chapterNumber} • STEP $beatNum/$totalBeats'
+                                                : 'Ch.${vm.currentChapter.chapterNumber} ($chapterTitle)  •  STEP $beatNum / $totalBeats',
+                                            style: TextStyle(
+                                              color: const Color(0xFFE9D5FF),
+                                              fontSize: isCompact ? 10.5 : 11.5,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Heroine Switcher Pill (🌺 갸루: 레이나 <-> 🌸 청순: 히카리)
+                                        InkWell(
+                                          onTap: () {
+                                            final next =
+                                                vm.selectedHeroine ==
+                                                    VnHeroineCharacter.reina
+                                                ? VnHeroineCharacter.hikari
+                                                : VnHeroineCharacter.reina;
+                                            vm.selectHeroine(next);
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: isCompact ? 8 : 10,
+                                              vertical: isCompact ? 3 : 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: vm
+                                                  .selectedHeroine
+                                                  .accentColor
+                                                  .withValues(alpha: 0.25),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              border: Border.all(
+                                                color: vm
+                                                    .selectedHeroine
+                                                    .accentColor,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              isKo
+                                                  ? '${vm.selectedHeroine.badgeEmoji} 히로인 전환: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "레이나(갸루) → 히카리" : "히카리(청순) → 레이나(갸루)"}'
+                                                  : '${vm.selectedHeroine.badgeEmoji} ヒロイン切替: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "レイナ(ギャル) → ヒカリ" : "ヒカリ(清楚) → レイナ(ギャル)"}',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: isCompact
+                                                    ? 10.5
+                                                    : 11.2,
+                                                fontWeight: FontWeight.w800,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 4),
-                                ValueListenableBuilder<String>(
-                                  valueListenable: vm.japaneseLineNotifier,
-                                  builder: (context, textJa, _) {
-                                    if (textJa.isEmpty) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return Text(
-                                      textJa,
-                                      style: TextStyle(
-                                        color: const Color(0xFFBAE6FD),
-                                        fontSize: isCompact ? 12.0 : 13.5,
-                                        height: 1.35,
-                                        fontWeight: FontWeight.w600,
-                                        shadows: const [
-                                          Shadow(
-                                            color: Colors.black87,
-                                            blurRadius: 3,
-                                            offset: Offset(1, 1),
+                                        ),
+
+                                        // Moe / Gyaru Voice Pitch & Seiyuu Selector Pill
+                                        InkWell(
+                                          onTap: () =>
+                                              _showMoeVoiceTunerSheet(context),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
                                           ),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: isCompact ? 8 : 10,
+                                              vertical: isCompact ? 3 : 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0x33EC4899),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              border: Border.all(
+                                                color: const Color(0xFFF472B6),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              isKo
+                                                  ? '${vm.isGyaruVoiceStyle ? "🌺 갸루 보이스" : "🎀 미소녀 보이스"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)'
+                                                  : '${vm.isGyaruVoiceStyle ? "🌺 ギャルボイス" : "🎀 美少女ボイス"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)',
+                                              style: TextStyle(
+                                                color: const Color(0xFFFBCFE8),
+                                                fontSize: isCompact
+                                                    ? 10.5
+                                                    : 11.2,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Live Japanese Voice / Replay Status Pill
+                                        InkWell(
+                                          onTap: () {
+                                            if (!vm.isConnected) {
+                                              vm.connectSession(
+                                                sendInitialGreeting: true,
+                                              );
+                                            } else {
+                                              vm.speakCurrentBeat();
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: isCompact ? 8 : 10,
+                                              vertical: isCompact ? 3 : 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: vm.isConnected
+                                                  ? const Color(0x3310B981)
+                                                  : const Color(0x33F59E0B),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              border: Border.all(
+                                                color: vm.isConnected
+                                                    ? const Color(0xFF34D399)
+                                                    : const Color(0xFFFBBF24),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  vm.isAiSpeaking
+                                                      ? Icons.volume_up_rounded
+                                                      : Icons
+                                                            .play_circle_outline_rounded,
+                                                  size: isCompact ? 14 : 15,
+                                                  color: vm.isConnected
+                                                      ? const Color(0xFF6EE7B7)
+                                                      : const Color(0xFFFDE68A),
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  vm.isConnected
+                                                      ? (vm.isAiSpeaking
+                                                            ? (isKo
+                                                                  ? '🔊 일본어 음성 출력 중 (24kHz)'
+                                                                  : '🔊 日本語ボイス出力中 (24kHz)')
+                                                            : (isKo
+                                                                  ? '🔊 음성 다시 듣기 (${vm.selectedVoice})'
+                                                                  : '🔊 ボイスをもう一度聴く (${vm.selectedVoice})'))
+                                                      : (vm.isConnecting
+                                                            ? (isKo
+                                                                  ? '⏳ Gemini Live 연결 중...'
+                                                                  : '⏳ Gemini Live 接続中...')
+                                                            : (isKo
+                                                                  ? '🔌 탭하여 일본어 음성 연결'
+                                                                  : '🔌 タップして日本語ボイス接続')),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: isCompact
+                                                        ? 10.5
+                                                        : 11.5,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  SizedBox(height: isCompact ? 5 : 6),
+
+                                  // 2. Classic Visual Novel Horizontal Divider Line under Speaker Name
+                                  Container(
+                                    height: 2.0,
+                                    width: double.infinity,
+                                    decoration: const BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFFD8B4FE),
+                                          Color(0xAA9333EA),
+                                          Color(0x229333EA),
                                         ],
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  ),
+
+                                  SizedBox(height: isCompact ? 7 : 10),
+
+                                  // 3. Main Dialogue Text Area (Full text visible without ellipsis truncation)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isCompact ? 4 : 14,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ValueListenableBuilder<String>(
+                                          valueListenable: vm.subtitleNotifier,
+                                          builder: (context, primaryText, _) {
+                                            return RichText(
+                                              text: TextSpan(
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: isCompact
+                                                      ? 14.5
+                                                      : 18.0,
+                                                  height: 1.40,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.2,
+                                                  shadows: const [
+                                                    Shadow(
+                                                      color: Colors.black,
+                                                      blurRadius: 4,
+                                                      offset: Offset(1, 1.5),
+                                                    ),
+                                                  ],
+                                                ),
+                                                children: [
+                                                  TextSpan(
+                                                    text: '$primaryText ',
+                                                  ),
+                                                  WidgetSpan(
+                                                    alignment:
+                                                        PlaceholderAlignment
+                                                            .middle,
+                                                    child: FadeTransition(
+                                                      opacity:
+                                                          _cursorBlinkController,
+                                                      child: Container(
+                                                        margin:
+                                                            const EdgeInsets.only(
+                                                              left: 4,
+                                                            ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 5,
+                                                              vertical: 1,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          border: Border.all(
+                                                            color: Colors.white,
+                                                            width: 1.4,
+                                                          ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                3,
+                                                              ),
+                                                        ),
+                                                        child: const Text(
+                                                          '▼',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 11,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 4),
+                                        ValueListenableBuilder<String>(
+                                          valueListenable:
+                                              vm.japaneseLineNotifier,
+                                          builder: (context, textJa, _) {
+                                            if (textJa.isEmpty) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return Text(
+                                              textJa,
+                                              style: TextStyle(
+                                                color: const Color(0xFFBAE6FD),
+                                                fontSize: isCompact
+                                                    ? 11.5
+                                                    : 13.5,
+                                                height: 1.35,
+                                                fontWeight: FontWeight.w600,
+                                                shadows: const [
+                                                  Shadow(
+                                                    color: Colors.black87,
+                                                    blurRadius: 3,
+                                                    offset: Offset(1, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: isCompact ? 5 : 8),
+
+                          // 4. Bottom Visual Novel Hint & System Menu Bar (Wrap so neither hint nor buttons are ever truncated)
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isCompact ? 4 : 14,
+                            ),
+                            child: Wrap(
+                              spacing: isCompact ? 8 : 12,
+                              runSpacing: isCompact ? 3 : 4,
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  vm.isChoiceOverlayOpen
+                                      ? (isKo
+                                            ? '👆 화면 중앙의 선택지를 클릭하세요'
+                                            : '👆 画面中央の選択肢をクリックしてください')
+                                      : (isKo
+                                            ? '💡 대화창을 클릭하면 다음 대사($beatNum/$totalBeats)로 넘어갑니다'
+                                            : '💡 ウィンドウをクリックすると次のセリフ($beatNum/$totalBeats)へ進みます'),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: isCompact ? 10.5 : 11.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Wrap(
+                                  spacing: isCompact ? 1 : 2,
+                                  runSpacing: 2,
+                                  children: [
+                                    _VnMenuTextButton(
+                                      label: '◀ PREV',
+                                      compact: isCompact,
+                                      onTap: vm.previousDialogue,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'NEXT ▶',
+                                      compact: isCompact,
+                                      onTap: vm.advanceDialogue,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'JUMP',
+                                      compact: isCompact,
+                                      onTap: () =>
+                                          _showChapterJumpMenu(context),
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'CHOICE',
+                                      compact: isCompact,
+                                      isActive: vm.isChoiceOverlayOpen,
+                                      onTap: vm.toggleChoices,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'CODE',
+                                      compact: isCompact,
+                                      isActive: vm.isShowcaseVisible,
+                                      onTap: vm.toggleShowcase,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'RIG',
+                                      compact: isCompact,
+                                      isActive: vm.isRigInspectorVisible,
+                                      activeColor: const Color(0xFF4ADE80),
+                                      onTap: vm.toggleRigInspector,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: vm.isMicRecording
+                                          ? '🎙️MIC ON'
+                                          : '🎙️MIC',
+                                      compact: isCompact,
+                                      isActive: vm.isMicRecording,
+                                      activeColor: const Color(0xFFF43F5E),
+                                      onTap: vm.toggleMic,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'ASK',
+                                      compact: isCompact,
+                                      onTap: () => _showAskDialog(context),
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'SKIP',
+                                      compact: isCompact,
+                                      onTap: vm.skipToChoices,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'AUTO',
+                                      compact: isCompact,
+                                      isActive: vm.isAutoMode,
+                                      onTap: vm.toggleAutoMode,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'LOG',
+                                      compact: isCompact,
+                                      onTap: widget.onOpenBacklog,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'CLOSE',
+                                      compact: isCompact,
+                                      onTap: vm.toggleDialogueBoxHidden,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'CONFIG',
+                                      compact: isCompact,
+                                      onTap: widget.onOpenSettings,
+                                    ),
+                                    _VnMenuTextButton(
+                                      label: 'QUIT',
+                                      compact: isCompact,
+                                      onTap: () =>
+                                          Navigator.of(context).maybePop(),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // 4. Bottom Visual Novel Hint & System Menu Bar (Wrap so neither hint nor buttons are ever truncated)
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isCompact ? 4 : 14,
-                          ),
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 4,
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                vm.isChoiceOverlayOpen
-                                    ? (isKo
-                                          ? '👆 화면 중앙의 선택지를 클릭하세요'
-                                          : '👆 画面中央の選択肢をクリックしてください')
-                                    : (isKo
-                                          ? '💡 대화창을 클릭하면 다음 대사($beatNum/$totalBeats)로 넘어갑니다'
-                                          : '💡 ウィンドウをクリックすると次のセリフ($beatNum/$totalBeats)へ進みます'),
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Wrap(
-                                spacing: 2,
-                                runSpacing: 2,
-                                children: [
-                                  _VnMenuTextButton(
-                                    label: '◀ PREV',
-                                    onTap: vm.previousDialogue,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'NEXT ▶',
-                                    onTap: vm.advanceDialogue,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'JUMP',
-                                    onTap: () => _showChapterJumpMenu(context),
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'CHOICE',
-                                    isActive: vm.isChoiceOverlayOpen,
-                                    onTap: vm.toggleChoices,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'CODE',
-                                    isActive: vm.isShowcaseVisible,
-                                    onTap: vm.toggleShowcase,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'RIG',
-                                    isActive: vm.isRigInspectorVisible,
-                                    activeColor: const Color(0xFF4ADE80),
-                                    onTap: vm.toggleRigInspector,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: vm.isMicRecording
-                                        ? '🎙️MIC ON'
-                                        : '🎙️MIC',
-                                    isActive: vm.isMicRecording,
-                                    activeColor: const Color(0xFFF43F5E),
-                                    onTap: vm.toggleMic,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'ASK',
-                                    onTap: () => _showAskDialog(context),
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'SKIP',
-                                    onTap: vm.skipToChoices,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'AUTO',
-                                    isActive: vm.isAutoMode,
-                                    onTap: vm.toggleAutoMode,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'LOG',
-                                    onTap: widget.onOpenBacklog,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'CLOSE',
-                                    onTap: vm.toggleDialogueBoxHidden,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'CONFIG',
-                                    onTap: widget.onOpenSettings,
-                                  ),
-                                  _VnMenuTextButton(
-                                    label: 'QUIT',
-                                    onTap: () =>
-                                        Navigator.of(context).maybePop(),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -1033,12 +1131,14 @@ class _VnMenuTextButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool isActive;
+  final bool compact;
   final Color activeColor;
 
   const _VnMenuTextButton({
     required this.label,
     required this.onTap,
     this.isActive = false,
+    this.compact = false,
     this.activeColor = const Color(0xFF38BDF8),
   });
 
@@ -1048,14 +1148,17 @@ class _VnMenuTextButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 5 : 7,
+          vertical: compact ? 2 : 3,
+        ),
         child: Text(
           label,
           style: TextStyle(
             color: isActive ? activeColor : const Color(0xFFB8B2C8),
-            fontSize: 11.5,
+            fontSize: compact ? 10.5 : 11.5,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
+            letterSpacing: 0.4,
             shadows: const [
               Shadow(
                 color: Colors.black87,
@@ -1085,21 +1188,27 @@ class VnChoiceOverlayPanel extends StatelessWidget {
     if (!viewModel.isChoiceOverlayOpen || choices.isEmpty) {
       return const SizedBox.shrink();
     }
+    final isCompact = MediaQuery.sizeOf(context).width < 520;
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 700),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 12 : 20,
+            vertical: 8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               for (var i = 0; i < choices.length; i++) ...[
                 _GlossyVnChoiceButton(
                   choice: choices[i],
+                  compact: isCompact,
                   onTap: () => viewModel.selectChoice(choices[i]),
                 ),
-                if (i < choices.length - 1) const SizedBox(height: 16),
+                if (i < choices.length - 1)
+                  SizedBox(height: isCompact ? 10 : 16),
               ],
             ],
           ),
@@ -1114,10 +1223,12 @@ class VnChoiceOverlayPanel extends StatelessWidget {
 class _GlossyVnChoiceButton extends StatefulWidget {
   final VnChoiceOption choice;
   final VoidCallback onTap;
+  final bool compact;
 
   const _GlossyVnChoiceButton({
     required this.choice,
     required this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -1129,6 +1240,7 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = widget.compact;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -1140,7 +1252,7 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
           duration: const Duration(milliseconds: 140),
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 64),
+            constraints: BoxConstraints(minHeight: isCompact ? 50 : 64),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(
@@ -1207,9 +1319,9 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 10,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 14 : 22,
+                    vertical: isCompact ? 8 : 10,
                   ),
                   child: Builder(
                     builder: (context) {
@@ -1225,12 +1337,12 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
                                 ? widget.choice.labelKo
                                 : widget.choice.labelJa,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 17.5,
+                              fontSize: isCompact ? 14.5 : 17.5,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.3,
-                              shadows: [
+                              shadows: const [
                                 Shadow(
                                   color: Colors.black,
                                   blurRadius: 2,
@@ -1265,11 +1377,11 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
                             Text(
                               widget.choice.labelJa,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFF0F9FF),
-                                fontSize: 12,
+                              style: TextStyle(
+                                color: const Color(0xFFF0F9FF),
+                                fontSize: isCompact ? 11 : 12,
                                 fontWeight: FontWeight.w700,
-                                shadows: [
+                                shadows: const [
                                   Shadow(
                                     color: Colors.black87,
                                     blurRadius: 4,

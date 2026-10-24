@@ -528,11 +528,27 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     final squashStretchY = (1.0 + activeSquashPos).clamp(0.91, 1.10);
     final squashStretchX = (1.0 / math.sqrt(squashStretchY)).clamp(0.94, 1.06);
 
-    final screenHeight = MediaQuery.of(context).size.height;
-    final charHeight = screenHeight * 0.86;
-    final charWidth = charHeight * (768.0 / 1024.0);
+    final screenSize = MediaQuery.sizeOf(context);
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+    final isMobile = screenWidth < 600;
+    final isMobilePortrait = isMobile && screenHeight > screenWidth;
     final isDual = vm.isDualHeroineMode;
     final activeSpeaker = vm.activeSpeakingHeroine;
+
+    // Ensure character width never exceeds screenWidth so Align(Alignment(x, y))
+    // never inverts left/right coordinates on narrow mobile portrait screens!
+    final maxAllowedCharWidth = isDual
+        ? (isMobile ? screenWidth * 0.62 : screenWidth * 0.48)
+        : (isMobile ? screenWidth * 0.92 : screenWidth * 0.75);
+    final charHeightFromWidth = maxAllowedCharWidth * (1024.0 / 768.0);
+    final charHeight = math.min(screenHeight * 0.86, charHeightFromWidth);
+    final charWidth = charHeight * (768.0 / 1024.0);
+    // On tall mobile portrait screens, lift the character stage slightly so the
+    // bottom dialogue box doesn't cover the heroines' upper bodies.
+    final stageBottomInset = isMobilePortrait && !vm.isDialogueBoxHidden
+        ? (screenHeight * 0.14).clamp(70.0, 130.0)
+        : 0.0;
 
     Widget buildHeroineActor(
       VnHeroineCharacter actor, {
@@ -667,7 +683,12 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                         height: charHeight,
                       ),
                     for (final h in actorHearts)
-                      _buildHeartParticle(h, rawTime, vm.isKorean),
+                      _buildHeartParticle(
+                        h,
+                        rawTime,
+                        vm.isKorean,
+                        charHeight,
+                      ),
                   ],
                 ),
               ),
@@ -676,6 +697,9 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
         ),
       );
     }
+
+    final hikariDualAlign = Alignment(isMobile ? -0.92 : -0.52, 1.0);
+    final reinaDualAlign = Alignment(isMobile ? 0.92 : 0.50, 1.0);
 
     return MouseRegion(
       onHover: (event) {
@@ -756,7 +780,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                   ),
                 ),
 
-                // 2. ZZZ-Style Cyber Halo & Audio-Reactive Rings
+                // 2. Cyber Halo & Audio-Reactive Rings
                 CustomPaint(
                   painter: _VnStageAtmospherePainter(
                     time: rawTime,
@@ -773,30 +797,42 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                 if (isDual) ...[
                   // Draw listening heroine slightly behind, and speaking heroine in front!
                   if (activeSpeaker == VnHeroineCharacter.reina) ...[
-                    buildHeroineActor(
-                      VnHeroineCharacter.hikari,
-                      alignment: const Alignment(-0.52, 1.0),
-                      isSpeakingThisTurn: false,
-                      scaleFactor: 0.90,
+                    Padding(
+                      padding: EdgeInsets.only(bottom: stageBottomInset),
+                      child: buildHeroineActor(
+                        VnHeroineCharacter.hikari,
+                        alignment: hikariDualAlign,
+                        isSpeakingThisTurn: false,
+                        scaleFactor: 0.90,
+                      ),
                     ),
-                    buildHeroineActor(
-                      VnHeroineCharacter.reina,
-                      alignment: const Alignment(0.50, 1.0),
-                      isSpeakingThisTurn: true,
-                      scaleFactor: 0.96,
+                    Padding(
+                      padding: EdgeInsets.only(bottom: stageBottomInset),
+                      child: buildHeroineActor(
+                        VnHeroineCharacter.reina,
+                        alignment: reinaDualAlign,
+                        isSpeakingThisTurn: true,
+                        scaleFactor: 0.96,
+                      ),
                     ),
                   ] else ...[
-                    buildHeroineActor(
-                      VnHeroineCharacter.reina,
-                      alignment: const Alignment(0.50, 1.0),
-                      isSpeakingThisTurn: false,
-                      scaleFactor: 0.90,
+                    Padding(
+                      padding: EdgeInsets.only(bottom: stageBottomInset),
+                      child: buildHeroineActor(
+                        VnHeroineCharacter.reina,
+                        alignment: reinaDualAlign,
+                        isSpeakingThisTurn: false,
+                        scaleFactor: 0.90,
+                      ),
                     ),
-                    buildHeroineActor(
-                      VnHeroineCharacter.hikari,
-                      alignment: const Alignment(-0.52, 1.0),
-                      isSpeakingThisTurn: true,
-                      scaleFactor: 0.96,
+                    Padding(
+                      padding: EdgeInsets.only(bottom: stageBottomInset),
+                      child: buildHeroineActor(
+                        VnHeroineCharacter.hikari,
+                        alignment: hikariDualAlign,
+                        isSpeakingThisTurn: true,
+                        scaleFactor: 0.96,
+                      ),
                     ),
                   ],
                   // Non-overlapping Left (Hikari) / Right (Reina) Touch Zones in Dual Mode
@@ -855,11 +891,14 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                     ),
                   ),
                 ] else
-                  buildHeroineActor(
-                    vm.selectedHeroine,
-                    alignment: widget.characterAlignment,
-                    isSpeakingThisTurn: true,
-                    scaleFactor: 1.0,
+                  Padding(
+                    padding: EdgeInsets.only(bottom: stageBottomInset),
+                    child: buildHeroineActor(
+                      vm.selectedHeroine,
+                      alignment: widget.characterAlignment,
+                      isSpeakingThisTurn: true,
+                      scaleFactor: 1.0,
+                    ),
                   ),
 
                 // 4. Foreground Sakura Petals & Depth-of-Field Bokeh (Z = +1.5)
@@ -883,9 +922,9 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
           // 5. Interactive 2.5D Rig & Physics HUD Banner (when RIG Inspector is open)
           if (vm.isRigInspectorVisible)
             Positioned(
-              top: 66,
-              right: 16,
-              left: 16,
+              top: isMobile ? 96 : 66,
+              right: isMobile ? 10 : 16,
+              left: isMobile ? 10 : 16,
               child: Align(
                 alignment: Alignment.topRight,
                 child: _buildRigInspectorControlCard(
@@ -1065,6 +1104,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     _FloatingHeartParticle h,
     double nowSec,
     bool isKorean,
+    double charHeight,
   ) {
     final age = (nowSec - h.spawnTime).clamp(0.0, 1.8);
     final progress = age / 1.8;
@@ -1080,7 +1120,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
         : (isKorean ? '🌸 히카리 호감도 UP! +4%' : '🌸 ヒカリ 好感度 UP! +4%');
 
     return Positioned(
-      top: MediaQuery.of(context).size.height * 0.18 + dy,
+      top: charHeight * 0.18 + dy,
       child: Transform.translate(
         offset: Offset(dx, 0),
         child: Opacity(

@@ -86,17 +86,20 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                       color: Color(0xFF38BDF8),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      isKo
-                          ? '📜 지난 대사 기록 (LOG / バックログ)'
-                          : '📜 バックログ (会話履歴 / LOG)',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Expanded(
+                      child: Text(
+                        isKo
+                            ? '📜 지난 대사 기록 (LOG / バックログ)'
+                            : '📜 バックログ (会話履歴 / LOG)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                    const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white70),
                       onPressed: () => Navigator.pop(context),
@@ -212,6 +215,16 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
         builder: (context, _) {
           final vm = _viewModel;
 
+          final screenSize = MediaQuery.sizeOf(context);
+          final isMobileScreen = screenSize.width < 600;
+          final isShortScreen = screenSize.height < 520;
+          final topOverlayOffset = isShortScreen
+              ? 48.0
+              : (isMobileScreen ? 92.0 : 58.0);
+          final bottomOverlayOffset = isShortScreen
+              ? (screenSize.height * 0.42).clamp(110.0, 165.0)
+              : (isMobileScreen ? 225.0 : 210.0);
+
           return Scaffold(
             backgroundColor: const Color(0xFF090D16),
             body: Stack(
@@ -223,25 +236,32 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                   characterAlignment: Alignment.bottomCenter,
                 ),
 
-                // 2. Minimal Top-Left / Top-Right Floating Pill (Back + Study Note Toggle)
+                // 2. Top Floating HUD Bar (Wrap on mobile so it never overflows on any screen width)
                 SafeArea(
+                  bottom: false,
                   child: Align(
-                    alignment: Alignment.topCenter,
+                    alignment: Alignment.topLeft,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final isCompact = constraints.maxWidth < 560;
+                        final isCompact = constraints.maxWidth < 640;
                         return Padding(
                           padding: EdgeInsets.symmetric(
-                            horizontal: isCompact ? 10 : 16,
-                            vertical: 10,
+                            horizontal: isCompact ? 8 : 16,
+                            vertical: isCompact ? 6 : 10,
                           ),
-                          child: Row(
+                          child: Wrap(
+                            spacing: isCompact ? 6 : 8,
+                            runSpacing: 6,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               // Back to Examples Button
                               IconButton.filledTonal(
-                                visualDensity: isCompact
-                                    ? VisualDensity.compact
-                                    : VisualDensity.standard,
+                                visualDensity: VisualDensity.compact,
+                                constraints: const BoxConstraints(
+                                  minWidth: 34,
+                                  minHeight: 34,
+                                ),
+                                padding: const EdgeInsets.all(6),
                                 style: IconButton.styleFrom(
                                   backgroundColor: Colors.black54,
                                   foregroundColor: Colors.white,
@@ -251,60 +271,54 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                     : 'サンプル一覧に戻る',
                                 icon: const Icon(
                                   Icons.arrow_back_ios_new_rounded,
-                                  size: 16,
+                                  size: 15,
                                 ),
                                 onPressed: () =>
                                     Navigator.of(context).maybePop(),
                               ),
-                              SizedBox(width: isCompact ? 6 : 10),
 
-                              // Toggleable Study Note Pill (Wrapped in Flexible so it never overflows)
-                              Flexible(
-                                child: ActionChip(
-                                  visualDensity: isCompact
-                                      ? VisualDensity.compact
-                                      : VisualDensity.standard,
-                                  backgroundColor: vm.isShowcaseVisible
-                                      ? const Color(0xE61E293B)
-                                      : Colors.black54,
-                                  side: BorderSide(
-                                    color: vm.isShowcaseVisible
-                                        ? const Color(0xFF38BDF8)
-                                        : Colors.white30,
-                                  ),
-                                  avatar: const Icon(
-                                    Icons.menu_book_rounded,
-                                    size: 15,
-                                    color: Color(0xFF38BDF8),
-                                  ),
-                                  label: Text(
-                                    vm.isKorean
-                                        ? (isCompact
-                                              ? (vm.isShowcaseVisible
-                                                    ? 'SDK 노트 닫기'
-                                                    : 'SDK 노트')
-                                              : (vm.isShowcaseVisible
-                                                    ? '📘 SDK 코드 학습노트 닫기'
-                                                    : '📘 SDK 코드 학습노트 보기'))
-                                        : (isCompact
-                                              ? (vm.isShowcaseVisible
-                                                    ? '学習ノート閉'
-                                                    : '学習ノート')
-                                              : (vm.isShowcaseVisible
-                                                    ? '📘 SDK コード学習ノートを閉じる'
-                                                    : '📘 SDK コード学習ノートを見る')),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isCompact ? 11 : 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  onPressed: vm.toggleShowcase,
+                              // Toggleable Study Note Pill
+                              ActionChip(
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                backgroundColor: vm.isShowcaseVisible
+                                    ? const Color(0xE61E293B)
+                                    : Colors.black54,
+                                side: BorderSide(
+                                  color: vm.isShowcaseVisible
+                                      ? const Color(0xFF38BDF8)
+                                      : Colors.white30,
                                 ),
+                                avatar: const Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 14,
+                                  color: Color(0xFF38BDF8),
+                                ),
+                                label: Text(
+                                  vm.isKorean
+                                      ? (isCompact
+                                            ? (vm.isShowcaseVisible
+                                                  ? 'SDK 노트 닫기'
+                                                  : 'SDK 노트')
+                                            : (vm.isShowcaseVisible
+                                                  ? '📘 SDK 코드 학습노트 닫기'
+                                                  : '📘 SDK 코드 학습노트 보기'))
+                                      : (isCompact
+                                            ? (vm.isShowcaseVisible
+                                                  ? '学習ノート閉'
+                                                  : '学習ノート')
+                                            : (vm.isShowcaseVisible
+                                                  ? '📘 SDK コード学習ノートを閉じる'
+                                                  : '📘 SDK コード学習ノートを見る')),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isCompact ? 11 : 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onPressed: vm.toggleShowcase,
                               ),
-                              SizedBox(width: isCompact ? 6 : 10),
 
                               // 3-Way Character Stage Selector: [👯 2인 동시] [🌺 레이나(갸루)] [🌸 히카리(청순)]
                               Container(
@@ -317,8 +331,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: Colors.white24),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Wrap(
+                                  spacing: 4,
+                                  runSpacing: 2,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     _buildHeroineModeButton(
                                       label: vm.isKorean
@@ -329,7 +345,6 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                       isCompact: isCompact,
                                       onTap: vm.enableDualHeroineMode,
                                     ),
-                                    const SizedBox(width: 4),
                                     _buildHeroineModeButton(
                                       label: vm.isKorean
                                           ? (isCompact
@@ -350,7 +365,6 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                         soloMode: true,
                                       ),
                                     ),
-                                    const SizedBox(width: 4),
                                     _buildHeroineModeButton(
                                       label: vm.isKorean
                                           ? (isCompact
@@ -374,13 +388,12 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   ],
                                 ),
                               ),
-                              SizedBox(width: isCompact ? 6 : 8),
 
                               // Quick Language Toggle Pill (🇯🇵 日本語 <-> 🇰🇷 한국어)
                               ActionChip(
-                                visualDensity: isCompact
-                                    ? VisualDensity.compact
-                                    : VisualDensity.standard,
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
                                 backgroundColor: Colors.black54,
                                 side: const BorderSide(color: Colors.white24),
                                 label: Text(
@@ -402,7 +415,6 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   );
                                 },
                               ),
-                              SizedBox(width: isCompact ? 6 : 8),
 
                               // Affection Indicator Pill (Individual Heroine Affection in Dual Mode)
                               if (vm.isDualHeroineMode)
@@ -429,7 +441,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                             horizontal: 4,
                                             vertical: 1,
                                           ),
-                                          child: Row(
+                                        child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               const Icon(
@@ -513,7 +525,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   child: Container(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: isCompact ? 8 : 12,
-                                      vertical: 6,
+                                      vertical: 5,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
@@ -563,11 +575,11 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                     child: Align(
                       alignment: Alignment.topLeft,
                       child: Padding(
-                        padding: const EdgeInsets.only(
-                          top: 58,
-                          left: 16,
-                          right: 16,
-                          bottom: 220,
+                        padding: EdgeInsets.only(
+                          top: topOverlayOffset,
+                          left: isMobileScreen ? 10 : 16,
+                          right: isMobileScreen ? 10 : 16,
+                          bottom: bottomOverlayOffset,
                         ),
                         child: SingleChildScrollView(
                           child: VnSdkShowcaseCard(
@@ -584,10 +596,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                 // 4. Centered Glossy Sky-Blue Choice Overlay (Screenshot 2 Style!)
                 if (vm.isChoiceOverlayOpen)
                   Positioned(
-                    top: 60,
+                    top: topOverlayOffset,
                     left: 0,
                     right: 0,
-                    bottom: 205,
+                    bottom: bottomOverlayOffset,
                     child: VnChoiceOverlayPanel(viewModel: vm),
                   ),
 
