@@ -107,9 +107,11 @@ class SessionStatusBar extends StatelessWidget {
                   children: [
                     Expanded(child: _VolumeBar(viewModel: viewModel)),
                     const SizedBox(width: 8),
-                    AudioDeviceSelectorButton(
-                      viewModel: viewModel,
-                      isCompact: true,
+                    Flexible(
+                      child: AudioDeviceSelectorButton(
+                        viewModel: viewModel,
+                        isCompact: true,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(

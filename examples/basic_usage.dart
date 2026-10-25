@@ -1,11 +1,15 @@
-import 'package:gemini_live/gemini_live.dart';
+import 'dart:io' show Platform;
+
+import 'package:gemini_live/gemini_live_core.dart';
 
 /// Example: Basic Live API Usage
 ///
 /// This example demonstrates the basic usage of the Gemini Live API
 /// including connecting, sending text, and handling responses.
 void main() async {
-  const apiKey = 'YOUR_API_KEY'; // Replace with your actual API key
+  final apiKey =
+      Platform.environment['GEMINI_API_KEY'] ??
+      'YOUR_API_KEY'; // Or set GEMINI_API_KEY env var
 
   // Create Live Service
   final liveService = LiveService(apiKey: apiKey, apiVersion: 'v1beta');

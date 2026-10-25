@@ -120,15 +120,17 @@ class AudioDeviceSelectorButton extends StatelessWidget {
               color: isBlackHole ? Colors.amberAccent : Colors.cyanAccent,
             ),
             const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: isCompact ? 130 : 220),
-              child: Text(
-                isBlackHole ? '🔈 $label' : label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isBlackHole ? Colors.amberAccent : Colors.white,
-                  fontSize: isCompact ? 11 : 12,
-                  fontWeight: FontWeight.w600,
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isCompact ? 130 : 180),
+                child: Text(
+                  isBlackHole ? '🔈 $label' : label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isBlackHole ? Colors.amberAccent : Colors.white,
+                    fontSize: isCompact ? 11 : 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

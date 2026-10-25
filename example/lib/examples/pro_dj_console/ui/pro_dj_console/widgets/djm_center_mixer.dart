@@ -72,15 +72,19 @@ class DjmCenterMixer extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '4-CH DIGITAL MIXER',
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                  letterSpacing: 1.0,
+              const Expanded(
+                child: Text(
+                  '4-CH DIGITAL MIXER',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -104,37 +108,45 @@ class DjmCenterMixer extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              RotaryKnob(
-                label: 'TRIM (TEMP)',
-                value: temperature,
-                min: 0.0,
-                max: 2.5,
-                color: Colors.purpleAccent,
-                onChanged: onTemperatureChanged,
+              Expanded(
+                child: RotaryKnob(
+                  label: 'TRIM (TEMP)',
+                  value: temperature,
+                  min: 0.0,
+                  max: 2.5,
+                  color: Colors.purpleAccent,
+                  onChanged: onTemperatureChanged,
+                ),
               ),
-              RotaryKnob(
-                label: 'HI (BRIGHT)',
-                value: brightness,
-                min: 0.0,
-                max: 1.0,
-                color: Colors.blueAccent,
-                onChanged: onBrightnessChanged,
+              Expanded(
+                child: RotaryKnob(
+                  label: 'HI (BRIGHT)',
+                  value: brightness,
+                  min: 0.0,
+                  max: 1.0,
+                  color: Colors.blueAccent,
+                  onChanged: onBrightnessChanged,
+                ),
               ),
-              RotaryKnob(
-                label: 'MID (DENSE)',
-                value: density,
-                min: 0.0,
-                max: 1.0,
-                color: Colors.orangeAccent,
-                onChanged: onDensityChanged,
+              Expanded(
+                child: RotaryKnob(
+                  label: 'MID (DENSE)',
+                  value: density,
+                  min: 0.0,
+                  max: 1.0,
+                  color: Colors.orangeAccent,
+                  onChanged: onDensityChanged,
+                ),
               ),
-              RotaryKnob(
-                label: 'LOW (GUIDE)',
-                value: guidance,
-                min: 1.0,
-                max: 6.0,
-                color: Colors.cyanAccent,
-                onChanged: onGuidanceChanged,
+              Expanded(
+                child: RotaryKnob(
+                  label: 'LOW (GUIDE)',
+                  value: guidance,
+                  min: 1.0,
+                  max: 6.0,
+                  color: Colors.cyanAccent,
+                  onChanged: onGuidanceChanged,
+                ),
               ),
             ],
           ),
@@ -149,18 +161,20 @@ class DjmCenterMixer extends StatelessWidget {
               const SizedBox(width: 14),
 
               // Stem Isolator / Kill Buttons
-              Column(
-                children: [
-                  StemKillButton('BASS KILL', muteBass, onMuteBassChanged),
-                  const SizedBox(height: 8),
-                  StemKillButton('DRUM KILL', muteDrums, onMuteDrumsChanged),
-                  const SizedBox(height: 8),
-                  StemKillButton(
-                    'ONLY BASS/DRUM',
-                    onlyBassAndDrums,
-                    onOnlyBassAndDrumsChanged,
-                  ),
-                ],
+              Flexible(
+                child: Column(
+                  children: [
+                    StemKillButton('BASS KILL', muteBass, onMuteBassChanged),
+                    const SizedBox(height: 8),
+                    StemKillButton('DRUM KILL', muteDrums, onMuteDrumsChanged),
+                    const SizedBox(height: 8),
+                    StemKillButton(
+                      'ONLY BASS/DRUM',
+                      onlyBassAndDrums,
+                      onOnlyBassAndDrumsChanged,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 14),
 
@@ -183,29 +197,40 @@ class DjmCenterMixer extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'CROSSFADER [A]',
-                      style: TextStyle(
-                        color: Color(0xFF00E5FF),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                    const Flexible(
+                      child: Text(
+                        'CROSSFADER [A]',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Color(0xFF00E5FF),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
-                    Text(
-                      'A: ${(1.0 - crossfader).toStringAsFixed(2)}  |  B: ${crossfader.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'A: ${(1.0 - crossfader).toStringAsFixed(2)}  |  B: ${crossfader.toStringAsFixed(2)}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
-                    const Text(
-                      '[B] CROSSFADER',
-                      style: TextStyle(
-                        color: Color(0xFFFF9100),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                    const SizedBox(width: 4),
+                    const Flexible(
+                      child: Text(
+                        '[B] CROSSFADER',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Color(0xFFFF9100),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ],

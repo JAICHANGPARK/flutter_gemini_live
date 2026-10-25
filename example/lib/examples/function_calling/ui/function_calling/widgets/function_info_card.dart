@@ -56,15 +56,18 @@ class FunctionInfoCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.functions, size: 16, color: Colors.blue),
           const SizedBox(width: 8),
-          Text(
-            name,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
+          Flexible(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
             ),
           ),
           const SizedBox(width: 8),

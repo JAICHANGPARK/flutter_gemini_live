@@ -1,4 +1,6 @@
-import 'package:gemini_live/gemini_live.dart';
+import 'dart:io' show Platform;
+
+import 'package:gemini_live/gemini_live_core.dart';
 
 /// Example: Grounding with Google Maps & Custom Audio Transcription Config
 ///
@@ -6,7 +8,9 @@ import 'package:gemini_live/gemini_live.dart';
 /// (places & routing) and audio transcription settings with custom vocabulary
 /// in the Gemini Live API.
 void main() async {
-  const apiKey = 'YOUR_API_KEY'; // Replace with your actual API key
+  final apiKey =
+      Platform.environment['GEMINI_API_KEY'] ??
+      'YOUR_API_KEY'; // Or set GEMINI_API_KEY env var
 
   final liveService = LiveService(apiKey: apiKey, apiVersion: 'v1beta');
 

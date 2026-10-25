@@ -88,6 +88,7 @@ class VideoPlayerWithHud extends StatelessWidget {
               left: 12,
               right: 12,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -130,24 +131,28 @@ class VideoPlayerWithHud extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   // Target language pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(
-                      'Live Translate (gemini-3.5) ➔ ${vm.targetLanguageName}',
-                      style: const TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(
+                        'Live Translate (gemini-3.5) ➔ ${vm.targetLanguageName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.cyanAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -157,64 +162,77 @@ class VideoPlayerWithHud extends StatelessWidget {
 
             // Center Interactive YouTube Play Button
             Center(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: vm.playVideo,
-                  borderRadius: BorderRadius.circular(50),
-                  hoverColor: Colors.white10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: vm.isConnected
-                            ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                            : [
-                                const Color(0xFFFF0000),
-                                const Color(0xFFCC0000),
-                              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: vm.playVideo,
+                    borderRadius: BorderRadius.circular(50),
+                    hoverColor: Colors.white10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
                       ),
-                      borderRadius: BorderRadius.circular(50),
-                      border: Border.all(
-                        color: vm.isConnected
-                            ? Colors.cyanAccent.withValues(alpha: 0.5)
-                            : Colors.white30,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              (vm.isConnected ? Colors.cyanAccent : Colors.red)
-                                  .withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          spreadRadius: 2,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: vm.isConnected
+                              ? [
+                                  const Color(0xFF1E293B),
+                                  const Color(0xFF0F172A),
+                                ]
+                              : [
+                                  const Color(0xFFFF0000),
+                                  const Color(0xFFCC0000),
+                                ],
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          vm.isConnected
-                              ? Icons.open_in_browser_rounded
-                              : Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 32,
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: vm.isConnected
+                              ? Colors.cyanAccent.withValues(alpha: 0.5)
+                              : Colors.white30,
+                          width: 1.5,
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          vm.isConnected ? '브라우저에서 영상 열기' : '영상 재생 & 실시간 자막 시작',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                (vm.isConnected
+                                        ? Colors.cyanAccent
+                                        : Colors.red)
+                                    .withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            spreadRadius: 2,
                           ),
+                        ],
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              vm.isConnected
+                                  ? Icons.open_in_browser_rounded
+                                  : Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              vm.isConnected
+                                  ? '브라우저에서 영상 열기'
+                                  : '영상 재생 & 실시간 자막 시작',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

@@ -20,9 +20,11 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isNarrow = MediaQuery.sizeOf(context).width < 440;
     return AppBar(
       backgroundColor: const Color(0xFF1E222B),
       elevation: 0,
+      titleSpacing: isNarrow ? 6 : null,
       title: Row(
         children: [
           const Icon(Icons.music_note_rounded, color: Colors.purpleAccent),
@@ -35,28 +37,30 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            flex: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.purple.withAlpha(50),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.purpleAccent.withAlpha(100)),
-              ),
-              child: const Text(
-                'Lyria Realtime',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.purpleAccent,
-                  fontWeight: FontWeight.w600,
+          if (!isNarrow) ...[
+            const SizedBox(width: 8),
+            Flexible(
+              flex: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withAlpha(50),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.purpleAccent.withAlpha(100)),
+                ),
+                child: const Text(
+                  'Lyria Realtime',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.purpleAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
       actions: [

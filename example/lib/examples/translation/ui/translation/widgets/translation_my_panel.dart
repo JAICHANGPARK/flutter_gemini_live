@@ -34,15 +34,18 @@ class TranslationMyPanel extends StatelessWidget {
                 style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(width: 8),
-              Text(
-                '내 화면 (${myLang['name']} 발화 및 통역 기록)',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Colors.blueAccent,
+              Expanded(
+                child: Text(
+                  '내 화면 (${myLang['name']} 발화 및 통역 기록)',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.blueAccent,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               const Icon(
                 Icons.person_rounded,
                 size: 18,

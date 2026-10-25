@@ -162,11 +162,12 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   letterSpacing: 1.2,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               // Active Blend Pills
-              Flexible(
+              Expanded(
                 child: Text(
                   '🎛️ $mixSummary',
+                  textAlign: TextAlign.right,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFFBBF24),
@@ -197,36 +198,55 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text(
-                'SUB BASS (40Hz)',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+              Flexible(
+                child: Text(
+                  'SUB BASS (40Hz)',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              Text(
-                'LOW-MID (500Hz)',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'LOW-MID (500Hz)',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              Text(
-                'MID-HIGH (4kHz)',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'MID-HIGH (4kHz)',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              Text(
-                'TREBLE (16kHz)',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+              SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'TREBLE (16kHz)',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

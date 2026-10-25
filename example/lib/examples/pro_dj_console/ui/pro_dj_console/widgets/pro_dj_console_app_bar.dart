@@ -18,9 +18,11 @@ class ProDjConsoleAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final isNarrow = MediaQuery.sizeOf(context).width < 440;
     return AppBar(
       backgroundColor: const Color(0xFF14171E),
       elevation: 0,
+      titleSpacing: isNarrow ? 4 : null,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white70),
         onPressed: () => Navigator.of(context).pop(),
@@ -28,7 +30,10 @@ class ProDjConsoleAppBar extends StatelessWidget
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: EdgeInsets.symmetric(
+              horizontal: isNarrow ? 6 : 8,
+              vertical: 3,
+            ),
             decoration: BoxDecoration(
               color: Colors.red.shade900,
               borderRadius: BorderRadius.circular(4),
@@ -43,7 +48,7 @@ class ProDjConsoleAppBar extends StatelessWidget
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: isNarrow ? 6 : 10),
           const Flexible(
             child: Text(
               'DIGITAL MULTI-PLAYER CONSOLE',

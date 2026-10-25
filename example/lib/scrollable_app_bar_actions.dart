@@ -17,7 +17,11 @@ class ScrollableAppBarActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxWidth = MediaQuery.sizeOf(context).width * maxWidthFraction;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final effectiveFraction = screenWidth < 480
+        ? (maxWidthFraction * 0.72).clamp(0.35, 0.48)
+        : maxWidthFraction;
+    final maxWidth = screenWidth * effectiveFraction;
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: SingleChildScrollView(

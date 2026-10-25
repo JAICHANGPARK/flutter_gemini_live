@@ -54,14 +54,19 @@ class TransportControls extends StatelessWidget {
               ),
             ),
             // Reset Context (Seamless)
-            OutlinedButton.icon(
-              onPressed: isConnected ? viewModel.resetContext : null,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Reset Context'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.cyanAccent,
-                side: BorderSide(
-                  color: isConnected ? Colors.cyanAccent : Colors.white24,
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: OutlinedButton.icon(
+                  onPressed: isConnected ? viewModel.resetContext : null,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Reset Context'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.cyanAccent,
+                    side: BorderSide(
+                      color: isConnected ? Colors.cyanAccent : Colors.white24,
+                    ),
+                  ),
                 ),
               ),
             ),

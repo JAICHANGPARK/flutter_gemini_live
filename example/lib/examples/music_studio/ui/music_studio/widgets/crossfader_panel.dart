@@ -24,26 +24,35 @@ class CrossfaderPanel extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.tune, color: Colors.purpleAccent, size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'Prompt DJ Crossfader (A ⟷ B)',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.tune, color: Colors.purpleAccent, size: 16),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Prompt DJ Crossfader (A ⟷ B)',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Text(
-                'A: ${(1.0 - crossfaderValue).toStringAsFixed(2)} · B: ${crossfaderValue.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: Colors.purpleAccent,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'A: ${(1.0 - crossfaderValue).toStringAsFixed(2)} · B: ${crossfaderValue.toStringAsFixed(2)}',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.purpleAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

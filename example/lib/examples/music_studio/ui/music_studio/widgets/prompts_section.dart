@@ -26,14 +26,18 @@ class PromptsSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '🎛️ Steerable Weighted Prompts',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                const Expanded(
+                  child: Text(
+                    '🎛️ Steerable Weighted Prompts',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => viewModel.addPrompt('', 0.5),
                   icon: const Icon(Icons.add, size: 18),

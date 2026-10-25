@@ -536,23 +536,24 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     final isDual = vm.isDualHeroineMode;
     final activeSpeaker = vm.activeSpeakingHeroine;
 
-    // Ensure character width never exceeds screenWidth so Align(Alignment(x, y))
-    // never inverts left/right coordinates on narrow mobile portrait screens!
-    final maxAllowedCharWidth = isDual
-        ? (isMobile ? screenWidth * 0.62 : screenWidth * 0.48)
-        : (isMobile ? screenWidth * 0.92 : screenWidth * 0.75);
-    final charHeightFromWidth = maxAllowedCharWidth * (1024.0 / 768.0);
-    final charHeight = math.min(screenHeight * 0.86, charHeightFromWidth);
+    // Keep characters tall and prominent on both solo and dual modes!
+    // Using explicit horizontal translation (`horizontalStageOffset`) instead of
+    // Align(-x/+x) ensures Dual Mode characters never shrink or invert on mobile portrait.
+    final charHeight = isMobilePortrait
+        ? screenHeight * 0.66
+        : screenHeight * 0.86;
     final charWidth = charHeight * (768.0 / 1024.0);
-    // On tall mobile portrait screens, lift the character stage slightly so the
-    // bottom dialogue box doesn't cover the heroines' upper bodies.
+    // Lift the character stage on mobile portrait so both heroines' heads and
+    // upper bodies stand tall and clearly visible above the bottom dialogue box.
     final stageBottomInset = isMobilePortrait && !vm.isDialogueBoxHidden
-        ? (screenHeight * 0.14).clamp(70.0, 130.0)
+        ? (screenHeight * 0.20).clamp(145.0, 220.0)
         : 0.0;
+    final dualSpreadX = isMobile ? screenWidth * 0.22 : screenWidth * 0.19;
 
     Widget buildHeroineActor(
       VnHeroineCharacter actor, {
       required Alignment alignment,
+      required double horizontalStageOffset,
       required bool isSpeakingThisTurn,
       required double scaleFactor,
     }) {
@@ -631,7 +632,9 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
               alignment: Alignment.bottomCenter,
               transform: Matrix4.identity()
                 ..translateByDouble(
-                  actorImpulseX + _smoothedParallax.dx * 10.0,
+                  horizontalStageOffset +
+                      actorImpulseX +
+                      _smoothedParallax.dx * 10.0,
                   actorImpulseY + _smoothedParallax.dy * 5.0,
                   0.0,
                   1.0,
@@ -697,9 +700,6 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
         ),
       );
     }
-
-    final hikariDualAlign = Alignment(isMobile ? -0.92 : -0.52, 1.0);
-    final reinaDualAlign = Alignment(isMobile ? 0.92 : 0.50, 1.0);
 
     return MouseRegion(
       onHover: (event) {
@@ -801,18 +801,20 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                       padding: EdgeInsets.only(bottom: stageBottomInset),
                       child: buildHeroineActor(
                         VnHeroineCharacter.hikari,
-                        alignment: hikariDualAlign,
+                        alignment: Alignment.bottomCenter,
+                        horizontalStageOffset: -dualSpreadX,
                         isSpeakingThisTurn: false,
-                        scaleFactor: 0.90,
+                        scaleFactor: isMobile ? 0.94 : 0.90,
                       ),
                     ),
                     Padding(
                       padding: EdgeInsets.only(bottom: stageBottomInset),
                       child: buildHeroineActor(
                         VnHeroineCharacter.reina,
-                        alignment: reinaDualAlign,
+                        alignment: Alignment.bottomCenter,
+                        horizontalStageOffset: dualSpreadX,
                         isSpeakingThisTurn: true,
-                        scaleFactor: 0.96,
+                        scaleFactor: isMobile ? 0.98 : 0.96,
                       ),
                     ),
                   ] else ...[
@@ -820,18 +822,20 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                       padding: EdgeInsets.only(bottom: stageBottomInset),
                       child: buildHeroineActor(
                         VnHeroineCharacter.reina,
-                        alignment: reinaDualAlign,
+                        alignment: Alignment.bottomCenter,
+                        horizontalStageOffset: dualSpreadX,
                         isSpeakingThisTurn: false,
-                        scaleFactor: 0.90,
+                        scaleFactor: isMobile ? 0.94 : 0.90,
                       ),
                     ),
                     Padding(
                       padding: EdgeInsets.only(bottom: stageBottomInset),
                       child: buildHeroineActor(
                         VnHeroineCharacter.hikari,
-                        alignment: hikariDualAlign,
+                        alignment: Alignment.bottomCenter,
+                        horizontalStageOffset: -dualSpreadX,
                         isSpeakingThisTurn: true,
-                        scaleFactor: 0.96,
+                        scaleFactor: isMobile ? 0.98 : 0.96,
                       ),
                     ),
                   ],
@@ -896,6 +900,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                     child: buildHeroineActor(
                       vm.selectedHeroine,
                       alignment: widget.characterAlignment,
+                      horizontalStageOffset: 0.0,
                       isSpeakingThisTurn: true,
                       scaleFactor: 1.0,
                     ),

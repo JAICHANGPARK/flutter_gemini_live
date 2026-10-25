@@ -74,34 +74,40 @@ class CdjDeck extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: deckColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: deckColor.withAlpha(180),
-                          blurRadius: 6,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: deckColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: deckColor.withAlpha(180),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        deckTitle,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: deckColor,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          letterSpacing: 1.0,
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    deckTitle,
-                    style: TextStyle(
-                      color: deckColor,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -136,15 +142,19 @@ class CdjDeck extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'STEERABLE PROMPT',
-                      style: TextStyle(
-                        color: deckColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                        letterSpacing: 0.8,
+                    Expanded(
+                      child: Text(
+                        'STEERABLE PROMPT',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: deckColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       'WEIGHT: ${promptWeight.toStringAsFixed(2)}',
                       style: const TextStyle(

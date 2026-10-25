@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:gemini_live/gemini_live.dart';
+import 'package:gemini_live/gemini_live_core.dart';
 
 /// Example: Connect to Live API with an Ephemeral Token
 ///

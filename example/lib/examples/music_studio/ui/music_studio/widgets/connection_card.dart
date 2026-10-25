@@ -39,98 +39,119 @@ class ConnectionCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 320;
+            final dropdown = DropdownButtonFormField<String>(
+              initialValue: viewModel.selectedModel,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF242936),
+              decoration: const InputDecoration(
+                labelText: 'Lyria Live Model',
+                labelStyle: TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: LiveMusicModels.lyriaRealtimeExp,
+                  child: Text(
+                    'lyria-realtime-exp (Standard)',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+              onChanged: isConnected
+                  ? null
+                  : (val) {
+                      if (val != null) {
+                        viewModel.selectModel(val);
+                      }
+                    },
+            );
+            final connectBtn = ElevatedButton.icon(
+              onPressed: isConnecting
+                  ? null
+                  : isConnected
+                  ? viewModel.disconnect
+                  : viewModel.connect,
+              icon: isConnecting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(isConnected ? Icons.link_off : Icons.link),
+              label: Text(isConnected ? 'Disconnect' : 'Connect'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isConnected
+                    ? Colors.red.shade700
+                    : Colors.purple.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: viewModel.selectedModel,
-                    dropdownColor: const Color(0xFF242936),
-                    decoration: const InputDecoration(
-                      labelText: 'Lyria Live Model',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                if (isCompact) ...[
+                  dropdown,
+                  const SizedBox(height: 10),
+                  SizedBox(width: double.infinity, child: connectBtn),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(child: dropdown),
+                      const SizedBox(width: 12),
+                      connectBtn,
+                    ],
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: LiveMusicModels.lyriaRealtimeExp,
-                        child: Text(
-                          'lyria-realtime-exp (Standard)',
-                          style: TextStyle(color: Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        viewModel.status.text,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
                       ),
-                    ],
-                    onChanged: isConnected
-                        ? null
-                        : (val) {
-                            if (val != null) {
-                              viewModel.selectModel(val);
-                            }
-                          },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: isConnecting
-                      ? null
-                      : isConnected
-                      ? viewModel.disconnect
-                      : viewModel.connect,
-                  icon: isConnecting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(isConnected ? Icons.link_off : Icons.link),
-                  label: Text(isConnected ? 'Disconnect' : 'Connect'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isConnected
-                        ? Colors.red.shade700
-                        : Colors.purple.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Chunks: ${viewModel.receivedChunksCount} · ${(viewModel.totalBytesReceived / 1024).toStringAsFixed(1)} KB',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  viewModel.status.text,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  'Chunks: ${viewModel.receivedChunksCount} · ${(viewModel.totalBytesReceived / 1024).toStringAsFixed(1)} KB',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

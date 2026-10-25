@@ -1,44 +1,12 @@
 /// Public entry point for the `gemini_live` package.
 ///
 /// Import this library to access the high-level [GoogleGenAI] client,
-/// Live API session helpers, and the package's request and response models.
+/// Live API session helpers, the package's request and response models,
+/// and all pre-built Material 3 & Cupertino Live UI widgets and controllers.
+///
+/// For pure-Dart CLI or backend environments without Flutter (`dart:ui`),
+/// import `package:gemini_live/gemini_live_core.dart` instead.
 library;
 
-export 'src/google_genai.dart';
-export 'src/utils/wav_header.dart';
-export 'src/widgets/live_status_badge.dart';
-export 'src/widgets/live_mic_button.dart';
-export 'src/widgets/live_voice_indicator.dart';
-export 'src/utils/token_usage_tracker.dart';
-export 'src/widgets/live_usage_badge.dart';
-export 'src/voices_service.dart';
-export 'src/utils/audio_utils.dart';
-export 'src/utils/live_session_controller.dart';
-export 'src/widgets/live_waveform.dart';
-export 'src/widgets/live_caption_bubble.dart';
-export 'src/widgets/cupertino_live_status_badge.dart';
-export 'src/widgets/cupertino_live_mic_button.dart';
-export 'src/widgets/cupertino_live_usage_badge.dart';
-export 'src/widgets/live_barge_in_banner.dart';
-export 'src/widgets/live_control_bar.dart';
-export 'src/widgets/live_voice_selector.dart';
-export 'src/widgets/live_vision_overlay.dart';
-export 'src/widgets/live_chat_view.dart';
-export 'src/music_service.dart';
-export 'src/auth_tokens_service.dart';
-export 'src/utils/live_logger.dart';
-export 'src/utils/pcm_audio_buffer.dart';
-export 'src/utils/reconnect_policy.dart';
-export 'src/utils/function_tool_registry.dart';
-export 'src/utils/transcript_exporter.dart';
-export 'src/utils/frame_rate_limiter.dart';
-export 'src/widgets/live_tool_activity_chip.dart';
-export 'src/widgets/live_audio_route_button.dart';
-export 'src/widgets/live_translate_split_view.dart';
-export 'src/widgets/live_thinking_indicator.dart';
-export 'src/widgets/live_context_config_sheet.dart';
-export 'src/widgets/live_music_control_deck.dart';
-export 'src/widgets/live_reconnect_banner.dart';
-export 'src/widgets/live_voice_studio_sheet.dart';
-export 'src/widgets/live_session_info_sheet.dart';
-
+export 'gemini_live_core.dart';
+export 'src/flutter_exports.dart';

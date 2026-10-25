@@ -28,6 +28,7 @@ class AnimeVnNavigatorPage extends StatefulWidget {
 class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
   late final AnimeVnViewModel _viewModel;
   final FocusNode _keyboardFocusNode = FocusNode();
+  bool _didConfigureInitialMobileLayout = false;
 
   @override
   void initState() {
@@ -36,6 +37,18 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
       ..onNotice = _showNotice
       ..requestApiKeySetup = _requestApiKeySetup;
     _viewModel.init();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didConfigureInitialMobileLayout) {
+      _didConfigureInitialMobileLayout = true;
+      if (MediaQuery.sizeOf(context).width < 600 &&
+          _viewModel.isShowcaseVisible) {
+        _viewModel.toggleShowcase();
+      }
+    }
   }
 
   @override

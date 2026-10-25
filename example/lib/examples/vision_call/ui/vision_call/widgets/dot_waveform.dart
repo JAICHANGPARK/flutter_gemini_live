@@ -28,37 +28,40 @@ class DotWaveform extends StatelessWidget {
         final isAiActive = act.isAiResponding;
         final isActive = isAiActive || isUserSpeaking;
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(dotCount, (i) {
-            // Wave calculation
-            final wave = math.sin(animValue + (i * 0.45));
-            const baseHeight = 4.0;
-            final dynamicHeight = isActive
-                ? (isUserSpeaking
-                      ? (baseHeight +
-                            (wave.abs() * (8.0 + (act.userMicVolume * 28.0))))
-                      : (baseHeight + (wave.abs() * 14.0)))
-                : baseHeight;
-            final alpha = isActive
-                ? (160 + (wave.abs() * 95)).toInt().clamp(120, 255)
-                : 100;
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(dotCount, (i) {
+              // Wave calculation
+              final wave = math.sin(animValue + (i * 0.45));
+              const baseHeight = 4.0;
+              final dynamicHeight = isActive
+                  ? (isUserSpeaking
+                        ? (baseHeight +
+                              (wave.abs() * (8.0 + (act.userMicVolume * 28.0))))
+                        : (baseHeight + (wave.abs() * 14.0)))
+                  : baseHeight;
+              final alpha = isActive
+                  ? (160 + (wave.abs() * 95)).toInt().clamp(120, 255)
+                  : 100;
 
-            final dotColor = isAiActive
-                ? Colors.greenAccent
-                : (isUserSpeaking ? const Color(0xFFFFD54F) : Colors.white);
+              final dotColor = isAiActive
+                  ? Colors.greenAccent
+                  : (isUserSpeaking ? const Color(0xFFFFD54F) : Colors.white);
 
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2.2),
-              width: 4.0,
-              height: dynamicHeight,
-              decoration: BoxDecoration(
-                color: dotColor.withAlpha(alpha),
-                borderRadius: BorderRadius.circular(2.0),
-              ),
-            );
-          }),
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2.2),
+                width: 4.0,
+                height: dynamicHeight,
+                decoration: BoxDecoration(
+                  color: dotColor.withAlpha(alpha),
+                  borderRadius: BorderRadius.circular(2.0),
+                ),
+              );
+            }),
+          ),
         );
       },
     );

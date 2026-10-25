@@ -32,12 +32,15 @@ class PromptTagBank extends StatelessWidget {
         children: [
           Icon(Icons.library_music_rounded, color: Colors.cyanAccent, size: 16),
           SizedBox(width: 6),
-          Text(
-            'Prompt DJ Tag Bank (Official Guide Vocabularies)',
-            style: TextStyle(
-              color: Colors.cyanAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              'Prompt DJ Tag Bank (Official Guide Vocabularies)',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.cyanAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

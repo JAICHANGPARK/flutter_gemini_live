@@ -249,14 +249,15 @@ class LiveControlBar extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
                       const Text(
                         'HUD 옵션:',
                         style: TextStyle(color: Colors.white60, fontSize: 12),
                       ),
-                      const SizedBox(width: 8),
                       FilterChip(
                         label: const Text('원문 함께 보기'),
                         selected: vm.showOriginalText,
@@ -270,7 +271,6 @@ class LiveControlBar extends StatelessWidget {
                         ),
                         onSelected: vm.setShowOriginalText,
                       ),
-                      const SizedBox(width: 6),
                       FilterChip(
                         label: const Text('플로팅 자막'),
                         selected: vm.showFloatingHud,

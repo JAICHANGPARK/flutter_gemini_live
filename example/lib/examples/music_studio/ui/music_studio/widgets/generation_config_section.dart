@@ -101,7 +101,7 @@ class GenerationConfigSection extends StatelessWidget {
             Row(
               children: [
                 const SizedBox(
-                  width: 100,
+                  width: 72,
                   child: Text(
                     'Mode:',
                     style: TextStyle(
@@ -111,30 +111,39 @@ class GenerationConfigSection extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: SegmentedButton<MusicGenerationMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: MusicGenerationMode.QUALITY,
-                        label: Text('Quality', style: TextStyle(fontSize: 11)),
-                      ),
-                      ButtonSegment(
-                        value: MusicGenerationMode.DIVERSITY,
-                        label: Text(
-                          'Diversity',
-                          style: TextStyle(fontSize: 11),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: SegmentedButton<MusicGenerationMode>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: MusicGenerationMode.QUALITY,
+                          label: Text(
+                            'Quality',
+                            style: TextStyle(fontSize: 11),
+                          ),
                         ),
+                        ButtonSegment(
+                          value: MusicGenerationMode.DIVERSITY,
+                          label: Text(
+                            'Diversity',
+                            style: TextStyle(fontSize: 11),
+                          ),
+                        ),
+                        ButtonSegment(
+                          value: MusicGenerationMode.VOCALIZATION,
+                          label: Text('Vocal', style: TextStyle(fontSize: 11)),
+                        ),
+                      ],
+                      selected: {viewModel.mode},
+                      onSelectionChanged: (val) => viewModel.setMode(val.first),
+                      style: SegmentedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        selectedBackgroundColor: Colors.purple.shade700,
+                        selectedForegroundColor: Colors.white,
+                        foregroundColor: Colors.white70,
                       ),
-                      ButtonSegment(
-                        value: MusicGenerationMode.VOCALIZATION,
-                        label: Text('Vocal', style: TextStyle(fontSize: 11)),
-                      ),
-                    ],
-                    selected: {viewModel.mode},
-                    onSelectionChanged: (val) => viewModel.setMode(val.first),
-                    style: SegmentedButton.styleFrom(
-                      selectedBackgroundColor: Colors.purple.shade700,
-                      selectedForegroundColor: Colors.white,
-                      foregroundColor: Colors.white70,
                     ),
                   ),
                 ),

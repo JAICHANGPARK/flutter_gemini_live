@@ -42,11 +42,15 @@ class MasterLcdDisplay extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 6,
             children: [
               // Elapsed Time Readout
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
                     'TIME  ',
@@ -72,6 +76,7 @@ class MasterLcdDisplay extends StatelessWidget {
 
               // Real-time BPM display
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
                     'BPM  ',
@@ -106,6 +111,7 @@ class MasterLcdDisplay extends StatelessWidget {
                   ),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.music_note,
@@ -127,6 +133,7 @@ class MasterLcdDisplay extends StatelessWidget {
 
               // Engine Connection Pill
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.circle,

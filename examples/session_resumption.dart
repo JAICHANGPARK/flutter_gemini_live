@@ -1,12 +1,14 @@
 import 'dart:io' show Platform;
-import 'package:gemini_live/gemini_live.dart';
+import 'package:gemini_live/gemini_live_core.dart';
 
 /// Example: Session Resumption
 ///
 /// This example demonstrates how to resume a previous Live API session
 /// using session resumption configuration.
 void main() async {
-  const apiKey = 'YOUR_API_KEY'; // Replace with your actual API key
+  final apiKey =
+      Platform.environment['GEMINI_API_KEY'] ??
+      'YOUR_API_KEY'; // Or set GEMINI_API_KEY env var
 
   // Try to load a previous session handle (if exists)
   String? previousSessionHandle = _loadPreviousSessionHandle();

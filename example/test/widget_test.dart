@@ -2,6 +2,18 @@ import 'package:example/examples/anime_vn_navigator/domain/models/vn_character_m
 import 'package:example/examples/anime_vn_navigator/domain/models/vn_sdk_chapter.dart';
 import 'package:example/examples/anime_vn_navigator/ui/anime_vn_navigator_screen.dart';
 import 'package:example/examples/anime_vn_navigator/ui/view_models/anime_vn_view_model.dart';
+import 'package:example/examples/chat/ui/chat/chat_screen.dart';
+import 'package:example/examples/dj_midi_box/ui/dj_midi_box/dj_midi_box_screen.dart';
+import 'package:example/examples/function_calling/ui/function_calling/function_calling_screen.dart';
+import 'package:example/examples/live_api/ui/live_api/live_api_screen.dart';
+import 'package:example/examples/math_tutor/ui/math_tutor/math_tutor_screen.dart';
+import 'package:example/examples/media_subtitle/ui/media_subtitle/media_subtitle_screen.dart';
+import 'package:example/examples/music_studio/ui/music_studio/music_studio_screen.dart';
+import 'package:example/examples/pro_dj_console/ui/pro_dj_console/pro_dj_console_screen.dart';
+import 'package:example/examples/realtime_media/ui/realtime_media/realtime_media_screen.dart';
+import 'package:example/examples/smart_notetaker/ui/smart_notetaker/smart_notetaker_screen.dart';
+import 'package:example/examples/translation/ui/translation/translation_screen.dart';
+import 'package:example/examples/vision_call/ui/vision_call/vision_call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -157,6 +169,58 @@ void main() {
         Navigator.of(tester.element(find.byType(AnimeVnNavigatorPage))).pop();
         await tester.pump(const Duration(milliseconds: 250));
       }
+    },
+  );
+
+  testWidgets(
+    'All 13 example screens render without overflow on mobile portrait and landscape viewports',
+    (WidgetTester tester) async {
+      const mobileSizes = <Size>[
+        Size(320, 568), // iPhone SE
+        Size(360, 640), // Compact Android
+        Size(375, 812), // Standard iPhone
+        Size(667, 375), // Mobile landscape
+      ];
+
+      final pages = <String, Widget Function()>{
+        'HomePage': () => const HomePage(),
+        'AnimeVnNavigatorPage': () => const AnimeVnNavigatorPage(),
+        'LiveTranslationPage': () => const LiveTranslationPage(),
+        'LiveMediaSubtitlePage': () => const LiveMediaSubtitlePage(),
+        'LiveSmartNotePage': () => const LiveSmartNotePage(),
+        'LiveMathTutorPage': () => const LiveMathTutorPage(),
+        'LiveVisionCallPage': () => const LiveVisionCallPage(),
+        'LiveMusicStudioPage': () => const LiveMusicStudioPage(),
+        'ProDjConsolePage': () => const ProDjConsolePage(),
+        'DjMidiBoxPage': () => const DjMidiBoxPage(),
+        'ChatPage': () => const ChatPage(),
+        'LiveAPIDemoPage': () => const LiveAPIDemoPage(),
+        'FunctionCallingDemoPage': () => const FunctionCallingDemoPage(),
+        'RealtimeMediaDemoPage': () => const RealtimeMediaDemoPage(),
+      };
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final failures = <String>[];
+      for (final size in mobileSizes) {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+
+        for (final entry in pages.entries) {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: entry.value(),
+            ),
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+          final err = tester.takeException();
+          if (err != null) {
+            failures.add('${entry.key} @ $size: $err');
+          }
+        }
+      }
+      expect(failures, isEmpty, reason: failures.join('\n'));
     },
   );
 }

@@ -36,15 +36,18 @@ class TranslationPartnerPanel extends StatelessWidget {
                 style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(width: 8),
-              Text(
-                'For Partner: ${targetLang['name']}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Colors.amber.shade900,
+              Expanded(
+                child: Text(
+                  'For Partner: ${targetLang['name']}',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.amber.shade900,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               const Icon(
                 Icons.person_pin_rounded,
                 size: 18,

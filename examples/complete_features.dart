@@ -1,4 +1,6 @@
-import 'package:gemini_live/gemini_live.dart';
+import 'dart:io' show Platform;
+
+import 'package:gemini_live/gemini_live_core.dart';
 
 /// Example: Complete Live API Features
 ///
@@ -10,7 +12,9 @@ import 'package:gemini_live/gemini_live.dart';
 /// - Audio transcription
 /// - Context window compression
 void main() async {
-  const apiKey = 'YOUR_API_KEY'; // Replace with your actual API key
+  final apiKey =
+      Platform.environment['GEMINI_API_KEY'] ??
+      'YOUR_API_KEY'; // Or set GEMINI_API_KEY env var
 
   print('🚀 Gemini Live API - Complete Features Example');
   print('=' * 50);
