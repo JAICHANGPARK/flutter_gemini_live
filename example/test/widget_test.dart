@@ -17,10 +17,15 @@ import 'package:example/examples/translation/ui/translation/translation_screen.d
 import 'package:example/examples/vision_call/ui/vision_call/vision_call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:example/main.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('home screen shows demo entries including Anime Visual Novel', (
     WidgetTester tester,
   ) async {
