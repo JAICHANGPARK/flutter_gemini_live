@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/live_logger.dart';
+import 'live_adaptive_layout.dart';
 
 /// Signature for customizing individual log rows in [GeminiLiveLogConsole].
 typedef GeminiLiveLogEntryBuilder = Widget Function(
@@ -364,12 +367,44 @@ class _GeminiLiveLogOverlayState extends State<GeminiLiveLogOverlay> {
   }
 
   Widget _buildPositionedOverlay(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
+    final viewport = GeminiLiveViewportInfo.of(context);
+    final screenSize = viewport.size;
     final controller = _effectiveController;
 
+    double availablePaneWidth = screenSize.width - 16.0;
+    if (viewport.isBookPosture && viewport.hingeBounds != null) {
+      final hinge = viewport.hingeBounds!;
+      if (_offset.dx < hinge.left) {
+        availablePaneWidth = hinge.left - 16.0;
+      } else {
+        availablePaneWidth = screenSize.width - hinge.right - 16.0;
+      }
+    }
+
+    final maxW = math
+        .min(widget.expandedWidth, math.max(180.0, availablePaneWidth))
+        .toDouble();
+    final maxH = math
+        .min(
+          widget.expandedHeight,
+          math.max(160.0, screenSize.height - 32.0),
+        )
+        .toDouble();
+
+    final double effectiveLeft = _isExpanded
+        ? _offset.dx
+              .clamp(8.0, math.max(8.0, screenSize.width - maxW - 8.0))
+              .toDouble()
+        : _offset.dx;
+    final double effectiveTop = _isExpanded
+        ? _offset.dy
+              .clamp(8.0, math.max(8.0, screenSize.height - maxH - 8.0))
+              .toDouble()
+        : _offset.dy;
+
     return Positioned(
-      left: _offset.dx,
-      top: _offset.dy,
+      left: effectiveLeft,
+      top: effectiveTop,
       child: Material(
         color: Colors.transparent,
         child: ListenableBuilder(
@@ -389,15 +424,6 @@ class _GeminiLiveLogOverlayState extends State<GeminiLiveLogOverlay> {
                 child: collapsed,
               );
             }
-
-            final maxW = (screenSize.width - 24.0).clamp(
-              240.0,
-              widget.expandedWidth,
-            );
-            final maxH = (screenSize.height - 48.0).clamp(
-              200.0,
-              widget.expandedHeight,
-            );
 
             final consoleWidget = widget.consoleBuilder != null
                 ? widget.consoleBuilder!(

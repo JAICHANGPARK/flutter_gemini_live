@@ -10,6 +10,7 @@ export 'utils/transcript_exporter.dart';
 export 'widgets/cupertino_live_mic_button.dart';
 export 'widgets/cupertino_live_status_badge.dart';
 export 'widgets/cupertino_live_usage_badge.dart';
+export 'widgets/live_adaptive_layout.dart';
 export 'widgets/live_audio_route_button.dart';
 export 'widgets/live_barge_in_banner.dart';
 export 'widgets/live_caption_bubble.dart';

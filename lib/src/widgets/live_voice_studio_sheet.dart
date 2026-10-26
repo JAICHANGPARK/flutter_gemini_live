@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../model/models.dart';
 import '../voices_service.dart';
+import 'live_adaptive_layout.dart';
 
 /// Signature for building a custom voice resource card in [GeminiLiveVoiceStudioSheet].
 typedef GeminiLiveVoiceResourceItemBuilder = Widget Function(
@@ -205,17 +206,9 @@ class _GeminiLiveVoiceStudioSheetState
         widget.backgroundColor ??
         (isDark ? const Color(0xFF18181B) : Colors.white);
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        20.0,
-        14.0,
-        20.0,
-        24.0 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-      ),
+    return GeminiLiveAdaptiveSheetContainer(
+      backgroundColor: bg,
+      includeKeyboardInsets: true,
       child: Material(
         color: Colors.transparent,
         child: SingleChildScrollView(

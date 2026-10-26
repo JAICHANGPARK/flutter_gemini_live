@@ -319,71 +319,101 @@ class _GeminiLiveMusicControlDeckState
             ),
           ],
 
-          // BPM slider
-          if (widget.showBpmControl) ...[
+          // BPM slider & Scale selector (side-by-side on wide screens, stacked on compact)
+          if (widget.showBpmControl || widget.showScaleSelector) ...[
             const SizedBox(height: 12.0),
-            Row(
-              children: [
-                Text(
-                  'Tempo (BPM)',
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _bpm.toDouble(),
-                    min: 60,
-                    max: 200,
-                    divisions: 140,
-                    activeColor: primary,
-                    label: '$_bpm BPM',
-                    onChanged: (value) {
-                      setState(() {
-                        _bpm = value.round();
-                      });
-                      _emitConfig();
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWideDeck =
+                    constraints.maxWidth >= 560.0 &&
+                    widget.showBpmControl &&
+                    widget.showScaleSelector;
 
-          // Scale selector
-          if (widget.showScaleSelector) ...[
-            const SizedBox(height: 4.0),
-            DropdownButtonFormField<Scale>(
-              initialValue: _scale,
-              isExpanded: true,
-              decoration: InputDecoration(
-                isDense: true,
-                labelText: 'Musical Scale',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-              ),
-              items: Scale.values
-                  .map(
-                    (s) => DropdownMenuItem<Scale>(
-                      value: s,
-                      child: Text(
-                        s == Scale.SCALE_UNSPECIFIED
-                            ? 'Auto (Unspecified)'
-                            : s.name.replaceAll('_', ' '),
-                        style: const TextStyle(fontSize: 12.5),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (next) {
-                if (next == null) return;
-                setState(() {
-                  _scale = next;
-                });
-                _emitConfig();
+                final bpmWidget = widget.showBpmControl
+                    ? Row(
+                        children: [
+                          Text(
+                            'Tempo (BPM)',
+                            style: TextStyle(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                          Expanded(
+                            child: Slider(
+                              value: _bpm.toDouble(),
+                              min: 60,
+                              max: 200,
+                              divisions: 140,
+                              activeColor: primary,
+                              label: '$_bpm BPM',
+                              onChanged: (value) {
+                                setState(() {
+                                  _bpm = value.round();
+                                });
+                                _emitConfig();
+                              },
+                            ),
+                          ),
+                        ],
+                      )
+                    : null;
+
+                final scaleWidget = widget.showScaleSelector
+                    ? DropdownButtonFormField<Scale>(
+                        initialValue: _scale,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          labelText: 'Musical Scale',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        items: Scale.values
+                            .map(
+                              (s) => DropdownMenuItem<Scale>(
+                                value: s,
+                                child: Text(
+                                  s == Scale.SCALE_UNSPECIFIED
+                                      ? 'Auto (Unspecified)'
+                                      : s.name.replaceAll('_', ' '),
+                                  style: const TextStyle(fontSize: 12.5),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (next) {
+                          if (next == null) return;
+                          setState(() {
+                            _scale = next;
+                          });
+                          _emitConfig();
+                        },
+                      )
+                    : null;
+
+                if (isWideDeck) {
+                  return Row(
+                    children: [
+                      Expanded(child: bpmWidget!),
+                      const SizedBox(width: 16.0),
+                      Expanded(child: scaleWidget!),
+                    ],
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ?bpmWidget,
+                    if (bpmWidget != null && scaleWidget != null)
+                      const SizedBox(height: 4.0),
+                    ?scaleWidget,
+                  ],
+                );
               },
             ),
           ],
@@ -393,8 +423,11 @@ class _GeminiLiveMusicControlDeckState
           // Playback Transport Bar
           widget.transportBuilder != null
               ? widget.transportBuilder!(context, _isPlaying, _handleControl)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              : Wrap(
+                  alignment: WrapAlignment.spaceEvenly,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8.0,
+                  runSpacing: 8.0,
                   children: [
                     FilledButton.icon(
                       onPressed: () => _handleControl(

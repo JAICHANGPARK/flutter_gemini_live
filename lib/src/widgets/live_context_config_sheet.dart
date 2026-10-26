@@ -259,6 +259,7 @@ class GeminiLiveContextConfigSheet extends StatefulWidget {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 560.0),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,

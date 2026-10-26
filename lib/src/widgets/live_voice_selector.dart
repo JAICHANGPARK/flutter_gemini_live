@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../model/models.dart';
+import 'live_adaptive_layout.dart';
 
 /// A modal bottom sheet widget for selecting Gemini Live voice personas.
 ///
@@ -178,14 +179,11 @@ class _GeminiLiveVoiceSelectorSheetState
     final bgColor = isDark ? const Color(0xFF18181B) : Colors.white;
     final primaryColor = isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.black12,
-          width: 0.5,
-        ),
+    return GeminiLiveAdaptiveSheetContainer(
+      backgroundColor: bgColor,
+      border: Border.all(
+        color: isDark ? Colors.white12 : Colors.black12,
+        width: 0.5,
       ),
       padding: const EdgeInsets.fromLTRB(20.0, 12.0, 20.0, 32.0),
       child: Column(

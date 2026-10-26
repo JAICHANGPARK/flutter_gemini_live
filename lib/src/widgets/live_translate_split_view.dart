@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../google_genai.dart';
 import '../utils/live_session_controller.dart';
+import 'live_adaptive_layout.dart';
 import 'live_mic_button.dart';
 import 'live_status_badge.dart';
 import 'live_waveform.dart';
@@ -109,6 +110,24 @@ class GeminiLiveTranslateSplitView extends StatefulWidget {
   /// Background color override.
   final Color? backgroundColor;
 
+  /// Adaptive layout mode for foldable devices, tablets, and desktops.
+  ///
+  /// When set to [GeminiLiveAdaptiveLayoutMode.auto] (the default):
+  /// - Foldable Book posture (vertical hinge) or wide viewports (`width >= adaptiveBreakpoint`
+  ///   when [faceToFaceMode] is `false`) arrange the panes side-by-side.
+  /// - Foldable Tabletop / Flex posture (horizontal hinge) splits the target pane
+  ///   above the hinge and the source pane + controls below the hinge.
+  /// - Standard portrait screens or [faceToFaceMode] stack panes vertically.
+  final GeminiLiveAdaptiveLayoutMode layoutMode;
+
+  /// Width breakpoint at which [GeminiLiveAdaptiveLayoutMode.auto] switches to
+  /// side-by-side dual panes when [faceToFaceMode] is `false`. Defaults to `840.0`.
+  final double adaptiveBreakpoint;
+
+  /// Whether to align panes around physical foldable hinges ([DisplayFeature]).
+  /// Defaults to `true`.
+  final bool respectFoldableHinge;
+
   /// Creates a dual-pane live translation view.
   const GeminiLiveTranslateSplitView({
     super.key,
@@ -133,6 +152,9 @@ class GeminiLiveTranslateSplitView extends StatefulWidget {
     this.controlsBuilder,
     this.title = 'Live Interpreter',
     this.backgroundColor,
+    this.layoutMode = GeminiLiveAdaptiveLayoutMode.auto,
+    this.adaptiveBreakpoint = 840.0,
+    this.respectFoldableHinge = true,
   }) : assert(
          apiKey != null || controller != null,
          'Either apiKey or controller must be provided to GeminiLiveTranslateSplitView.',
@@ -349,49 +371,56 @@ class _GeminiLiveTranslateSplitViewState
           widget.headerBuilder?.call(context, _controller) ??
           _buildDefaultAppBar(context, isDark),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            children: [
-              // Top Pane (Target Language, optionally rotated 180 degrees)
-              Expanded(
-                child: _faceToFace
-                    ? RotatedBox(quarterTurns: 2, child: topPaneContent)
-                    : topPaneContent,
-              ),
+        child: GeminiLiveResponsiveBuilder(
+          builder: (context, viewport) {
+            final effectiveMode =
+                (_faceToFace &&
+                    widget.layoutMode == GeminiLiveAdaptiveLayoutMode.auto &&
+                    !viewport.isTabletopPosture)
+                ? GeminiLiveAdaptiveLayoutMode.singlePane
+                : widget.layoutMode;
 
-              const SizedBox(height: 10),
+            final primaryPaneWidget = _faceToFace
+                ? RotatedBox(quarterTurns: 2, child: topPaneContent)
+                : topPaneContent;
 
-              // Middle Language Swap Bar
-              widget.languageBarBuilder?.call(
-                    context,
-                    _sourceCode,
-                    _targetCode,
-                    _handleSwapLanguages,
-                  ) ??
-                  _buildDefaultLanguageBar(context, isDark),
+            final languageBarWidget =
+                widget.languageBarBuilder?.call(
+                  context,
+                  _sourceCode,
+                  _targetCode,
+                  _handleSwapLanguages,
+                ) ??
+                _buildDefaultLanguageBar(context, isDark);
 
-              const SizedBox(height: 10),
+            final controlsWidget =
+                widget.controlsBuilder?.call(
+                  context,
+                  _controller,
+                  effectiveRecording,
+                  _handleToggleMic,
+                ) ??
+                GeminiLiveMicButton(
+                  isRecording: effectiveRecording,
+                  onPressed: _handleToggleMic,
+                  size: viewport.isShortHeight ? 48.0 : 60.0,
+                );
 
-              // Bottom Pane (Source Language)
-              Expanded(child: bottomPaneContent),
+            final hPad = viewport.isUltraNarrow ? 10.0 : 16.0;
+            final bPad = viewport.isShortHeight ? 8.0 : 16.0;
 
-              const SizedBox(height: 16),
-
-              // Bottom Controls
-              widget.controlsBuilder?.call(
-                    context,
-                    _controller,
-                    effectiveRecording,
-                    _handleToggleMic,
-                  ) ??
-                  GeminiLiveMicButton(
-                    isRecording: effectiveRecording,
-                    onPressed: _handleToggleMic,
-                    size: 60.0,
-                  ),
-            ],
-          ),
+            return GeminiLiveAdaptiveSplitView(
+              mode: effectiveMode,
+              breakpoint: widget.adaptiveBreakpoint,
+              respectFoldableHinge: widget.respectFoldableHinge,
+              spacing: viewport.isShortHeight ? 6.0 : 10.0,
+              padding: EdgeInsets.fromLTRB(hPad, 8.0, hPad, bPad),
+              primaryPane: primaryPaneWidget,
+              centerWidget: languageBarWidget,
+              secondaryPane: bottomPaneContent,
+              bottomControls: controlsWidget,
+            );
+          },
         ),
       ),
     );
@@ -514,77 +543,96 @@ class _GeminiLiveTranslateSplitViewState
         ? const Color(0xFF52525B)
         : const Color(0xFFA1A1AA);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: borderColor, width: isActive ? 1.0 : 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    languageLabel,
-                    style: TextStyle(
-                      color: titleColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.1,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    languageCode,
-                    style: TextStyle(
-                      color: titleColor.withValues(alpha: 0.65),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              if (isActive)
-                GeminiLiveWaveform(
-                  width: 30,
-                  barCount: 5,
-                  height: 16,
-                  barWidth: 2.5,
-                  spacing: 2.0,
-                  color: bodyColor.withValues(alpha: 0.75),
-                ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            (latestText != null && latestText.isNotEmpty)
-                ? latestText
-                : placeholder,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: (latestText != null && latestText.isNotEmpty)
-                  ? bodyColor
-                  : placeholderColor,
-              fontSize: (latestText != null && latestText.isNotEmpty) ? 22 : 17,
-              fontWeight: (latestText != null && latestText.isNotEmpty)
-                  ? FontWeight.w600
-                  : FontWeight.w400,
-              height: 1.35,
-              letterSpacing: -0.3,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompactPane =
+            constraints.hasBoundedHeight && constraints.maxHeight < 140.0;
+        final pad = isCompactPane ? 12.0 : 20.0;
+        final hasText = latestText != null && latestText.isNotEmpty;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: EdgeInsets.all(pad),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: borderColor,
+              width: isActive ? 1.0 : 0.5,
             ),
           ),
-          const Spacer(),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            languageLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: titleColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          languageCode,
+                          style: TextStyle(
+                            color: titleColor.withValues(alpha: 0.65),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isActive)
+                    GeminiLiveWaveform(
+                      width: 30,
+                      barCount: 5,
+                      height: 16,
+                      barWidth: 2.5,
+                      spacing: 2.0,
+                      color: bodyColor.withValues(alpha: 0.75),
+                    ),
+                ],
+              ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      hasText ? latestText : placeholder,
+                      maxLines: isCompactPane ? 2 : 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: hasText ? bodyColor : placeholderColor,
+                        fontSize: hasText
+                            ? (isCompactPane ? 17 : 22)
+                            : (isCompactPane ? 14 : 17),
+                        fontWeight: hasText ? FontWeight.w600 : FontWeight.w400,
+                        height: 1.35,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

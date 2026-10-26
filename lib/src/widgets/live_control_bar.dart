@@ -108,59 +108,62 @@ class GeminiLiveControlBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Microphone Toggle
-          _ControlButton(
-            icon: isMicActive ? Icons.mic : Icons.mic_off,
-            tooltip: isMicActive ? 'Mute Microphone' : 'Unmute Microphone',
-            backgroundColor: isMicActive ? activeBtnBg : inactiveBtnBg,
-            foregroundColor: isMicActive ? activeBtnFg : inactiveBtnFg,
-            onPressed: onToggleMic,
-          ),
-          SizedBox(width: spacing),
-
-          // Video Toggle
-          _ControlButton(
-            icon: isVideoActive ? Icons.videocam : Icons.videocam_off,
-            tooltip: isVideoActive ? 'Turn Video Off' : 'Turn Video On',
-            backgroundColor: isVideoActive ? activeBtnBg : inactiveBtnBg,
-            foregroundColor: isVideoActive ? activeBtnFg : inactiveBtnFg,
-            onPressed: onToggleVideo,
-          ),
-
-          // Flip Camera (Optional)
-          if (showFlipCamera && onFlipCamera != null) ...[
-            SizedBox(width: spacing),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Microphone Toggle
             _ControlButton(
-              icon: Icons.flip_camera_ios_rounded,
-              tooltip: 'Switch Camera',
-              backgroundColor: inactiveBtnBg,
-              foregroundColor: inactiveBtnFg,
-              onPressed: onFlipCamera!,
+              icon: isMicActive ? Icons.mic : Icons.mic_off,
+              tooltip: isMicActive ? 'Mute Microphone' : 'Unmute Microphone',
+              backgroundColor: isMicActive ? activeBtnBg : inactiveBtnBg,
+              foregroundColor: isMicActive ? activeBtnFg : inactiveBtnFg,
+              onPressed: onToggleMic,
             ),
-          ],
-
-          // Trailing widget (e.g. Chat or Settings)
-          if (trailing != null) ...[
             SizedBox(width: spacing),
-            trailing!,
-          ],
 
-          // End Call Button
-          if (onEndCall != null) ...[
-            SizedBox(width: spacing),
+            // Video Toggle
             _ControlButton(
-              icon: Icons.call_end_rounded,
-              tooltip: 'End Call',
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-              onPressed: onEndCall!,
+              icon: isVideoActive ? Icons.videocam : Icons.videocam_off,
+              tooltip: isVideoActive ? 'Turn Video Off' : 'Turn Video On',
+              backgroundColor: isVideoActive ? activeBtnBg : inactiveBtnBg,
+              foregroundColor: isVideoActive ? activeBtnFg : inactiveBtnFg,
+              onPressed: onToggleVideo,
             ),
+
+            // Flip Camera (Optional)
+            if (showFlipCamera && onFlipCamera != null) ...[
+              SizedBox(width: spacing),
+              _ControlButton(
+                icon: Icons.flip_camera_ios_rounded,
+                tooltip: 'Switch Camera',
+                backgroundColor: inactiveBtnBg,
+                foregroundColor: inactiveBtnFg,
+                onPressed: onFlipCamera!,
+              ),
+            ],
+
+            // Trailing widget (e.g. Chat or Settings)
+            if (trailing != null) ...[
+              SizedBox(width: spacing),
+              trailing!,
+            ],
+
+            // End Call Button
+            if (onEndCall != null) ...[
+              SizedBox(width: spacing),
+              _ControlButton(
+                icon: Icons.call_end_rounded,
+                tooltip: 'End Call',
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                onPressed: onEndCall!,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

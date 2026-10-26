@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gemini_live/gemini_live.dart';
@@ -1335,6 +1336,140 @@ void main() {
         expect(find.text('Logs (4)'), findsOneWidget);
 
         logController.dispose();
+      },
+    );
+
+    testWidgets(
+      'GeminiLiveViewportInfo and GeminiLiveAdaptiveSplitView adapt to Book and Tabletop foldable hinges and ultra-narrow screens',
+      (tester) async {
+        GeminiLiveViewportInfo? capturedViewport;
+
+        // 1. Ultra-narrow cover display (280 x 650)
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(280, 650)),
+              child: SizedBox(
+                width: 280,
+                height: 650,
+                child: GeminiLiveResponsiveBuilder(
+                  builder: (context, viewport) {
+                    capturedViewport = viewport;
+                    return const GeminiLiveAdaptiveSplitView(
+                      primaryPane: Text('Primary Pane'),
+                      secondaryPane: Text('Secondary Pane'),
+                      centerWidget: Text('Center Divider'),
+                      bottomControls: Text('Bottom Controls'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(capturedViewport, isNotNull);
+        expect(capturedViewport!.isCompact, isTrue);
+        expect(capturedViewport!.isUltraNarrow, isTrue);
+        expect(capturedViewport!.foldPosture, GeminiLiveFoldPosture.flat);
+        expect(find.text('Primary Pane'), findsOneWidget);
+        expect(find.text('Secondary Pane'), findsOneWidget);
+
+        // 2. Foldable Book posture (vertical hinge at x=390..410 on 800x600 screen)
+        const bookHinge = ui.DisplayFeature(
+          bounds: Rect.fromLTWH(390, 0, 20, 600),
+          type: ui.DisplayFeatureType.hinge,
+          state: ui.DisplayFeatureState.postureHalfOpened,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(800, 600),
+                displayFeatures: [bookHinge],
+              ),
+              child: GeminiLiveResponsiveBuilder(
+                builder: (context, viewport) {
+                  capturedViewport = viewport;
+                  return GeminiLiveTranslateSplitView(
+                    apiKey: 'dummy-key',
+                    autoConnect: false,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        expect(capturedViewport!.isBookPosture, isTrue);
+        expect(capturedViewport!.hasSeparatingHinge, isTrue);
+        expect(
+          capturedViewport!.resolveLayoutMode(GeminiLiveAdaptiveLayoutMode.auto),
+          GeminiLiveAdaptiveLayoutMode.dualPane,
+        );
+        // Verify left pane and right pane are positioned side by side around the hinge
+        final targetPos = tester.getCenter(
+          find.text('Translation will appear here'),
+        );
+        final sourcePos = tester.getCenter(
+          find.text('Tap the microphone and start speaking'),
+        );
+        expect(targetPos.dx, lessThan(390.0));
+        expect(sourcePos.dx, greaterThan(410.0));
+
+        // 3. Foldable Tabletop / Flex posture (horizontal hinge at y=280..300 on 800x600 screen)
+        const tabletopHinge = ui.DisplayFeature(
+          bounds: Rect.fromLTWH(0, 280, 800, 20),
+          type: ui.DisplayFeatureType.hinge,
+          state: ui.DisplayFeatureState.postureHalfOpened,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(800, 600),
+                displayFeatures: [tabletopHinge],
+              ),
+              child: GeminiLiveResponsiveBuilder(
+                builder: (context, viewport) {
+                  capturedViewport = viewport;
+                  return const GeminiLiveChatView(
+                    apiKey: 'dummy-key',
+                    autoConnect: false,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        expect(capturedViewport!.isTabletopPosture, isTrue);
+        expect(
+          capturedViewport!.resolveLayoutMode(GeminiLiveAdaptiveLayoutMode.auto),
+          GeminiLiveAdaptiveLayoutMode.tabletop,
+        );
+        expect(find.text('Gemini Live Ready'), findsOneWidget);
+
+        // 4. GeminiLiveChatView in Book posture renders companion side panel automatically
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(800, 600),
+                displayFeatures: [bookHinge],
+              ),
+              child: GeminiLiveChatView(
+                apiKey: 'dummy-key',
+                autoConnect: false,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(GeminiLiveVoiceIndicator), findsOneWidget);
+        expect(find.text('Gemini Live Ready'), findsOneWidget);
       },
     );
   });

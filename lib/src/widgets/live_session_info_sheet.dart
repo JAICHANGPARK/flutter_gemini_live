@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../model/models.dart';
 import '../utils/live_session_controller.dart';
+import 'live_adaptive_layout.dart';
 
 /// Signature for building a custom diagnostic key-value row in [GeminiLiveSessionInfoSheet].
 typedef GeminiLiveSessionInfoRowBuilder = Widget Function(
@@ -233,18 +234,14 @@ class GeminiLiveSessionInfoSheet extends StatelessWidget {
           ),
         ];
 
-        return Container(
+        return GeminiLiveAdaptiveSheetContainer(
+          backgroundColor: bg,
           padding: const EdgeInsets.fromLTRB(20.0, 14.0, 20.0, 28.0),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(24.0),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               Center(
                 child: Container(
                   width: 36.0,
@@ -315,7 +312,8 @@ class GeminiLiveSessionInfoSheet extends StatelessWidget {
                           ],
                         ),
                       ),
-            ],
+              ],
+            ),
           ),
         );
       },

@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../google_genai.dart';
 import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
+import 'live_adaptive_layout.dart';
 import 'live_context_config_sheet.dart';
 import 'live_log_overlay.dart';
 import 'live_mic_button.dart';
@@ -11,6 +13,7 @@ import 'live_reconnect_banner.dart';
 import 'live_status_badge.dart';
 import 'live_thinking_indicator.dart';
 import 'live_tool_activity_chip.dart';
+import 'live_voice_indicator.dart';
 import 'live_waveform.dart';
 
 /// Builder signature for custom user and model chat bubbles.
@@ -212,6 +215,35 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Accepts a [GeminiLiveLogger], a [GeminiLiveLogController], or a `void Function(String)` callback.
   final Object? logger;
 
+  /// Adaptive layout mode for foldable devices, tablets, and desktops.
+  ///
+  /// Defaults to [GeminiLiveAdaptiveLayoutMode.auto].
+  final GeminiLiveAdaptiveLayoutMode layoutMode;
+
+  /// Width threshold at which [showAdaptiveSidePanel] or [sidePanelBuilder]
+  /// transitions into a two-pane side-by-side layout. Defaults to `840.0`.
+  final double adaptiveBreakpoint;
+
+  /// Whether to align dual-pane or tabletop layouts around physical foldable hinges ([DisplayFeature]).
+  /// Defaults to `true`.
+  final bool respectFoldableHinge;
+
+  /// Whether to show a companion voice visualizer & session status side panel
+  /// on wide screens (`width >= adaptiveBreakpoint`) or foldable Book-mode displays.
+  /// Defaults to `false` (automatically active on foldable Book posture or when [sidePanelBuilder] is provided).
+  final bool showAdaptiveSidePanel;
+
+  /// Optional custom builder for the companion side panel in dual-pane / Book mode.
+  final Widget Function(
+    BuildContext context,
+    GeminiLiveSessionController controller,
+    GeminiLiveViewportInfo viewport,
+  )?
+  sidePanelBuilder;
+
+  /// Optional maximum width constraint for the chat column on wide screens when in single-pane mode.
+  final double? maxContentWidth;
+
   /// Creates a pluggable Gemini Live chat screen widget.
   const GeminiLiveChatView({
     super.key,
@@ -255,6 +287,12 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showLogOverlay = false,
     this.logController,
     this.logger,
+    this.layoutMode = GeminiLiveAdaptiveLayoutMode.auto,
+    this.adaptiveBreakpoint = 840.0,
+    this.respectFoldableHinge = true,
+    this.showAdaptiveSidePanel = false,
+    this.sidePanelBuilder,
+    this.maxContentWidth,
   })  : assert(
           apiKey != null || controller != null,
           'Either apiKey or controller must be provided to GeminiLiveChatView.',
@@ -475,87 +513,54 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
-              children: [
-                // GoAway / automatic reconnection banner
-                if (widget.showReconnectBanner &&
-                    (_controller.isReconnecting ||
-                        _controller.lastGoAway != null))
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 4.0),
-                    child: widget.reconnectBannerBuilder?.call(
-                          context,
-                          _controller,
-                        ) ??
-                        GeminiLiveReconnectBanner.fromController(
-                          controller: _controller,
-                          onReconnectNow: _connectSession,
-                        ),
-                  ),
+            GeminiLiveResponsiveBuilder(
+              builder: (context, viewport) {
+                final chatColumn = _buildChatColumn(context, viewport);
 
-                // Live waveform header bar when connected
-                if (widget.showWaveform && _controller.isConnected)
-                  widget.waveformBuilder?.call(context, _controller) ??
-                      _buildWaveformBar(context),
+                final shouldShowDualPane =
+                    widget.layoutMode == GeminiLiveAdaptiveLayoutMode.dualPane ||
+                    (widget.layoutMode == GeminiLiveAdaptiveLayoutMode.auto &&
+                        (viewport.isBookPosture ||
+                            ((widget.showAdaptiveSidePanel ||
+                                    widget.sidePanelBuilder != null) &&
+                                viewport.size.width >=
+                                    widget.adaptiveBreakpoint)));
 
-                // Transcript message list
-                Expanded(
-                  child: _controller.transcripts.isEmpty
-                      ? (widget.emptyBuilder?.call(context, _controller) ??
-                          _buildDefaultEmpty(context))
-                      : _buildMessageList(context),
-                ),
+                if (shouldShowDualPane) {
+                  final sidePanel =
+                      widget.sidePanelBuilder?.call(
+                        context,
+                        _controller,
+                        viewport,
+                      ) ??
+                      _buildDefaultAdaptiveSidePanel(context, viewport);
 
-                // Extended Thinking reasoning indicator
-                if (widget.showThinkingIndicator &&
-                    (_controller.isThinking ||
-                        _controller.latestThought != null))
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14.0,
-                      vertical: 4.0,
+                  return GeminiLiveAdaptiveSplitView(
+                    mode: GeminiLiveAdaptiveLayoutMode.dualPane,
+                    breakpoint: widget.adaptiveBreakpoint,
+                    respectFoldableHinge: widget.respectFoldableHinge,
+                    primaryFlex: 2,
+                    secondaryFlex: 3,
+                    spacing: 0.0,
+                    primaryPane: sidePanel,
+                    secondaryPane: chatColumn,
+                  );
+                }
+
+                if (widget.maxContentWidth != null &&
+                    viewport.size.width > widget.maxContentWidth!) {
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: widget.maxContentWidth!,
+                      ),
+                      child: chatColumn,
                     ),
-                    child: widget.thinkingIndicatorBuilder?.call(
-                          context,
-                          _controller.isThinking,
-                          _controller.latestThought,
-                        ) ??
-                        GeminiLiveThinkingIndicator.fromController(
-                          controller: _controller,
-                        ),
-                  ),
+                  );
+                }
 
-                // Active tool / function call status chip
-                if (widget.showToolActivity && _controller.isExecutingTool)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6.0),
-                    child: widget.toolActivityBuilder?.call(
-                          context,
-                          _controller.activeToolCalls,
-                        ) ??
-                        GeminiLiveToolActivityChip.fromController(
-                          controller: _controller,
-                        ),
-                  ),
-
-                // Live streaming / speaking indicator
-                if (widget.streamingIndicatorBuilder != null)
-                  widget.streamingIndicatorBuilder!(
-                    context,
-                    _controller.isModelSpeaking,
-                  )
-                else if (_controller.isModelSpeaking)
-                  _buildDefaultStreamingIndicator(context),
-
-                // Chat input bar slot
-                widget.inputBuilder?.call(
-                      context,
-                      _controller,
-                      _textController,
-                      _sendMessage,
-                    ) ??
-                    _buildDefaultInputBar(context),
-              ],
+                return chatColumn;
+              },
             ),
             if (widget.showLogOverlay)
               GeminiLiveLogOverlay(
@@ -567,6 +572,182 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
                 initialOffset: const Offset(12.0, 12.0),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatColumn(
+    BuildContext context,
+    GeminiLiveViewportInfo viewport,
+  ) {
+    final topSection = Column(
+      children: [
+        // GoAway / automatic reconnection banner
+        if (widget.showReconnectBanner &&
+            (_controller.isReconnecting || _controller.lastGoAway != null))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 4.0),
+            child:
+                widget.reconnectBannerBuilder?.call(context, _controller) ??
+                GeminiLiveReconnectBanner.fromController(
+                  controller: _controller,
+                  onReconnectNow: _connectSession,
+                ),
+          ),
+
+        // Live waveform header bar when connected
+        if (widget.showWaveform && _controller.isConnected)
+          widget.waveformBuilder?.call(context, _controller) ??
+              _buildWaveformBar(context),
+
+        // Transcript message list
+        Expanded(
+          child: _controller.transcripts.isEmpty
+              ? (widget.emptyBuilder?.call(context, _controller) ??
+                    _buildDefaultEmpty(context))
+              : _buildMessageList(context),
+        ),
+      ],
+    );
+
+    final bottomSection = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Extended Thinking reasoning indicator
+        if (widget.showThinkingIndicator &&
+            (_controller.isThinking || _controller.latestThought != null))
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14.0,
+              vertical: 4.0,
+            ),
+            child:
+                widget.thinkingIndicatorBuilder?.call(
+                  context,
+                  _controller.isThinking,
+                  _controller.latestThought,
+                ) ??
+                GeminiLiveThinkingIndicator.fromController(
+                  controller: _controller,
+                ),
+          ),
+
+        // Active tool / function call status chip
+        if (widget.showToolActivity && _controller.isExecutingTool)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6.0),
+            child:
+                widget.toolActivityBuilder?.call(
+                  context,
+                  _controller.activeToolCalls,
+                ) ??
+                GeminiLiveToolActivityChip.fromController(
+                  controller: _controller,
+                ),
+          ),
+
+        // Live streaming / speaking indicator
+        if (widget.streamingIndicatorBuilder != null)
+          widget.streamingIndicatorBuilder!(
+            context,
+            _controller.isModelSpeaking,
+          )
+        else if (_controller.isModelSpeaking)
+          _buildDefaultStreamingIndicator(context),
+
+        // Chat input bar slot
+        widget.inputBuilder?.call(
+              context,
+              _controller,
+              _textController,
+              _sendMessage,
+            ) ??
+            _buildDefaultInputBar(context),
+      ],
+    );
+
+    final isTabletop =
+        widget.layoutMode == GeminiLiveAdaptiveLayoutMode.tabletop ||
+        (widget.layoutMode == GeminiLiveAdaptiveLayoutMode.auto &&
+            viewport.isTabletopPosture);
+
+    if (isTabletop &&
+        widget.respectFoldableHinge &&
+        viewport.hingeBounds != null) {
+      final hinge = viewport.hingeBounds!;
+      return Column(
+        children: [
+          Expanded(child: topSection),
+          SizedBox(height: math.max(hinge.height, 8.0)),
+          bottomSection,
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(child: topSection),
+        bottomSection,
+      ],
+    );
+  }
+
+  Widget _buildDefaultAdaptiveSidePanel(
+    BuildContext context,
+    GeminiLiveViewportInfo viewport,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = isDark ? Colors.white12 : Colors.black12;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.02)
+            : Colors.black.withValues(alpha: 0.015),
+        border: Border(
+          right: BorderSide(color: borderColor, width: 0.8),
+        ),
+      ),
+      padding: const EdgeInsets.all(20.0),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GeminiLiveVoiceIndicator(
+                isSpeaking:
+                    _controller.isModelSpeaking || _controller.isUserSpeaking,
+                height: 48.0,
+                barCount: 6,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                _controller.isModelSpeaking
+                    ? 'Gemini Speaking'
+                    : (_controller.isUserSpeaking
+                          ? 'Listening...'
+                          : (_controller.isConnected
+                                ? 'Live Session Active'
+                                : 'Disconnected')),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              GeminiLiveStatusBadge(
+                state: _mapSessionState(_controller.state),
+              ),
+              const SizedBox(height: 16.0),
+              Text(
+                'Model: ${widget.model}',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -676,10 +857,11 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
   Widget _buildDefaultEmpty(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(20.0),
@@ -765,7 +947,7 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5.0),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.78,
+          maxWidth: math.min(MediaQuery.sizeOf(context).width * 0.78, 560.0),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
         decoration: BoxDecoration(
