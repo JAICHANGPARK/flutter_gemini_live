@@ -170,6 +170,7 @@ For apps built with `CupertinoApp` or seeking Apple Human Interface Guidelines s
 | **Music Control Deck** | `GeminiLiveMusicControlDeck` | Interactive Lyria Realtime Music (`LiveMusicSession`) Prompt DJ mixer & transport deck (`session:`, `initialPrompts:`, `headerBuilder`, `promptItemBuilder`, `transportBuilder`). |
 | **Reconnect Banner** | `GeminiLiveReconnectBanner` | Animated `GoAway` countdown and automatic session resumption / reconnection (`GeminiLiveReconnectPolicy`) banner (`.fromController(controller: controller)`, `contentBuilder`, `actionBuilder`). Built into `GeminiLiveChatView` (`showReconnectBanner: true`). |
 | **Session Info Inspector** | `GeminiLiveSessionInfoBadge` & `GeminiLiveSessionInfoSheet` | Live session diagnostics pill and modal inspector displaying `sessionId`, `sessionResumption` handle status, `HttpOptions`, `labels`, active tools, and token/cost metrics (`rowBuilder`). |
+| **In-App Log Overlay & Console** | `GeminiLiveLogOverlay` & `GeminiLiveLogConsole` | Draggable floating `Stack` / `Overlay` log inspector (`.showOverlay(context)`) and embeddable console (`.showSheet(context)`) for debugging WebSocket traffic on physical devices (`GeminiLiveLogController`). |
 | **Vision Overlay** | `GeminiLiveVisionOverlay` | Wraps any camera preview with Project Astra style radar scanlines, corner HUD target reticles, and in-flight analysis indicator. |
 
 #### Voice Selector (`GeminiLiveVoiceSelectorSheet`) Usage

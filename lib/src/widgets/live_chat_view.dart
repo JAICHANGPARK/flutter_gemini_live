@@ -5,6 +5,7 @@ import '../google_genai.dart';
 import '../utils/live_logger.dart';
 import '../utils/live_session_controller.dart';
 import 'live_context_config_sheet.dart';
+import 'live_log_overlay.dart';
 import 'live_mic_button.dart';
 import 'live_reconnect_banner.dart';
 import 'live_status_badge.dart';
@@ -199,8 +200,16 @@ class GeminiLiveChatView extends StatefulWidget {
   /// Whether to enable structured console logging in debug mode. Defaults to `false`.
   final bool debugLogging;
 
+  /// Whether to render a draggable floating [GeminiLiveLogOverlay] on top of
+  /// the chat view for on-device debugging. Defaults to `false`.
+  final bool showLogOverlay;
+
+  /// Optional [GeminiLiveLogController] used when [showLogOverlay] is `true`.
+  /// Defaults to [GeminiLiveLogController.instance] if omitted.
+  final GeminiLiveLogController? logController;
+
   /// Optional custom logger or callback function for detailed network/lifecycle logging.
-  /// Accepts either a [GeminiLiveLogger] instance or a standard `void Function(String)` callback.
+  /// Accepts a [GeminiLiveLogger], a [GeminiLiveLogController], or a `void Function(String)` callback.
   final Object? logger;
 
   /// Creates a pluggable Gemini Live chat screen widget.
@@ -243,6 +252,8 @@ class GeminiLiveChatView extends StatefulWidget {
     this.showReconnectBanner = true,
     this.inputHint = 'Ask Gemini Live...',
     this.debugLogging = false,
+    this.showLogOverlay = false,
+    this.logController,
     this.logger,
   })  : assert(
           apiKey != null || controller != null,
@@ -257,8 +268,9 @@ class GeminiLiveChatView extends StatefulWidget {
         assert(
           logger == null ||
               logger is GeminiLiveLogger ||
+              logger is GeminiLiveLogController ||
               logger is void Function(String),
-          'logger must be either a GeminiLiveLogger or a void Function(String) callback.',
+          'logger must be a GeminiLiveLogger, GeminiLiveLogController, or void Function(String) callback.',
         );
 
   @override
@@ -294,8 +306,17 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
     void Function(String message)? effectiveLogger;
     if (widget.logger is GeminiLiveLogger) {
       effectiveLogger = (widget.logger as GeminiLiveLogger).toCallback();
+    } else if (widget.logger is GeminiLiveLogController) {
+      effectiveLogger = (widget.logger as GeminiLiveLogController).toCallback(
+        alsoPrintToConsole: widget.debugLogging,
+      );
     } else if (widget.logger is void Function(String)) {
       effectiveLogger = widget.logger as void Function(String);
+    } else if (widget.showLogOverlay || widget.logController != null) {
+      final logCtrl = widget.logController ?? GeminiLiveLogController.instance;
+      effectiveLogger = logCtrl.toCallback(
+        alsoPrintToConsole: widget.debugLogging,
+      );
     } else if (widget.debugLogging) {
       effectiveLogger = const GeminiLiveLogger().toCallback();
     }
@@ -452,82 +473,99 @@ class _GeminiLiveChatViewState extends State<GeminiLiveChatView> {
       backgroundColor: bg,
       appBar: widget.headerBuilder?.call(context, _controller) ?? _buildDefaultAppBar(context),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // GoAway / automatic reconnection banner
-            if (widget.showReconnectBanner &&
-                (_controller.isReconnecting ||
-                    _controller.lastGoAway != null))
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 4.0),
-                child: widget.reconnectBannerBuilder?.call(
+            Column(
+              children: [
+                // GoAway / automatic reconnection banner
+                if (widget.showReconnectBanner &&
+                    (_controller.isReconnecting ||
+                        _controller.lastGoAway != null))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 4.0),
+                    child: widget.reconnectBannerBuilder?.call(
+                          context,
+                          _controller,
+                        ) ??
+                        GeminiLiveReconnectBanner.fromController(
+                          controller: _controller,
+                          onReconnectNow: _connectSession,
+                        ),
+                  ),
+
+                // Live waveform header bar when connected
+                if (widget.showWaveform && _controller.isConnected)
+                  widget.waveformBuilder?.call(context, _controller) ??
+                      _buildWaveformBar(context),
+
+                // Transcript message list
+                Expanded(
+                  child: _controller.transcripts.isEmpty
+                      ? (widget.emptyBuilder?.call(context, _controller) ??
+                          _buildDefaultEmpty(context))
+                      : _buildMessageList(context),
+                ),
+
+                // Extended Thinking reasoning indicator
+                if (widget.showThinkingIndicator &&
+                    (_controller.isThinking ||
+                        _controller.latestThought != null))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14.0,
+                      vertical: 4.0,
+                    ),
+                    child: widget.thinkingIndicatorBuilder?.call(
+                          context,
+                          _controller.isThinking,
+                          _controller.latestThought,
+                        ) ??
+                        GeminiLiveThinkingIndicator.fromController(
+                          controller: _controller,
+                        ),
+                  ),
+
+                // Active tool / function call status chip
+                if (widget.showToolActivity && _controller.isExecutingTool)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6.0),
+                    child: widget.toolActivityBuilder?.call(
+                          context,
+                          _controller.activeToolCalls,
+                        ) ??
+                        GeminiLiveToolActivityChip.fromController(
+                          controller: _controller,
+                        ),
+                  ),
+
+                // Live streaming / speaking indicator
+                if (widget.streamingIndicatorBuilder != null)
+                  widget.streamingIndicatorBuilder!(
+                    context,
+                    _controller.isModelSpeaking,
+                  )
+                else if (_controller.isModelSpeaking)
+                  _buildDefaultStreamingIndicator(context),
+
+                // Chat input bar slot
+                widget.inputBuilder?.call(
                       context,
                       _controller,
+                      _textController,
+                      _sendMessage,
                     ) ??
-                    GeminiLiveReconnectBanner.fromController(
-                      controller: _controller,
-                      onReconnectNow: _connectSession,
-                    ),
-              ),
-
-            // Live waveform header bar when connected
-            if (widget.showWaveform && _controller.isConnected)
-              widget.waveformBuilder?.call(context, _controller) ??
-                  _buildWaveformBar(context),
-
-            // Transcript message list
-            Expanded(
-              child: _controller.transcripts.isEmpty
-                  ? (widget.emptyBuilder?.call(context, _controller) ??
-                      _buildDefaultEmpty(context))
-                  : _buildMessageList(context),
+                    _buildDefaultInputBar(context),
+              ],
             ),
-
-            // Extended Thinking reasoning indicator
-            if (widget.showThinkingIndicator &&
-                (_controller.isThinking || _controller.latestThought != null))
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14.0,
-                  vertical: 4.0,
-                ),
-                child: widget.thinkingIndicatorBuilder?.call(
-                      context,
-                      _controller.isThinking,
-                      _controller.latestThought,
-                    ) ??
-                    GeminiLiveThinkingIndicator.fromController(
-                      controller: _controller,
-                    ),
+            if (widget.showLogOverlay)
+              GeminiLiveLogOverlay(
+                controller:
+                    widget.logController ??
+                    (widget.logger is GeminiLiveLogController
+                        ? widget.logger as GeminiLiveLogController
+                        : GeminiLiveLogController.instance),
+                initialOffset: const Offset(12.0, 12.0),
               ),
-
-            // Active tool / function call status chip
-            if (widget.showToolActivity && _controller.isExecutingTool)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6.0),
-                child: widget.toolActivityBuilder?.call(
-                      context,
-                      _controller.activeToolCalls,
-                    ) ??
-                    GeminiLiveToolActivityChip.fromController(
-                      controller: _controller,
-                    ),
-              ),
-
-            // Live streaming / speaking indicator
-            if (widget.streamingIndicatorBuilder != null)
-              widget.streamingIndicatorBuilder!(context, _controller.isModelSpeaking)
-            else if (_controller.isModelSpeaking)
-              _buildDefaultStreamingIndicator(context),
-
-            // Chat input bar slot
-            widget.inputBuilder?.call(
-                  context,
-                  _controller,
-                  _textController,
-                  _sendMessage,
-                ) ??
-                _buildDefaultInputBar(context),
           ],
         ),
       ),

@@ -182,12 +182,16 @@ class GeminiLiveSessionInfoSheet extends StatelessWidget {
             backgroundColor ??
             (isDark ? const Color(0xFF18181B) : Colors.white);
         final tracker = controller.tokenTracker;
+        final metrics = controller.connectionMetrics;
         final effectiveHttp =
             httpOptions ?? controller.liveService.httpOptions;
 
         final entries = <MapEntry<String, String>>[
           MapEntry('Connection State', controller.state.name),
           MapEntry('Session ID', controller.sessionId ?? 'Not assigned'),
+          MapEntry('Stability Score', metrics.formatStabilitySummary()),
+          MapEntry('Setup Latency', metrics.formatSetupLatency()),
+          MapEntry('TTFA Latency', metrics.formatTtfaLatency()),
           MapEntry(
             'Session Resumable',
             controller.isSessionResumable ||
@@ -195,6 +199,11 @@ class GeminiLiveSessionInfoSheet extends StatelessWidget {
                 ? 'Yes (${controller.latestSessionHandle ?? "active"})'
                 : 'No',
           ),
+          if (metrics.reconnectAttempts > 0 || metrics.abnormalDisconnects > 0)
+            MapEntry(
+              'Recovery (SRR / MTTR)',
+              '${(metrics.recoverySuccessRate * 100).toStringAsFixed(0)}% / ${metrics.mttrMs.round()} ms',
+            ),
           MapEntry('Active Tools', '${controller.activeTools.length}'),
           MapEntry(
             'In-Flight Tool Calls',

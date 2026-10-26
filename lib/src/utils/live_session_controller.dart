@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../live_service.dart';
 import '../model/models.dart';
+import 'connection_metrics_tracker.dart';
 import 'pcm_audio_buffer.dart';
 import 'reconnect_policy.dart';
 import 'token_usage_tracker.dart';
@@ -103,6 +104,9 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// The token accounting tracker monitoring consumption and estimated cost.
   final GeminiTokenUsageTracker tokenTracker;
 
+  /// Quantitative connection stability and latency tracker (CSR, setup latency, TTFA, SRR, MTTR).
+  final GeminiConnectionMetricsTracker connectionMetrics;
+
   /// Optional automatic reconnection policy when `GoAway` or abnormal close occurs.
   final GeminiLiveReconnectPolicy? reconnectPolicy;
 
@@ -123,8 +127,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
   bool _isInterrupted = false;
   bool _isThinking = false;
   bool _manualDisconnectRequested = false;
+  bool _isDisposed = false;
   bool _isReconnecting = false;
   int _reconnectAttempt = 0;
+  int _connectionGeneration = 0;
   Timer? _reconnectTimer;
 
   String? _sessionId;
@@ -161,9 +167,12 @@ class GeminiLiveSessionController extends ChangeNotifier {
   GeminiLiveSessionController({
     required this.liveService,
     GeminiTokenUsageTracker? tokenTracker,
+    GeminiConnectionMetricsTracker? connectionMetrics,
     this.reconnectPolicy,
     this.autoExecuteCallableTools = true,
-  }) : tokenTracker = tokenTracker ?? GeminiTokenUsageTracker();
+  }) : tokenTracker = tokenTracker ?? GeminiTokenUsageTracker(),
+       connectionMetrics =
+           connectionMetrics ?? GeminiConnectionMetricsTracker();
 
   /// Current session connection state.
   LiveSessionState get state => _state;
@@ -269,21 +278,27 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _lastError = null;
     _lastStackTrace = null;
 
+    final int generation = ++_connectionGeneration;
+
     final wrappedCallbacks = LiveCallbacks(
       onOpen: () {
+        if (_isDisposed || generation != _connectionGeneration) return;
         params.callbacks.onOpen?.call();
       },
       onMessage: (message) {
+        if (_isDisposed || generation != _connectionGeneration) return;
         _handleServerMessage(message);
         params.callbacks.onMessage?.call(message);
       },
       onError: (error, stackTrace) {
+        if (_isDisposed || generation != _connectionGeneration) return;
         _lastError = error;
         _lastStackTrace = stackTrace;
         _setState(LiveSessionState.error);
         params.callbacks.onError?.call(error, stackTrace);
       },
       onClose: (closeCode, [closeReason]) {
+        if (_isDisposed || generation != _connectionGeneration) return;
         _handleClose(closeCode, closeReason);
         params.callbacks.onClose?.call(closeCode, closeReason);
       },
@@ -296,6 +311,12 @@ class GeminiLiveSessionController extends ChangeNotifier {
             transparent: params.sessionResumption?.transparent,
           )
         : params.sessionResumption;
+
+    connectionMetrics.recordConnectStart(
+      isReconnect: _isReconnecting || _reconnectAttempt > 0,
+      hasResumptionHandle: effectiveSessionResumption?.handle != null &&
+          effectiveSessionResumption!.handle!.isNotEmpty,
+    );
 
     _activeSystemInstruction = params.systemInstruction;
     _activeTools = params.tools != null ? List<Tool>.from(params.tools!) : const [];
@@ -346,8 +367,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
       _sessionId = _session?.sessionId ?? _sessionId;
       _reconnectAttempt = 0;
       _isReconnecting = false;
+      connectionMetrics.recordConnectSuccess();
       _setState(LiveSessionState.connected);
     } catch (e, st) {
+      connectionMetrics.recordConnectFailure();
       _lastError = e;
       _lastStackTrace = st;
       _setState(LiveSessionState.error);
@@ -377,6 +400,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     // 1c. GoAway server notice
     if (message.goAway != null) {
       _lastGoAway = message.goAway;
+      connectionMetrics.recordGoAway();
       notifyListeners();
       if (reconnectPolicy != null &&
           reconnectPolicy!.reconnectOnGoAway &&
@@ -436,6 +460,9 @@ class GeminiLiveSessionController extends ChangeNotifier {
           // Audio chunk
           if (part.inlineData != null &&
               part.inlineData!.mimeType.startsWith('audio/')) {
+            if (!_isModelSpeaking) {
+              connectionMetrics.recordFirstModelAudio();
+            }
             _isThinking = false;
             _isModelSpeaking = true;
             _isInterrupted = false;
@@ -581,12 +608,13 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _isModelSpeaking = false;
     _isUserSpeaking = false;
     _session = null;
+    final isAbnormal = !_manualDisconnectRequested && closeCode != 1000;
+    connectionMetrics.recordDisconnect(isAbnormal: isAbnormal);
     _setState(LiveSessionState.disconnected);
 
     if (reconnectPolicy != null &&
         reconnectPolicy!.reconnectOnAbnormalClose &&
-        !_manualDisconnectRequested &&
-        closeCode != 1000) {
+        isAbnormal) {
       _scheduleReconnect();
     }
   }
@@ -608,21 +636,24 @@ class GeminiLiveSessionController extends ChangeNotifier {
     notifyListeners();
 
     _reconnectTimer = Timer(delay, () async {
-      if (_manualDisconnectRequested || _lastConnectParams == null) return;
+      if (_isDisposed || _manualDisconnectRequested || _lastConnectParams == null) return;
       if (_session != null) {
-        try {
-          await _session!.close();
-        } catch (_) {}
+        final staleSession = _session!;
         _session = null;
+        _connectionGeneration++;
+        try {
+          await staleSession.close();
+        } catch (_) {}
       }
       _state = LiveSessionState.disconnected;
       try {
         await connect(_lastConnectParams!);
       } catch (_) {
-        if (!_manualDisconnectRequested &&
+        if (!_isDisposed &&
+            !_manualDisconnectRequested &&
             _reconnectAttempt < policy.maxAttempts) {
           _scheduleReconnect();
-        } else {
+        } else if (!_isDisposed) {
           _isReconnecting = false;
           notifyListeners();
         }
@@ -653,6 +684,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
   void stopUserSpeaking() {
     if (_isUserSpeaking) {
       _isUserSpeaking = false;
+      connectionMetrics.recordUserTurnSubmitted();
       notifyListeners();
     }
   }
@@ -677,6 +709,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
       text: text,
       isStreaming: !turnComplete,
     );
+
+    if (turnComplete) {
+      connectionMetrics.recordUserTurnSubmitted();
+    }
 
     _session!.sendClientContent(
       turns: [
@@ -732,6 +768,10 @@ class GeminiLiveSessionController extends ChangeNotifier {
       imageMimeType: imageMimeType,
       isStreaming: !turnComplete,
     );
+
+    if (turnComplete) {
+      connectionMetrics.recordUserTurnSubmitted();
+    }
 
     _session!.sendClientContent(
       turns: [
@@ -851,7 +891,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _setState(LiveSessionState.disconnected);
   }
 
-  /// Clears the recorded transcripts and resets the token tracker.
+  /// Clears the recorded transcripts and resets the token and connection metrics trackers.
   void clearHistory() {
     _transcripts.clear();
     _thoughts.clear();
@@ -863,6 +903,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _lastCompletedTurnWav = null;
     _currentTurnAudioBuffer.clear();
     tokenTracker.reset();
+    connectionMetrics.reset();
     notifyListeners();
   }
 
@@ -942,13 +983,17 @@ class GeminiLiveSessionController extends ChangeNotifier {
   void _setState(LiveSessionState newState) {
     if (_state != newState) {
       _state = newState;
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _manualDisconnectRequested = true;
+    _connectionGeneration++;
     _reconnectTimer?.cancel();
     _session?.close();
     _incomingAudioController.close();

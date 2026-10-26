@@ -2,6 +2,7 @@
 /// `dart:ui` is available (Flutter mobile, web, and desktop).
 library;
 
+export 'utils/connection_metrics_tracker.dart';
 export 'utils/live_logger.dart';
 export 'utils/live_session_controller.dart';
 export 'utils/token_usage_tracker.dart';
@@ -15,6 +16,7 @@ export 'widgets/live_caption_bubble.dart';
 export 'widgets/live_chat_view.dart';
 export 'widgets/live_context_config_sheet.dart';
 export 'widgets/live_control_bar.dart';
+export 'widgets/live_log_overlay.dart';
 export 'widgets/live_mic_button.dart';
 export 'widgets/live_music_control_deck.dart';
 export 'widgets/live_reconnect_banner.dart';

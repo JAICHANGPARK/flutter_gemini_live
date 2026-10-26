@@ -122,9 +122,9 @@ GeminiLiveSessionInfoBadge(
 
 ---
 
-## 🔍 3. Structured Diagnostics & Traffic Logging (`GeminiLiveLogger`)
+## 🔍 3. Structured Diagnostics, Traffic Logging & In-App Log Overlay (`GeminiLiveLogger`, `GeminiLiveLogController` & `GeminiLiveLogOverlay`)
 
-Use `GeminiLiveLogger` to inspect WebSocket handshakes, outgoing client frames (`📤`), incoming server events (`📥`), warnings (`⚠️`), and errors (`❌`) with severity filtering.
+Use `GeminiLiveLogger` and `GeminiLiveLogController` to inspect WebSocket handshakes, outgoing client frames (`📤`), incoming server events (`📥`), warnings (`⚠️`), and errors (`❌`) with severity filtering—both in the IDE console and directly on a physical device via `GeminiLiveLogOverlay` or `GeminiLiveLogConsole`.
 
 ### Log Levels (`GeminiLiveLogLevel`)
 - `GeminiLiveLogLevel.traffic`: Verbose network traffic (raw JSON payloads & media packets)
@@ -132,6 +132,34 @@ Use `GeminiLiveLogger` to inspect WebSocket handshakes, outgoing client frames (
 - `GeminiLiveLogLevel.warning`: Deprecations, fallbacks, parameter adjustments
 - `GeminiLiveLogLevel.error`: Connection failures and WebSocket errors
 - `GeminiLiveLogLevel.none`: Completely silent (recommended for production release builds)
+
+### On-Device Floating Log Overlay (`Stack` / `Overlay`)
+
+```dart
+final logController = GeminiLiveLogController(); // Ring buffer + base64 payload compaction
+
+final genAI = GoogleGenAI(
+  apiKey: apiKey,
+  logger: logController.toCallback(alsoPrintToConsole: true),
+);
+
+// 1. Inside any Stack (draggable floating pill -> expands to live HUD console):
+Stack(
+  children: [
+    MyLiveScreen(),
+    GeminiLiveLogOverlay(controller: logController),
+  ],
+)
+
+// 2. Or attach directly to Flutter's Overlay:
+final entry = GeminiLiveLogOverlay.showOverlay(context, controller: logController);
+
+// 3. Or enable with a single flag on GeminiLiveChatView:
+GeminiLiveChatView(
+  apiKey: apiKey,
+  showLogOverlay: true,
+)
+```
 
 ### Wiring `GeminiLiveLogger` to `GoogleGenAI`
 

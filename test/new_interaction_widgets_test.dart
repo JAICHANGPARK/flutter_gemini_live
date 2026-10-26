@@ -1240,5 +1240,102 @@ void main() {
         expect(stripWavHeader(wavBytes).length, pcm16k.length);
       },
     );
+
+    testWidgets(
+      'GeminiLiveLogController and GeminiLiveLogOverlay support any-widget wrapping (.withGeminiLiveLogOverlay) and full logger/UI customization',
+      (tester) async {
+        final forwardedEntries = <GeminiLiveLogEntry>[];
+        final logController = GeminiLiveLogController(
+          maxEntries: 50,
+          // Custom filter: ignore noisy heartbeat pings
+          customFilter: (msg, level, tag) => !msg.contains('HEARTBEAT_PING'),
+          // Custom sanitizer: mask api_key values
+          sanitizer: (msg) => msg.replaceAll('secret-123', '***'),
+          // Custom formatter
+          formatter: (msg, level, ts, tag) => 'CUSTOM[$tag|${level.name}] $msg',
+          // Forward to external telemetry sink
+          onEntryAdded: forwardedEntries.add,
+        );
+        final callback = logController.toCallback(defaultTag: 'WS');
+
+        callback('HEARTBEAT_PING'); // filtered out
+        callback('Connected with key secret-123');
+        callback('📤 {"realtimeInput":{"mediaChunks":[{"data":"${'A' * 200}"}]}}');
+        logController.warning('Audio buffer underrun', tag: 'AUDIO');
+        callback('❌ WebSocket connection failed');
+
+        expect(logController.entries, hasLength(4));
+        expect(forwardedEntries, hasLength(4));
+        expect(logController.errorCount, 1);
+        expect(logController.warningCount, 1);
+        expect(logController.availableTags, containsAll(['WS', 'AUDIO']));
+        // Verify sanitizer, formatter, & base64 payload compaction
+        expect(
+          logController.entries[0].message,
+          'Connected with key ***',
+        );
+        expect(
+          logController.entries[0].formattedMessage,
+          'CUSTOM[WS|info] Connected with key ***',
+        );
+        expect(
+          logController.entries[1].message,
+          contains('<base64 200 chars>'),
+        );
+
+        // Attach to ANY widget directly using .withGeminiLiveLogOverlay(...)
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: const Center(
+                child: Text('Any Arbitrary Widget'),
+              ).withGeminiLiveLogOverlay(
+                controller: logController,
+                theme: GeminiLiveLogTheme.light,
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Any Arbitrary Widget'), findsOneWidget);
+        // Collapsed pill displays total log count and error badge
+        expect(find.text('Logs (4)'), findsOneWidget);
+        expect(find.text('1'), findsOneWidget);
+
+        // Tap collapsed pill to expand console
+        await tester.tap(find.text('Logs (4)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Gemini Live Logs (4)'), findsOneWidget);
+        expect(find.textContaining('WebSocket connection failed'), findsOneWidget);
+
+        // Filter by #AUDIO tag chip
+        await tester.ensureVisible(find.text('#AUDIO'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('#AUDIO'));
+        await tester.pumpAndSettle();
+        expect(logController.filteredEntries, hasLength(1));
+        expect(
+          logController.filteredEntries.first.message,
+          'Audio buffer underrun',
+        );
+
+        // Clear tag filter and filter by ERROR level only
+        await tester.tap(find.text('#AUDIO'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('ERROR'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ERROR'));
+        await tester.pumpAndSettle();
+        expect(logController.filteredEntries, hasLength(1));
+
+        // Minimize back to pill
+        await tester.tap(find.byIcon(Icons.minimize_rounded));
+        await tester.pumpAndSettle();
+        expect(find.text('Logs (4)'), findsOneWidget);
+
+        logController.dispose();
+      },
+    );
   });
 }
