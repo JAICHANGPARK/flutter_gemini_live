@@ -82,7 +82,7 @@ class DjmCenterMixer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Mixer Top Silk Screen Brand + Corner Screws
+          // Mixer Top Silk Screen Brand + SPX 24 LED + PHANTOM +48V + Corner Screws
           Row(
             children: [
               const _MixerScrew(),
@@ -92,7 +92,7 @@ class DjmCenterMixer extends StatelessWidget {
                   i18n.mixerHeader,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: Color(0xFF38BDF8),
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.w900,
                     fontSize: 10.5,
@@ -100,7 +100,62 @@ class DjmCenterMixer extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
+              // SPX 7-Segment Amber LED Badge ("24")
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF050608),
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(color: const Color(0xFF283244)),
+                ),
+                child: const Text(
+                  'SPX 24',
+                  style: TextStyle(
+                    color: Color(0xFFFF9800),
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 9.5,
+                    shadows: [
+                      Shadow(color: Color(0xFFFF6D00), blurRadius: 4),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // PHANTOM +48V Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1014),
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(color: const Color(0xFFEF4444), width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 4.5,
+                      height: 4.5,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      '+48V',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 8.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -114,7 +169,7 @@ class DjmCenterMixer extends StatelessWidget {
                     color: Colors.purpleAccent,
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.bold,
-                    fontSize: 9.5,
+                    fontSize: 9.0,
                   ),
                 ),
               ),
@@ -123,20 +178,33 @@ class DjmCenterMixer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Container(height: 1, color: const Color(0xFF232B3B)),
-          const SizedBox(height: 10),
+          Container(height: 1.2, color: const Color(0xFF0084D6)),
+          const SizedBox(height: 8),
 
-          // 4-Band Color-Coded Hardware Rotary Pots (GAIN White, COMP Yellow, EQ Green, AUX Cyan)
+          // Row 1 of Color-Coded Hardware Rotary Pots: GAIN (White), COMP (Yellow), HIGH 10kHz (Green), MID 2.5kHz (Green)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              Expanded(
+                child: RotaryKnob(
+                  label: 'GAIN +48V',
+                  value: ((deckAWeight + deckBWeight) * 0.5).clamp(0.0, 1.0),
+                  min: 0.0,
+                  max: 1.0,
+                  color: const Color(0xFFF8FAFC), // GAIN White Cap
+                  onChanged: (v) {
+                    onDeckAWeightChanged(v);
+                    onDeckBWeightChanged(v);
+                  },
+                ),
+              ),
               Expanded(
                 child: RotaryKnob(
                   label: i18n.knobTrimTemp,
                   value: temperature,
                   min: 0.0,
                   max: 2.5,
-                  color: const Color(0xFFEAB308), // COMP Yellow/Gold
+                  color: const Color(0xFFEAB308), // COMP Yellow/Gold Cap
                   onChanged: onTemperatureChanged,
                 ),
               ),
@@ -146,7 +214,7 @@ class DjmCenterMixer extends StatelessWidget {
                   value: brightness,
                   min: 0.0,
                   max: 1.0,
-                  color: const Color(0xFF00C853), // EQ HIGH Green
+                  color: const Color(0xFF00C853), // EQ HIGH Green Cap
                   onChanged: onBrightnessChanged,
                 ),
               ),
@@ -156,18 +224,56 @@ class DjmCenterMixer extends StatelessWidget {
                   value: density,
                   min: 0.0,
                   max: 1.0,
-                  color: const Color(0xFF00C853), // EQ MID Green
+                  color: const Color(0xFF00C853), // EQ MID Green Cap
                   onChanged: onDensityChanged,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // Row 2 of Color-Coded Hardware Rotary Pots: LOW 100Hz (Green), AUX1 (Cyan), AUX2/FX (White), PAN/BAL (Red-Orange)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
               Expanded(
                 child: RotaryKnob(
                   label: i18n.knobLowGuide,
                   value: guidance,
                   min: 1.0,
                   max: 6.0,
-                  color: const Color(0xFF00B0FF), // AUX/FX Cyan-Blue
+                  color: const Color(0xFF00C853), // EQ LOW Green Cap
                   onChanged: onGuidanceChanged,
+                ),
+              ),
+              Expanded(
+                child: RotaryKnob(
+                  label: 'AUX1 CH1',
+                  value: deckAWeight,
+                  min: 0.0,
+                  max: 1.0,
+                  color: const Color(0xFF00B0FF), // AUX1 Cyan-Blue Cap
+                  onChanged: onDeckAWeightChanged,
+                ),
+              ),
+              Expanded(
+                child: RotaryKnob(
+                  label: 'AUX2/FX',
+                  value: deckBWeight,
+                  min: 0.0,
+                  max: 1.0,
+                  color: const Color(0xFFF8FAFC), // AUX2/FX White Cap
+                  onChanged: onDeckBWeightChanged,
+                ),
+              ),
+              Expanded(
+                child: RotaryKnob(
+                  label: 'PAN / BAL',
+                  value: crossfader,
+                  min: 0.0,
+                  max: 1.0,
+                  color: const Color(0xFFFF3D00), // PAN Red-Orange Cap
+                  onChanged: onCrossfaderChanged,
                 ),
               ),
             ],
