@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../realtime_media_i18n.dart';
 import '../view_models/realtime_media_view_model.dart';
 
 /// Connect / Disconnect buttons.
@@ -12,6 +13,7 @@ class ConnectionButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final isConnected = viewModel.isConnected;
     final isConnecting = viewModel.isConnecting;
+    final t = RealtimeMediaI18n.current;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Wrap(
@@ -34,10 +36,10 @@ class ConnectionButtons extends StatelessWidget {
                   ),
             label: Text(
               isConnecting
-                  ? 'Connecting...'
+                  ? t.connecting
                   : isConnected
-                  ? 'Connected'
-                  : 'Connect',
+                  ? t.connected
+                  : t.connect,
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: isConnected ? Colors.green : null,
@@ -48,7 +50,7 @@ class ConnectionButtons extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: isConnected ? viewModel.disconnect : null,
             icon: const Icon(Icons.link_off),
-            label: const Text('Disconnect'),
+            label: Text(t.disconnect),
           ),
         ],
       ),

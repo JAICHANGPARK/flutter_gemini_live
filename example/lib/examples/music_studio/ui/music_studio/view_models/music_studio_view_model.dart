@@ -14,6 +14,7 @@ import '../../../data/services/music_studio_live_service.dart';
 import '../../../domain/models/music_preset.dart';
 import '../../../domain/models/music_studio_status.dart';
 import '../../../domain/music_presets.dart';
+import '../music_studio_i18n.dart';
 import 'music_studio_notice.dart';
 
 /// State + logic for the Live Music Studio (Lyria Live) screen.
@@ -169,7 +170,7 @@ class MusicStudioViewModel extends ChangeNotifier {
 
   void removePrompt(int index) {
     if (_promptControllers.length <= 1) {
-      _notice('At least one weighted prompt is required.');
+      _notice(MusicStudioI18n.current.noticeMinPromptRequired);
       return;
     }
     _promptControllers[index].dispose();
@@ -244,7 +245,7 @@ class MusicStudioViewModel extends ChangeNotifier {
           onError: (error, st) {
             _log('🚨 Error: $error');
             if (!_disposed) {
-              _notice('Live Music Error: $error');
+              _notice(MusicStudioI18n.current.noticeLiveMusicError(error));
             }
           },
           onClose: (code, reason) {
@@ -285,7 +286,7 @@ class MusicStudioViewModel extends ChangeNotifier {
         _isConnected = false;
         _status = MusicStudioStatus.failed;
         notifyListeners();
-        _notice('Failed to connect: $e');
+        _notice(MusicStudioI18n.current.noticeFailedToConnect(e));
       }
     }
   }
@@ -368,7 +369,7 @@ class MusicStudioViewModel extends ChangeNotifier {
     _log('🔄 Sending RESET_CONTEXT signal (seamless transition)');
     _session!.resetContext();
     _notice(
-      'Music context reset. Generating fresh variation seamlessly.',
+      MusicStudioI18n.current.noticeContextReset,
       duration: const Duration(seconds: 2),
     );
   }
@@ -384,14 +385,14 @@ class MusicStudioViewModel extends ChangeNotifier {
     }
 
     if (prompts.isEmpty) {
-      _notice('Please enter at least one valid prompt text.');
+      _notice(MusicStudioI18n.current.noticeEnterValidPrompt);
       return;
     }
 
     _log('🎛️ Updating weighted prompts (${prompts.length} active)...');
     _session!.setWeightedPrompts(prompts);
     _notice(
-      'Applied ${prompts.length} weighted prompts to Lyria.',
+      MusicStudioI18n.current.noticeAppliedPrompts(prompts.length),
       duration: const Duration(seconds: 1),
     );
   }
@@ -430,8 +431,8 @@ class MusicStudioViewModel extends ChangeNotifier {
 
     _notice(
       bpmOrScaleChanged && _autoResetOnTempoScaleChange
-          ? 'Applied config & auto-reset context for new tempo/scale.'
-          : 'Music generation configuration updated.',
+          ? MusicStudioI18n.current.noticeConfigAndAutoReset
+          : MusicStudioI18n.current.noticeConfigUpdated,
       duration: const Duration(seconds: 1),
     );
   }
@@ -455,7 +456,7 @@ class MusicStudioViewModel extends ChangeNotifier {
       sendWeightedPrompts();
     }
     _notice(
-      'Added tag "$tag" to steerable prompts.',
+      MusicStudioI18n.current.noticeAddedTag(tag),
       duration: const Duration(seconds: 1),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:example/app_settings_dialog.dart';
+import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 
 import 'view_models/translation_view_model.dart';
@@ -59,7 +60,10 @@ class _LiveTranslationPageState extends State<LiveTranslationPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
         return Scaffold(

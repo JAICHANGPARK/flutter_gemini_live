@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/vn_character_models.dart';
 import '../../domain/models/vn_sdk_chapter.dart';
+import '../anime_vn_i18n.dart';
 import '../view_models/anime_vn_view_model.dart';
 
 /// Classic Japanese Visual Novel (미연시) Bottom Dialogue Window
@@ -47,16 +48,14 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
   }
 
   Future<void> _showAskDialog(BuildContext context) async {
-    final isKo = widget.viewModel.isKorean;
+    final i18n = AnimeVnI18n.current;
     final controller = TextEditingController();
     final submitted = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1429),
         title: Text(
-          isKo
-              ? '💬 히카리에게 직접 질문하기 (Gemini Live)'
-              : '💬 ヒカリに直接質問する (Gemini Live)',
+          i18n.askDialogTitle,
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         content: TextField(
@@ -64,9 +63,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            hintText: isKo
-                ? '예: gemini_live에서 Barge-in은 어떻게 처리해?'
-                : '例: gemini_liveでバージインはどう処理するの？',
+            hintText: i18n.askDialogHint,
             hintStyle: const TextStyle(color: Colors.white54),
           ),
           onSubmitted: (val) => Navigator.of(ctx).pop(val),
@@ -74,11 +71,11 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(isKo ? '취소' : 'キャンセル'),
+            child: Text(i18n.cancelButton),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: Text(isKo ? '질문 보내기' : '質問を送る'),
+            child: Text(i18n.sendQuestionButton),
           ),
         ],
       ),
@@ -90,7 +87,8 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
   }
 
   void _showChapterJumpMenu(BuildContext context) {
-    final isKo = widget.viewModel.isKorean;
+    final lang = AppLanguageController.instance.currentLanguage;
+    final i18n = AnimeVnI18n(lang);
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -111,9 +109,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isKo
-                        ? '📚 전 10화 마스터 커리큘럼 선택 (Ch.1 ~ Ch.10)'
-                        : '📚 全10話 マスターカリキュラム選択 (Ch.1 ~ Ch.10)',
+                    i18n.chapterJumpMenuTitle,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 17,
@@ -145,7 +141,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                             ),
                           ),
                           title: Text(
-                            isKo ? chapter.titleKo : chapter.titleJa,
+                            chapter.titleFor(lang),
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -190,92 +186,18 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
       ),
       builder: (ctx) {
         return ListenableBuilder(
-          listenable: widget.viewModel,
+          listenable: Listenable.merge([
+            widget.viewModel,
+            AppLanguageController.instance,
+          ]),
           builder: (context, _) {
             final vm = widget.viewModel;
-            final isKo = vm.isKorean;
+            final lang = AppLanguageController.instance.currentLanguage;
+            final i18n = AnimeVnI18n(lang);
             final currentPitch = vm.voicePitchShift;
             final isGyaru = vm.isGyaruVoiceStyle;
-            final pitchPresets = isKo
-                ? <(String, String, double, bool)>[
-                    (
-                      '🌺 하이텐션 시부야 갸루 보이스 (추천)',
-                      '+2.3 반음 + 갸루 말투/연기 톤 (~っしょ! / 마린 톤)',
-                      1.14,
-                      true,
-                    ),
-                    (
-                      '🎀 초절정 모에 미소녀',
-                      '+3.3 반음 (블루아카/갸루게 청순 하이톤)',
-                      1.21,
-                      false,
-                    ),
-                    (
-                      '🌸 정통 미연시 히로인',
-                      '+2.6 반음 (귀엽고 달콤한 정통파 후배 톤)',
-                      1.16,
-                      false,
-                    ),
-                    (
-                      '✨ 상큼 발랄 후배 톤',
-                      '+1.5 반음 (밝고 경쾌한 애니 소녀)',
-                      1.09,
-                      false,
-                    ),
-                    (
-                      '🎙️ 오리지널 내추럴 원음',
-                      '0.0 반음 (DSP 피치 변조 없음)',
-                      1.00,
-                      isGyaru,
-                    ),
-                  ]
-                : <(String, String, double, bool)>[
-                    (
-                      '🌺 渋谷系ハイテンション・ギャルボイス (推奨)',
-                      '+2.3半音 + ギャル声優演技トーン (〜っしょ！✨)',
-                      1.14,
-                      true,
-                    ),
-                    (
-                      '🎀 超絶萌え美少女ボイス',
-                      '+3.3半音 (ブルアカ・ギャルゲー清楚高音)',
-                      1.21,
-                      false,
-                    ),
-                    (
-                      '🌸 王道ギャルゲーヒロイン',
-                      '+2.6半音 (甘くて可愛い清楚後輩トーン)',
-                      1.16,
-                      false,
-                    ),
-                    (
-                      '✨ 明るく元気な後輩トーン',
-                      '+1.5半音 (爽やかなアニメ美少女)',
-                      1.09,
-                      false,
-                    ),
-                    (
-                      '🎙️ オリジナル原音',
-                      '0.0半音 (DSPピッチ変調なし)',
-                      1.00,
-                      isGyaru,
-                    ),
-                  ];
-            final voiceActors = isKo
-                ? <(String, String)>[
-                    ('Autonoe', '하이텐션 갸루 & 에너지 소녀 (레이나 추천)'),
-                    ('Leda', '밝고 통통 튀는 하이톤 소녀 (히카리 추천)'),
-                    ('Zephyr', '맑고 청량한 쿨뷰티 소녀 보이스'),
-                    ('Despina', '부드럽고 다정한 선배 보이스'),
-                    ('Aoede', '차분한 성인 내레이터 보이스'),
-                  ]
-                : <(String, String)>[
-                    ('Autonoe', 'ハイテンション・ギャル＆元気美少女 (レイナ推奨)'),
-                    ('Leda', '明るく弾むハイトーン美少女 (ヒカリ推奨)'),
-                    ('Zephyr', '透明感のある爽やか美少女'),
-                    ('Despina', '優しくて甘いお姉さんボイス'),
-                    ('Aoede', '落ち着いたナレーターボイス'),
-                  ];
+            final pitchPresets = i18n.pitchPresets(isGyaru);
+            final voiceActors = i18n.voiceActors;
 
             final sheetWidth = MediaQuery.sizeOf(ctx).width;
             final isNarrowSheet = sheetWidth < 560;
@@ -304,9 +226,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
-                              isKo
-                                  ? '🌺 히로인 캐릭터 & 미소녀/갸루 보이스 튜너'
-                                  : '🌺 ヒロイン選択＆ギャル・美少女ボイスチューナー',
+                              i18n.voiceTunerSheetTitle,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: isNarrowSheet ? 14.5 : 15.5,
@@ -329,15 +249,13 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                 Icons.volume_up_rounded,
                                 size: 15,
                               ),
-                              label: Text(isKo ? '지금 목소리 테스트' : '今の声をテスト'),
+                              label: Text(i18n.testVoiceNowButton),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          isKo
-                              ? '1. 파트너 히로인 캐릭터 선택 (클릭 시 일러스트 & 대사 스타일 즉시 전환)'
-                              : '1. パートナーヒロイン選択（クリックで立ち絵＆セリフ口調を即時切替）',
+                          i18n.voiceTunerSection1,
                           style: const TextStyle(
                             color: Color(0xFFFFB703),
                             fontSize: 12.5,
@@ -384,9 +302,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              isKo
-                                                  ? '${h.nameKo} (${h.nameJa})'
-                                                  : h.nameJa,
+                                              h.nameFor(lang),
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w900,
@@ -395,9 +311,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              isKo
-                                                  ? h.subtitleKo
-                                                  : h.subtitleJa,
+                                              h.subtitleFor(lang),
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 11,
@@ -414,9 +328,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          isKo
-                              ? '2. 실시간 성우 연기 톤 & SoLoud DSP 피치 (재연결 없이 즉시 적용)'
-                              : '2. リアルタイム声優演技トーン＆SoLoud DSPピッチ（即時反映）',
+                          i18n.voiceTunerSection2,
                           style: const TextStyle(
                             color: Color(0xFFF472B6),
                             fontSize: 12.5,
@@ -493,9 +405,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          isKo
-                              ? '3. Gemini Live 성우 베이스 프리셋 (변경 시 자동 재연결)'
-                              : '3. Gemini Live 声優ベースプリセット（変更時に自動再接続）',
+                          i18n.voiceTunerSection3,
                           style: const TextStyle(
                             color: Color(0xFF38BDF8),
                             fontSize: 12.5,
@@ -539,7 +449,8 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
   @override
   Widget build(BuildContext context) {
     final vm = widget.viewModel;
-    final isKo = vm.isKorean;
+    final lang = AppLanguageController.instance.currentLanguage;
+    final i18n = AnimeVnI18n(lang);
 
     // When user clicks CLOSE, show only a tiny floating restore pill at bottom-right
     if (vm.isDialogueBoxHidden) {
@@ -554,7 +465,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
             ),
             onPressed: vm.toggleDialogueBoxHidden,
             icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-            label: Text(isKo ? '대사창 표시 (OPEN)' : 'メッセージ枠を表示 (OPEN)'),
+            label: Text(i18n.showDialogueBoxButton),
           ),
         ),
       );
@@ -562,9 +473,7 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
 
     final beatNum = vm.currentBeatIndex + 1;
     final totalBeats = vm.totalBeatsInChapter;
-    final chapterTitle = isKo
-        ? vm.currentChapter.titleKo
-        : vm.currentChapter.titleJa;
+    final chapterTitle = vm.currentChapter.titleFor(lang);
 
     final screenSize = MediaQuery.sizeOf(context);
     final isShortViewport = screenSize.height < 520;
@@ -736,9 +645,14 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                               ),
                                             ),
                                             child: Text(
-                                              isKo
-                                                  ? '${vm.selectedHeroine.badgeEmoji} 히로인 전환: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "레이나(갸루) → 히카리" : "히카리(청순) → 레이나(갸루)"}'
-                                                  : '${vm.selectedHeroine.badgeEmoji} ヒロイン切替: ${vm.selectedHeroine == VnHeroineCharacter.reina ? "レイナ(ギャル) → ヒカリ" : "ヒカリ(清楚) → レイナ(ギャル)"}',
+                                              i18n.heroineSwitchPill(
+                                                badgeEmoji: vm
+                                                    .selectedHeroine
+                                                    .badgeEmoji,
+                                                isReina:
+                                                    vm.selectedHeroine ==
+                                                    VnHeroineCharacter.reina,
+                                              ),
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: isCompact
@@ -771,9 +685,11 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                               ),
                                             ),
                                             child: Text(
-                                              isKo
-                                                  ? '${vm.isGyaruVoiceStyle ? "🌺 갸루 보이스" : "🎀 미소녀 보이스"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)'
-                                                  : '${vm.isGyaruVoiceStyle ? "🌺 ギャルボイス" : "🎀 美少女ボイス"} (${vm.selectedVoice} • ${vm.voicePitchShift.toStringAsFixed(2)}x)',
+                                              i18n.voiceTunerPill(
+                                                isGyaru: vm.isGyaruVoiceStyle,
+                                                selectedVoice: vm.selectedVoice,
+                                                pitchShift: vm.voicePitchShift,
+                                              ),
                                               style: TextStyle(
                                                 color: const Color(0xFFFBCFE8),
                                                 fontSize: isCompact
@@ -830,28 +746,29 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                                                       : const Color(0xFFFDE68A),
                                                 ),
                                                 const SizedBox(width: 5),
-                                                Text(
-                                                  vm.isConnected
-                                                      ? (vm.isAiSpeaking
-                                                            ? (isKo
-                                                                  ? '🔊 일본어 음성 출력 중 (24kHz)'
-                                                                  : '🔊 日本語ボイス出力中 (24kHz)')
-                                                            : (isKo
-                                                                  ? '🔊 음성 다시 듣기 (${vm.selectedVoice})'
-                                                                  : '🔊 ボイスをもう一度聴く (${vm.selectedVoice})'))
-                                                      : (vm.isConnecting
-                                                            ? (isKo
-                                                                  ? '⏳ Gemini Live 연결 중...'
-                                                                  : '⏳ Gemini Live 接続中...')
-                                                            : (isKo
-                                                                  ? '🔌 탭하여 일본어 음성 연결'
-                                                                  : '🔌 タップして日本語ボイス接続')),
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: isCompact
-                                                        ? 10.5
-                                                        : 11.5,
-                                                    fontWeight: FontWeight.w700,
+                                                Flexible(
+                                                  child: Text(
+                                                    i18n.voicePlaybackStatusPill(
+                                                      isConnected:
+                                                          vm.isConnected,
+                                                      isConnecting:
+                                                          vm.isConnecting,
+                                                      isAiSpeaking:
+                                                          vm.isAiSpeaking,
+                                                      selectedVoice:
+                                                          vm.selectedVoice,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: isCompact
+                                                          ? 10.5
+                                                          : 11.5,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -1010,13 +927,11 @@ class _VnDialogueBoxState extends State<VnDialogueBox>
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Text(
-                                  vm.isChoiceOverlayOpen
-                                      ? (isKo
-                                            ? '👆 화면 중앙의 선택지를 클릭하세요'
-                                            : '👆 画面中央の選択肢をクリックしてください')
-                                      : (isKo
-                                            ? '💡 대화창을 클릭하면 다음 대사($beatNum/$totalBeats)로 넘어갑니다'
-                                            : '💡 ウィンドウをクリックすると次のセリフ($beatNum/$totalBeats)へ進みます'),
+                                  i18n.bottomHintText(
+                                    isChoiceOverlayOpen: vm.isChoiceOverlayOpen,
+                                    beatNum: beatNum,
+                                    totalBeats: totalBeats,
+                                  ),
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: isCompact ? 10.5 : 11.5,
@@ -1325,17 +1240,18 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
                   ),
                   child: Builder(
                     builder: (context) {
-                      final isKo =
-                          AppLanguageController.instance.currentLanguage ==
-                          AppLanguage.ko;
+                      final lang =
+                          AppLanguageController.instance.currentLanguage;
+                      final primaryChoiceLabel = widget.choice.labelFor(lang);
+                      final showSubJa =
+                          lang != AppLanguage.ja &&
+                          primaryChoiceLabel != widget.choice.labelJa;
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // Main Choice Text with strong dark outline shadow
                           Text(
-                            isKo
-                                ? widget.choice.labelKo
-                                : widget.choice.labelJa,
+                            primaryChoiceLabel,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white,
@@ -1371,9 +1287,9 @@ class _GlossyVnChoiceButtonState extends State<_GlossyVnChoiceButton> {
                               ],
                             ),
                           ),
-                          if (isKo) ...[
+                          if (showSubJa) ...[
                             const SizedBox(height: 2),
-                            // Japanese Sub-label (only shown when primary language is Korean)
+                            // Japanese Sub-label (shown when primary language is EN/KO/ZH)
                             Text(
                               widget.choice.labelJa,
                               textAlign: TextAlign.center,

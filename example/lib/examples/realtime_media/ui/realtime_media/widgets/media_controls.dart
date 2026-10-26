@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../realtime_media_i18n.dart';
 import '../view_models/realtime_media_view_model.dart';
 import 'camera_voice_card.dart';
 
@@ -18,6 +19,7 @@ class MediaControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActivityActive = viewModel.isActivityActive;
+    final t = RealtimeMediaI18n.current;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -28,10 +30,10 @@ class MediaControls extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'Send realtime text...',
-                    prefixIcon: Icon(Icons.text_fields),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: t.sendRealtimeTextHint,
+                    prefixIcon: const Icon(Icons.text_fields),
+                    border: const OutlineInputBorder(),
                   ),
                   onSubmitted: viewModel.sendRealtimeText,
                 ),
@@ -47,7 +49,7 @@ class MediaControls extends StatelessWidget {
                   onPressed: viewModel.toggleActivity,
                   icon: Icon(isActivityActive ? Icons.stop : Icons.play_arrow),
                   label: Text(
-                    isActivityActive ? 'End Activity' : 'Start Activity',
+                    isActivityActive ? t.endActivity : t.startActivity,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isActivityActive
@@ -67,7 +69,7 @@ class MediaControls extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: viewModel.sendAudioStreamEnd,
                 icon: const Icon(Icons.stop_circle),
-                label: const Text('Audio End'),
+                label: Text(t.audioEnd),
               ),
               ElevatedButton.icon(
                 onPressed: viewModel.isSendingVideo
@@ -80,17 +82,17 @@ class MediaControls extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.image),
-                label: const Text('Send Image'),
+                label: Text(t.sendImage),
               ),
               ElevatedButton.icon(
                 onPressed: viewModel.sendMediaChunks,
                 icon: const Icon(Icons.folder_zip),
-                label: const Text('Media Chunks'),
+                label: Text(t.mediaChunks),
               ),
               ElevatedButton.icon(
                 onPressed: viewModel.sendCombinedRealtimeInput,
                 icon: const Icon(Icons.merge_type),
-                label: const Text('Frame + Prompt'),
+                label: Text(t.framePlusPrompt),
               ),
             ],
           ),

@@ -1,9 +1,11 @@
+import 'package:example/app_translations.dart';
 import 'package:example/foldable_utils.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../domain/models/note_language.dart';
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 import 'audio_device_selector_button.dart';
 import 'foldable_pill.dart';
@@ -25,16 +27,21 @@ class SmartNotetakerAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return AppBar(
-      title: const Row(
+      title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.edit_note_rounded, color: Colors.amberAccent, size: 26),
-          SizedBox(width: 8),
+          const Icon(
+            Icons.edit_note_rounded,
+            color: Colors.amberAccent,
+            size: 26,
+          ),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
-              'Live Smart NoteTaker',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              i18n.appTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -80,21 +87,22 @@ class SmartNotetakerAppBar extends StatelessWidget
               child: GeminiLiveUsageBadge(tracker: viewModel.usageTracker),
             ),
             AudioDeviceSelectorButton(viewModel: viewModel, isCompact: true),
+            const LanguageSelectorButton(compact: true),
             IconButton(
               icon: const Icon(Icons.summarize_rounded),
-              tooltip: 'AI 최종 요약본 정리',
+              tooltip: i18n.wrapUpTooltip,
               onPressed: viewModel.isConnected
                   ? viewModel.generateWrapUpSummary
                   : null,
             ),
             IconButton(
               icon: const Icon(Icons.copy_all_rounded),
-              tooltip: '마크다운 전체 복사',
+              tooltip: i18n.copyAllTooltip,
               onPressed: viewModel.copyNotesToClipboard,
             ),
             IconButton(
               icon: const Icon(Icons.restart_alt_rounded),
-              tooltip: '새 노트 시작 (초기화)',
+              tooltip: i18n.clearNotesTooltip,
               onPressed: viewModel.clearNotes,
             ),
           ],

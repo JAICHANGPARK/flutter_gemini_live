@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
 import '../view_models/media_subtitle_view_model.dart';
 
 /// Cinematic floating subtitle overlay shown on top of the video.
@@ -78,8 +79,10 @@ class FloatingSubtitleHud extends StatelessWidget {
                 hasTranslated
                     ? displayTranslated
                     : (vm.isConnected
-                          ? '실시간 음성을 스트리밍 통역 중입니다...'
-                          : '스트리밍을 시작하면 실시간 통역 자막이 여기에 표시됩니다.'),
+                          ? MediaSubtitleI18n.current.streamingRealtimeAudio
+                          : MediaSubtitleI18n
+                                .current
+                                .startStreamingForSubtitles),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: hasTranslated

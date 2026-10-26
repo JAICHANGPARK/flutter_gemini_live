@@ -1,7 +1,9 @@
+import 'package:example/app_translations.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import '../translation_i18n.dart';
 import '../view_models/translation_view_model.dart';
 import 'translation_foldable_badge.dart';
 
@@ -22,14 +24,15 @@ class TranslationAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = TranslationI18n.current;
     return AppBar(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.translate_rounded, color: Colors.blueAccent),
-          SizedBox(width: 8),
+          const Icon(Icons.translate_rounded, color: Colors.blueAccent),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
-              'Live Translation (동시통역)',
+              i18n.appBarTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -39,6 +42,7 @@ class TranslationAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         ScrollableAppBarActions(
           children: [
+            const LanguageSelectorButton(compact: true),
             // Real-time token usage and cost badge
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -55,8 +59,8 @@ class TranslationAppBar extends StatelessWidget implements PreferredSizeWidget {
                     : Colors.white54,
               ),
               tooltip: vm.isAudioOutputEnabled
-                  ? '번역 음성 출력 켜짐 (클릭하여 음소거)'
-                  : '번역 음성 출력 꺼짐 (클릭하여 켜기)',
+                  ? i18n.voiceOutputOnTooltip
+                  : i18n.voiceOutputOffTooltip,
               onPressed: vm.toggleAudioOutput,
             ),
             // Echo Loop Prevention Toggle Button
@@ -68,8 +72,8 @@ class TranslationAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: vm.preventEchoLoop ? Colors.blueAccent : Colors.white54,
               ),
               tooltip: vm.preventEchoLoop
-                  ? '에코 방지 켜짐 (스피커 출력 중 마이크 자동 차단으로 무한반복 방지)'
-                  : '에코 방지 꺼짐 (헤드셋/이어폰 착용 시)',
+                  ? i18n.echoPreventOnTooltip
+                  : i18n.echoPreventOffTooltip,
               onPressed: vm.togglePreventEchoLoop,
             ),
             // Dual Flip Mode Toggle Button
@@ -81,13 +85,13 @@ class TranslationAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: vm.isDualFlipMode ? Colors.amber : null,
               ),
               tooltip: vm.isDualFlipMode
-                  ? '단일 채팅 모드로 전환'
-                  : '양방향 대면 모드(Dual Flip)로 전환',
+                  ? i18n.switchToSingleChatTooltip
+                  : i18n.switchToDualFlipTooltip,
               onPressed: vm.toggleDualFlipMode,
             ),
             IconButton(
               icon: const Icon(Icons.tune_rounded),
-              tooltip: '설정',
+              tooltip: i18n.settingsTooltip,
               onPressed: onOpenSettings,
             ),
             const TranslationFoldableBadge(),

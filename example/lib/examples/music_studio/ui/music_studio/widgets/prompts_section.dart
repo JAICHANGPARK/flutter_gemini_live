@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/music_presets.dart';
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 import 'crossfader_panel.dart';
 import 'preset_chip.dart';
@@ -15,6 +16,7 @@ class PromptsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     return Card(
       color: const Color(0xFF1C2029),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -26,11 +28,11 @@ class PromptsSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    '🎛️ Steerable Weighted Prompts',
+                    i18n.steerablePromptsTitle,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -41,7 +43,7 @@ class PromptsSection extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => viewModel.addPrompt('', 0.5),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Prompt'),
+                  label: Text(i18n.addPromptButton),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.purpleAccent,
                   ),
@@ -90,7 +92,7 @@ class PromptsSection extends StatelessWidget {
                     ? viewModel.sendWeightedPrompts
                     : null,
                 icon: const Icon(Icons.send_rounded, size: 18),
-                label: const Text('Update Steerable Prompts'),
+                label: Text(i18n.updatePromptsButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple.shade700,
                   foregroundColor: Colors.white,

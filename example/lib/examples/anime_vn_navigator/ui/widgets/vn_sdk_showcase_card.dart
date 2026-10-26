@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/models/vn_sdk_chapter.dart';
+import '../anime_vn_i18n.dart';
 import '../view_models/anime_vn_view_model.dart';
 
 /// Collapsible `gemini_live` SDK Study Note & Code Card (`📘 SDK 학습 노트`).
@@ -26,16 +27,10 @@ class VnSdkShowcaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isKo =
-        AppLanguageController.instance.currentLanguage == AppLanguage.ko;
-    final codeText = isKo
-        ? showcase.codeSnippet
-        : (showcase.codeSnippetJa ?? showcase.codeSnippet);
-    final keyPoints = isKo
-        ? showcase.keyPointsKo
-        : (showcase.keyPointsJa.isNotEmpty
-              ? showcase.keyPointsJa
-              : showcase.keyPointsKo);
+    final lang = AppLanguageController.instance.currentLanguage;
+    final i18n = AnimeVnI18n(lang);
+    final codeText = showcase.codeFor(lang);
+    final keyPoints = showcase.keyPointsFor(lang);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 430),
@@ -93,9 +88,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                tooltip: isKo
-                    ? 'Dart 코드 복사 (Copy Code)'
-                    : 'Dartコードをコピー (Copy Code)',
+                tooltip: i18n.copyCodeTooltip,
                 icon: const Icon(
                   Icons.copy_rounded,
                   size: 15,
@@ -105,11 +98,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
                   Clipboard.setData(ClipboardData(text: codeText));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        isKo
-                            ? '📋 예제 Dart 코드가 클립보드에 복사되었습니다!'
-                            : '📋 サンプルDartコードをクリップボードにコピーしました！',
-                      ),
+                      content: Text(i18n.copyCodeSnackBar),
                       duration: const Duration(seconds: 2),
                     ),
                   );
@@ -120,9 +109,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                tooltip: isKo
-                    ? '학습 노트 접기 (하단 CODE 버튼으로 다시 열기)'
-                    : '学習ノートを閉じる（下部 CODE ボタンで再表示）',
+                tooltip: i18n.closeShowcaseTooltip,
                 icon: const Icon(
                   Icons.close_rounded,
                   size: 16,
@@ -134,9 +121,9 @@ class VnSdkShowcaseCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Title + Summary (Localized)
+          // Title + Summary (Localized across EN/KO/JA/ZH)
           Text(
-            isKo ? showcase.titleKo : showcase.titleJa,
+            showcase.titleFor(lang),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
@@ -146,7 +133,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
           ),
           const SizedBox(height: 3),
           Text(
-            isKo ? showcase.summaryKo : showcase.summaryJa,
+            showcase.summaryFor(lang),
             style: const TextStyle(
               color: Color(0xFFCBD5E1),
               fontSize: 12,
@@ -270,7 +257,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
                       border: Border.all(color: Colors.white24),
                     ),
                     child: Text(
-                      isKo ? '◀ 이전 단계' : '◀ 前のステップ',
+                      i18n.prevStepButton,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -308,7 +295,7 @@ class VnSdkShowcaseCard extends StatelessWidget {
                       border: Border.all(color: accentColor),
                     ),
                     child: Text(
-                      isKo ? '다음 단계 ▶' : '次のステップ ▶',
+                      i18n.nextStepButton,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,

@@ -1,6 +1,8 @@
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
+import '../translation_i18n.dart';
+
 /// App bar chip that shows the detected foldable posture (FLEX / DUO / FOLD).
 class TranslationFoldableBadge extends StatelessWidget {
   const TranslationFoldableBadge({super.key});
@@ -11,12 +13,15 @@ class TranslationFoldableBadge extends StatelessWidget {
     if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
       return const SizedBox.shrink();
     }
+    final i18n = TranslationI18n.current;
     return Padding(
       padding: const EdgeInsets.only(right: 8, left: 2),
       child: Tooltip(
         message: foldableInfo.isTabletop
-            ? '테이블탑 / 플렉스 모드'
-            : (foldableInfo.isDualScreen ? '듀얼스크린 감지됨' : '폴더블 와이드 감지됨'),
+            ? i18n.tabletopModeTooltip
+            : (foldableInfo.isDualScreen
+                  ? i18n.dualScreenTooltip
+                  : i18n.foldableWideTooltip),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
           decoration: BoxDecoration(

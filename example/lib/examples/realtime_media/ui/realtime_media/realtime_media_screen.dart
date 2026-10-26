@@ -1,6 +1,9 @@
+import 'package:example/app_translations.dart';
+import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import 'realtime_media_i18n.dart';
 import 'view_models/realtime_media_view_model.dart';
 import 'widgets/control_panel.dart';
 import 'widgets/log_section.dart';
@@ -41,19 +44,28 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
+        final t = RealtimeMediaI18n.current;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Realtime Media Demo'),
+            title: Text(t.appBarTitle),
             actions: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: GeminiLiveStatusBadge.fromFlags(
-                  isConnected: vm.isConnected,
-                  isConnecting: vm.isConnecting,
-                ),
+              ScrollableAppBarActions(
+                children: [
+                  const LanguageSelectorButton(compact: true),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: GeminiLiveStatusBadge.fromFlags(
+                      isConnected: vm.isConnected,
+                      isConnecting: vm.isConnecting,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

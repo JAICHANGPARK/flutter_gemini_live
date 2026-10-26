@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
 import '../view_models/media_subtitle_view_model.dart';
 
 /// Live subtitle timeline: finished entries plus the in-flight "LIVE" card.
@@ -16,6 +17,7 @@ class TranscriptPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = MediaSubtitleI18n.current;
     return ValueListenableBuilder<int>(
       valueListenable: vm.subtitleRevision,
       builder: (context, _, _) {
@@ -39,15 +41,18 @@ class TranscriptPanel extends StatelessWidget {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    '실시간 자막 타임라인',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                  Expanded(
+                    child: Text(
+                      i18n.liveSubtitleTimelineTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -58,7 +63,7 @@ class TranscriptPanel extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '${subtitleHistory.length}개 문장',
+                      i18n.sentencesCount(subtitleHistory.length),
                       style: const TextStyle(
                         color: Colors.white60,
                         fontSize: 11,
@@ -80,10 +85,10 @@ class TranscriptPanel extends StatelessWidget {
                               color: Colors.white.withValues(alpha: 0.2),
                             ),
                             const SizedBox(height: 12),
-                            const Text(
-                              '수신된 자막 기록이 없습니다.\n실시간 자막을 시작하면 타임라인이 누적됩니다.',
+                            Text(
+                              i18n.emptyTranscriptPlaceholder,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white38,
                                 fontSize: 13,
                               ),
@@ -184,10 +189,10 @@ class TranscriptPanel extends StatelessWidget {
                                         color: Colors.cyanAccent,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 8,
                                             height: 8,
                                             child: CircularProgressIndicator(
@@ -195,10 +200,10 @@ class TranscriptPanel extends StatelessWidget {
                                               color: Colors.black,
                                             ),
                                           ),
-                                          SizedBox(width: 4),
+                                          const SizedBox(width: 4),
                                           Text(
-                                            'LIVE 통역 중',
-                                            style: TextStyle(
+                                            i18n.liveTranslatingBadge,
+                                            style: const TextStyle(
                                               color: Colors.black,
                                               fontSize: 10,
                                               fontWeight: FontWeight.bold,

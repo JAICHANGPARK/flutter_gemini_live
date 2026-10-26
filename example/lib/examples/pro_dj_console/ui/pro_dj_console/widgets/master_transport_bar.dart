@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../pro_dj_console_i18n.dart';
+
 /// Master transport: connect toggle, play / pause, stop / cue, hard drop.
 class MasterTransportBar extends StatelessWidget {
   final bool isConnecting;
@@ -27,6 +29,7 @@ class MasterTransportBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = ProDjConsoleI18n.current;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -51,8 +54,10 @@ class MasterTransportBar extends StatelessWidget {
             ),
             label: Text(
               isConnecting
-                  ? 'CONNECTING...'
-                  : (isConnected ? 'DISCONNECT' : 'CONNECT CONSOLE'),
+                  ? i18n.connectingButton
+                  : (isConnected
+                        ? i18n.disconnectButton
+                        : i18n.connectConsoleButton),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: isConnected
@@ -74,7 +79,9 @@ class MasterTransportBar extends StatelessWidget {
                   isPlaying ? Icons.pause : Icons.play_arrow,
                   size: 20,
                 ),
-                label: Text(isPlaying ? 'PAUSE' : 'PLAY MASTER'),
+                label: Text(
+                  isPlaying ? i18n.pauseButton : i18n.playMasterButton,
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade700,
                   foregroundColor: Colors.white,
@@ -88,7 +95,7 @@ class MasterTransportBar extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: isConnected ? onStop : null,
                 icon: const Icon(Icons.stop, size: 20),
-                label: const Text('STOP / CUE'),
+                label: Text(i18n.stopCueButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber.shade800,
                   foregroundColor: Colors.white,
@@ -102,7 +109,7 @@ class MasterTransportBar extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: isConnected ? onResetContext : null,
                 icon: const Icon(Icons.bolt, size: 20),
-                label: const Text('HARD DROP'),
+                label: Text(i18n.hardDropButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple.shade700,
                   foregroundColor: Colors.white,

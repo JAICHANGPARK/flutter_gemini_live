@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 
 /// "LOGS" tab of the DJ console: real-time WebSocket event log.
@@ -7,6 +8,7 @@ Widget buildDjLogsTab(
   DjMidiBoxViewModel vm,
   ScrollController logScrollController,
 ) {
+  final i18n = DjMidiBoxI18n.current;
   final logs = vm.logs;
   return Column(
     children: [
@@ -17,7 +19,7 @@ Widget buildDjLogsTab(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'EVENTS (${logs.length})',
+              i18n.eventsHeader(logs.length),
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 10,
@@ -27,11 +29,11 @@ Widget buildDjLogsTab(
             ),
             InkWell(
               onTap: vm.clearLogs,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Text(
-                  'CLEAR',
-                  style: TextStyle(
+                  i18n.clearLogsButton,
+                  style: const TextStyle(
                     color: Color(0xFFF43F5E),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -44,11 +46,11 @@ Widget buildDjLogsTab(
       ),
       Expanded(
         child: logs.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
-                  'No events logged yet.\nConnect or play to view real-time WebSocket events.',
+                  i18n.emptyLogsText,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white30, fontSize: 11),
+                  style: const TextStyle(color: Colors.white30, fontSize: 11),
                 ),
               )
             : ListView.builder(

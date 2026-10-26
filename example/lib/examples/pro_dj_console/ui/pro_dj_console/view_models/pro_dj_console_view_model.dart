@@ -9,6 +9,7 @@ import '../../../data/services/pro_dj_audio_service.dart';
 import '../../../data/services/pro_dj_music_service.dart';
 import '../../../domain/hot_cue_pads.dart';
 import '../../../domain/models/hot_cue_pad_data.dart';
+import '../pro_dj_console_i18n.dart';
 import 'pro_dj_console_notice.dart';
 
 /// State and logic of the Pro DJ Console: Lyria RealTime session, mixer
@@ -212,8 +213,8 @@ class ProDjConsoleViewModel extends ChangeNotifier {
       _sendGenerationConfig();
 
       onNotice?.call(
-        const ProDjConsoleNotice(
-          '🎧 Pro DJ Console Connected to Lyria RealTime!',
+        ProDjConsoleNotice(
+          ProDjConsoleI18n.current.noticeConnected,
           ProDjConsoleNoticeKind.connected,
         ),
       );
@@ -224,7 +225,7 @@ class ProDjConsoleViewModel extends ChangeNotifier {
         _log('Connection failed: $e');
         onNotice?.call(
           ProDjConsoleNotice(
-            'Connection failed: $e',
+            ProDjConsoleI18n.current.noticeConnectionFailed(e),
             ProDjConsoleNoticeKind.error,
           ),
         );
@@ -299,8 +300,8 @@ class ProDjConsoleViewModel extends ChangeNotifier {
     _log('🔥 [HARD DROP / RESET CONTEXT] Executing instant context reset...');
     _music.resetContext();
     onNotice?.call(
-      const ProDjConsoleNotice(
-        '⚡ Instant Beat Drop: Context reset executed!',
+      ProDjConsoleNotice(
+        ProDjConsoleI18n.current.noticeHardDrop,
         ProDjConsoleNoticeKind.hardDrop,
       ),
     );

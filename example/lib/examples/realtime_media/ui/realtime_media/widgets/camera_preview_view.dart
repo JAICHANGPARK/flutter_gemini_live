@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/camera_text.dart';
+import '../realtime_media_i18n.dart';
 import '../view_models/realtime_media_view_model.dart';
 
 /// Camera preview with a device label chip, spinner or placeholder message.
@@ -46,10 +47,11 @@ class CameraPreviewView extends StatelessWidget {
       );
     }
 
+    final t = RealtimeMediaI18n.current;
     final hasKnownCameraDevices = viewModel.availableCameras.isNotEmpty;
     final message = hasKnownCameraDevices
-        ? 'Camera preview is not ready yet. Tap Initialize Camera.'
-        : 'Camera preview is unavailable on this device, permission has not been granted, or no camera is attached.';
+        ? t.cameraNotReadyMessage
+        : t.cameraUnavailableMessage;
 
     return Center(
       child: Padding(

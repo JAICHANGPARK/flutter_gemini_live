@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 import 'interim_bubble.dart';
 import 'speech_bubble.dart';
@@ -12,6 +13,7 @@ class LiveTimelinePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     final speechTurns = viewModel.speechTurns;
     final interimSpeech = viewModel.interimSpeech;
 
@@ -29,17 +31,20 @@ class LiveTimelinePanel extends StatelessWidget {
                 size: 18,
               ),
               const SizedBox(width: 8),
-              const Text(
-                '실시간 발화 & 동시 번역',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  i18n.timelineHeader,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
-                '${speechTurns.length}개 발화',
+                i18n.speechTurnsCount(speechTurns.length),
                 style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
             ],
@@ -57,10 +62,13 @@ class LiveTimelinePanel extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.2),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          '녹음을 시작하면 회의/강의 발화가\n실시간으로 텍스트화 및 번역됩니다.',
+                        Text(
+                          i18n.timelineEmptyHint,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white38, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),

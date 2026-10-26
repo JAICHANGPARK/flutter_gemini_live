@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
 import '../view_models/media_subtitle_view_model.dart';
 import 'floating_subtitle_hud.dart';
 
@@ -17,6 +18,7 @@ class VideoPlayerWithHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = MediaSubtitleI18n.current;
     final thumbnailUrl =
         'https://img.youtube.com/vi/${vm.currentVideoId}/maxresdefault.jpg';
 
@@ -120,7 +122,9 @@ class VideoPlayerWithHud extends StatelessWidget {
                           const Icon(Icons.circle, size: 8, color: Colors.grey),
                         const SizedBox(width: 6),
                         Text(
-                          vm.isConnected ? 'LIVE SUBTITLES ON' : 'STANDBY',
+                          vm.isConnected
+                              ? i18n.liveSubtitlesOn
+                              : i18n.standby,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -221,8 +225,8 @@ class VideoPlayerWithHud extends StatelessWidget {
                             const SizedBox(width: 10),
                             Text(
                               vm.isConnected
-                                  ? '브라우저에서 영상 열기'
-                                  : '영상 재생 & 실시간 자막 시작',
+                                  ? i18n.openVideoInBrowser
+                                  : i18n.playVideoAndStartSubtitles,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,

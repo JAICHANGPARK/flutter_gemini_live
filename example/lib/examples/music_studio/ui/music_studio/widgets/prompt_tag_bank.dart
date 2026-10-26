@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
+
 /// Expandable keyword palette (official Lyria guide vocabularies).
 class PromptTagBank extends StatelessWidget {
   const PromptTagBank({super.key, required this.onTag});
@@ -28,15 +30,19 @@ class PromptTagBank extends StatelessWidget {
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: 12),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.library_music_rounded, color: Colors.cyanAccent, size: 16),
-          SizedBox(width: 6),
+          const Icon(
+            Icons.library_music_rounded,
+            color: Colors.cyanAccent,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Prompt DJ Tag Bank (Official Guide Vocabularies)',
+              MusicStudioI18n.current.tagBankTitle,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.cyanAccent,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

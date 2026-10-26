@@ -1,3 +1,4 @@
+import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 
 /// Playable Visual Novel Heroines in `ときめき☆Gemini Live`.
@@ -9,8 +10,12 @@ enum VnHeroineCharacter {
     id: 'hikari',
     nameJa: 'ヒカリ',
     nameKo: '히카리',
+    nameEn: 'Hikari',
+    nameZh: '光',
     subtitleJa: '王道清楚系 AI ナビゲーター',
     subtitleKo: '청순 모에 후배 AI 내비게이터',
+    subtitleEn: 'Pure-Hearted Kouhai AI Navigator',
+    subtitleZh: '纯情萌系学妹 AI 领航员',
     badgeEmoji: '🌸',
     defaultVoiceId: 'Leda',
     defaultPitchShift: 1.16,
@@ -20,8 +25,12 @@ enum VnHeroineCharacter {
     id: 'reina',
     nameJa: 'レイナ',
     nameKo: '레이나',
+    nameEn: 'Reina',
+    nameZh: '玲奈',
     subtitleJa: '渋谷系ハイテンション・ギャル開発者',
     subtitleKo: '하이텐션 시부야 갸루 개발자',
+    subtitleEn: 'High-Tension Shibuya Tech-Gyaru Dev',
+    subtitleZh: '涉谷系元气辣妹开发者',
     badgeEmoji: '🌺',
     defaultVoiceId: 'Autonoe',
     defaultPitchShift: 1.14,
@@ -31,8 +40,12 @@ enum VnHeroineCharacter {
   final String id;
   final String nameJa;
   final String nameKo;
+  final String nameEn;
+  final String nameZh;
   final String subtitleJa;
   final String subtitleKo;
+  final String subtitleEn;
+  final String subtitleZh;
   final String badgeEmoji;
   final String defaultVoiceId;
   final double defaultPitchShift;
@@ -42,13 +55,31 @@ enum VnHeroineCharacter {
     required this.id,
     required this.nameJa,
     required this.nameKo,
+    required this.nameEn,
+    required this.nameZh,
     required this.subtitleJa,
     required this.subtitleKo,
+    required this.subtitleEn,
+    required this.subtitleZh,
     required this.badgeEmoji,
     required this.defaultVoiceId,
     required this.defaultPitchShift,
     required this.accentColor,
   });
+
+  String nameFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => '$nameKo ($nameJa)',
+    AppLanguage.ja => nameJa,
+    AppLanguage.zh => '$nameZh ($nameJa)',
+    AppLanguage.en => '$nameEn ($nameJa)',
+  };
+
+  String subtitleFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => subtitleKo,
+    AppLanguage.ja => subtitleJa,
+    AppLanguage.zh => subtitleZh,
+    AppLanguage.en => subtitleEn,
+  };
 
   /// Converts standard polite Japanese lesson dialogue into Reina's lively
   /// Shibuya Tech-Gyaru (`ギャル語`) style while keeping all SDK code/API names exact.
@@ -127,6 +158,7 @@ enum VnCharacterEmotion {
     labelJa: '通常・微笑み',
     labelKo: '기본 미소',
     labelEn: 'Warm Smile',
+    labelZh: '温柔微笑',
     assetPath: 'assets/anime_vn/hikari_normal.png',
     closedAssetPath: 'assets/anime_vn/hikari_normal.png',
     talkingAssetPath: 'assets/anime_vn/hikari_talking.png',
@@ -139,6 +171,7 @@ enum VnCharacterEmotion {
     labelJa: '大喜び・キラキラ',
     labelKo: '기쁨 / 텐션 업',
     labelEn: 'Happy & Excited',
+    labelZh: '开心闪耀',
     assetPath: 'assets/anime_vn/hikari_happy.png',
     closedAssetPath: 'assets/anime_vn/hikari_happy_closed.png',
     talkingAssetPath: 'assets/anime_vn/hikari_happy.png',
@@ -151,6 +184,7 @@ enum VnCharacterEmotion {
     labelJa: 'ドヤ顔・技術解説',
     labelKo: '자신감 넘치는 설명',
     labelEn: 'Confident Presenter',
+    labelZh: '自信讲解',
     assetPath: 'assets/anime_vn/hikari_explaining.png',
     closedAssetPath: 'assets/anime_vn/hikari_explaining_closed.png',
     talkingAssetPath: 'assets/anime_vn/hikari_explaining.png',
@@ -163,6 +197,7 @@ enum VnCharacterEmotion {
     labelJa: '驚き・照れ（バージイン）',
     labelKo: '깜짝 놀람 / 부끄러움',
     labelEn: 'Surprised / Flustered',
+    labelZh: '惊讶害羞',
     assetPath: 'assets/anime_vn/hikari_surprised.png',
     closedAssetPath: 'assets/anime_vn/hikari_surprised_closed.png',
     talkingAssetPath: 'assets/anime_vn/hikari_surprised.png',
@@ -175,6 +210,7 @@ enum VnCharacterEmotion {
     labelJa: '思考中・推論モード',
     labelKo: '깊은 생각 중',
     labelEn: 'Deep Thinking',
+    labelZh: '深度思考',
     assetPath: 'assets/anime_vn/hikari_thinking.png',
     closedAssetPath: 'assets/anime_vn/hikari_thinking.png',
     talkingAssetPath: 'assets/anime_vn/hikari_thinking_talking.png',
@@ -187,6 +223,7 @@ enum VnCharacterEmotion {
   final String labelJa;
   final String labelKo;
   final String labelEn;
+  final String labelZh;
   final String assetPath;
   final String closedAssetPath;
   final String talkingAssetPath;
@@ -199,6 +236,7 @@ enum VnCharacterEmotion {
     required this.labelJa,
     required this.labelKo,
     required this.labelEn,
+    required this.labelZh,
     required this.assetPath,
     required this.closedAssetPath,
     required this.talkingAssetPath,
@@ -206,6 +244,13 @@ enum VnCharacterEmotion {
     required this.accentColor,
     required this.badgeEmoji,
   });
+
+  String labelFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => labelKo,
+    AppLanguage.ja => labelJa,
+    AppLanguage.zh => labelZh,
+    AppLanguage.en => labelEn,
+  };
 
   String assetPathFor(VnHeroineCharacter heroine) {
     if (heroine == VnHeroineCharacter.hikari) return assetPath;
@@ -315,6 +360,7 @@ enum VnSceneBackground {
     nameJa: '東京テックカンファレンス会場',
     nameKo: '도쿄 개발자 컨퍼런스 메인 스테이지',
     nameEn: 'Tokyo Dev Conference Stage',
+    nameZh: '东京开发者大会主舞台',
     primaryGradient: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF311042)],
     accentColor: Color(0xFF38BDF8),
   ),
@@ -323,6 +369,7 @@ enum VnSceneBackground {
     nameJa: '秋葉原 AI サイバーラボ',
     nameKo: '아키하바라 AI 사이버 연구실',
     nameEn: 'Akihabara AI Cyber Lab',
+    nameZh: '秋叶原 AI 赛博实验室',
     primaryGradient: [Color(0xFF090D16), Color(0xFF0F2942), Color(0xFF1E1B4B)],
     accentColor: Color(0xFF22D3EE),
   ),
@@ -331,6 +378,7 @@ enum VnSceneBackground {
     nameJa: '桜舞う夕暮れの開発部室',
     nameKo: '벚꽃 흩날리는 해질녘 개발부실',
     nameEn: 'Sakura Sunset Dev Clubroom',
+    nameZh: '樱花飞舞的黄昏开发社团室',
     primaryGradient: [Color(0xFF2E1035), Color(0xFF6B2146), Color(0xFF9D4EDD)],
     accentColor: Color(0xFFF472B6),
   );
@@ -339,6 +387,7 @@ enum VnSceneBackground {
   final String nameJa;
   final String nameKo;
   final String nameEn;
+  final String nameZh;
   final List<Color> primaryGradient;
   final Color accentColor;
 
@@ -347,9 +396,17 @@ enum VnSceneBackground {
     required this.nameJa,
     required this.nameKo,
     required this.nameEn,
+    required this.nameZh,
     required this.primaryGradient,
     required this.accentColor,
   });
+
+  String nameFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => nameKo,
+    AppLanguage.ja => nameJa,
+    AppLanguage.zh => nameZh,
+    AppLanguage.en => nameEn,
+  };
 
   static VnSceneBackground fromId(String? raw) {
     if (raw == null) return VnSceneBackground.tokyoConf;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../realtime_media_i18n.dart';
 import '../view_models/realtime_media_view_model.dart';
 import 'log_list.dart';
 import 'section_divider.dart';
@@ -12,6 +13,7 @@ class LogSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = RealtimeMediaI18n.current;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -21,12 +23,12 @@ class LogSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Live Logs',
+                  t.liveLogsTitle,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
               Chip(
-                label: Text('${viewModel.logs.length} entries'),
+                label: Text(t.entriesCount(viewModel.logs.length)),
                 visualDensity: VisualDensity.compact,
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 import 'action_items_panel.dart';
 
@@ -11,6 +12,7 @@ class HighlightsSummaryBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -26,16 +28,22 @@ class HighlightsSummaryBar extends StatelessWidget {
             size: 18,
           ),
           const SizedBox(width: 8),
-          Text(
-            '핵심 요약 ${viewModel.keyTakeaways.length}건 · 액션 아이템 ${viewModel.actionItems.length}건 감지됨',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              i18n.highlightsSummary(
+                viewModel.keyTakeaways.length,
+                viewModel.actionItems.length,
+              ),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          if (viewModel.actionItems.isNotEmpty)
+          if (viewModel.actionItems.isNotEmpty) ...[
+            const SizedBox(width: 8),
             TextButton(
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
@@ -48,8 +56,12 @@ class HighlightsSummaryBar extends StatelessWidget {
                   builder: (_) => ActionItemsPanel(viewModel: viewModel),
                 );
               },
-              child: const Text('할 일 목록 보기 ➔', style: TextStyle(fontSize: 11)),
+              child: Text(
+                i18n.viewTasksButton,
+                style: const TextStyle(fontSize: 11),
+              ),
             ),
+          ],
         ],
       ),
     );

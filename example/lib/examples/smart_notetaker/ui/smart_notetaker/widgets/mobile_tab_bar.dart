@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 
 /// Tab switcher shown on narrow (mobile) layouts.
@@ -10,6 +11,7 @@ class MobileTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       width: double.infinity,
       color: const Color(0xFF131B2E),
@@ -22,17 +24,17 @@ class MobileTabBar extends StatelessWidget {
             ButtonSegment(
               value: 0,
               icon: const Icon(Icons.mic, size: 16),
-              label: Text('실시간 발화 (${viewModel.speechTurns.length})'),
+              label: Text(i18n.liveSpeechTab(viewModel.speechTurns.length)),
             ),
-            const ButtonSegment(
+            ButtonSegment(
               value: 1,
-              icon: Icon(Icons.description, size: 16),
-              label: Text('스마트 노트'),
+              icon: const Icon(Icons.description, size: 16),
+              label: Text(i18n.smartNotesTab),
             ),
             ButtonSegment(
               value: 2,
               icon: const Icon(Icons.checklist_rtl, size: 16),
-              label: Text('할일 (${viewModel.actionItems.length})'),
+              label: Text(i18n.tasksTab(viewModel.actionItems.length)),
             ),
           ],
           selected: {viewModel.activeViewTab},

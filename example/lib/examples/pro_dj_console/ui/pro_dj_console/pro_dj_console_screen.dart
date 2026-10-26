@@ -1,4 +1,5 @@
 import 'package:example/app_settings_dialog.dart';
+import 'package:example/app_translations.dart';
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
@@ -102,7 +103,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
         return Scaffold(

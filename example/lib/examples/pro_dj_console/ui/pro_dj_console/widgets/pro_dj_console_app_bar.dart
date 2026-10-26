@@ -5,6 +5,8 @@ import 'package:example/foldable_utils.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 
+import '../pro_dj_console_i18n.dart';
+
 /// Console app bar: title, ON AIR badge, MIDI box, language, settings and
 /// foldable badge.
 class ProDjConsoleAppBar extends StatelessWidget
@@ -18,6 +20,7 @@ class ProDjConsoleAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    final i18n = ProDjConsoleI18n.current;
     final isNarrow = MediaQuery.sizeOf(context).width < 440;
     return AppBar(
       backgroundColor: const Color(0xFF14171E),
@@ -49,12 +52,12 @@ class ProDjConsoleAppBar extends StatelessWidget
             ),
           ),
           SizedBox(width: isNarrow ? 6 : 10),
-          const Flexible(
+          Flexible(
             child: Text(
-              'DIGITAL MULTI-PLAYER CONSOLE',
+              i18n.appBarSubtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
@@ -100,7 +103,7 @@ class ProDjConsoleAppBar extends StatelessWidget
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'ON AIR',
+                    i18n.onAirBadge,
                     style: TextStyle(
                       color: isPlaying ? Colors.redAccent : Colors.white38,
                       fontWeight: FontWeight.w900,
@@ -116,7 +119,7 @@ class ProDjConsoleAppBar extends StatelessWidget
                 Icons.grid_view_rounded,
                 color: Color(0xFFA855F7),
               ),
-              tooltip: 'DJ MIDI Box (16-Pad Rotary Grid)',
+              tooltip: i18n.midiBoxTooltip,
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
@@ -127,7 +130,7 @@ class ProDjConsoleAppBar extends StatelessWidget
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white70),
               onPressed: () => AppSettingsDialog.show(context),
-              tooltip: 'Settings',
+              tooltip: i18n.settingsTooltip,
             ),
             Builder(
               builder: (context) {
@@ -139,10 +142,10 @@ class ProDjConsoleAppBar extends StatelessWidget
                   padding: const EdgeInsets.only(right: 8, left: 2),
                   child: Tooltip(
                     message: foldableInfo.isTabletop
-                        ? 'Tabletop / Flex Mode'
+                        ? i18n.tabletopTooltip
                         : (foldableInfo.isDualScreen
-                              ? 'Duo Dual-Screen Active'
-                              : 'Foldable Active'),
+                              ? i18n.duoScreenTooltip
+                              : i18n.foldableTooltip),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 7,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
+
 /// YouTube URL / video ID input with a load button.
 class UrlBar extends StatelessWidget {
   const UrlBar({super.key, required this.controller, required this.onLoad});
@@ -9,6 +11,7 @@ class UrlBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MediaSubtitleI18n.current;
     return Row(
       children: [
         Expanded(
@@ -21,12 +24,15 @@ class UrlBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.ondemand_video, color: Colors.redAccent),
-                hintText: 'YouTube 링크 또는 Video ID 입력 (e.g. XEzRZ33sJCE)',
-                hintStyle: TextStyle(color: Colors.white38),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(
+                  Icons.ondemand_video,
+                  color: Colors.redAccent,
+                ),
+                hintText: i18n.urlFieldHint,
+                hintStyle: const TextStyle(color: Colors.white38),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,
                 ),
@@ -46,9 +52,9 @@ class UrlBar extends StatelessWidget {
             ),
           ),
           onPressed: onLoad,
-          child: const Text(
-            '로드',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          child: Text(
+            i18n.loadButton,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       ],

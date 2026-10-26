@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import '../pro_dj_console_i18n.dart';
 import 'dj_vu_meter.dart';
 import 'rotary_knob.dart';
 import 'stem_kill_button.dart';
@@ -52,6 +53,7 @@ class DjmCenterMixer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = ProDjConsoleI18n.current;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -72,11 +74,11 @@ class DjmCenterMixer extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '4-CH DIGITAL MIXER',
+                  i18n.mixerHeader,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white38,
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
@@ -110,7 +112,7 @@ class DjmCenterMixer extends StatelessWidget {
             children: [
               Expanded(
                 child: RotaryKnob(
-                  label: 'TRIM (TEMP)',
+                  label: i18n.knobTrimTemp,
                   value: temperature,
                   min: 0.0,
                   max: 2.5,
@@ -120,7 +122,7 @@ class DjmCenterMixer extends StatelessWidget {
               ),
               Expanded(
                 child: RotaryKnob(
-                  label: 'HI (BRIGHT)',
+                  label: i18n.knobHiBright,
                   value: brightness,
                   min: 0.0,
                   max: 1.0,
@@ -130,7 +132,7 @@ class DjmCenterMixer extends StatelessWidget {
               ),
               Expanded(
                 child: RotaryKnob(
-                  label: 'MID (DENSE)',
+                  label: i18n.knobMidDense,
                   value: density,
                   min: 0.0,
                   max: 1.0,
@@ -140,7 +142,7 @@ class DjmCenterMixer extends StatelessWidget {
               ),
               Expanded(
                 child: RotaryKnob(
-                  label: 'LOW (GUIDE)',
+                  label: i18n.knobLowGuide,
                   value: guidance,
                   min: 1.0,
                   max: 6.0,
@@ -164,12 +166,12 @@ class DjmCenterMixer extends StatelessWidget {
               Flexible(
                 child: Column(
                   children: [
-                    StemKillButton('BASS KILL', muteBass, onMuteBassChanged),
+                    StemKillButton(i18n.bassKill, muteBass, onMuteBassChanged),
                     const SizedBox(height: 8),
-                    StemKillButton('DRUM KILL', muteDrums, onMuteDrumsChanged),
+                    StemKillButton(i18n.drumKill, muteDrums, onMuteDrumsChanged),
                     const SizedBox(height: 8),
                     StemKillButton(
-                      'ONLY BASS/DRUM',
+                      i18n.onlyBassDrum,
                       onlyBassAndDrums,
                       onOnlyBassAndDrumsChanged,
                     ),
@@ -197,11 +199,11 @@ class DjmCenterMixer extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Flexible(
+                    Flexible(
                       child: Text(
-                        'CROSSFADER [A]',
+                        i18n.crossfaderLeft,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF00E5FF),
                           fontWeight: FontWeight.bold,
                           fontSize: 10,
@@ -222,11 +224,11 @@ class DjmCenterMixer extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Flexible(
+                    Flexible(
                       child: Text(
-                        '[B] CROSSFADER',
+                        i18n.crossfaderRight,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFFFF9100),
                           fontWeight: FontWeight.bold,
                           fontSize: 10,

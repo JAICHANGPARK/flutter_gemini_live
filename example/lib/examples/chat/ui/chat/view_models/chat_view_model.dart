@@ -17,6 +17,7 @@ import '../../../data/services/chat_recorder_service.dart';
 import '../../../domain/chat_log_format.dart';
 import '../../../domain/models/connection_status.dart';
 import '../../../domain/models/response_mode.dart';
+import '../chat_i18n.dart';
 
 /// State + logic for the chat screen.
 ///
@@ -198,8 +199,7 @@ class ChatViewModel extends ChangeNotifier {
       notifyListeners();
       _addMessage(
         ChatMessage(
-          text:
-              "Gemini API key is not configured. Go back and open Settings on the home screen.",
+          text: ChatI18n.current.apiKeyNotConfigured,
           author: Role.model,
         ),
       );
@@ -227,12 +227,13 @@ class ChatViewModel extends ChangeNotifier {
     _updateAudioPlaybackTarget();
     _usageTracker.reset();
     _messages.clear(); // Clear previous chat history.
+    final connectingPrompt = voiceModeEnabled
+        ? ChatI18n.current.connectingVoice
+        : ChatI18n.current.connectingText;
     // Add a temporary message to inform the user about the connection attempt.
     _addMessage(
       ChatMessage(
-        text: voiceModeEnabled
-            ? "Connecting to Gemini Live API (voice mode)..."
-            : "Connecting to Gemini Live API (text mode)...",
+        text: connectingPrompt,
         author: Role.model,
       ),
     );
@@ -281,8 +282,8 @@ class ChatViewModel extends ChangeNotifier {
         _addMessage(
           ChatMessage(
             text: voiceModeEnabled
-                ? "Hello! Voice mode is on. Press the mic button to speak. Responses appear as live transcripts."
-                : "Hello! Text mode is on. Type a message or attach an image. Responses appear as live transcripts.",
+                ? ChatI18n.current.welcomeVoice
+                : ChatI18n.current.welcomeText,
             author: Role.model,
           ),
         );
@@ -294,13 +295,12 @@ class ChatViewModel extends ChangeNotifier {
       if (_canApplySessionUpdate(connectVersion)) {
         _connectionStatus = ConnectionStatus.disconnected;
         if (_messages.isNotEmpty &&
-            _messages.last.text.startsWith('Connecting to Gemini Live API')) {
+            _messages.last.text == connectingPrompt) {
           _messages.removeLast();
         }
         _addMessage(
           ChatMessage(
-            text:
-                "Failed to connect to Gemini Live API: $e\nPlease check your API key or model in Settings.",
+            text: ChatI18n.current.connectionFailed(e),
             author: Role.model,
           ),
         );
@@ -429,7 +429,7 @@ class ChatViewModel extends ChangeNotifier {
     } catch (error) {
       logExampleEvent('CHAT', 'Image picker failed: $error');
       if (_isDisposed) return;
-      onNotice?.call('Image selection failed. Check platform permissions.');
+      onNotice?.call(ChatI18n.current.imageSelectionFailed);
     }
   }
 
@@ -463,11 +463,11 @@ class ChatViewModel extends ChangeNotifier {
         // 2. Display a message in the UI to confirm audio was sent.
         _addMessage(
           ChatMessage(
-            text: "[Voice input sent]",
+            text: ChatI18n.current.voiceInputSent,
             author: Role.user,
             audio: ChatAudioClip.file(
               filePath: path,
-              label: 'Your voice input',
+              label: ChatI18n.current.yourVoiceInputLabel,
             ),
           ),
         );
@@ -515,15 +515,13 @@ class ChatViewModel extends ChangeNotifier {
         } else {
           logExampleEvent('CHAT', 'Microphone permission was denied.');
           if (!_isDisposed) {
-            onNotice?.call(
-              '마이크 권한이 필요합니다. macOS [시스템 설정 > 개인정보 보호 및 보안 > 마이크]에서 앱을 허용해 주세요.',
-            );
+            onNotice?.call(ChatI18n.current.micPermissionRequired);
           }
         }
       } catch (e) {
         logExampleEvent('ERROR', 'Failed to start voice recording: $e');
         if (!_isDisposed) {
-          onNotice?.call("마이크 녹음 오류: $e");
+          onNotice?.call(ChatI18n.current.micRecordingError(e));
         }
       }
     }

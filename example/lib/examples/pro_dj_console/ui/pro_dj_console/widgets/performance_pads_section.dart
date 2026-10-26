@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/hot_cue_pad_data.dart';
+import '../pro_dj_console_i18n.dart';
 
 /// 8 RGB hot cue / sound bank performance pads.
 class PerformancePadsSection extends StatelessWidget {
@@ -26,18 +27,19 @@ class PerformancePadsSection extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final i18n = ProDjConsoleI18n.current;
           final isNarrow = constraints.maxWidth < 480;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
-                      'HOT CUE / SOUND BANK (8-PAD RUBBER PERFORMANCE)',
+                      i18n.hotCueHeader,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
@@ -45,13 +47,13 @@ class PerformancePadsSection extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Flexible(
                     flex: 0,
                     child: Text(
-                      'RGB VELOCITY BACKLIT',
+                      i18n.rgbBacklitBadge,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white38,
                         fontWeight: FontWeight.bold,
                         fontSize: 10,

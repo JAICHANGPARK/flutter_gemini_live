@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 import 'param_slider.dart';
 
@@ -12,6 +13,7 @@ class GenerationConfigSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     return Card(
       color: const Color(0xFF1C2029),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -20,9 +22,9 @@ class GenerationConfigSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '⚙️ Music Generation Parameters',
-              style: TextStyle(
+            Text(
+              i18n.generationParamsTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -59,11 +61,11 @@ class GenerationConfigSection extends StatelessWidget {
             // Scale Selector
             Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 100,
                   child: Text(
-                    'Scale / Key:',
-                    style: TextStyle(
+                    i18n.scaleKeyLabel,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -77,9 +79,9 @@ class GenerationConfigSection extends StatelessWidget {
                     style: const TextStyle(color: Colors.white),
                     underline: Container(height: 1, color: Colors.white24),
                     items: [
-                      const DropdownMenuItem<Scale?>(
+                      DropdownMenuItem<Scale?>(
                         value: null,
-                        child: Text('Default / Free Scale'),
+                        child: Text(i18n.defaultFreeScale),
                       ),
                       ...Scale.values
                           .where((s) => s != Scale.SCALE_UNSPECIFIED)
@@ -100,11 +102,11 @@ class GenerationConfigSection extends StatelessWidget {
             // Mode Selector
             Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 72,
                   child: Text(
-                    'Mode:',
-                    style: TextStyle(
+                    i18n.modeLabel,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
@@ -116,24 +118,27 @@ class GenerationConfigSection extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: SegmentedButton<MusicGenerationMode>(
                       showSelectedIcon: false,
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: MusicGenerationMode.QUALITY,
                           label: Text(
-                            'Quality',
-                            style: TextStyle(fontSize: 11),
+                            i18n.modeQuality,
+                            style: const TextStyle(fontSize: 11),
                           ),
                         ),
                         ButtonSegment(
                           value: MusicGenerationMode.DIVERSITY,
                           label: Text(
-                            'Diversity',
-                            style: TextStyle(fontSize: 11),
+                            i18n.modeDiversity,
+                            style: const TextStyle(fontSize: 11),
                           ),
                         ),
                         ButtonSegment(
                           value: MusicGenerationMode.VOCALIZATION,
-                          label: Text('Vocal', style: TextStyle(fontSize: 11)),
+                          label: Text(
+                            i18n.modeVocal,
+                            style: const TextStyle(fontSize: 11),
+                          ),
                         ),
                       ],
                       selected: {viewModel.mode},
@@ -153,28 +158,28 @@ class GenerationConfigSection extends StatelessWidget {
 
             // Sliders: Temperature, Guidance, Density, Brightness
             ParamSlider(
-              label: 'Variance (Temp)',
+              label: i18n.varianceTempLabel,
               value: viewModel.temperature,
               min: 0.0,
               max: 3.0,
               onChanged: viewModel.setTemperature,
             ),
             ParamSlider(
-              label: 'Guidance (Prompt)',
+              label: i18n.guidancePromptLabel,
               value: viewModel.guidance,
               min: 0.0,
               max: 6.0,
               onChanged: viewModel.setGuidance,
             ),
             ParamSlider(
-              label: 'Density',
+              label: i18n.densityLabel,
               value: viewModel.density,
               min: 0.0,
               max: 1.0,
               onChanged: viewModel.setDensity,
             ),
             ParamSlider(
-              label: 'Brightness',
+              label: i18n.brightnessLabel,
               value: viewModel.brightness,
               min: 0.0,
               max: 1.0,
@@ -187,21 +192,21 @@ class GenerationConfigSection extends StatelessWidget {
               spacing: 12,
               children: [
                 FilterChip(
-                  label: const Text('Mute Bass'),
+                  label: Text(i18n.muteBassChip),
                   selected: viewModel.muteBass,
                   selectedColor: Colors.deepOrange.withAlpha(100),
                   checkmarkColor: Colors.white,
                   onSelected: viewModel.setMuteBass,
                 ),
                 FilterChip(
-                  label: const Text('Mute Drums'),
+                  label: Text(i18n.muteDrumsChip),
                   selected: viewModel.muteDrums,
                   selectedColor: Colors.deepOrange.withAlpha(100),
                   checkmarkColor: Colors.white,
                   onSelected: viewModel.setMuteDrums,
                 ),
                 FilterChip(
-                  label: const Text('Only Bass & Drums'),
+                  label: Text(i18n.onlyBassAndDrumsChip),
                   selected: viewModel.onlyBassAndDrums,
                   selectedColor: Colors.teal.withAlpha(100),
                   checkmarkColor: Colors.white,
@@ -215,17 +220,17 @@ class GenerationConfigSection extends StatelessWidget {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: viewModel.autoResetOnTempoScaleChange,
-              title: const Text(
-                'Auto-reset Context on BPM/Scale change',
-                style: TextStyle(
+              title: Text(
+                i18n.autoResetTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              subtitle: const Text(
-                'Lyria docs: BPM/Scale changes require resetContext() for new tempo/key adoption.',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+              subtitle: Text(
+                i18n.autoResetSubtitle,
+                style: const TextStyle(color: Colors.white54, fontSize: 11),
               ),
               activeThumbColor: Colors.purpleAccent,
               onChanged: viewModel.setAutoResetOnTempoScaleChange,
@@ -239,7 +244,7 @@ class GenerationConfigSection extends StatelessWidget {
                     ? viewModel.sendGenerationConfig
                     : null,
                 icon: const Icon(Icons.tune_rounded, size: 18),
-                label: const Text('Apply Generation Config'),
+                label: Text(i18n.applyConfigButton),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade700,
                   foregroundColor: Colors.white,

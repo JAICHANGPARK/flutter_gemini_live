@@ -12,6 +12,7 @@ import '../../../data/services/dj_music_service.dart';
 import '../../../domain/dj_defaults.dart';
 import '../../../domain/models/midi_knob_data.dart';
 import '../../../domain/models/midi_log_entry.dart';
+import '../dj_midi_box_i18n.dart';
 import 'dj_midi_box_notice.dart';
 
 /// State + logic for the DJ MIDI Box screen (Lyria RealTime steering).
@@ -210,8 +211,8 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       _sendGenerationConfig();
 
       onNotice?.call(
-        const DjMidiBoxNotice(
-          '🎛️ DJ MIDI Box Connected to Lyria RealTime! Tap ▶ to Play.',
+        DjMidiBoxNotice(
+          DjMidiBoxI18n.current.noticeConnected,
           DjMidiBoxNoticeKind.connected,
         ),
       );
@@ -222,7 +223,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
         _addLog('❌ Connection failed: $e', color: const Color(0xFFEF4444));
         onNotice?.call(
           DjMidiBoxNotice(
-            'Connection failed: $e',
+            DjMidiBoxI18n.current.noticeConnectionFailed(e),
             DjMidiBoxNoticeKind.connectionFailed,
           ),
         );

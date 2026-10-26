@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/live_speech_turn.dart';
+import '../smart_notetaker_i18n.dart';
 
 /// A finished speaker turn in the timeline.
 class SpeechBubble extends StatelessWidget {
@@ -10,6 +11,7 @@ class SpeechBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -38,9 +40,9 @@ class SpeechBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Text(
-                '발표자 발화',
-                style: TextStyle(color: Colors.white60, fontSize: 11),
+              Text(
+                i18n.speakerUtterance,
+                style: const TextStyle(color: Colors.white60, fontSize: 11),
               ),
             ],
           ),

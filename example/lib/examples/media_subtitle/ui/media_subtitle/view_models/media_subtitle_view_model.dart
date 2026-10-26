@@ -15,6 +15,7 @@ import '../../../domain/models/subtitle_languages.dart';
 import '../../../domain/models/youtube_preset.dart';
 import '../../../domain/subtitle_transcript.dart';
 import '../../../domain/youtube_id_extractor.dart';
+import '../media_subtitle_i18n.dart';
 import 'media_subtitle_notice.dart';
 
 /// State + logic for the Live Media Subtitles screen.
@@ -231,10 +232,13 @@ class MediaSubtitleViewModel extends ChangeNotifier {
     if (id.isNotEmpty && id.length == 11) {
       _currentVideoId = id;
       notifyListeners();
-      _notice('YouTube 영상이 로드되었습니다: $id', MediaSubtitleNoticeKind.brief);
+      _notice(
+        MediaSubtitleI18n.current.videoLoadedNotice(id),
+        MediaSubtitleNoticeKind.brief,
+      );
     } else {
       _notice(
-        '올바른 YouTube URL 또는 11자리 비디오 ID를 입력하세요.',
+        MediaSubtitleI18n.current.invalidYoutubeUrlNotice,
         MediaSubtitleNoticeKind.error,
       );
     }
@@ -251,7 +255,7 @@ class MediaSubtitleViewModel extends ChangeNotifier {
     await _browser.open(url);
     if (!_disposed) {
       _notice(
-        'YouTube 영상을 브라우저에서 재생합니다: $url\nBlackHole을 통해 오디오가 실시간 자막으로 번역됩니다.',
+        MediaSubtitleI18n.current.playingInBrowserNotice(url),
         MediaSubtitleNoticeKind.playing,
       );
       if (!_isConnected && !_isConnecting) {
@@ -281,7 +285,10 @@ class MediaSubtitleViewModel extends ChangeNotifier {
     if (!_audioDevices.hasApiKey) {
       final configured = await requestApiKeySetup?.call();
       if (configured != true || !_audioDevices.hasApiKey) {
-        _notice('Gemini API 키가 설정되지 않았습니다.', MediaSubtitleNoticeKind.plain);
+        _notice(
+          MediaSubtitleI18n.current.apiKeyNotConfigured,
+          MediaSubtitleNoticeKind.plain,
+        );
         return;
       }
     }
@@ -305,7 +312,10 @@ class MediaSubtitleViewModel extends ChangeNotifier {
           _isConnected = false;
           _isConnecting = false;
           notifyListeners();
-          _notice('Live API 오류: $err', MediaSubtitleNoticeKind.plain);
+          _notice(
+            MediaSubtitleI18n.current.liveApiError(err),
+            MediaSubtitleNoticeKind.plain,
+          );
         },
         onClose: (code, reason) {
           debugPrint(
@@ -318,7 +328,7 @@ class MediaSubtitleViewModel extends ChangeNotifier {
           notifyListeners();
           if (reason != null && reason.isNotEmpty) {
             _notice(
-              'Live 연결 종료 ($code): $reason',
+              MediaSubtitleI18n.current.liveConnectionClosed(code, reason),
               MediaSubtitleNoticeKind.plain,
             );
           }
@@ -337,7 +347,10 @@ class MediaSubtitleViewModel extends ChangeNotifier {
       if (!_disposed) {
         _isConnecting = false;
         notifyListeners();
-        _notice('연결 실패: $e', MediaSubtitleNoticeKind.plain);
+        _notice(
+          MediaSubtitleI18n.current.connectionFailed(e),
+          MediaSubtitleNoticeKind.plain,
+        );
       }
     }
   }
@@ -392,7 +405,7 @@ class MediaSubtitleViewModel extends ChangeNotifier {
       _subtitleHistory.add(
         SubtitleEntry(
           originalText: _currentOriginalSubtitle.trim().isEmpty
-              ? '(음성 발화)'
+              ? MediaSubtitleI18n.current.voiceSpeechFallback
               : _currentOriginalSubtitle.trim(),
           translatedText: translatedTrimmed,
         ),
@@ -417,7 +430,10 @@ class MediaSubtitleViewModel extends ChangeNotifier {
 
     final hasPermission = await _mic.hasPermission();
     if (!hasPermission) {
-      _notice('마이크/오디오 캡처 권한이 필요합니다.', MediaSubtitleNoticeKind.plain);
+      _notice(
+        MediaSubtitleI18n.current.micPermissionRequired,
+        MediaSubtitleNoticeKind.plain,
+      );
       return;
     }
 
@@ -451,7 +467,10 @@ class MediaSubtitleViewModel extends ChangeNotifier {
         _live.sendAudioChunk(chunk);
       });
     } catch (e) {
-      _notice('오디오 스트리밍 시작 오류: $e', MediaSubtitleNoticeKind.plain);
+      _notice(
+        MediaSubtitleI18n.current.audioStreamingStartError(e),
+        MediaSubtitleNoticeKind.plain,
+      );
     }
   }
 
@@ -471,11 +490,17 @@ class MediaSubtitleViewModel extends ChangeNotifier {
 
   void copySubtitlesToClipboard() {
     if (_subtitleHistory.isEmpty) {
-      _notice('복사할 자막 기록이 없습니다.', MediaSubtitleNoticeKind.plain);
+      _notice(
+        MediaSubtitleI18n.current.noSubtitlesToCopy,
+        MediaSubtitleNoticeKind.plain,
+      );
       return;
     }
     _clipboard.copy(buildSubtitleTranscript(_subtitleHistory));
-    _notice('전체 자막이 클립보드에 복사되었습니다.', MediaSubtitleNoticeKind.plain);
+    _notice(
+      MediaSubtitleI18n.current.subtitlesCopiedToClipboard,
+      MediaSubtitleNoticeKind.plain,
+    );
   }
 
   void clearSubtitles() {

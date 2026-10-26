@@ -10,12 +10,14 @@ import '../../data/services/vn_audio_service.dart';
 import '../../data/services/vn_live_service.dart';
 import '../../domain/models/vn_character_models.dart';
 import '../../domain/models/vn_sdk_chapter.dart';
+import '../anime_vn_i18n.dart';
 
 /// A single entry in the Visual Novel backlog (`LOG / バックログ`).
 class VnDialogueLogEntry {
   final String speaker;
   final String textJa;
   final String textKo;
+  final String textLocalized;
   final VnCharacterEmotion emotion;
   final DateTime timestamp;
   final bool isUser;
@@ -24,17 +26,24 @@ class VnDialogueLogEntry {
     required this.speaker,
     required this.textJa,
     this.textKo = '',
+    this.textLocalized = '',
     required this.emotion,
     required this.timestamp,
     this.isUser = false,
   });
 
   String get text {
-    final isKo = AppLanguageController.instance.currentLanguage == AppLanguage.ko;
-    if (!isKo) {
-      return textJa.isNotEmpty ? textJa : textKo;
+    final lang = AppLanguageController.instance.currentLanguage;
+    if (lang == AppLanguage.ja) {
+      return textJa.isNotEmpty ? textJa : textLocalized;
     }
-    return textKo.isNotEmpty ? '$textKo\n$textJa' : textJa;
+    final primary = textLocalized.isNotEmpty
+        ? textLocalized
+        : (lang == AppLanguage.ko && textKo.isNotEmpty ? textKo : textJa);
+    if (primary.isNotEmpty && textJa.isNotEmpty && primary != textJa) {
+      return '$primary\n$textJa';
+    }
+    return primary.isNotEmpty ? primary : textJa;
   }
 }
 
@@ -231,17 +240,19 @@ class AnimeVnViewModel extends ChangeNotifier {
   bool get isDialogueBoxHidden => _isDialogueBoxHidden;
   bool get isAutoMode => _isAutoMode;
 
-  bool get isKorean =>
-      AppLanguageController.instance.currentLanguage == AppLanguage.ko;
+  AppLanguage get currentLanguage =>
+      AppLanguageController.instance.currentLanguage;
+
+  AnimeVnI18n get i18n => AnimeVnI18n(currentLanguage);
+
+  bool get isKorean => currentLanguage == AppLanguage.ko;
 
   String get defaultSpeakerLabel {
     final h = activeSpeakingHeroine;
-    return isKorean
-        ? '${h.badgeEmoji} ${h.nameKo} (${h.nameJa})'
-        : '${h.badgeEmoji} ${h.nameJa}';
+    return '${h.badgeEmoji} ${h.nameFor(currentLanguage)}';
   }
 
-  String get userSpeakerLabel => isKorean ? '선배 (You)' : '先輩 (You)';
+  String get userSpeakerLabel => i18n.userSpeakerLabel;
 
   String _resolveBeatTextJa(VnDialogueBeat beat) {
     final speaker = activeSpeakingHeroine;
@@ -269,26 +280,48 @@ class AnimeVnViewModel extends ChangeNotifier {
     return beat.textKo;
   }
 
+  String _resolveBeatTextLocalized(VnDialogueBeat beat) {
+    final lang = currentLanguage;
+    final useGyaru =
+        activeSpeakingHeroine == VnHeroineCharacter.reina ||
+        (!_isDualHeroineMode && _isGyaruVoiceStyle);
+    final chapterNum = currentChapter.chapterNumber;
+    return switch (lang) {
+      AppLanguage.ko => _resolveBeatTextKo(beat),
+      AppLanguage.ja => _resolveBeatTextJa(beat),
+      AppLanguage.zh =>
+        AnimeVnI18n.beatTextZh(
+              chapterNum,
+              _currentBeatIndex,
+              useGyaru: useGyaru,
+            ) ??
+            _resolveBeatTextJa(beat),
+      AppLanguage.en =>
+        AnimeVnI18n.beatTextEn(
+              chapterNum,
+              _currentBeatIndex,
+              useGyaru: useGyaru,
+            ) ??
+            _resolveBeatTextJa(beat),
+    };
+  }
+
   void _refreshCurrentBeatDisplay() {
     if (_isSpeakingScriptedBeat) {
       final beat = currentBeat;
       final textJa = _resolveBeatTextJa(beat);
-      final textKo = _resolveBeatTextKo(beat);
+      final textLocalized = _resolveBeatTextLocalized(beat);
       speakerNameNotifier.value = defaultSpeakerLabel;
-      subtitleNotifier.value = isKorean ? textKo : textJa;
-      japaneseLineNotifier.value = isKorean ? '「$textJa」' : '';
+      subtitleNotifier.value = textLocalized;
+      japaneseLineNotifier.value = currentLanguage != AppLanguage.ja
+          ? '「$textJa」'
+          : '';
     } else {
       speakerNameNotifier.value = defaultSpeakerLabel;
     }
   }
 
-  String get affectionRankLabelJa {
-    final pts = affectionPoints;
-    if (pts >= 90) return 'Lv.MAX 運命の相棒 💖';
-    if (pts >= 75) return 'Lv.4 大好きセンパイ 💕';
-    if (pts >= 50) return 'Lv.3 仲良しナビ ✨';
-    return 'Lv.2 はじめまして 🌸';
-  }
+  String get affectionRankLabelJa => i18n.affectionRankLabel(affectionPoints);
 
   // --- Dialogue Window Notifiers ---
   late final ValueNotifier<String> speakerNameNotifier = ValueNotifier(
@@ -395,15 +428,19 @@ class AnimeVnViewModel extends ChangeNotifier {
 
     final textJa = _resolveBeatTextJa(beat);
     final textKo = _resolveBeatTextKo(beat);
+    final textLocalized = _resolveBeatTextLocalized(beat);
     speakerNameNotifier.value = defaultSpeakerLabel;
-    subtitleNotifier.value = isKorean ? textKo : textJa;
-    japaneseLineNotifier.value = isKorean ? '「$textJa」' : '';
+    subtitleNotifier.value = textLocalized;
+    japaneseLineNotifier.value = currentLanguage != AppLanguage.ja
+        ? '「$textJa」'
+        : '';
 
     _dialogueHistory.add(
       VnDialogueLogEntry(
         speaker: defaultSpeakerLabel,
         textJa: textJa,
         textKo: textKo,
+        textLocalized: textLocalized,
         emotion: beat.emotion,
         timestamp: DateTime.now(),
       ),
@@ -613,7 +650,7 @@ class AnimeVnViewModel extends ChangeNotifier {
       if (_disposed) return;
       _isConnecting = false;
       _isConnected = false;
-      onNotice?.call('接続失敗 (Connection failed): $e');
+      onNotice?.call(i18n.connectionFailed(e));
       notifyListeners();
     }
   }
@@ -670,21 +707,8 @@ class AnimeVnViewModel extends ChangeNotifier {
       final useGyaru =
           activeSpeakingHeroine == VnHeroineCharacter.reina ||
           _isGyaruVoiceStyle;
-      if (useGyaru) {
-        subtitleNotifier.value = isKorean
-            ? '앗! 💦 미안 미안 선배~☆ 선배가 말하려던 참이었지?! 편하게 말해줘~💖'
-            : 'あっ！💦 ごめんごめんセンパイっ☆ 何か言おうとしてたよね？！なんでも聞いて〜💖';
-        japaneseLineNotifier.value = isKorean
-            ? '「あっ！💦 ごめんごめんセンパイっ☆ 何か言おうとしてたよね？！なんでも聞いて〜💖」'
-            : '';
-      } else {
-        subtitleNotifier.value = isKorean
-            ? '앗! 💦 죄송해요 선배, 말씀하시려던 참이었군요! 편하게 말씀해 주세요!'
-            : 'あっ！💦 ごめんなさい先輩っ、お話し中でしたよね！どうぞ聞かせてくださいっ！';
-        japaneseLineNotifier.value = isKorean
-            ? '「あっ！💦 ごめんなさい先輩っ、お話し中でしたよね！どうぞ聞かせてくださいっ！」'
-            : '';
-      }
+      subtitleNotifier.value = i18n.bargeInPrimary(useGyaru: useGyaru);
+      japaneseLineNotifier.value = i18n.bargeInSecondary(useGyaru: useGyaru);
       notifyListeners();
       return;
     }
@@ -709,9 +733,7 @@ class AnimeVnViewModel extends ChangeNotifier {
       if (!_isSpeakingScriptedBeat) {
         speakerNameNotifier.value = defaultSpeakerLabel;
         subtitleNotifier.value = _currentTurnTextBuffer.toString().trim();
-        japaneseLineNotifier.value = isKorean
-            ? '💬 Live AI 응답 중 (대사가 끝나면 대화창을 클릭해 다음 선택지로 이동하세요)'
-            : '💬 Live AI 応答中（話し終わったらウィンドウをクリックして選択肢へ進めます）';
+        japaneseLineNotifier.value = i18n.liveAiRespondingHint;
       }
     }
 
@@ -897,23 +919,21 @@ class AnimeVnViewModel extends ChangeNotifier {
     _currentEmotion = choice.previewEmotion;
     _triggerMotion(VnStageMotion.jump);
 
+    final localizedChoiceLabel = choice.labelFor(currentLanguage);
     _dialogueHistory.add(
       VnDialogueLogEntry(
         speaker: userSpeakerLabel,
         textJa: choice.labelJa,
         textKo: choice.labelKo,
+        textLocalized: localizedChoiceLabel,
         emotion: choice.previewEmotion,
         timestamp: DateTime.now(),
         isUser: true,
       ),
     );
     speakerNameNotifier.value = defaultSpeakerLabel;
-    subtitleNotifier.value = isKorean
-        ? '질문에 대한 답변을 준비하고 있어요... 💭'
-        : '質問への回答を準備しています... 💭';
-    japaneseLineNotifier.value = isKorean
-        ? '『${choice.labelKo}』'
-        : '『${choice.labelJa}』';
+    subtitleNotifier.value = i18n.preparingAnswer;
+    japaneseLineNotifier.value = '『$localizedChoiceLabel』';
     notifyListeners();
 
     if (!_isConnected) {
@@ -925,9 +945,7 @@ class AnimeVnViewModel extends ChangeNotifier {
       _live.sendText(choice.livePromptToSend!);
     } else {
       _audio.triggerSimulatedSpeechBurst();
-      subtitleNotifier.value = isKorean
-          ? 'API 키를 연결하면 제 목소리(24kHz)로 실시간 답변을 들으실 수 있어요! 대화창을 클릭하면 다음 선택지로 이동합니다.'
-          : 'APIキーを設定すると、私の声（24kHz）でリアルタイム回答をお聴きいただけます！ウィンドウをクリックすると選択肢へ戻ります。';
+      subtitleNotifier.value = i18n.apiKeyRequiredSimulatedHint;
     }
   }
 
@@ -943,6 +961,7 @@ class AnimeVnViewModel extends ChangeNotifier {
       VnDialogueLogEntry(
         speaker: userSpeakerLabel,
         textJa: trimmed,
+        textLocalized: trimmed,
         emotion: _currentEmotion,
         timestamp: DateTime.now(),
         isUser: true,
@@ -950,9 +969,7 @@ class AnimeVnViewModel extends ChangeNotifier {
     );
     speakerNameNotifier.value = userSpeakerLabel;
     subtitleNotifier.value = '『$trimmed』';
-    japaneseLineNotifier.value = isKorean
-        ? '히카리가 답변을 생각하고 있습니다...'
-        : 'ヒカリが返答を考えています...';
+    japaneseLineNotifier.value = i18n.thinkingCustomReply;
     notifyListeners();
 
     if (!_isConnected) {
@@ -1092,7 +1109,7 @@ class AnimeVnViewModel extends ChangeNotifier {
     try {
       final hasPerm = await _micRecorder.hasPermission();
       if (!hasPerm) {
-        onNotice?.call('マイク権限が必要です (Microphone permission required)');
+        onNotice?.call(i18n.micPermissionRequired);
         return;
       }
 
@@ -1134,7 +1151,7 @@ class AnimeVnViewModel extends ChangeNotifier {
         _live.sendAudio(pcmBytes);
       });
     } catch (e) {
-      onNotice?.call('マイク開始エラー: $e');
+      onNotice?.call(i18n.micStartError(e));
     }
   }
 

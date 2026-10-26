@@ -1,9 +1,11 @@
+import 'package:example/app_translations.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../domain/models/connection_status.dart';
 import '../../../domain/models/response_mode.dart';
+import '../chat_i18n.dart';
 import '../view_models/chat_view_model.dart';
 
 /// Screen app bar: title, chat mode menu, settings, usage and status badges.
@@ -23,22 +25,24 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final t = ChatI18n.current;
     return AppBar(
-      title: const Text('Gemini Live API'),
+      title: Text(t.appBarTitle),
       actions: [
         ScrollableAppBarActions(
           children: [
+            const LanguageSelectorButton(compact: true),
             PopupMenuButton<ResponseMode>(
-              tooltip: 'Chat mode',
+              tooltip: t.chatModeTooltip,
               onSelected: vm.selectMode,
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: ResponseMode.text,
-                  child: Text('Text Mode'),
+                  child: Text(t.textMode),
                 ),
                 PopupMenuItem(
                   value: ResponseMode.audio,
-                  child: Text('Voice Mode'),
+                  child: Text(t.voiceMode),
                 ),
               ],
               icon: Icon(
@@ -47,7 +51,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             IconButton(
               icon: const Icon(Icons.tune_rounded),
-              tooltip: 'API Key & Model Settings',
+              tooltip: t.settingsTooltip,
               onPressed: onOpenSettings,
             ),
             Padding(

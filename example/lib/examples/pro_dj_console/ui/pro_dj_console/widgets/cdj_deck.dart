@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pro_dj_console_i18n.dart';
 import 'dj_jog_wheel.dart';
 import 'round_transport_button.dart';
 
@@ -46,10 +47,11 @@ class CdjDeck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = ProDjConsoleI18n.current;
     final deckColor = isDeckA
         ? const Color(0xFF00E5FF)
         : const Color(0xFFFF9100);
-    final deckTitle = isDeckA ? 'DECK 1 (A)' : 'DECK 2 (B)';
+    final deckTitle = i18n.deckTitle(isDeckA);
     final promptText = isDeckA ? deckAPrompt : deckBPrompt;
     final promptWeight = isDeckA ? deckAWeight : deckBWeight;
 
@@ -115,9 +117,9 @@ class CdjDeck extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: const Text(
-                  'VINYL MODE',
-                  style: TextStyle(
+                child: Text(
+                  i18n.vinylModeBadge,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
@@ -144,7 +146,7 @@ class CdjDeck extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'STEERABLE PROMPT',
+                        i18n.steerablePromptLabel,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: deckColor,
@@ -156,7 +158,7 @@ class CdjDeck extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'WEIGHT: ${promptWeight.toStringAsFixed(2)}',
+                      i18n.weightLabel(promptWeight.toStringAsFixed(2)),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 10,
@@ -205,7 +207,7 @@ class CdjDeck extends StatelessWidget {
                         color: Colors.white70,
                       ),
                       onPressed: () => onEditPrompt(),
-                      tooltip: 'Edit Prompt',
+                      tooltip: i18n.editPromptTooltip,
                     ),
                   ],
                 ),

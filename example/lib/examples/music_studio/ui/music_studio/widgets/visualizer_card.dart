@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 
 /// Real-time stream visualizer (24 animated bars).
@@ -27,11 +28,11 @@ class VisualizerCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Real-time Stream Visualizer',
+                        MusicStudioI18n.current.visualizerTitle,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -51,7 +52,9 @@ class VisualizerCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isPlaying ? 'PCM 48kHz LIVE' : 'STREAM IDLE',
+                        isPlaying
+                            ? MusicStudioI18n.current.pcmLiveBadge
+                            : MusicStudioI18n.current.streamIdleBadge,
                         style: TextStyle(
                           color: isPlaying ? Colors.greenAccent : Colors.white60,
                           fontSize: 11,

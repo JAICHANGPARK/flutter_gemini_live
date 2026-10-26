@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
 import '../view_models/media_subtitle_view_model.dart';
 import 'audio_device_selector_button.dart';
 
@@ -35,6 +36,7 @@ class LiveControlBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = MediaSubtitleI18n.current;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -76,9 +78,9 @@ class LiveControlBar extends StatelessWidget {
                           Text(
                             vm.isConnected
                                 ? (vm.isAudioStreaming
-                                      ? '초저지연 번역 스트리밍 중'
-                                      : '연결됨 (오디오 대기 중)')
-                                : 'Live Translate (gemini-3.5) 자막기 오프라인',
+                                      ? i18n.statusStreamingNarrow
+                                      : i18n.statusConnectedWaiting)
+                                : i18n.statusOffline,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -126,7 +128,11 @@ class LiveControlBar extends StatelessWidget {
                                 : Icons.play_arrow_rounded,
                           ),
                     label: Text(
-                      vm.isConnected ? '자막 정지' : '실시간 자막 시작',
+                      vm.isConnected
+                          ? i18n.stopSubtitles
+                          : i18n.startLiveSubtitles,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -159,9 +165,9 @@ class LiveControlBar extends StatelessWidget {
                           Text(
                             vm.isConnected
                                 ? (vm.isAudioStreaming
-                                      ? '오디오 수음 및 초저지연 번역 스트리밍 중'
-                                      : '연결됨 (오디오 대기 중)')
-                                : 'Live Translate (gemini-3.5) 자막기 오프라인',
+                                      ? i18n.statusStreamingWide
+                                      : i18n.statusConnectedWaiting)
+                                : i18n.statusOffline,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -205,7 +211,9 @@ class LiveControlBar extends StatelessWidget {
                                   : Icons.play_arrow_rounded,
                             ),
                       label: Text(
-                        vm.isConnected ? '자막 정지' : '실시간 자막 시작',
+                        vm.isConnected
+                            ? i18n.stopSubtitles
+                            : i18n.startLiveSubtitles,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -220,19 +228,23 @@ class LiveControlBar extends StatelessWidget {
                 children: [
                   Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.settings_voice_rounded,
                         size: 16,
                         color: Colors.cyanAccent,
                       ),
-                      SizedBox(width: 6),
-                      Text(
-                        '오디오 입력 장치:',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          i18n.audioInputDeviceLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -254,12 +266,15 @@ class LiveControlBar extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      const Text(
-                        'HUD 옵션:',
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
+                      Text(
+                        i18n.hudOptionsLabel,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
                       ),
                       FilterChip(
-                        label: const Text('원문 함께 보기'),
+                        label: Text(i18n.showOriginalTextChip),
                         selected: vm.showOriginalText,
                         backgroundColor: const Color(0xFF0F172A),
                         selectedColor: Colors.cyanAccent.shade700,
@@ -272,7 +287,7 @@ class LiveControlBar extends StatelessWidget {
                         onSelected: vm.setShowOriginalText,
                       ),
                       FilterChip(
-                        label: const Text('플로팅 자막'),
+                        label: Text(i18n.floatingSubtitleChip),
                         selected: vm.showFloatingHud,
                         backgroundColor: const Color(0xFF0F172A),
                         selectedColor: Colors.cyanAccent.shade700,
@@ -295,7 +310,7 @@ class LiveControlBar extends StatelessWidget {
                           color: Colors.white70,
                           size: 18,
                         ),
-                        tooltip: '글자 크기 축소',
+                        tooltip: i18n.decreaseFontSizeTooltip,
                         onPressed: vm.subtitleFontSize > 14
                             ? vm.decreaseFontSize
                             : null,
@@ -313,7 +328,7 @@ class LiveControlBar extends StatelessWidget {
                           color: Colors.white70,
                           size: 18,
                         ),
-                        tooltip: '글자 크기 확대',
+                        tooltip: i18n.increaseFontSizeTooltip,
                         onPressed: vm.subtitleFontSize < 28
                             ? vm.increaseFontSize
                             : null,

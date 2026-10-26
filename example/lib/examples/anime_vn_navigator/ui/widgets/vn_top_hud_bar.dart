@@ -1,8 +1,10 @@
+import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../domain/models/vn_character_models.dart';
 import '../../domain/models/vn_sdk_chapter.dart';
+import '../anime_vn_i18n.dart';
 import '../view_models/anime_vn_view_model.dart';
 
 /// Top Visual Novel HUD displaying Hikari's Affection Meter (好感度),
@@ -32,6 +34,8 @@ class VnTopHudBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final emotion = viewModel.currentEmotion;
+    final lang = AppLanguageController.instance.currentLanguage;
+    final i18n = AnimeVnI18n(lang);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -50,7 +54,7 @@ class VnTopHudBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Back button, Title, Affection Meter, Voice Selector, Usage Badge, Settings
+          // Row 1: Back button, Title, Affection Meter, Voice Selector, Usage Badge, Language, Settings
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -61,6 +65,7 @@ class VnTopHudBar extends StatelessWidget {
                     backgroundColor: Colors.white.withValues(alpha: 0.12),
                     foregroundColor: Colors.white,
                   ),
+                  tooltip: i18n.backToExamplesTooltip,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
@@ -84,14 +89,14 @@ class VnTopHudBar extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('🌸', style: TextStyle(fontSize: 14)),
-                      SizedBox(width: 6),
+                      const Text('🌸', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
                       Text(
-                        'ときめき☆Gemini Live ナビ',
-                        style: TextStyle(
+                        i18n.gameTitleBadge,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontSize: 13,
@@ -104,19 +109,19 @@ class VnTopHudBar extends StatelessWidget {
                 const SizedBox(width: 10),
 
                 // Affection Heart Meter (好感度メーター)
-                _buildAffectionBadge(),
+                _buildAffectionBadge(i18n),
                 const SizedBox(width: 10),
 
                 // Connection Status / Reconnect Pill
-                _buildConnectionPill(),
+                _buildConnectionPill(i18n),
                 const SizedBox(width: 8),
 
                 // Voice Persona Selector (CV切替)
-                _buildVoiceSelector(context),
+                _buildVoiceSelector(context, i18n),
                 const SizedBox(width: 8),
 
                 // Scene Background Selector
-                _buildSceneSelector(context),
+                _buildSceneSelector(context, i18n, lang),
                 const SizedBox(width: 8),
 
                 // Real-time Token Usage & Cost Badge
@@ -126,9 +131,15 @@ class VnTopHudBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
 
+                Theme(
+                  data: ThemeData.dark(useMaterial3: true),
+                  child: const LanguageSelectorButton(compact: true),
+                ),
+                const SizedBox(width: 4),
+
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: 'API Key & Audio Settings',
+                  tooltip: i18n.settingsTooltip,
                   icon: const Icon(
                     Icons.settings_rounded,
                     color: Colors.white70,
@@ -146,9 +157,9 @@ class VnTopHudBar extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                // Chapters 1..4
+                // Chapters 1..10
                 for (var i = 0; i < VnScenarioCatalog.chapters.length; i++) ...[
-                  _buildChapterChip(i, VnScenarioCatalog.chapters[i]),
+                  _buildChapterChip(i, VnScenarioCatalog.chapters[i], lang),
                   const SizedBox(width: 6),
                 ],
                 const SizedBox(width: 8),
@@ -161,7 +172,7 @@ class VnTopHudBar extends StatelessWidget {
 
                 // Expression Quick Switcher (表情テスト)
                 for (final exp in VnCharacterEmotion.values) ...[
-                  _buildEmotionPill(exp, isSelected: exp == emotion),
+                  _buildEmotionPill(exp, lang, isSelected: exp == emotion),
                   const SizedBox(width: 5),
                 ],
               ],
@@ -172,7 +183,7 @@ class VnTopHudBar extends StatelessWidget {
     );
   }
 
-  Widget _buildAffectionBadge() {
+  Widget _buildAffectionBadge(AnimeVnI18n i18n) {
     final pts = viewModel.affectionPoints;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -189,7 +200,7 @@ class VnTopHudBar extends StatelessWidget {
           const Icon(Icons.favorite_rounded, color: Color(0xFFF472B6), size: 16),
           const SizedBox(width: 5),
           Text(
-            '好感度 $pts%',
+            i18n.soloAffectionBadge(pts, isCompact: false),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -213,7 +224,7 @@ class VnTopHudBar extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            viewModel.affectionRankLabelJa,
+            i18n.affectionRankLabel(pts),
             style: const TextStyle(
               color: Color(0xFFFBCFE8),
               fontSize: 11,
@@ -225,15 +236,16 @@ class VnTopHudBar extends StatelessWidget {
     );
   }
 
-  Widget _buildConnectionPill() {
+  Widget _buildConnectionPill(AnimeVnI18n i18n) {
     final connected = viewModel.isConnected;
     final connecting = viewModel.isConnecting;
     final color = connected
         ? const Color(0xFF10B981)
         : (connecting ? const Color(0xFFF59E0B) : const Color(0xFFEF4444));
-    final label = connected
-        ? 'LIVE 接続中 (ja-JP)'
-        : (connecting ? '接続中...' : '未接続 (タップで開始)');
+    final label = i18n.connectionPillLabel(
+      isConnected: connected,
+      isConnecting: connecting,
+    );
 
     return InkWell(
       onTap: () => viewModel.connectSession(sendInitialGreeting: true),
@@ -268,9 +280,9 @@ class VnTopHudBar extends StatelessWidget {
     );
   }
 
-  Widget _buildVoiceSelector(BuildContext context) {
+  Widget _buildVoiceSelector(BuildContext context, AnimeVnI18n i18n) {
     return PopupMenuButton<String>(
-      tooltip: 'CV（キャラクターボイス）変更',
+      tooltip: i18n.voiceSelectorTooltip,
       initialValue: viewModel.selectedVoice,
       onSelected: viewModel.changeVoice,
       itemBuilder: (context) => _recommendedVoices.map((v) {
@@ -329,15 +341,19 @@ class VnTopHudBar extends StatelessWidget {
     );
   }
 
-  Widget _buildSceneSelector(BuildContext context) {
+  Widget _buildSceneSelector(
+    BuildContext context,
+    AnimeVnI18n i18n,
+    AppLanguage lang,
+  ) {
     return PopupMenuButton<VnSceneBackground>(
-      tooltip: '背景ステージ変更',
+      tooltip: i18n.sceneSelectorTooltip,
       initialValue: viewModel.currentScene,
       onSelected: viewModel.setSceneManually,
       itemBuilder: (context) => VnSceneBackground.values.map((scene) {
         return PopupMenuItem<VnSceneBackground>(
           value: scene,
-          child: Text('${scene.nameJa} (${scene.nameKo})'),
+          child: Text(scene.nameFor(lang)),
         );
       }).toList(),
       child: Container(
@@ -353,7 +369,7 @@ class VnTopHudBar extends StatelessWidget {
             const Icon(Icons.landscape_rounded, color: Colors.amber, size: 15),
             const SizedBox(width: 5),
             Text(
-              viewModel.currentScene.nameJa,
+              viewModel.currentScene.nameFor(lang),
               style: const TextStyle(color: Colors.white, fontSize: 11.5),
             ),
           ],
@@ -362,8 +378,18 @@ class VnTopHudBar extends StatelessWidget {
     );
   }
 
-  Widget _buildChapterChip(int index, VnSdkChapter chapter) {
+  Widget _buildChapterChip(
+    int index,
+    VnSdkChapter chapter,
+    AppLanguage lang,
+  ) {
     final isSelected = viewModel.currentChapterIndex == index;
+    final localizedTitle = chapter.titleFor(lang);
+    final shortTitle = localizedTitle.contains('：')
+        ? localizedTitle.split('：').last
+        : (localizedTitle.contains(': ')
+              ? localizedTitle.split(': ').last
+              : localizedTitle);
     return InkWell(
       onTap: () => viewModel.selectChapter(index),
       borderRadius: BorderRadius.circular(14),
@@ -381,7 +407,7 @@ class VnTopHudBar extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Ch.${chapter.chapterNumber} ${chapter.titleJa.split('：').last}',
+          'Ch.${chapter.chapterNumber} $shortTitle',
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.white70,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -393,9 +419,14 @@ class VnTopHudBar extends StatelessWidget {
   }
 
   Widget _buildEmotionPill(
-    VnCharacterEmotion emotion, {
+    VnCharacterEmotion emotion,
+    AppLanguage lang, {
     required bool isSelected,
   }) {
+    final rawLabel = emotion.labelFor(lang);
+    final shortLabel = rawLabel.contains('・')
+        ? rawLabel.split('・').first
+        : rawLabel;
     return InkWell(
       onTap: () => viewModel.setEmotionManually(emotion),
       borderRadius: BorderRadius.circular(14),
@@ -411,7 +442,7 @@ class VnTopHudBar extends StatelessWidget {
           ),
         ),
         child: Text(
-          '${emotion.badgeEmoji} ${emotion.labelJa.split('・').first}',
+          '${emotion.badgeEmoji} $shortLabel',
           style: TextStyle(
             color: Colors.white,
             fontSize: 11,

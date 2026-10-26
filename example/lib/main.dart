@@ -37,7 +37,6 @@ class MyApp extends StatelessWidget {
         return AppLanguageScope(
           controller: AppLanguageController.instance,
           child: MaterialApp(
-            key: ValueKey(AppLanguageController.instance.currentLanguage),
             title: AppLanguageController.instance.t.appTitle,
             locale: AppLanguageController.instance.currentLocale,
             debugShowCheckedModeBanner: false,

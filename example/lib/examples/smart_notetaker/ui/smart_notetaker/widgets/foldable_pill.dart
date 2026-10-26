@@ -1,6 +1,8 @@
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
+
 /// Small pill showing the current foldable posture (TABLETOP / DUO / FOLD).
 class FoldablePill extends StatelessWidget {
   const FoldablePill({super.key, required this.foldableInfo});
@@ -12,6 +14,7 @@ class FoldablePill extends StatelessWidget {
     if (!foldableInfo.hasHinge && !foldableInfo.isFoldableOrWide) {
       return const SizedBox.shrink();
     }
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -44,8 +47,8 @@ class FoldablePill extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             foldableInfo.isTabletop
-                ? 'TABLETOP'
-                : (foldableInfo.isDualScreen ? 'DUO' : 'FOLD'),
+                ? i18n.tabletopLabel
+                : (foldableInfo.isDualScreen ? i18n.duoLabel : i18n.foldLabel),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,

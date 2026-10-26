@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../realtime_media_i18n.dart';
 import '../view_models/realtime_media_view_model.dart';
 
 /// Automatic / manual activity detection selector.
@@ -10,27 +11,28 @@ class ModeSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = RealtimeMediaI18n.current;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Activity Detection Mode:',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          Text(
+            t.modeSelectionTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           SegmentedButton<bool>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: false,
-                label: Text('Automatic'),
-                icon: Icon(Icons.auto_mode),
+                label: Text(t.modeAutomatic),
+                icon: const Icon(Icons.auto_mode),
               ),
               ButtonSegment(
                 value: true,
-                label: Text('Manual'),
-                icon: Icon(Icons.touch_app),
+                label: Text(t.modeManual),
+                icon: const Icon(Icons.touch_app),
               ),
             ],
             selected: {viewModel.manualActivityMode},
@@ -42,9 +44,7 @@ class ModeSelection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            viewModel.manualActivityMode
-                ? 'Manual mode: live camera + voice starts an activity automatically, and you can still end it yourself.'
-                : 'Auto mode: microphone audio streams continuously, and camera frames upload only while speech is detected.',
+            viewModel.manualActivityMode ? t.modeManualDesc : t.modeAutoDesc,
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],

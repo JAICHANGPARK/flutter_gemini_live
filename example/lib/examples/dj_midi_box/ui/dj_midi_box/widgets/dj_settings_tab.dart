@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../domain/dj_defaults.dart';
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 
 /// "SETTINGS" tab of the DJ console: tempo, mode, scale and mix sliders.
 Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
+  final i18n = DjMidiBoxI18n.current;
   return ListView(
     padding: const EdgeInsets.all(16),
     children: [
@@ -13,9 +15,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'TEMPO (BPM)',
-            style: TextStyle(
+          Text(
+            i18n.tempoBpmHeader,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 11,
@@ -71,9 +73,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       const SizedBox(height: 8),
 
       // Generation Mode
-      const Text(
-        'GENERATION MODE',
-        style: TextStyle(
+      Text(
+        i18n.generationModeHeader,
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 11,
@@ -113,9 +115,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       const SizedBox(height: 16),
 
       // Scale
-      const Text(
-        'MUSICAL SCALE',
-        style: TextStyle(
+      Text(
+        i18n.musicalScaleHeader,
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 11,
@@ -136,10 +138,7 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
             isExpanded: true,
             style: const TextStyle(color: Colors.white, fontSize: 12),
             items: [
-              const DropdownMenuItem(
-                value: null,
-                child: Text('Auto Scale (Model Decides)'),
-              ),
+              DropdownMenuItem(value: null, child: Text(i18n.autoScaleOption)),
               ...Scale.values
                   .where((s) => s != Scale.SCALE_UNSPECIFIED)
                   .map(
@@ -162,9 +161,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'GUIDANCE SCALE',
-            style: TextStyle(
+          Text(
+            i18n.guidanceScaleHeader,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 11,
@@ -192,9 +191,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'SOUND DENSITY',
-            style: TextStyle(
+          Text(
+            i18n.soundDensityHeader,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 11,
@@ -222,9 +221,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'BRIGHTNESS',
-            style: TextStyle(
+          Text(
+            i18n.brightnessHeader,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 11,
@@ -252,9 +251,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       // Mute bass & drums
       SwitchListTile.adaptive(
         contentPadding: EdgeInsets.zero,
-        title: const Text(
-          'Mute Bass',
-          style: TextStyle(color: Colors.white, fontSize: 12),
+        title: Text(
+          i18n.muteBassSwitch,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
         value: vm.muteBass,
         activeTrackColor: const Color(0xFFEF4444),
@@ -262,9 +261,9 @@ Widget buildDjSettingsTab(BuildContext context, DjMidiBoxViewModel vm) {
       ),
       SwitchListTile.adaptive(
         contentPadding: EdgeInsets.zero,
-        title: const Text(
-          'Mute Drums',
-          style: TextStyle(color: Colors.white, fontSize: 12),
+        title: Text(
+          i18n.muteDrumsSwitch,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
         value: vm.muteDrums,
         activeTrackColor: const Color(0xFFEF4444),

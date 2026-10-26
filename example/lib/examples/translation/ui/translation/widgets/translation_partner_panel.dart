@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/live_translation_message.dart';
+import '../translation_i18n.dart';
 
 /// Right / top panel: the translated text for the person on the other side.
 class TranslationPartnerPanel extends StatelessWidget {
@@ -23,6 +24,8 @@ class TranslationPartnerPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = TranslationI18n.current;
+    final targetLangName = targetLang['name'] ?? '';
     final content = Container(
       color: Colors.amber.shade50.withValues(alpha: 0.35),
       padding: const EdgeInsets.all(12),
@@ -38,7 +41,7 @@ class TranslationPartnerPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'For Partner: ${targetLang['name']}',
+                  i18n.partnerPanelHeader(targetLangName),
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -61,8 +64,8 @@ class TranslationPartnerPanel extends StatelessWidget {
                 ? Center(
                     child: Text(
                       isConnected
-                          ? 'Listening...\nTranslations (${targetLang['name']}) will appear here for your partner.'
-                          : 'Waiting for session to start.',
+                          ? i18n.partnerPanelConnectedEmpty(targetLangName)
+                          : i18n.partnerPanelDisconnectedEmpty,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 
 /// Glowing audio-reactive orb + status line shown on the upright half of a
@@ -61,8 +62,8 @@ class DjTabletopOrb extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             vm.isPlaying
-                ? 'PLAYING · ${vm.bpm} BPM'
-                : 'READY · TAP DIALS TO PLAY',
+                ? DjMidiBoxI18n.current.tabletopPlaying(vm.bpm)
+                : DjMidiBoxI18n.current.tabletopReady,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,

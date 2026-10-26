@@ -2,6 +2,7 @@ import 'package:example/app_settings_dialog.dart';
 import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 import 'dj_console_sheet.dart';
 
@@ -17,6 +18,7 @@ class DjTopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = DjMidiBoxI18n.current;
     final vm = viewModel;
     final isNarrow = MediaQuery.sizeOf(context).width < 480;
     return Padding(
@@ -38,12 +40,12 @@ class DjTopHeader extends StatelessWidget {
                     size: 20,
                   ),
                   onPressed: () => Navigator.of(context).pop(),
-                  tooltip: 'Back',
+                  tooltip: i18n.backTooltip,
                 ),
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
-                    'DJ MIDI BOX',
+                    i18n.headerTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -136,8 +138,10 @@ class DjTopHeader extends StatelessWidget {
                           const SizedBox(width: 6),
                           Text(
                             vm.isConnecting
-                                ? 'CONNECTING'
-                                : (vm.isConnected ? 'ONLINE' : 'CONNECT'),
+                                ? i18n.connectingPill
+                                : (vm.isConnected
+                                      ? i18n.onlinePill
+                                      : i18n.connectPill),
                             style: TextStyle(
                               color: vm.isConnected
                                   ? const Color(0xFF10B981)
@@ -181,8 +185,8 @@ class DjTopHeader extends StatelessWidget {
                       }
                     },
                     tooltip: vm.showSidePanel
-                        ? 'Hide Console'
-                        : 'Show Console (Prompt, Settings, Logs)',
+                        ? i18n.hideConsoleTooltip
+                        : i18n.showConsoleTooltip,
                   ),
 
                   const SizedBox(width: 4),
@@ -194,7 +198,7 @@ class DjTopHeader extends StatelessWidget {
                       size: 20,
                     ),
                     onPressed: () => AppSettingsDialog.show(context),
-                    tooltip: 'Settings',
+                    tooltip: i18n.settingsTooltip,
                   ),
                 ],
               ),

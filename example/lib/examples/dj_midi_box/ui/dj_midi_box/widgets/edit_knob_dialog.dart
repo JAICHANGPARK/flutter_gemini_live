@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/midi_knob_data.dart';
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 
 /// Long-press editor for a dial's label and prompt.
@@ -9,6 +10,7 @@ void showEditKnobDialog(
   DjMidiBoxViewModel viewModel,
   MidiKnobData knob,
 ) {
+  final i18n = DjMidiBoxI18n.current;
   final titleController = TextEditingController(text: knob.title);
   final promptController = TextEditingController(text: knob.prompt);
 
@@ -19,7 +21,7 @@ void showEditKnobDialog(
         backgroundColor: const Color(0xFF1E1438),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Edit Knob: ${knob.title}',
+          i18n.editKnobTitle(knob.title),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -31,11 +33,11 @@ void showEditKnobDialog(
             TextField(
               controller: titleController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Label Badge Title',
-                labelStyle: TextStyle(color: Colors.white70),
+              decoration: InputDecoration(
+                labelText: i18n.labelBadgeTitleField,
+                labelStyle: const TextStyle(color: Colors.white70),
                 filled: true,
-                fillColor: Color(0xFF2D1F50),
+                fillColor: const Color(0xFF2D1F50),
               ),
             ),
             const SizedBox(height: 12),
@@ -43,11 +45,11 @@ void showEditKnobDialog(
               controller: promptController,
               maxLines: 3,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Musical Description Prompt',
-                labelStyle: TextStyle(color: Colors.white70),
+              decoration: InputDecoration(
+                labelText: i18n.musicalPromptField,
+                labelStyle: const TextStyle(color: Colors.white70),
                 filled: true,
-                fillColor: Color(0xFF2D1F50),
+                fillColor: const Color(0xFF2D1F50),
               ),
             ),
           ],
@@ -55,9 +57,9 @@ void showEditKnobDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'CANCEL',
-              style: TextStyle(color: Colors.white54),
+            child: Text(
+              i18n.cancelButton,
+              style: const TextStyle(color: Colors.white54),
             ),
           ),
           ElevatedButton(
@@ -73,7 +75,7 @@ void showEditKnobDialog(
               );
               Navigator.pop(ctx);
             },
-            child: const Text('SAVE'),
+            child: Text(i18n.saveButton),
           ),
         ],
       );

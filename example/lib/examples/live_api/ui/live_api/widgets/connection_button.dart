@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../live_api_i18n.dart';
+
 class ConnectionButton extends StatelessWidget {
   const ConnectionButton({
     super.key,
@@ -14,6 +16,7 @@ class ConnectionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = LiveApiI18n.current;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ElevatedButton.icon(
@@ -31,10 +34,10 @@ class ConnectionButton extends StatelessWidget {
               ),
         label: Text(
           isConnecting
-              ? 'Connecting...'
+              ? t.connecting
               : isConnected
-              ? 'Connected'
-              : 'Connect to Live API',
+              ? t.connected
+              : t.connectToLiveApi,
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: isConnected ? Colors.green : null,

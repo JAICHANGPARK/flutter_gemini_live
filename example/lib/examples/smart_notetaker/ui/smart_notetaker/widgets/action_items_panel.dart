@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 
 /// Action item checklist.
@@ -14,6 +15,7 @@ class ActionItemsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     final actionItems = viewModel.actionItems;
 
     return Container(
@@ -30,17 +32,23 @@ class ActionItemsPanel extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
-                '액션 아이템 & 할 일 체크리스트',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+              Expanded(
+                child: Text(
+                  i18n.actionItemsHeader,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
-                '${actionItems.where((a) => a.isCompleted).length} / ${actionItems.length} 완료',
+                i18n.completedCount(
+                  actionItems.where((a) => a.isCompleted).length,
+                  actionItems.length,
+                ),
                 style: const TextStyle(color: Colors.white60, fontSize: 12),
               ),
             ],
@@ -58,10 +66,13 @@ class ActionItemsPanel extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.2),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          '감지된 액션 아이템이 없습니다.\n회의 중 과제나 할 일이 언급되면 자동 추가됩니다.',
+                        Text(
+                          i18n.actionItemsEmptyHint,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white38, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),

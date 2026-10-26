@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 import 'audio_device_selector_button.dart';
 
@@ -16,6 +17,7 @@ class SessionStatusBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     final isConnected = viewModel.isConnected;
     final isConnecting = viewModel.isConnecting;
 
@@ -56,8 +58,8 @@ class SessionStatusBar extends StatelessWidget {
                     Expanded(
                       child: Text(
                         isConnected
-                            ? 'RECORDING & TRANSLATING'
-                            : 'READY TO RECORD',
+                            ? i18n.recordingAndTranslating
+                            : i18n.readyToRecord,
                         style: TextStyle(
                           color: isConnected
                               ? Colors.redAccent
@@ -145,7 +147,7 @@ class SessionStatusBar extends StatelessWidget {
                               size: 18,
                             ),
                       label: Text(
-                        isConnected ? '종료' : '녹음 시작',
+                        isConnected ? i18n.stopShort : i18n.startShort,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -181,7 +183,7 @@ class SessionStatusBar extends StatelessWidget {
                 ),
               const SizedBox(width: 10),
               Text(
-                isConnected ? 'RECORDING & TRANSLATING' : 'READY TO RECORD',
+                isConnected ? i18n.recordingAndTranslating : i18n.readyToRecord,
                 style: TextStyle(
                   color: isConnected ? Colors.redAccent : Colors.white60,
                   fontSize: 12,
@@ -256,7 +258,7 @@ class SessionStatusBar extends StatelessWidget {
                         isConnected ? Icons.stop_rounded : Icons.mic_rounded,
                       ),
                 label: Text(
-                  isConnected ? '세션 종료' : '노트 녹음 시작',
+                  isConnected ? i18n.stopSession : i18n.startRecordingNote,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

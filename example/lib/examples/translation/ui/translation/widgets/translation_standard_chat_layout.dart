@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../translation_i18n.dart';
 import '../view_models/translation_view_model.dart';
 
 /// 💬 일반 채팅형 단일 레이아웃
@@ -11,8 +12,11 @@ class TranslationStandardChatLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = TranslationI18n.current;
     final myLang = vm.myLanguage;
     final targetLang = vm.targetLanguage;
+    final myLangName = myLang['name'] ?? '';
+    final targetLangName = targetLang['name'] ?? '';
     final history = vm.history;
 
     if (history.isEmpty) {
@@ -28,8 +32,8 @@ class TranslationStandardChatLayout extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               vm.isConnected
-                  ? '마이크로 ${myLang['name']}로 말하기를 시작하세요.\n원문과 번역문(${targetLang['name']})이 실시간 음성/자막으로 출력됩니다.'
-                  : '하단의 "통역 시작" 버튼을 눌러 실시간 번역 세션을 연결하세요.',
+                  ? i18n.standardChatConnectedEmpty(myLangName, targetLangName)
+                  : i18n.standardChatDisconnectedEmpty,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
             ),
@@ -79,8 +83,8 @@ class TranslationStandardChatLayout extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       item.isUser
-                          ? '내 음성 (${myLang['name']})'
-                          : '통역 결과 (${targetLang['name']})',
+                          ? i18n.myVoiceChatLabel(myLangName)
+                          : i18n.translationResultChatLabel(targetLangName),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

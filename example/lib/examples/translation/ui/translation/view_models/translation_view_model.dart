@@ -11,6 +11,7 @@ import '../../../data/services/translation_live_service.dart';
 import '../../../data/services/translation_mic_service.dart';
 import '../../../domain/models/live_translation_message.dart';
 import '../../../domain/models/translation_languages.dart';
+import '../translation_i18n.dart';
 
 /// State + logic for the Live Translation (동시통역) screen.
 ///
@@ -233,7 +234,7 @@ class TranslationViewModel extends ChangeNotifier {
     if (!ApiKeyStore.hasApiKey) {
       final configured = await requestApiKeySetup?.call();
       if (configured != true || !ApiKeyStore.hasApiKey) {
-        _notice('Gemini API 키가 설정되지 않았습니다.');
+        _notice(TranslationI18n.current.apiKeyNotConfigured);
         return;
       }
     }
@@ -262,7 +263,7 @@ class TranslationViewModel extends ChangeNotifier {
           _isConnecting = false;
           _isMicActive = false;
           notifyListeners();
-          _notice('세션 오류: $error');
+          _notice(TranslationI18n.current.sessionError(error));
         },
         onClose: (code, reason) {
           if (_disposed) return;
@@ -282,7 +283,7 @@ class TranslationViewModel extends ChangeNotifier {
         _isConnecting = false;
         _isConnected = false;
         notifyListeners();
-        _notice('연결 실패: $e');
+        _notice(TranslationI18n.current.connectionFailed(e));
       }
     }
   }
@@ -312,7 +313,7 @@ class TranslationViewModel extends ChangeNotifier {
 
   Future<void> _startMicStreaming() async {
     if (!await _mic.hasPermission()) {
-      _notice('마이크 권한이 필요합니다.');
+      _notice(TranslationI18n.current.micPermissionRequired);
       return;
     }
 

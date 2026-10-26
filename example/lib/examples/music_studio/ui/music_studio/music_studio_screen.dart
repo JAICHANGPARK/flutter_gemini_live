@@ -1,4 +1,5 @@
 import 'package:example/app_settings_dialog.dart';
+import 'package:example/app_translations.dart';
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
@@ -81,12 +82,15 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
     final darkSurface = const Color(0xFF13151A);
     final foldableInfo = FoldableLayoutInfo.of(context);
 
-    return Scaffold(
-      backgroundColor: darkSurface,
-      appBar: MusicStudioAppBar(foldableInfo: foldableInfo),
-      body: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) => LayoutBuilder(
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
+      builder: (context, _) => Scaffold(
+        backgroundColor: darkSurface,
+        appBar: MusicStudioAppBar(foldableInfo: foldableInfo),
+        body: LayoutBuilder(
           builder: (context, constraints) {
             final vm = _viewModel;
             // 1. Tabletop / Flex mode (Foldable resting on flat surface)

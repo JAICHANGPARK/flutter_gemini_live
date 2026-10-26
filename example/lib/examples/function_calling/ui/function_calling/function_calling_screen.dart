@@ -1,5 +1,8 @@
+import 'package:example/app_translations.dart';
+import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 
+import 'function_calling_i18n.dart';
 import 'view_models/function_calling_view_model.dart';
 import 'widgets/function_info_card.dart';
 import 'widgets/input_area.dart';
@@ -41,28 +44,42 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
+        final t = FunctionCallingI18n.current;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Function Calling Demo'),
+            title: Text(t.appBarTitle),
             actions: [
-              if (vm.isConnected)
-                IconButton(
-                  icon: Icon(
-                    vm.toolsEnabled ? Icons.build : Icons.build_circle_outlined,
-                  ),
-                  tooltip: vm.toolsEnabled
-                      ? 'Clear tools in-session (sendContextUpdate)'
-                      : 'Restore tools in-session (sendContextUpdate)',
-                  onPressed: vm.toggleToolsInSession,
-                ),
-              if (vm.pendingFunctionCalls.isNotEmpty)
-                Badge(
-                  label: Text('${vm.pendingFunctionCalls.length}'),
-                  child: const Icon(Icons.pending_actions),
-                ),
+              ScrollableAppBarActions(
+                children: [
+                  const LanguageSelectorButton(compact: true),
+                  if (vm.isConnected)
+                    IconButton(
+                      icon: Icon(
+                        vm.toolsEnabled
+                            ? Icons.build
+                            : Icons.build_circle_outlined,
+                      ),
+                      tooltip: vm.toolsEnabled
+                          ? t.clearToolsTooltip
+                          : t.restoreToolsTooltip,
+                      onPressed: vm.toggleToolsInSession,
+                    ),
+                  if (vm.pendingFunctionCalls.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Badge(
+                        label: Text('${vm.pendingFunctionCalls.length}'),
+                        child: const Icon(Icons.pending_actions),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
           body: LayoutBuilder(
@@ -78,7 +95,8 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const FunctionInfoCard(),
+                          // ignore: prefer_const_constructors
+                          FunctionInfoCard(),
                           if (!vm.isConnected)
                             Padding(
                               padding: const EdgeInsets.symmetric(
@@ -97,9 +115,7 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
                                       )
                                     : const Icon(Icons.connect_without_contact),
                                 label: Text(
-                                  vm.isConnecting
-                                      ? 'Connecting...'
-                                      : 'Connect',
+                                  vm.isConnecting ? t.connecting : t.connect,
                                 ),
                               ),
                             ),

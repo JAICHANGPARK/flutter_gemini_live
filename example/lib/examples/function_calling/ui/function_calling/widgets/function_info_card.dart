@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../function_calling_i18n.dart';
+
 class FunctionInfoCard extends StatelessWidget {
   const FunctionInfoCard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final t = FunctionCallingI18n.current;
     return Card(
       margin: const EdgeInsets.all(8),
       child: Padding(
@@ -12,39 +15,21 @@ class FunctionInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Available Functions:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              t.availableFunctionsTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            _buildFunctionInfo(
-              'get_weather',
-              'Get weather for a location (+ unit)',
-            ),
-            _buildFunctionInfo(
-              'get_current_time',
-              'Get current time for a timezone',
-            ),
-            _buildFunctionInfo(
-              'get_exchange_rate',
-              'Get FX rate (e.g., USD/KRW)',
-            ),
-            _buildFunctionInfo(
-              'convert_currency',
-              'Convert amount across currencies',
-            ),
-            _buildFunctionInfo(
-              'search_places',
-              'Search ranked places by query/city',
-            ),
-            _buildFunctionInfo(
-              'create_reminder',
-              'Schedule reminder (non-blocking)',
-            ),
+            _buildFunctionInfo('get_weather', t.descGetWeather),
+            _buildFunctionInfo('get_current_time', t.descGetCurrentTime),
+            _buildFunctionInfo('get_exchange_rate', t.descGetExchangeRate),
+            _buildFunctionInfo('convert_currency', t.descConvertCurrency),
+            _buildFunctionInfo('search_places', t.descSearchPlaces),
+            _buildFunctionInfo('create_reminder', t.descCreateReminder),
             const SizedBox(height: 8),
-            const Text(
-              'Try: weather/time + FX conversion + cafe search + reminders',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            Text(
+              t.tryHint,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),

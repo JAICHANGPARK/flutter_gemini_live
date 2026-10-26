@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
+
 /// The in-progress (interim) speech bubble at the end of the timeline.
 class InterimBubble extends StatelessWidget {
   const InterimBubble({super.key, required this.text});
@@ -8,6 +10,7 @@ class InterimBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -29,9 +32,9 @@ class InterimBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '실시간 청취 중...',
-                style: TextStyle(
+              Text(
+                i18n.listeningLive,
+                style: const TextStyle(
                   color: Colors.amberAccent,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../pro_dj_console_i18n.dart';
+
 /// Expandable diagnostics terminal showing the latest console log lines.
 class ConsoleLogs extends StatelessWidget {
   final List<String> consoleLogs;
@@ -12,9 +14,9 @@ class ConsoleLogs extends StatelessWidget {
       color: const Color(0xFF10131A),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
-        title: const Text(
-          '🎛️ DJ CONSOLE DIAGNOSTIC TERMINAL',
-          style: TextStyle(
+        title: Text(
+          ProDjConsoleI18n.current.diagnosticTerminalTitle,
+          style: const TextStyle(
             color: Colors.white70,
             fontSize: 12,
             fontWeight: FontWeight.bold,

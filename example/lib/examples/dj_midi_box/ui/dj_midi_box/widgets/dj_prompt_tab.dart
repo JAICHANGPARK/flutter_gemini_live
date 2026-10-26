@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/dj_defaults.dart';
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 
 /// "PROMPT" tab of the DJ console: custom prompt injection + style presets.
 Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
+  final i18n = DjMidiBoxI18n.current;
   return ListView(
     padding: const EdgeInsets.all(16),
     children: [
@@ -12,16 +14,18 @@ Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
         children: [
           const Icon(Icons.edit_note, color: Color(0xFFFBBF24), size: 16),
           const SizedBox(width: 6),
-          const Text(
-            'CUSTOM PROMPT INJECTION',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-              letterSpacing: 1.0,
+          Expanded(
+            child: Text(
+              i18n.customPromptHeader,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                letterSpacing: 1.0,
+              ),
             ),
           ),
-          const Spacer(),
           Switch.adaptive(
             value: vm.customPromptActive,
             activeTrackColor: const Color(0xFFA855F7),
@@ -32,8 +36,8 @@ Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
       const SizedBox(height: 6),
       Text(
         vm.customPromptActive
-            ? 'Active: Steering the music along with the 16 rotary knobs'
-            : 'Disabled: Only rotary knobs are active',
+            ? i18n.customPromptActiveStatus
+            : i18n.customPromptDisabledStatus,
         style: TextStyle(
           color: vm.customPromptActive
               ? const Color(0xFF34D399)
@@ -47,7 +51,7 @@ Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
         maxLines: 4,
         style: const TextStyle(color: Colors.white, fontSize: 13),
         decoration: InputDecoration(
-          hintText: 'Enter real-time music style prompt...',
+          hintText: i18n.customPromptHint,
           hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
           filled: true,
           fillColor: const Color(0xFF1E123D),
@@ -68,9 +72,9 @@ Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Prompt Weight (Influence):',
-            style: TextStyle(color: Colors.white70, fontSize: 11),
+          Text(
+            i18n.promptWeightLabel,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
           Text(
             '${(vm.customPromptWeight * 100).round()}%',
@@ -108,17 +112,17 @@ Widget buildDjPromptTab(BuildContext context, DjMidiBoxViewModel vm) {
           ),
         ),
         icon: const Icon(Icons.send_rounded, size: 16),
-        label: const Text(
-          'APPLY PROMPT TO MIX',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        label: Text(
+          i18n.applyPromptButton,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         ),
         onPressed: vm.applyCustomPrompt,
       ),
 
       const SizedBox(height: 20),
-      const Text(
-        'QUICK STYLE PRESETS',
-        style: TextStyle(
+      Text(
+        i18n.quickStylePresetsHeader,
+        style: const TextStyle(
           color: Colors.white54,
           fontWeight: FontWeight.bold,
           fontSize: 10,

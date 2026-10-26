@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import '../chat_i18n.dart';
 import '../view_models/chat_view_model.dart';
 
 /// Builds the text input composer with buttons for image, audio, and sending.
@@ -20,6 +21,7 @@ class ChatComposer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final t = ChatI18n.current;
     final pickedImage = vm.pickedImage;
     final pickedImageBytes = vm.pickedImageBytes;
     return Container(
@@ -46,8 +48,8 @@ class ChatComposer extends StatelessWidget {
                   Expanded(
                     child: Text(
                       vm.isRecording
-                          ? 'Recording voice input... tap the mic again to send it.'
-                          : 'Voice mode is ready. Tap the mic to record spoken input.',
+                          ? t.recordingVoiceNotice
+                          : t.voiceModeReadyNotice,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -111,6 +113,7 @@ class ChatComposer extends StatelessWidget {
               // Button to pick an image.
               IconButton(
                 icon: const Icon(Icons.image_outlined),
+                tooltip: t.pickImageTooltip,
                 onPressed: vm.pickImage,
               ),
               // Button to toggle audio recording.
@@ -118,7 +121,9 @@ class ChatComposer extends StatelessWidget {
                 GeminiLiveMicButton(
                   isRecording: vm.isRecording,
                   onPressed: vm.toggleRecording,
-                  tooltip: vm.isRecording ? 'Stop recording' : 'Record voice',
+                  tooltip: vm.isRecording
+                      ? t.stopRecordingTooltip
+                      : t.recordVoiceTooltip,
                 ),
               // The main text input field.
               Expanded(
@@ -127,14 +132,15 @@ class ChatComposer extends StatelessWidget {
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration.collapsed(
                     hintText: vm.voiceModeEnabled
-                        ? 'Type a message or use the mic'
-                        : 'Enter a message or image description',
+                        ? t.hintVoiceMode
+                        : t.hintTextMode,
                   ),
                 ),
               ),
               // Button to send the message.
               IconButton(
                 icon: const Icon(Icons.send),
+                tooltip: t.sendTooltip,
                 onPressed: onSend,
                 color: Theme.of(context).colorScheme.primary,
               ),

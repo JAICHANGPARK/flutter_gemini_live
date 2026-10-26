@@ -1,5 +1,7 @@
+import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 
+import '../translation_i18n.dart';
 import '../view_models/translation_view_model.dart';
 
 /// Waveform & controls bottom bar: mic / AI playback indicator, status text,
@@ -27,9 +29,14 @@ class TranslationBottomBar extends StatelessWidget {
       child: SafeArea(
         // Mic level changes for every audio chunk; rebuild only this subtree.
         child: ListenableBuilder(
-          listenable: Listenable.merge([vm, vm.micVolumeNotifier]),
+          listenable: Listenable.merge([
+            vm,
+            vm.micVolumeNotifier,
+            AppLanguageController.instance,
+          ]),
           builder: (context, _) {
             final micVolume = vm.micVolume;
+            final i18n = TranslationI18n.current;
             return Row(
               children: [
                 // Mic amplitude meter / AI playback indicator
@@ -60,18 +67,21 @@ class TranslationBottomBar extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         vm.isConnected
                             ? (vm.isAiCurrentlySpeaking
-                                  ? '🔊 번역 음성 출력 중 (에코 방지 대기)'
+                                  ? i18n.statusSpeaking
                                   : (vm.isMicActive
-                                        ? '실시간 동시통역 중 (말씀하시면 즉시 번역됩니다)'
-                                        : '마이크 일시 정지됨'))
+                                        ? i18n.statusTranslating
+                                        : i18n.statusMicPaused))
                             : (vm.isConnecting
-                                  ? 'Live Translate 서버 연결 중...'
-                                  : '준비 완료 (통역 시작을 누르세요)'),
+                                  ? i18n.statusConnecting
+                                  : i18n.statusReady),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -105,28 +115,46 @@ class TranslationBottomBar extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 if (vm.isConnected) ...[
                   IconButton.filledTonal(
+                    visualDensity: VisualDensity.compact,
                     onPressed: vm.toggleMicStreaming,
                     icon: Icon(
                       vm.isMicActive
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
                     ),
-                    tooltip: vm.isMicActive ? '마이크 일시중지' : '마이크 재개',
+                    tooltip: vm.isMicActive
+                        ? i18n.pauseMicTooltip
+                        : i18n.resumeMicTooltip,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.redAccent,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     onPressed: vm.disconnect,
-                    icon: const Icon(Icons.stop_rounded),
-                    label: const Text('종료'),
+                    icon: const Icon(Icons.stop_rounded, size: 18),
+                    label: Text(
+                      i18n.stopTranslation,
+                      style: const TextStyle(fontSize: 12.5),
+                    ),
                   ),
                 ] else ...[
                   FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
                     onPressed: vm.isConnecting ? null : vm.connect,
                     icon: vm.isConnecting
                         ? const SizedBox(
@@ -137,8 +165,13 @@ class TranslationBottomBar extends StatelessWidget {
                               color: Colors.white,
                             ),
                           )
-                        : const Icon(Icons.translate_rounded),
-                    label: Text(vm.isConnecting ? '연결 중...' : '통역 시작'),
+                        : const Icon(Icons.translate_rounded, size: 18),
+                    label: Text(
+                      vm.isConnecting
+                          ? i18n.connectingLabel
+                          : i18n.startTranslation,
+                      style: const TextStyle(fontSize: 12.5),
+                    ),
                   ),
                 ],
               ],

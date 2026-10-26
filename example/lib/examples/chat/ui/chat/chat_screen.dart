@@ -1,7 +1,9 @@
 import 'package:example/app_settings_dialog.dart';
+import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/models/connection_status.dart';
+import 'chat_i18n.dart';
 import 'view_models/chat_view_model.dart';
 import 'widgets/chat_app_bar.dart';
 import 'widgets/chat_composer.dart';
@@ -55,9 +57,13 @@ class _ChatScreenState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
+        final t = ChatI18n.current;
         return Scaffold(
           appBar: ChatAppBar(
             viewModel: vm,
@@ -78,7 +84,7 @@ class _ChatScreenState extends State<ChatPage> {
                     padding: const EdgeInsets.all(8.0),
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.refresh),
-                      label: const Text("Reconnect"),
+                      label: Text(t.reconnect),
                       onPressed: vm.connectToLiveAPI,
                     ),
                   ),

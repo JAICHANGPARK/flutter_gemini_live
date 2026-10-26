@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../live_api_i18n.dart';
 import '../view_models/live_api_view_model.dart';
 
 class FeatureToggles extends StatelessWidget {
@@ -9,6 +10,7 @@ class FeatureToggles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = LiveApiI18n.current;
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Wrap(
@@ -16,28 +18,28 @@ class FeatureToggles extends StatelessWidget {
         runSpacing: 8,
         children: [
           _buildToggle(
-            'Realtime Config',
+            t.toggleRealtimeConfig,
             viewModel.enableRealtimeConfig,
             (v) => viewModel.enableRealtimeConfig = v,
           ),
           _buildToggle(
-            'Transcription',
+            t.toggleTranscription,
             viewModel.enableTranscription,
             (v) => viewModel.enableTranscription = v,
           ),
           if (viewModel.enableTranscription)
             _buildToggle(
-              'Smart Mode',
+              t.toggleSmartMode,
               viewModel.useSmartTranscription,
               (v) => viewModel.useSmartTranscription = v,
             ),
           _buildToggle(
-            'Session Resume',
+            t.toggleSessionResume,
             viewModel.enableSessionResumption,
             (v) => viewModel.enableSessionResumption = v,
           ),
           _buildToggle(
-            'Context Compression',
+            t.toggleContextCompression,
             viewModel.enableContextCompression,
             (v) => viewModel.enableContextCompression = v,
           ),

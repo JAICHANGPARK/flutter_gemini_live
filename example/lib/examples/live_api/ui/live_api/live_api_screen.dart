@@ -1,6 +1,9 @@
+import 'package:example/app_translations.dart';
+import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
+import 'live_api_i18n.dart';
 import 'view_models/live_api_view_model.dart';
 import 'widgets/action_buttons.dart';
 import 'widgets/connection_button.dart';
@@ -34,27 +37,36 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: Listenable.merge([
+        _viewModel,
+        AppLanguageController.instance,
+      ]),
       builder: (context, _) {
         final vm = _viewModel;
+        final t = LiveApiI18n.current;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Live API Features Demo'),
+            title: Text(t.appBarTitle),
             actions: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: GeminiLiveStatusBadge.fromFlags(
-                  isConnected: vm.isConnected,
-                  isConnecting: vm.isConnecting,
-                  interactionStatus: vm.interactionStatus,
-                ),
+              ScrollableAppBarActions(
+                children: [
+                  const LanguageSelectorButton(compact: true),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: GeminiLiveStatusBadge.fromFlags(
+                      isConnected: vm.isConnected,
+                      isConnecting: vm.isConnecting,
+                      interactionStatus: vm.interactionStatus,
+                    ),
+                  ),
+                  if (vm.isConnected)
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: vm.closeConnection,
+                      tooltip: t.closeConnectionTooltip,
+                    ),
+                ],
               ),
-              if (vm.isConnected)
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: vm.closeConnection,
-                  tooltip: 'Close connection',
-                ),
             ],
           ),
           body: Column(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../live_api_i18n.dart';
+
 class ActionButtons extends StatelessWidget {
   const ActionButtons({
     super.key,
@@ -18,6 +20,7 @@ class ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = LiveApiI18n.current;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: SingleChildScrollView(
@@ -26,34 +29,34 @@ class ActionButtons extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () => onSendText(),
-              child: const Text('Send Text'),
+              child: Text(t.sendTextBtn),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: onSendClientContent,
-              child: const Text('Multi-turn'),
+              child: Text(t.multiTurnBtn),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: onSendRealtimeInput,
-              child: const Text('Realtime Input'),
+              child: Text(t.realtimeInputBtn),
             ),
             const SizedBox(width: 8),
             if (onSendContextUpdate != null) ...[
               ElevatedButton(
                 onPressed: onSendContextUpdate,
-                child: const Text('Context Update'),
+                child: Text(t.contextUpdateBtn),
               ),
               const SizedBox(width: 8),
             ],
             ElevatedButton(
               onPressed: () => onToggleActivity(true),
-              child: const Text('Activity Start'),
+              child: Text(t.activityStartBtn),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: () => onToggleActivity(false),
-              child: const Text('Activity End'),
+              child: Text(t.activityEndBtn),
             ),
           ],
         ),

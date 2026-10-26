@@ -6,6 +6,7 @@ import 'package:example/examples/pro_dj_console/ui/pro_dj_console/pro_dj_console
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
 import 'foldable_pill.dart';
 
 /// App bar with title, foldable badge, DJ page shortcuts, language and
@@ -20,6 +21,7 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     final isNarrow = MediaQuery.sizeOf(context).width < 440;
     return AppBar(
       backgroundColor: const Color(0xFF1E222B),
@@ -29,12 +31,12 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           const Icon(Icons.music_note_rounded, color: Colors.purpleAccent),
           const SizedBox(width: 8),
-          const Flexible(
+          Flexible(
             child: Text(
-              'Live Music Studio',
+              i18n.appBarTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
           if (!isNarrow) ...[
@@ -48,11 +50,11 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.purpleAccent.withAlpha(100)),
                 ),
-                child: const Text(
-                  'Lyria Realtime',
+                child: Text(
+                  i18n.lyriaRealtimeBadge,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 11,
                     color: Colors.purpleAccent,
                     fontWeight: FontWeight.w600,
@@ -78,9 +80,12 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 16,
                 color: Color(0xFFA855F7),
               ),
-              label: const Text(
-                'MIDI BOX',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              label: Text(
+                i18n.midiBoxButton,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF261840),
@@ -103,9 +108,12 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 16,
                 color: Color(0xFF00E5FF),
               ),
-              label: const Text(
-                'DJ CONSOLE',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              label: Text(
+                i18n.djConsoleButton,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF1E2638),
@@ -121,7 +129,7 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
             const SizedBox(width: 6),
             IconButton(
               icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
+              tooltip: i18n.settingsTooltip,
               onPressed: () => AppSettingsDialog.show(context),
             ),
           ],

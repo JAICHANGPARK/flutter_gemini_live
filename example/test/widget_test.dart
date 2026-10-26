@@ -1,3 +1,4 @@
+import 'package:example/app_translations.dart';
 import 'package:example/examples/anime_vn_navigator/domain/models/vn_character_models.dart';
 import 'package:example/examples/anime_vn_navigator/domain/models/vn_sdk_chapter.dart';
 import 'package:example/examples/anime_vn_navigator/ui/anime_vn_navigator_screen.dart';
@@ -101,7 +102,10 @@ void main() {
           (w) =>
               w is Text &&
               w.data != null &&
-              (w.data!.contains('히카리') || w.data!.contains('ヒカリ')),
+              (w.data!.contains('히카리') ||
+                  w.data!.contains('ヒカリ') ||
+                  w.data!.contains('Hikari') ||
+                  w.data!.contains('光')),
         ),
         findsWidgets,
       );
@@ -217,6 +221,54 @@ void main() {
           final err = tester.takeException();
           if (err != null) {
             failures.add('${entry.key} @ $size: $err');
+          }
+        }
+      }
+      expect(failures, isEmpty, reason: failures.join('\n'));
+    },
+  );
+
+  testWidgets(
+    'All 13 example screens support dynamic 4-language (en, ko, ja, zh) switching without overflow on 320x568',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(() {
+        AppLanguageController.instance.setLanguage(AppLanguage.en);
+      });
+
+      final pages = <String, Widget Function()>{
+        'HomePage': () => const HomePage(),
+        'AnimeVnNavigatorPage': () => const AnimeVnNavigatorPage(),
+        'LiveTranslationPage': () => const LiveTranslationPage(),
+        'LiveMediaSubtitlePage': () => const LiveMediaSubtitlePage(),
+        'LiveSmartNotePage': () => const LiveSmartNotePage(),
+        'LiveMathTutorPage': () => const LiveMathTutorPage(),
+        'LiveVisionCallPage': () => const LiveVisionCallPage(),
+        'LiveMusicStudioPage': () => const LiveMusicStudioPage(),
+        'ProDjConsolePage': () => const ProDjConsolePage(),
+        'DjMidiBoxPage': () => const DjMidiBoxPage(),
+        'ChatPage': () => const ChatPage(),
+        'LiveAPIDemoPage': () => const LiveAPIDemoPage(),
+        'FunctionCallingDemoPage': () => const FunctionCallingDemoPage(),
+        'RealtimeMediaDemoPage': () => const RealtimeMediaDemoPage(),
+      };
+
+      final failures = <String>[];
+      for (final entry in pages.entries) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: entry.value(),
+          ),
+        );
+        for (final lang in AppLanguage.values) {
+          AppLanguageController.instance.setLanguage(lang);
+          await tester.pump(const Duration(milliseconds: 80));
+          final err = tester.takeException();
+          if (err != null) {
+            failures.add('${entry.key} [${lang.code}]: $err');
           }
         }
       }

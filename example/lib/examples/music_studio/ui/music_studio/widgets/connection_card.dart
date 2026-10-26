@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../domain/models/music_studio_status.dart';
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 
 /// Model picker, connect / disconnect button, status line and stream metrics.
@@ -31,6 +32,7 @@ class ConnectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     final isConnected = viewModel.isConnected;
     final isConnecting = viewModel.isConnecting;
     final color = statusColor(viewModel.status);
@@ -46,22 +48,22 @@ class ConnectionCard extends StatelessWidget {
               initialValue: viewModel.selectedModel,
               isExpanded: true,
               dropdownColor: const Color(0xFF242936),
-              decoration: const InputDecoration(
-                labelText: 'Lyria Live Model',
-                labelStyle: TextStyle(color: Colors.white70),
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
+              decoration: InputDecoration(
+                labelText: i18n.modelLabel,
+                labelStyle: const TextStyle(color: Colors.white70),
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: LiveMusicModels.lyriaRealtimeExp,
                   child: Text(
-                    'lyria-realtime-exp (Standard)',
+                    i18n.modelStandardOption,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ],
@@ -86,7 +88,9 @@ class ConnectionCard extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Icon(isConnected ? Icons.link_off : Icons.link),
-              label: Text(isConnected ? 'Disconnect' : 'Connect'),
+              label: Text(
+                isConnected ? i18n.disconnectButton : i18n.connectButton,
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isConnected
                     ? Colors.red.shade700
@@ -127,7 +131,7 @@ class ConnectionCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        viewModel.status.text,
+                        i18n.statusText(viewModel.status),
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: color,
@@ -139,7 +143,12 @@ class ConnectionCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'Chunks: ${viewModel.receivedChunksCount} · ${(viewModel.totalBytesReceived / 1024).toStringAsFixed(1)} KB',
+                        i18n.streamMetrics(
+                          viewModel.receivedChunksCount,
+                          (viewModel.totalBytesReceived / 1024).toStringAsFixed(
+                            1,
+                          ),
+                        ),
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white54,

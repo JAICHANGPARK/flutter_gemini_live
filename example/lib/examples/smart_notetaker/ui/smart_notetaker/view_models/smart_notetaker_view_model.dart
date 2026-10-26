@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:example/api_key_store.dart';
+import 'package:example/app_translations.dart';
 import 'package:example/live_api_defaults.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import '../../../domain/models/note_action_item.dart';
 import '../../../domain/models/note_language.dart';
 import '../../../domain/note_chunk_parser.dart';
 import '../../../domain/note_prompts.dart';
+import '../smart_notetaker_i18n.dart';
 
 /// State + logic for the Live Smart NoteTaker screen.
 ///
@@ -124,13 +126,27 @@ class SmartNotetakerViewModel extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   void init() {
+    AppLanguageController.instance.addListener(_onAppLanguageChanged);
     _loadAudioDevices();
     _appendInitialNoteGuide();
+  }
+
+  void _onAppLanguageChanged() {
+    if (_disposed) return;
+    if (!_isConnected &&
+        _speechTurns.isEmpty &&
+        _keyTakeaways.isEmpty &&
+        _actionItems.isEmpty) {
+      _rawNotesBuffer.clear();
+      _appendInitialNoteGuide();
+    }
+    notifyListeners();
   }
 
   @override
   void dispose() {
     _disposed = true;
+    AppLanguageController.instance.removeListener(_onAppLanguageChanged);
     _sessionTimer?.cancel();
     _audioStreamSubscription?.cancel();
     unawaited(_mic.dispose());
@@ -235,7 +251,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
     if (!ApiKeyStore.hasApiKey) {
       final configured = await requestApiKeySetup?.call();
       if (configured != true || !ApiKeyStore.hasApiKey) {
-        _notice('Gemini API 키가 설정되지 않았습니다.');
+        _notice(SmartNotetakerI18n.current.apiKeyMissing);
         return;
       }
     }
@@ -261,7 +277,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
           _isConnected = false;
           _isConnecting = false;
           notifyListeners();
-          _notice('Live 세션 오류: $err');
+          _notice(SmartNotetakerI18n.current.liveSessionError(err));
         },
         onClose: (code, reason) {
           debugPrint(
@@ -274,7 +290,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
           notifyListeners();
           _sessionTimer?.cancel();
           if (reason != null && reason.isNotEmpty) {
-            _notice('세션 종료 ($code): $reason');
+            _notice(SmartNotetakerI18n.current.sessionClosed(code, reason));
           }
         },
       );
@@ -292,7 +308,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
       if (!_disposed) {
         _isConnecting = false;
         notifyListeners();
-        _notice('세션 시작 실패: $e');
+        _notice(SmartNotetakerI18n.current.sessionStartFailed(e));
       }
     }
   }
@@ -383,7 +399,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
 
     final hasPermission = await _mic.hasPermission();
     if (!hasPermission) {
-      _notice('마이크 권한이 필요합니다.');
+      _notice(SmartNotetakerI18n.current.micPermissionRequired);
       return;
     }
 
@@ -415,7 +431,7 @@ class SmartNotetakerViewModel extends ChangeNotifier {
         _live.sendAudioChunk(chunk);
       });
     } catch (e) {
-      _notice('오디오 녹음 시작 오류: $e');
+      _notice(SmartNotetakerI18n.current.audioRecordStartError(e));
     }
   }
 
@@ -441,24 +457,24 @@ class SmartNotetakerViewModel extends ChangeNotifier {
 
   void generateWrapUpSummary() {
     if (_speechTurns.isEmpty && _rawNotesBuffer.isEmpty) {
-      _notice('요약할 회의/강의 내용이 없습니다.');
+      _notice(SmartNotetakerI18n.current.noContentToSummarize);
       return;
     }
 
     if (_live.hasSession && _isConnected) {
       _live.sendWrapUpRequest();
-      _notice('AI에게 최종 요약 정리를 요청했습니다...');
+      _notice(SmartNotetakerI18n.current.wrapUpRequested);
     }
   }
 
   void copyNotesToClipboard() {
     final fullText = _rawNotesBuffer.toString();
     if (fullText.isEmpty) {
-      _notice('복사할 노트 내용이 없습니다.');
+      _notice(SmartNotetakerI18n.current.noNotesToCopy);
       return;
     }
     Clipboard.setData(ClipboardData(text: fullText));
-    _notice('스마트 마크다운 노트가 클립보드에 복사되었습니다!');
+    _notice(SmartNotetakerI18n.current.notesCopied);
   }
 
   void clearNotes() {

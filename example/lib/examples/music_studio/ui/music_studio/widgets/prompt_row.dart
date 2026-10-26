@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 
 /// One editable prompt: text field, weight slider and remove button.
@@ -11,6 +12,7 @@ class PromptRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -21,7 +23,7 @@ class PromptRow extends StatelessWidget {
               controller: viewModel.promptControllers[index],
               style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Prompt style, instrument, or vibe...',
+                hintText: i18n.promptHint,
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: const Color(0xFF262C38),
@@ -43,7 +45,9 @@ class PromptRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Weight: ${viewModel.promptWeights[index].toStringAsFixed(1)}',
+                  i18n.weightLabel(
+                    viewModel.promptWeights[index].toStringAsFixed(1),
+                  ),
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 SliderTheme(
@@ -68,7 +72,7 @@ class PromptRow extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close, color: Colors.white38, size: 18),
             onPressed: () => viewModel.removePrompt(index),
-            tooltip: 'Remove',
+            tooltip: i18n.removeTooltip,
           ),
         ],
       ),

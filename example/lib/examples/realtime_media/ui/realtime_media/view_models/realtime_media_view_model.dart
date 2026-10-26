@@ -15,6 +15,7 @@ import '../../../data/services/realtime_media_live_service.dart';
 import '../../../data/services/realtime_media_mic_service.dart';
 import '../../../domain/camera_text.dart';
 import '../../../domain/models/media_log.dart';
+import '../realtime_media_i18n.dart';
 
 /// State + logic for the Realtime Media demo screen.
 ///
@@ -165,7 +166,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (cameras.isEmpty) {
-        _addLog('VIDEO', '⚠️ No camera devices were found on this platform.');
+        _addLog('VIDEO', RealtimeMediaI18n.current.logNoCamerasFound);
         return;
       }
 
@@ -176,10 +177,12 @@ class RealtimeMediaViewModel extends ChangeNotifier {
     } on CameraException catch (error) {
       _addLog(
         'ERROR',
-        '❌ Camera is unavailable: ${describeCameraError(error)}',
+        RealtimeMediaI18n.current.logCameraUnavailable(
+          describeCameraError(error),
+        ),
       );
     } catch (error) {
-      _addLog('ERROR', '❌ Camera is unavailable: $error');
+      _addLog('ERROR', RealtimeMediaI18n.current.logCameraUnavailable(error));
     }
   }
 
@@ -209,20 +212,28 @@ class RealtimeMediaViewModel extends ChangeNotifier {
       notifyListeners();
 
       if (logStatus) {
-        _addLog('VIDEO', '✅ Camera ready: ${cameraLabel(description)}');
+        _addLog(
+          'VIDEO',
+          RealtimeMediaI18n.current.logCameraReady(cameraLabel(description)),
+        );
       }
     } on CameraException catch (error) {
       if (_disposed) return;
       _cameraController = null;
       _isCameraInitializing = false;
       notifyListeners();
-      _addLog('ERROR', '❌ Camera init failed: ${describeCameraError(error)}');
+      _addLog(
+        'ERROR',
+        RealtimeMediaI18n.current.logCameraInitFailed(
+          describeCameraError(error),
+        ),
+      );
     } catch (error) {
       if (_disposed) return;
       _cameraController = null;
       _isCameraInitializing = false;
       notifyListeners();
-      _addLog('ERROR', '❌ Camera init failed: $error');
+      _addLog('ERROR', RealtimeMediaI18n.current.logCameraInitFailed(error));
     }
   }
 
@@ -236,7 +247,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
     if (_availableCameras.isEmpty) {
       _addLog(
         'ERROR',
-        '❌ Camera preview is unavailable. Check camera access and whether a camera device is attached.',
+        RealtimeMediaI18n.current.logCameraPreviewUnavailable,
       );
       return false;
     }
@@ -266,7 +277,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
   Future<void> connect() async {
     if (_isConnecting) return;
     if (!ApiKeyStore.hasApiKey) {
-      _addLog('ERROR', '❌ API key is not configured. Open Settings first.');
+      _addLog('ERROR', RealtimeMediaI18n.current.logApiKeyNotConfigured);
       return;
     }
 
@@ -274,7 +285,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
     notifyListeners();
     _addLog(
       'SYSTEM',
-      'Connecting to Live API with Gemini 3.8 Live ($kLatestRealtimeLiveModel)...',
+      RealtimeMediaI18n.current.logConnecting(kLatestRealtimeLiveModel),
     );
     await _audio.stop();
 
@@ -282,7 +293,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
       final session = await _live.connect(
         manualActivityMode: _manualActivityMode,
         onOpen: () {
-          _addLog('CONNECTION', '✅ Connected');
+          _addLog('CONNECTION', RealtimeMediaI18n.current.logConnected);
           if (_disposed) return;
           _isConnected = true;
           _isConnecting = false;
@@ -301,7 +312,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
         onClose: (code, reason) {
           unawaited(stopLiveMultimodalStream(sendAudioStreamEnd: false));
           unawaited(_audio.stop());
-          _addLog('CONNECTION', '🔒 Disconnected');
+          _addLog('CONNECTION', RealtimeMediaI18n.current.logDisconnected);
           if (_disposed) return;
           _isConnected = false;
           _isConnecting = false;
@@ -313,7 +324,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
       _live.session = session;
       notifyListeners();
     } catch (error) {
-      _addLog('ERROR', '❌ Connection failed: $error');
+      _addLog('ERROR', RealtimeMediaI18n.current.logConnectionFailed(error));
       if (_disposed) return;
       _isConnecting = false;
       notifyListeners();
@@ -479,7 +490,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
 
     await _captureAndSendCameraFrame(logUpload: true);
     _live.sendRealtimeText(
-      'Describe what you see in the current camera frame.',
+      RealtimeMediaI18n.current.frameDescribePrompt,
     );
     _addLog('USER', '🔄 Sent current camera frame with a prompt');
   }

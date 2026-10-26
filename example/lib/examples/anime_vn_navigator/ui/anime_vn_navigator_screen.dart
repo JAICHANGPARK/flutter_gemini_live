@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/models/vn_character_models.dart';
+import 'anime_vn_i18n.dart';
 import 'view_models/anime_vn_view_model.dart';
 import 'widgets/live_anime_character_stage.dart';
 import 'widgets/vn_dialogue_box.dart';
@@ -85,7 +86,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
       ),
       builder: (context) {
         final logs = _viewModel.dialogueHistory;
-        final isKo = _viewModel.isKorean;
+        final i18n = AnimeVnI18n.current;
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -101,9 +102,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        isKo
-                            ? '📜 지난 대사 기록 (LOG / バックログ)'
-                            : '📜 バックログ (会話履歴 / LOG)',
+                        i18n.backlogTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -224,9 +223,13 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
       autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: ListenableBuilder(
-        listenable: _viewModel,
+        listenable: Listenable.merge([
+          _viewModel,
+          AppLanguageController.instance,
+        ]),
         builder: (context, _) {
           final vm = _viewModel;
+          final i18n = AnimeVnI18n.current;
 
           final screenSize = MediaQuery.sizeOf(context);
           final isMobileScreen = screenSize.width < 600;
@@ -279,9 +282,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   backgroundColor: Colors.black54,
                                   foregroundColor: Colors.white,
                                 ),
-                                tooltip: vm.isKorean
-                                    ? '예제 목록으로 돌아가기'
-                                    : 'サンプル一覧に戻る',
+                                tooltip: i18n.backToExamplesTooltip,
                                 icon: const Icon(
                                   Icons.arrow_back_ios_new_rounded,
                                   size: 15,
@@ -309,21 +310,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   color: Color(0xFF38BDF8),
                                 ),
                                 label: Text(
-                                  vm.isKorean
-                                      ? (isCompact
-                                            ? (vm.isShowcaseVisible
-                                                  ? 'SDK 노트 닫기'
-                                                  : 'SDK 노트')
-                                            : (vm.isShowcaseVisible
-                                                  ? '📘 SDK 코드 학습노트 닫기'
-                                                  : '📘 SDK 코드 학습노트 보기'))
-                                      : (isCompact
-                                            ? (vm.isShowcaseVisible
-                                                  ? '学習ノート閉'
-                                                  : '学習ノート')
-                                            : (vm.isShowcaseVisible
-                                                  ? '📘 SDK コード学習ノートを閉じる'
-                                                  : '📘 SDK コード学習ノートを見る')),
+                                  i18n.studyNoteToggleLabel(
+                                    isCompact: isCompact,
+                                    isVisible: vm.isShowcaseVisible,
+                                  ),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: isCompact ? 11 : 12,
@@ -350,22 +340,18 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                   crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
                                     _buildHeroineModeButton(
-                                      label: vm.isKorean
-                                          ? (isCompact ? '👯 2인' : '👯 2인 동시')
-                                          : (isCompact ? '👯 2人' : '👯 2人同時'),
+                                      label: i18n.dualModeLabel(
+                                        isCompact: isCompact,
+                                      ),
                                       isSelected: vm.isDualHeroineMode,
                                       activeColor: const Color(0xFFA855F7),
                                       isCompact: isCompact,
                                       onTap: vm.enableDualHeroineMode,
                                     ),
                                     _buildHeroineModeButton(
-                                      label: vm.isKorean
-                                          ? (isCompact
-                                                ? '🌺 레이나'
-                                                : '🌺 레이나(갸루)')
-                                          : (isCompact
-                                                ? '🌺 レイナ'
-                                                : '🌺 レイナ(ギャル)'),
+                                      label: i18n.reinaModeLabel(
+                                        isCompact: isCompact,
+                                      ),
                                       isSelected:
                                           !vm.isDualHeroineMode &&
                                           vm.selectedHeroine ==
@@ -379,13 +365,9 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                       ),
                                     ),
                                     _buildHeroineModeButton(
-                                      label: vm.isKorean
-                                          ? (isCompact
-                                                ? '🌸 히카리'
-                                                : '🌸 히카리(청순)')
-                                          : (isCompact
-                                                ? '🌸 ヒカリ'
-                                                : '🌸 ヒカリ(清楚)'),
+                                      label: i18n.hikariModeLabel(
+                                        isCompact: isCompact,
+                                      ),
                                       isSelected:
                                           !vm.isDualHeroineMode &&
                                           vm.selectedHeroine ==
@@ -402,31 +384,18 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                 ),
                               ),
 
-                              // Quick Language Toggle Pill (🇯🇵 日本語 <-> 🇰🇷 한국어)
-                              ActionChip(
-                                visualDensity: VisualDensity.compact,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                backgroundColor: Colors.black54,
-                                side: const BorderSide(color: Colors.white24),
-                                label: Text(
-                                  vm.isKorean
-                                      ? (isCompact ? '🇰🇷 KO' : '🇰🇷 한국어')
-                                      : (isCompact ? '🇯🇵 JA' : '🇯🇵 日本語'),
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isCompact ? 11 : 11.5,
-                                    fontWeight: FontWeight.bold,
+                              // 4-Language Selector Pill (EN / KO / JA / ZH)
+                              Theme(
+                                data: ThemeData.dark(useMaterial3: true),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const LanguageSelectorButton(
+                                    compact: true,
                                   ),
                                 ),
-                                onPressed: () {
-                                  final nextLang = vm.isKorean
-                                      ? AppLanguage.ja
-                                      : AppLanguage.ko;
-                                  AppLanguageController.instance.setLanguage(
-                                    nextLang,
-                                  );
-                                },
                               ),
 
                               // Affection Indicator Pill (Individual Heroine Affection in Dual Mode)
@@ -454,7 +423,7 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                             horizontal: 4,
                                             vertical: 1,
                                           ),
-                                        child: Row(
+                                          child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               const Icon(
@@ -464,11 +433,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                               ),
                                               const SizedBox(width: 3),
                                               Text(
-                                                isCompact
-                                                    ? '🌸 ${vm.hikariAffectionPoints}%'
-                                                    : (vm.isKorean
-                                                          ? '🌸 히카리 ${vm.hikariAffectionPoints}%'
-                                                          : '🌸 ヒカリ ${vm.hikariAffectionPoints}%'),
+                                                i18n.hikariAffectionBadge(
+                                                  vm.hikariAffectionPoints,
+                                                  isCompact: isCompact,
+                                                ),
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: isCompact
@@ -509,11 +477,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                               ),
                                               const SizedBox(width: 3),
                                               Text(
-                                                isCompact
-                                                    ? '🌺 ${vm.reinaAffectionPoints}%'
-                                                    : (vm.isKorean
-                                                          ? '🌺 레이나 ${vm.reinaAffectionPoints}%'
-                                                          : '🌺 レイナ ${vm.reinaAffectionPoints}%'),
+                                                i18n.reinaAffectionBadge(
+                                                  vm.reinaAffectionPoints,
+                                                  isCompact: isCompact,
+                                                ),
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: isCompact
@@ -559,11 +526,10 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          isCompact
-                                              ? '${vm.affectionPoints}%'
-                                              : (vm.isKorean
-                                                    ? '호감도 ${vm.affectionPoints}%'
-                                                    : '好感度 ${vm.affectionPoints}%'),
+                                          i18n.soloAffectionBadge(
+                                            vm.affectionPoints,
+                                            isCompact: isCompact,
+                                          ),
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: isCompact ? 11 : 12,

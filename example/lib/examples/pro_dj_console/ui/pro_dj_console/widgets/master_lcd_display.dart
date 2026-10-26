@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gemini_live/gemini_live.dart';
 
 import '../../../domain/duration_format.dart';
+import '../pro_dj_console_i18n.dart';
 
 /// CDJ master LCD header: elapsed time, BPM, key, engine status, beat grid.
 class MasterLcdDisplay extends StatelessWidget {
@@ -26,6 +27,7 @@ class MasterLcdDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = ProDjConsoleI18n.current;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -52,9 +54,9 @@ class MasterLcdDisplay extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'TIME  ',
-                    style: TextStyle(
+                  Text(
+                    i18n.lcdTimeLabel,
+                    style: const TextStyle(
                       color: Colors.white38,
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
@@ -120,7 +122,9 @@ class MasterLcdDisplay extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      selectedScale != null ? selectedScale!.name : 'NO KEY',
+                      selectedScale != null
+                          ? selectedScale!.name
+                          : i18n.lcdNoKey,
                       style: const TextStyle(
                         color: Color(0xFF00E5FF),
                         fontWeight: FontWeight.bold,
@@ -144,7 +148,7 @@ class MasterLcdDisplay extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    isConnected ? 'LYRIA REALTIME ONLINE' : 'STANDBY',
+                    isConnected ? i18n.lcdOnline : i18n.lcdStandby,
                     style: TextStyle(
                       color: isConnected
                           ? Colors.greenAccent

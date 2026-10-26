@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../translation_i18n.dart';
 import '../view_models/translation_view_model.dart';
 import 'translation_language_dropdown.dart';
 import 'translation_toggle_pill.dart';
@@ -14,6 +15,7 @@ class TranslationLanguageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = TranslationI18n.current;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -32,9 +34,9 @@ class TranslationLanguageBar extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  '내 언어:',
-                  style: TextStyle(
+                Text(
+                  i18n.myLanguageLabel,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: Colors.blueAccent,
@@ -61,7 +63,7 @@ class TranslationLanguageBar extends StatelessWidget {
                 size: 20,
                 color: Colors.blueAccent,
               ),
-              tooltip: '내 언어와 상대방 언어 맞바꾸기',
+              tooltip: i18n.swapLanguagesTooltip,
               visualDensity: VisualDensity.compact,
               onPressed: vm.isConnected ? null : vm.swapLanguages,
             ),
@@ -70,9 +72,9 @@ class TranslationLanguageBar extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  '상대방 언어:',
-                  style: TextStyle(
+                Text(
+                  i18n.partnerLanguageLabel,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                     color: Colors.amber,
@@ -115,7 +117,9 @@ class TranslationLanguageBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    vm.isDualFlipMode ? '테이블 대면 모드' : '일반 채팅 모드',
+                    vm.isDualFlipMode
+                        ? i18n.tabletopFaceToFaceMode
+                        : i18n.standardChatMode,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -143,7 +147,9 @@ class TranslationLanguageBar extends StatelessWidget {
               contentColor: vm.isAudioOutputEnabled
                   ? Colors.greenAccent
                   : Colors.grey,
-              label: vm.isAudioOutputEnabled ? '음성 출력 ON' : '음성 출력 OFF',
+              label: vm.isAudioOutputEnabled
+                  ? i18n.voiceOutputOn
+                  : i18n.voiceOutputOff,
             ),
             const SizedBox(width: 8),
             // Echo loop prevention pill (클릭하여 켜기/끄기)
@@ -161,7 +167,9 @@ class TranslationLanguageBar extends StatelessWidget {
               contentColor: vm.preventEchoLoop
                   ? Colors.blueAccent
                   : Colors.orangeAccent,
-              label: vm.preventEchoLoop ? '에코방지 ON' : '에코방지 OFF',
+              label: vm.preventEchoLoop
+                  ? i18n.echoPreventionOn
+                  : i18n.echoPreventionOff,
             ),
           ],
         ),

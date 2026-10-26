@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:example/app_settings_dialog.dart';
+import 'package:example/app_translations.dart';
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
@@ -107,7 +108,10 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
         ),
         child: SafeArea(
           child: ListenableBuilder(
-            listenable: _viewModel,
+            listenable: Listenable.merge([
+              _viewModel,
+              AppLanguageController.instance,
+            ]),
             builder: (context, _) => LayoutBuilder(
               builder: (context, constraints) {
                 final vm = _viewModel;

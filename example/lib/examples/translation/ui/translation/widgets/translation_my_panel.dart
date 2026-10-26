@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/live_translation_message.dart';
+import '../translation_i18n.dart';
 
 /// Left / bottom panel: my own speech and the full translation history.
 class TranslationMyPanel extends StatelessWidget {
@@ -21,6 +22,9 @@ class TranslationMyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = TranslationI18n.current;
+    final myLangName = myLang['name'] ?? '';
+    final targetLangName = targetLang['name'] ?? '';
     return Container(
       color: Colors.blue.shade50.withValues(alpha: 0.25),
       padding: const EdgeInsets.all(12),
@@ -36,7 +40,7 @@ class TranslationMyPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '내 화면 (${myLang['name']} 발화 및 통역 기록)',
+                  i18n.myPanelHeader(myLangName),
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -59,8 +63,11 @@ class TranslationMyPanel extends StatelessWidget {
                 ? Center(
                     child: Text(
                       isConnected
-                          ? '마이크로 ${myLang['name']}로 말씀하세요.\n내 음성과 상대방 번역 내용(${targetLang['name']})이 실시간으로 기록됩니다.'
-                          : '하단 통역 시작 버튼을 누르면 실시간 통역이 시작됩니다.',
+                          ? i18n.myPanelConnectedEmpty(
+                              myLangName,
+                              targetLangName,
+                            )
+                          : i18n.myPanelDisconnectedEmpty,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -104,8 +111,10 @@ class TranslationMyPanel extends StatelessWidget {
                             children: [
                               Text(
                                 msg.isUser
-                                    ? '🎤 내 발화 (${myLang['name']})'
-                                    : '🌐 번역문 (${targetLang['name']})',
+                                    ? i18n.mySpeechBubbleLabel(myLangName)
+                                    : i18n.translatedBubbleLabel(
+                                        targetLangName,
+                                      ),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,

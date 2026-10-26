@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/dj_mix_summary.dart';
 import '../../../domain/models/midi_knob_data.dart';
+import '../dj_midi_box_i18n.dart';
 import 'dj_visualizer_painter.dart';
 
 // ============================================================================
@@ -97,6 +98,7 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
 
   @override
   Widget build(BuildContext context) {
+    final i18n = DjMidiBoxI18n.current;
     // Generate active mix prompt summary string
     final String mixSummary = buildMixSummary(
       knobs: widget.knobs,
@@ -154,7 +156,7 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
               ),
               const SizedBox(width: 6),
               Text(
-                'LIVE FFT & WAVEFORM',
+                i18n.liveFftTitle,
                 style: TextStyle(
                   color: widget.isPlaying ? Colors.white : Colors.white38,
                   fontSize: 10,
@@ -197,52 +199,52 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
           // Frequency axis indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Flexible(
                 child: Text(
-                  'SUB BASS (40Hz)',
+                  i18n.subBassAxis,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white24,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
-                  'LOW-MID (500Hz)',
+                  i18n.lowMidAxis,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white24,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
-                  'MID-HIGH (4kHz)',
+                  i18n.midHighAxis,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white24,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
-                  'TREBLE (16kHz)',
+                  i18n.trebleAxis,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white24,
                     fontSize: 8,
                     fontWeight: FontWeight.bold,

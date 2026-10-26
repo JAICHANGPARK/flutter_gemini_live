@@ -1,3 +1,6 @@
+import 'package:example/app_translations.dart';
+
+import '../../ui/anime_vn_i18n.dart';
 import 'vn_character_models.dart';
 
 /// A single dialogue line ("beat") in the Visual Novel script.
@@ -52,6 +55,13 @@ class VnChoiceOption {
     this.targetChapterIndex,
     this.livePromptToSend,
   });
+
+  String labelFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => labelKo,
+    AppLanguage.ja => labelJa,
+    AppLanguage.zh => AnimeVnI18n.choiceLabelZh(id) ?? labelJa,
+    AppLanguage.en => AnimeVnI18n.choiceLabelEn(id) ?? labelJa,
+  };
 }
 
 /// Code & architecture study card data displayed alongside Hikari's explanation.
@@ -79,6 +89,38 @@ class VnSdkShowcaseData {
     required this.keyPointsKo,
     this.keyPointsJa = const [],
   });
+
+  String titleFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => titleKo,
+    AppLanguage.ja => titleJa,
+    AppLanguage.zh => AnimeVnI18n.showcaseZh(topicId)?.$1 ?? titleJa,
+    AppLanguage.en => AnimeVnI18n.showcaseEn(topicId)?.$1 ?? titleJa,
+  };
+
+  String summaryFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => summaryKo,
+    AppLanguage.ja => summaryJa,
+    AppLanguage.zh => AnimeVnI18n.showcaseZh(topicId)?.$2 ?? summaryJa,
+    AppLanguage.en => AnimeVnI18n.showcaseEn(topicId)?.$2 ?? summaryJa,
+  };
+
+  List<String> keyPointsFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => keyPointsKo,
+    AppLanguage.ja => keyPointsJa.isNotEmpty ? keyPointsJa : keyPointsKo,
+    AppLanguage.zh =>
+      AnimeVnI18n.showcaseZh(topicId)?.$3 ??
+          (keyPointsJa.isNotEmpty ? keyPointsJa : keyPointsKo),
+    AppLanguage.en =>
+      AnimeVnI18n.showcaseEn(topicId)?.$3 ??
+          (keyPointsJa.isNotEmpty ? keyPointsJa : keyPointsKo),
+  };
+
+  String codeFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => codeSnippet,
+    AppLanguage.ja ||
+    AppLanguage.zh ||
+    AppLanguage.en => codeSnippetJa ?? codeSnippet,
+  };
 }
 
 /// A Visual Novel learning chapter containing a sequence of [dialogueBeats]
@@ -107,6 +149,13 @@ class VnSdkChapter {
     required this.dialogueBeats,
     required this.choices,
   });
+
+  String titleFor(AppLanguage lang) => switch (lang) {
+    AppLanguage.ko => titleKo,
+    AppLanguage.ja => titleJa,
+    AppLanguage.zh => AnimeVnI18n.chapterTitleZh(id, titleJa),
+    AppLanguage.en => AnimeVnI18n.chapterTitleEn(id, titleJa),
+  };
 }
 
 /// Complete 10-Chapter, 50-Step Visual Novel Curriculum for mastering `gemini_live`.

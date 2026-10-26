@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 
 /// Popup button to choose the audio input device (BlackHole / microphone).
@@ -15,6 +16,7 @@ class AudioDeviceSelectorButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     final selectedAudioDevice = viewModel.selectedAudioDevice;
     final hasDevice = selectedAudioDevice != null;
     final isBlackHole =
@@ -22,11 +24,11 @@ class AudioDeviceSelectorButton extends StatelessWidget {
     final label = hasDevice
         ? (selectedAudioDevice.label.isNotEmpty
               ? selectedAudioDevice.label
-              : '입력 장치 (${selectedAudioDevice.id})')
-        : '기본 마이크 (System Default)';
+              : i18n.inputDeviceFallback(selectedAudioDevice.id))
+        : i18n.defaultMicLabel;
 
     return PopupMenuButton<String>(
-      tooltip: '오디오 입력 장치 선택 (BlackHole / 마이크)',
+      tooltip: i18n.audioDeviceTooltip,
       onOpened: viewModel.loadAudioDevices,
       onSelected: viewModel.selectAudioDeviceById,
       itemBuilder: (context) {
@@ -45,7 +47,7 @@ class AudioDeviceSelectorButton extends StatelessWidget {
                       : Colors.grey,
                 ),
                 const SizedBox(width: 8),
-                const Text('기본 마이크 (System Default)'),
+                Text(i18n.defaultMicLabel),
               ],
             ),
           ),
@@ -66,7 +68,9 @@ class AudioDeviceSelectorButton extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      isBh ? '🔈 ${dev.label} (시스템 오디오)' : dev.label,
+                      isBh
+                          ? '🔈 ${dev.label} (${i18n.systemAudioSuffix})'
+                          : dev.label,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,

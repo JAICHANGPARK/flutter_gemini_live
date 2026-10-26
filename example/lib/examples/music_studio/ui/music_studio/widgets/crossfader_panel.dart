@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 
 /// Prompt DJ crossfader between prompt A and prompt B.
@@ -24,16 +25,20 @@ class CrossfaderPanel extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Row(
                   children: [
-                    Icon(Icons.tune, color: Colors.purpleAccent, size: 16),
-                    SizedBox(width: 6),
+                    const Icon(
+                      Icons.tune,
+                      color: Colors.purpleAccent,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Prompt DJ Crossfader (A ⟷ B)',
+                        MusicStudioI18n.current.crossfaderTitle,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,

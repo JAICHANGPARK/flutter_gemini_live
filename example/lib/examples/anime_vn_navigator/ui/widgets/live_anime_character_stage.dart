@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/models/vn_character_models.dart';
+import '../anime_vn_i18n.dart';
 import '../view_models/anime_vn_view_model.dart';
 
 /// Option A — 6-Part 2.5D Decomposed Character Stage (`Live2D` / `Spine` / `ZZZ` Style).
@@ -949,7 +950,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     double scaleX,
     double scaleY,
   ) {
-    final isKo = vm.isKorean;
+    final i18n = AnimeVnI18n.current;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 300),
       child: Container(
@@ -980,9 +981,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    isKo
-                        ? '2.5D 스켈레탈 본 & 물리 인스펙터'
-                        : '2.5D スケルトン＆物理インスペクター',
+                    i18n.rigInspectorTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1004,15 +1003,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
             ),
             const SizedBox(height: 6),
             Text(
-              isKo
-                  ? '• Cyan: 날개 헤어핀 & 앞머리 파츠 (Z +0.85)\n'
-                        '• Green: 강체 얼굴 & 시선 트래킹 본 (Z +0.55)\n'
-                        '• Pink: 진자 물리 뒷머리 & 양갈래 (Z -1.00)\n'
-                        '• Amber: 상체 호흡 & 리본 스프링 (Z 0.00)'
-                  : '• Cyan: ウイング髪飾り＆前髪パーツ (Z +0.85)\n'
-                        '• Green: 剛体フェイス＆視線追従ボーン (Z +0.55)\n'
-                        '• Pink: 振り子物理・後ろ髪＆おさげ (Z -1.00)\n'
-                        '• Amber: 上半身呼吸＆リボンスプリング (Z 0.00)',
+              i18n.rigInspectorLegend,
               style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 10.5,
@@ -1053,13 +1044,9 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                         border: Border.all(color: Colors.white24),
                       ),
                       child: Text(
-                        vm.isSteppedAnimationMode
-                            ? (isKo
-                                  ? '🎬 12fps 리미티드 작화 ON'
-                                  : '🎬 12fps リミテッド作画 ON')
-                            : (isKo
-                                  ? '⚡ 60fps Live2D 보간 ON'
-                                  : '⚡ 60fps Live2D 補間 ON'),
+                        i18n.steppedAnimModeLabel(
+                          isStepped: vm.isSteppedAnimationMode,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1088,7 +1075,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      isKo ? '탱글 바운스!' : 'ぷるんバウンス！',
+                      i18n.bounceImpulseButton,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10.5,
@@ -1120,9 +1107,7 @@ class _LiveAnimeCharacterStageState extends State<LiveAnimeCharacterStage>
     final badgeColor = isReina
         ? const Color(0xEEF59E0B)
         : const Color(0xEEEC4899);
-    final popupText = isReina
-        ? (isKorean ? '🌺 레이나 호감도 UP! +4%' : '🌺 レイナ 好感度 UP! +4%')
-        : (isKorean ? '🌸 히카리 호감도 UP! +4%' : '🌸 ヒカリ 好感度 UP! +4%');
+    final popupText = AnimeVnI18n.current.heartPopupLabel(isReina: isReina);
 
     return Positioned(
       top: charHeight * 0.18 + dy,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../smart_notetaker_i18n.dart';
 import '../view_models/smart_notetaker_view_model.dart';
 import 'highlights_summary_bar.dart';
 
@@ -12,6 +13,7 @@ class SmartNotesBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = SmartNotetakerI18n.current;
     return Container(
       color: const Color(0xFF0F172A),
       padding: const EdgeInsets.all(16),
@@ -27,15 +29,18 @@ class SmartNotesBoard extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'AI 실시간 구조화 노트',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+              Expanded(
+                child: Text(
+                  i18n.smartNotesHeader,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               FilledButton.tonalIcon(
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.white10,
@@ -44,9 +49,9 @@ class SmartNotesBoard extends StatelessWidget {
                 ),
                 onPressed: viewModel.copyNotesToClipboard,
                 icon: const Icon(Icons.copy, size: 14),
-                label: const Text(
-                  'Markdown 복사',
-                  style: TextStyle(fontSize: 11),
+                label: Text(
+                  i18n.copyMarkdownButton,
+                  style: const TextStyle(fontSize: 11),
                 ),
               ),
             ],

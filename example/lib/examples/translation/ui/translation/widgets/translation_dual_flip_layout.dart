@@ -1,6 +1,7 @@
 import 'package:example/foldable_utils.dart';
 import 'package:flutter/material.dart';
 
+import '../translation_i18n.dart';
 import '../view_models/translation_view_model.dart';
 import 'translation_my_panel.dart';
 import 'translation_partner_panel.dart';
@@ -14,6 +15,7 @@ class TranslationDualFlipLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = TranslationI18n.current;
     final myLang = vm.myLanguage;
     final targetLang = vm.targetLanguage;
     final partnerMessages = vm.history.where((m) => !m.isUser).toList();
@@ -85,7 +87,7 @@ class TranslationDualFlipLayout extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '상대방: ${targetLang['name']} (180°)',
+                    i18n.partnerSplitLabel(targetLang['name'] ?? ''),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -96,7 +98,7 @@ class TranslationDualFlipLayout extends StatelessWidget {
                   Container(width: 1, height: 14, color: Colors.grey.shade400),
                   const SizedBox(width: 8),
                   Text(
-                    '내 화면: ${myLang['name']}',
+                    i18n.myScreenSplitLabel(myLang['name'] ?? ''),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,

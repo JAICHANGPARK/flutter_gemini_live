@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 import 'dj_logs_tab.dart';
 import 'dj_prompt_tab.dart';
@@ -21,6 +22,7 @@ class DjConsolePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = DjMidiBoxI18n.current;
     return DefaultTabController(
       length: 3,
       child: Container(
@@ -39,9 +41,9 @@ class DjConsolePanel extends StatelessWidget {
                 children: [
                   const Icon(Icons.tune, color: Color(0xFFA855F7), size: 18),
                   const SizedBox(width: 8),
-                  const Text(
-                    'DJ CONSOLE',
-                    style: TextStyle(
+                  Text(
+                    i18n.consolePanelTitle,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
                       fontSize: 13,
@@ -62,7 +64,9 @@ class DjConsolePanel extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      viewModel.isPlaying ? 'STREAMING' : 'IDLE',
+                      viewModel.isPlaying
+                          ? i18n.streamingBadge
+                          : i18n.idleBadge,
                       style: const TextStyle(
                         color: Color(0xFFA855F7),
                         fontSize: 9,
@@ -78,22 +82,28 @@ class DjConsolePanel extends StatelessWidget {
             // Tab Bar
             Container(
               color: Colors.black.withAlpha(40),
-              child: const TabBar(
-                indicatorColor: Color(0xFFA855F7),
+              child: TabBar(
+                indicatorColor: const Color(0xFFA855F7),
                 indicatorWeight: 3,
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white54,
-                labelStyle: TextStyle(
+                labelStyle: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
                 tabs: [
-                  Tab(icon: Icon(Icons.edit_note, size: 16), text: 'PROMPT'),
                   Tab(
-                    icon: Icon(Icons.settings_input_component, size: 16),
-                    text: 'SETTINGS',
+                    icon: const Icon(Icons.edit_note, size: 16),
+                    text: i18n.tabPrompt,
                   ),
-                  Tab(icon: Icon(Icons.terminal, size: 16), text: 'LOGS'),
+                  Tab(
+                    icon: const Icon(Icons.settings_input_component, size: 16),
+                    text: i18n.tabSettings,
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.terminal, size: 16),
+                    text: i18n.tabLogs,
+                  ),
                 ],
               ),
             ),

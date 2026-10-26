@@ -8,6 +8,7 @@ import 'package:gemini_live/gemini_live.dart';
 import '../../../data/services/live_api_audio_service.dart';
 import '../../../data/services/live_api_live_service.dart';
 import '../../../domain/models/log_entry.dart';
+import '../live_api_i18n.dart';
 
 /// State + logic for the Live API features demo screen.
 class LiveApiViewModel extends ChangeNotifier {
@@ -108,7 +109,7 @@ class LiveApiViewModel extends ChangeNotifier {
   Future<void> connect() async {
     if (_isConnecting) return;
     if (!ApiKeyStore.hasApiKey) {
-      _addLog('ERROR', '❌ API key is not configured. Open Settings first.');
+      _addLog('ERROR', LiveApiI18n.current.logApiKeyNotConfigured);
       return;
     }
 
@@ -116,7 +117,7 @@ class LiveApiViewModel extends ChangeNotifier {
     notifyListeners();
     _addLog(
       'SYSTEM',
-      'Connecting to Gemini 3.8 Live API...',
+      LiveApiI18n.current.logConnecting,
     );
     await _audio.stop();
 
@@ -129,7 +130,7 @@ class LiveApiViewModel extends ChangeNotifier {
         enableContextCompression: _enableContextCompression,
         sessionHandle: _sessionHandle,
         onOpen: () {
-          _addLog('CONNECTION', '✅ Connected successfully');
+          _addLog('CONNECTION', LiveApiI18n.current.logConnectedSuccess);
           _isConnected = true;
           _isConnecting = false;
           _interactionStatus = null;
@@ -138,7 +139,7 @@ class LiveApiViewModel extends ChangeNotifier {
         onMessage: _handleMessage,
         onError: (error, stack) {
           unawaited(_audio.stop());
-          _addLog('ERROR', '❌ Error: $error');
+          _addLog('ERROR', LiveApiI18n.current.logError(error));
           _isConnecting = false;
           _interactionStatus = null;
           notifyListeners();
@@ -147,7 +148,7 @@ class LiveApiViewModel extends ChangeNotifier {
           unawaited(_audio.stop());
           _addLog(
             'CONNECTION',
-            '🔒 Connection closed: code=$code, reason=$reason',
+            LiveApiI18n.current.logConnectionClosed(code, reason),
           );
           _isConnected = false;
           _isConnecting = false;
@@ -158,11 +159,11 @@ class LiveApiViewModel extends ChangeNotifier {
 
       _live.attach(session);
       if (session.sessionId != null) {
-        _addLog('SESSION', '🆔 Session ID: ${session.sessionId}');
+        _addLog('SESSION', LiveApiI18n.current.logSessionId(session.sessionId!));
       }
       notifyListeners();
     } catch (e) {
-      _addLog('ERROR', '❌ Connection failed: $e');
+      _addLog('ERROR', LiveApiI18n.current.logConnectionFailed(e));
       _isConnecting = false;
       notifyListeners();
     }
@@ -183,7 +184,7 @@ class LiveApiViewModel extends ChangeNotifier {
       final status = serverContent!.interactionStatus!;
       _interactionStatus = status;
       notifyListeners();
-      _addLog('STATUS', '⚡ Interaction status: ${status.name}');
+      _addLog('STATUS', LiveApiI18n.current.logInteractionStatus(status.name));
     }
 
     // Handle text
@@ -195,7 +196,10 @@ class LiveApiViewModel extends ChangeNotifier {
     // Handle audio data
     if (message.data != null) {
       _audio.appendBase64Chunk(message.data!);
-      _addLog('AUDIO', '🔊 Received audio: ${message.data!.length} chars');
+      _addLog(
+        'AUDIO',
+        LiveApiI18n.current.logReceivedAudio(message.data!.length),
+      );
     }
 
     // Handle transcriptions
@@ -203,7 +207,7 @@ class LiveApiViewModel extends ChangeNotifier {
       final t = message.serverContent!.inputTranscription!;
       _addLog(
         'TRANSCRIPTION',
-        '🎤 Input: ${t.text} ${t.finished == true ? "(complete)" : ""}',
+        LiveApiI18n.current.logInputTranscription(t.text, t.finished == true),
       );
     }
 
@@ -211,7 +215,7 @@ class LiveApiViewModel extends ChangeNotifier {
       final t = message.serverContent!.outputTranscription!;
       _addLog(
         'TRANSCRIPTION',
-        '🔈 Output: ${t.text} ${t.finished == true ? "(complete)" : ""}',
+        LiveApiI18n.current.logOutputTranscription(t.text, t.finished == true),
       );
     }
 
@@ -219,20 +223,29 @@ class LiveApiViewModel extends ChangeNotifier {
     if (message.voiceActivity != null) {
       _addLog(
         'VAD',
-        '🎤 Voice activity: ${message.voiceActivity!.speechActive == true ? "speaking" : "silent"}',
+        LiveApiI18n.current.logVoiceActivity(
+          message.voiceActivity!.speechActive == true,
+        ),
       );
     }
 
     if (message.voiceActivityDetectionSignal != null) {
       final signal = message.voiceActivityDetectionSignal!;
-      if (signal.start == true) _addLog('VAD', '🎙️ Speech started');
-      if (signal.end == true) _addLog('VAD', '🎙️ Speech ended');
+      if (signal.start == true) {
+        _addLog('VAD', LiveApiI18n.current.logSpeechStarted);
+      }
+      if (signal.end == true) {
+        _addLog('VAD', LiveApiI18n.current.logSpeechEnded);
+      }
     }
 
     // Handle session resumption
     if (message.sessionResumptionUpdate != null) {
       final update = message.sessionResumptionUpdate!;
-      _addLog('SESSION', '🔄 Resumption update: handle=${update.newHandle}');
+      _addLog(
+        'SESSION',
+        LiveApiI18n.current.logResumptionUpdate(update.newHandle),
+      );
       if (update.newHandle != null) {
         _sessionHandle = update.newHandle;
         notifyListeners();
@@ -243,7 +256,10 @@ class LiveApiViewModel extends ChangeNotifier {
     if (message.goAway != null) {
       _addLog(
         'WARNING',
-        '⏰ Server will disconnect in ${message.goAway!.timeRemaining}s: ${message.goAway!.reason}',
+        LiveApiI18n.current.logGoAway(
+          message.goAway!.timeRemaining,
+          message.goAway!.reason,
+        ),
       );
     }
 
@@ -264,14 +280,14 @@ class LiveApiViewModel extends ChangeNotifier {
     }
 
     if (turnFinished && _audio.hasBufferedAudio) {
-      _addLog('AUDIO', '▶️ Playing received audio');
+      _addLog('AUDIO', LiveApiI18n.current.logPlayingAudio);
       unawaited(_audio.playBufferedAudio());
     }
   }
 
   void sendText(String text) {
     if (!_live.hasSession || !_isConnected) {
-      _addLog('ERROR', '❌ Not connected');
+      _addLog('ERROR', LiveApiI18n.current.logNotConnected);
       return;
     }
 
@@ -281,53 +297,53 @@ class LiveApiViewModel extends ChangeNotifier {
 
   void sendClientContent() {
     if (!_live.hasSession || !_isConnected) {
-      _addLog('ERROR', '❌ Not connected');
+      _addLog('ERROR', LiveApiI18n.current.logNotConnected);
       return;
     }
 
-    _addLog('USER', '💬 [Multi-turn content]');
+    _addLog('USER', LiveApiI18n.current.logMultiTurnContent);
     _live.sendClientContent();
   }
 
   void sendRealtimeInput() {
     if (!_live.hasSession || !_isConnected) {
-      _addLog('ERROR', '❌ Not connected');
+      _addLog('ERROR', LiveApiI18n.current.logNotConnected);
       return;
     }
 
-    _addLog('USER', '🎙️ [Realtime input with media]');
+    _addLog('USER', LiveApiI18n.current.logRealtimeInputMedia);
     _live.sendRealtimeInput();
   }
 
   void sendContextUpdate() {
     if (!_live.hasSession || !_isConnected) {
-      _addLog('ERROR', '❌ Not connected');
+      _addLog('ERROR', LiveApiI18n.current.logNotConnected);
       return;
     }
 
     const updatedInstruction =
         'You are now a concise technical expert. Keep every answer to 1-2 short sentences.';
-    _addLog('USER', '🔄 [Context Update: systemInstruction]');
+    _addLog('USER', LiveApiI18n.current.logContextUpdate);
     _live.sendContextUpdate(systemInstruction: updatedInstruction);
   }
 
   void toggleActivity(bool isStart) {
     if (!_live.hasSession || !_isConnected) {
-      _addLog('ERROR', '❌ Not connected');
+      _addLog('ERROR', LiveApiI18n.current.logNotConnected);
       return;
     }
 
     if (isStart) {
-      _addLog('USER', '🎙️ [Activity Start]');
+      _addLog('USER', LiveApiI18n.current.logActivityStart);
       _live.sendActivityStart();
     } else {
-      _addLog('USER', '🎙️ [Activity End]');
+      _addLog('USER', LiveApiI18n.current.logActivityEnd);
       _live.sendActivityEnd();
     }
   }
 
   void closeConnection() {
     _live.close();
-    _addLog('SYSTEM', '👋 Closing connection...');
+    _addLog('SYSTEM', LiveApiI18n.current.logClosingConnection);
   }
 }

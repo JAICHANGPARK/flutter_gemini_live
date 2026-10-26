@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../media_subtitle_i18n.dart';
 import '../view_models/media_subtitle_view_model.dart';
 
 /// Popup menu button that selects the audio input device.
@@ -16,6 +17,7 @@ class AudioDeviceSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
+    final i18n = MediaSubtitleI18n.current;
     final selectedAudioDevice = vm.selectedAudioDevice;
     final hasDevice = selectedAudioDevice != null;
     final isBlackHole =
@@ -23,11 +25,11 @@ class AudioDeviceSelectorButton extends StatelessWidget {
     final label = hasDevice
         ? (selectedAudioDevice.label.isNotEmpty
               ? selectedAudioDevice.label
-              : '입력 장치 (${selectedAudioDevice.id})')
-        : '기본 마이크 (System Default)';
+              : i18n.inputDeviceFallback(selectedAudioDevice.id))
+        : i18n.systemDefaultMic;
 
     return PopupMenuButton<String>(
-      tooltip: '오디오 입력 장치 선택 (BlackHole / 마이크)',
+      tooltip: i18n.selectAudioInputDeviceTooltip,
       onOpened: vm.loadAudioDevices,
       onSelected: (deviceId) {
         if (deviceId == '__default__') {
@@ -55,7 +57,7 @@ class AudioDeviceSelectorButton extends StatelessWidget {
                       : Colors.grey,
                 ),
                 const SizedBox(width: 8),
-                const Text('기본 마이크 (System Default)'),
+                Text(i18n.systemDefaultMic),
               ],
             ),
           ),
@@ -76,7 +78,7 @@ class AudioDeviceSelectorButton extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      isBh ? '🔈 ${dev.label} (시스템 오디오)' : dev.label,
+                      isBh ? i18n.blackHoleSystemAudio(dev.label) : dev.label,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,

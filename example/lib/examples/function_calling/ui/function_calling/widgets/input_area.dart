@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../function_calling_i18n.dart';
+
 class InputArea extends StatelessWidget {
   const InputArea({
     super.key,
@@ -14,6 +16,7 @@ class InputArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = FunctionCallingI18n.current;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -27,15 +30,13 @@ class InputArea extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildQuickPrompt('Weather in Seoul in celsius'),
+                _buildQuickPrompt(t.quickPromptWeather),
                 const SizedBox(width: 6),
-                _buildQuickPrompt('Convert 120 USD to KRW'),
+                _buildQuickPrompt(t.quickPromptCurrency),
                 const SizedBox(width: 6),
-                _buildQuickPrompt('Find 3 ramen places in Tokyo'),
+                _buildQuickPrompt(t.quickPromptPlaces),
                 const SizedBox(width: 6),
-                _buildQuickPrompt(
-                  'Remind me tomorrow 9am Asia/Seoul to submit weekly report',
-                ),
+                _buildQuickPrompt(t.quickPromptReminder),
               ],
             ),
           ),
@@ -45,11 +46,10 @@ class InputArea extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Ask weather/time/fx conversion/place search/reminder...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
+                  decoration: InputDecoration(
+                    hintText: t.inputHint,
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
@@ -60,6 +60,7 @@ class InputArea extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(
                 onPressed: onSubmit,
+                tooltip: t.sendTooltip,
                 icon: const Icon(Icons.send),
                 color: Colors.blue,
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../music_studio_i18n.dart';
 import '../view_models/music_studio_view_model.dart';
 
 /// Play / Pause / Stop / Reset Context transport row.
@@ -10,6 +11,7 @@ class TransportControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final i18n = MusicStudioI18n.current;
     final isConnected = viewModel.isConnected;
     final isPlaying = viewModel.isPlaying;
     return Card(
@@ -25,7 +27,7 @@ class TransportControls extends StatelessWidget {
               iconSize: 28,
               onPressed: isConnected && !isPlaying ? viewModel.play : null,
               icon: const Icon(Icons.play_arrow_rounded),
-              tooltip: 'Start / Resume Generation',
+              tooltip: i18n.playTooltip,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.green.shade600,
                 disabledBackgroundColor: Colors.white10,
@@ -36,7 +38,7 @@ class TransportControls extends StatelessWidget {
               iconSize: 28,
               onPressed: isConnected && isPlaying ? viewModel.pause : null,
               icon: const Icon(Icons.pause_rounded),
-              tooltip: 'Pause Stream',
+              tooltip: i18n.pauseTooltip,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.amber.shade700,
                 disabledBackgroundColor: Colors.white10,
@@ -47,7 +49,7 @@ class TransportControls extends StatelessWidget {
               iconSize: 28,
               onPressed: isConnected ? viewModel.stop : null,
               icon: const Icon(Icons.stop_rounded),
-              tooltip: 'Stop & Reset Context',
+              tooltip: i18n.stopTooltip,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.red.shade700,
                 disabledBackgroundColor: Colors.white10,
@@ -60,7 +62,7 @@ class TransportControls extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: isConnected ? viewModel.resetContext : null,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Reset Context'),
+                  label: Text(i18n.resetContextButton),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.cyanAccent,
                     side: BorderSide(

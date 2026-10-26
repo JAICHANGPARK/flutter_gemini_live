@@ -9,6 +9,7 @@ import '../../../data/services/function_calling_audio_service.dart';
 import '../../../data/services/function_calling_live_service.dart';
 import '../../../domain/mock_function_executor.dart';
 import '../../../domain/models/chat_message.dart';
+import '../function_calling_i18n.dart';
 
 /// State + logic for the function calling (tool calling) demo screen.
 class FunctionCallingViewModel extends ChangeNotifier {
@@ -58,21 +59,19 @@ class FunctionCallingViewModel extends ChangeNotifier {
   Future<void> connect() async {
     if (_isConnecting) return;
     if (!ApiKeyStore.hasApiKey) {
-      _addSystemMessage('❌ API key is not configured. Open Settings first.');
+      _addSystemMessage(FunctionCallingI18n.current.sysApiKeyNotConfigured);
       return;
     }
 
     _isConnecting = true;
     notifyListeners();
-    _addSystemMessage(
-      'Connecting with function calling enabled on Gemini 3.8 Live...',
-    );
+    _addSystemMessage(FunctionCallingI18n.current.sysConnecting);
     await _audio.stop();
 
     try {
       final session = await _live.connect(
         onOpen: () {
-          _addSystemMessage('✅ Connected with function calling');
+          _addSystemMessage(FunctionCallingI18n.current.sysConnected);
           _isConnected = true;
           _isConnecting = false;
           notifyListeners();
@@ -80,13 +79,13 @@ class FunctionCallingViewModel extends ChangeNotifier {
         onMessage: _handleMessage,
         onError: (error, stack) {
           unawaited(_audio.stop());
-          _addSystemMessage('❌ Error: $error');
+          _addSystemMessage(FunctionCallingI18n.current.sysError(error));
           _isConnecting = false;
           notifyListeners();
         },
         onClose: (code, reason) {
           unawaited(_audio.stop());
-          _addSystemMessage('🔒 Connection closed');
+          _addSystemMessage(FunctionCallingI18n.current.sysConnectionClosed);
           _isConnected = false;
           _isConnecting = false;
           notifyListeners();
@@ -96,7 +95,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
       _live.attach(session);
       notifyListeners();
     } catch (e) {
-      _addSystemMessage('❌ Connection failed: $e');
+      _addSystemMessage(FunctionCallingI18n.current.sysConnectionFailed(e));
       _isConnecting = false;
       notifyListeners();
     }
@@ -120,7 +119,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
 
     if (message.data != null) {
       _audio.appendBase64Chunk(message.data!);
-      _addSystemMessage('🔊 Received audio response');
+      _addSystemMessage(FunctionCallingI18n.current.sysReceivedAudio);
     }
 
     // Handle tool calls
@@ -134,20 +133,24 @@ class FunctionCallingViewModel extends ChangeNotifier {
     // Handle tool call cancellation
     if (message.toolCallCancellation != null) {
       final ids = message.toolCallCancellation!.ids ?? [];
-      _addSystemMessage('❌ Tool calls cancelled: ${ids.join(", ")}');
+      _addSystemMessage(
+        FunctionCallingI18n.current.sysToolCallsCancelled(ids.join(", ")),
+      );
       _pendingFunctionCalls.removeWhere((call) => ids.contains(call.id));
       notifyListeners();
     }
 
     if (turnFinished && _audio.hasBufferedAudio) {
-      _addSystemMessage('▶️ Playing received audio');
+      _addSystemMessage(FunctionCallingI18n.current.sysPlayingAudio);
       unawaited(_audio.playBufferedAudio());
     }
   }
 
   void _handleFunctionCall(FunctionCall call) {
-    _addSystemMessage('🔧 Function call: ${call.name} (id: ${call.id})');
-    _addSystemMessage('   Args: ${call.args}');
+    _addSystemMessage(
+      FunctionCallingI18n.current.sysFunctionCall(call.name, call.id),
+    );
+    _addSystemMessage(FunctionCallingI18n.current.sysFunctionArgs(call.args));
 
     _pendingFunctionCalls.add(call);
     notifyListeners();
@@ -158,7 +161,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
     final result = executed.result;
     final scheduling = executed.scheduling;
 
-    _addSystemMessage('📤 Sending response: $result');
+    _addSystemMessage(FunctionCallingI18n.current.sysSendingResponse(result));
 
     // Send function response
     _live.sendToolResponse(call, result, scheduling);
@@ -188,7 +191,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
 
   void sendText(String text) {
     if (!_live.hasSession || !_isConnected) {
-      _addSystemMessage('❌ Not connected');
+      _addSystemMessage(FunctionCallingI18n.current.sysNotConnected);
       return;
     }
 
@@ -203,8 +206,8 @@ class FunctionCallingViewModel extends ChangeNotifier {
     _live.updateTools(enabled: _toolsEnabled);
     _addSystemMessage(
       _toolsEnabled
-          ? '🔄 Tools re-enabled in-session via sendContextUpdate(tools: defaultTools)'
-          : '🔄 All tools cleared in-session via sendContextUpdate(tools: [])',
+          ? FunctionCallingI18n.current.sysToolsReEnabled
+          : FunctionCallingI18n.current.sysToolsCleared,
     );
     notifyListeners();
   }
