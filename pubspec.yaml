@@ -12,7 +12,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  web_socket_client: ^0.2.1
   web_socket_channel: ^3.0.3
   http: ^1.6.0
   json_annotation: ^4.12.0
