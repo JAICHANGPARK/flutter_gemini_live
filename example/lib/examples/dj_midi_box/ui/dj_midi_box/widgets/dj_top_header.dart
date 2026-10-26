@@ -61,14 +61,64 @@ class DjTopHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // Status & BPM Pill
+          // Status & BPM Pill (scales down cleanly on narrow 320px viewports so all controls stay visible)
           Flexible(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
+            flex: 2,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Hardware Mixer Desk vs 4x4 Pad Matrix Toggle Pill
+                  InkWell(
+                    onTap: vm.toggleMixerDeskView,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: vm.isMixerDeskView
+                            ? const Color(0xFF0084D6).withAlpha(60)
+                            : Colors.white.withAlpha(20),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: vm.isMixerDeskView
+                              ? const Color(0xFF0095FF)
+                              : Colors.white24,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            vm.isMixerDeskView
+                                ? Icons.tune_rounded
+                                : Icons.grid_view_rounded,
+                            color: vm.isMixerDeskView
+                                ? const Color(0xFF38BDF8)
+                                : Colors.white70,
+                            size: 13,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            vm.isMixerDeskView ? 'MG16XU' : '4x4 PAD',
+                            style: TextStyle(
+                              color: vm.isMixerDeskView
+                                  ? const Color(0xFF38BDF8)
+                                  : Colors.white,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+
                   // BPM Indicator (Tap to cycle tempo)
                   InkWell(
                     onTap: vm.cycleBpm,

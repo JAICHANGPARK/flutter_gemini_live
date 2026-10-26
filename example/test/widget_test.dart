@@ -280,4 +280,63 @@ void main() {
       expect(failures, isEmpty, reason: failures.join('\n'));
     },
   );
+
+  testWidgets(
+    'DjMidiBoxPage (MG16XU Mixer Desk & 4x4 Pad Matrix) and ProDjConsolePage hardware controls work without errors across viewports',
+    (WidgetTester tester) async {
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const testSizes = <Size>[
+        Size(320, 568), // Mobile portrait
+        Size(667, 375), // Mobile landscape
+        Size(1280, 800), // Desktop wide
+      ];
+
+      for (final size in testSizes) {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+
+        // 1. DjMidiBoxPage in MG16XU Mixer Desk mode
+        await tester.pumpWidget(const MaterialApp(home: DjMidiBoxPage()));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'DjMidiBoxPage MG16XU mode at $size',
+        );
+        expect(find.text('MG16XU'), findsWidgets);
+
+        // Toggle to 4x4 PAD Matrix mode and verify layout at all sizes
+        await tester.tap(find.text('MG16XU').first);
+        await tester.pump(const Duration(milliseconds: 150));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'DjMidiBoxPage 4x4 PAD mode at $size',
+        );
+        expect(find.text('4x4 PAD'), findsOneWidget);
+
+        // Toggle back to MG16XU mode
+        await tester.tap(find.text('4x4 PAD'));
+        await tester.pump(const Duration(milliseconds: 150));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'DjMidiBoxPage back to MG16XU mode at $size',
+        );
+
+        // 2. ProDjConsolePage hardware mixer at all sizes
+        await tester.pumpWidget(const MaterialApp(home: ProDjConsolePage()));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'ProDjConsolePage at $size',
+        );
+        expect(find.text('CH 1 ON'), findsOneWidget);
+        expect(find.text('CH 2 ON'), findsOneWidget);
+      }
+    },
+  );
 }

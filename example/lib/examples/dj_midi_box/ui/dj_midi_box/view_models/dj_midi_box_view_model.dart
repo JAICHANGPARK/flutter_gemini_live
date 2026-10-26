@@ -66,12 +66,22 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   /// Audio player handle (the visualizer polls live FFT / waveform from it).
   SoloudLiveAudioPlayer get audioPlayer => _audio.player;
 
-  // Side console panel state
-  bool _showSidePanel = true;
+  // Side console panel & view mode state
+  bool _showSidePanel = false;
+  bool _isMixerDeskView = true;
+  bool _phantom48v = true;
+  int _spxProgram = 24;
+  double _groupBusLevel = 0.78;
+  double _stereoMasterLevel = 0.85;
   double _customPromptWeight = 0.85;
   bool _customPromptActive = false;
 
   bool get showSidePanel => _showSidePanel;
+  bool get isMixerDeskView => _isMixerDeskView;
+  bool get phantom48v => _phantom48v;
+  int get spxProgram => _spxProgram;
+  double get groupBusLevel => _groupBusLevel;
+  double get stereoMasterLevel => _stereoMasterLevel;
   double get customPromptWeight => _customPromptWeight;
   bool get customPromptActive => _customPromptActive;
 
@@ -327,10 +337,27 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       );
     }
 
-    // 2. Rotary Dial Prompts
-    final active = knobs.where((k) => k.weight > 0.01).toList();
+    // 2. Rotary Dial / Channel Strip Prompts
+    final active = knobs
+        .where((k) => k.weight > 0.01 && (k.stAssigned || k.groupAssigned))
+        .toList();
     for (final k in active) {
-      prompts.add(WeightedPrompt(text: k.prompt, weight: k.weight));
+      final modifiers = <String>[];
+      if (k.high > 0.68) modifiers.add('crisp sparkling 10kHz high-end');
+      if (k.high < 0.32) modifiers.add('warm rolled-off highs');
+      if (k.mid > 0.68) modifiers.add('forward punchy 2.5kHz midrange');
+      if (k.low > 0.68) modifiers.add('deep booming 100Hz low-end bass');
+      if (k.comp > 0.68) modifiers.add('tightly compressed studio dynamics');
+      if (k.aux2 > 0.60) modifiers.add('lush SPX hall reverb tail');
+
+      final promptText = modifiers.isEmpty
+          ? k.prompt
+          : '${k.prompt} (${modifiers.join(", ")})';
+      final busFactor = k.groupAssigned ? _groupBusLevel : 1.0;
+      final effectiveWeight =
+          (k.weight * (0.5 + k.gain * 0.7) * busFactor * _stereoMasterLevel)
+              .clamp(0.05, 1.0);
+      prompts.add(WeightedPrompt(text: promptText, weight: effectiveWeight));
     }
 
     if (prompts.isEmpty) {
@@ -420,6 +447,78 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     notifyListeners();
     if (_isConnected) {
       _sendWeightedPrompts();
+    }
+  }
+
+  void updateChannelParam(
+    int index, {
+    double? gain,
+    double? comp,
+    double? high,
+    double? mid,
+    double? low,
+    double? aux1,
+    double? aux2,
+    double? pan,
+    bool? groupAssigned,
+    bool? stAssigned,
+    bool? pflActive,
+  }) {
+    final k = knobs[index];
+    if (gain != null) k.gain = gain.clamp(0.0, 1.0);
+    if (comp != null) k.comp = comp.clamp(0.0, 1.0);
+    if (high != null) k.high = high.clamp(0.0, 1.0);
+    if (mid != null) k.mid = mid.clamp(0.0, 1.0);
+    if (low != null) k.low = low.clamp(0.0, 1.0);
+    if (aux1 != null) k.aux1 = aux1.clamp(0.0, 1.0);
+    if (aux2 != null) k.aux2 = aux2.clamp(0.0, 1.0);
+    if (pan != null) k.pan = pan.clamp(0.0, 1.0);
+    if (groupAssigned != null) k.groupAssigned = groupAssigned;
+    if (stAssigned != null) k.stAssigned = stAssigned;
+    if (pflActive != null) k.pflActive = pflActive;
+    notifyListeners();
+    if (_isConnected) {
+      _knobDebounceTimer?.cancel();
+      _knobDebounceTimer = Timer(const Duration(milliseconds: 140), () {
+        if (_isConnected) _sendWeightedPrompts();
+      });
+    }
+  }
+
+  void toggleMixerDeskView() {
+    _isMixerDeskView = !_isMixerDeskView;
+    notifyListeners();
+  }
+
+  void togglePhantom48v() {
+    _phantom48v = !_phantom48v;
+    notifyListeners();
+  }
+
+  void cycleSpxProgram([int delta = 1]) {
+    _spxProgram = ((_spxProgram - 1 + delta) % 24) + 1;
+    notifyListeners();
+  }
+
+  void setGroupBusLevel(double val) {
+    _groupBusLevel = val.clamp(0.0, 1.0);
+    notifyListeners();
+    if (_isConnected) {
+      _knobDebounceTimer?.cancel();
+      _knobDebounceTimer = Timer(const Duration(milliseconds: 140), () {
+        if (_isConnected) _sendWeightedPrompts();
+      });
+    }
+  }
+
+  void setStereoMasterLevel(double val) {
+    _stereoMasterLevel = val.clamp(0.0, 1.0);
+    notifyListeners();
+    if (_isConnected) {
+      _knobDebounceTimer?.cancel();
+      _knobDebounceTimer = Timer(const Duration(milliseconds: 140), () {
+        if (_isConnected) _sendWeightedPrompts();
+      });
     }
   }
 

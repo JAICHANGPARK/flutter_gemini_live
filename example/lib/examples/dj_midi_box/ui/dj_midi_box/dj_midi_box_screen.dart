@@ -14,6 +14,7 @@ import 'widgets/dj_knob_grid.dart';
 import 'widgets/dj_midi_box_snack_bar.dart';
 import 'widgets/dj_tabletop_orb.dart';
 import 'widgets/dj_top_header.dart';
+import 'widgets/mg_mixing_console_desk.dart';
 
 /// Interactive Prompt DJ MIDI Box inspired by Google AI Studio's Prompt DJ.
 ///
@@ -93,17 +94,16 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          // Rich cosmic dark purple gradient matching reference design
-          gradient: RadialGradient(
-            center: Alignment(0.4, -0.2),
-            radius: 1.3,
+          // Brushed dark anodized aluminum studio hardware mixer chassis
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF381566), // Glowing cosmic violet
-              Color(0xFF210E40), // Mid purple
-              Color(0xFF110724), // Dark deep purple
-              Color(0xFF090414), // Near black purple
+              Color(0xFF141923), // Top anodized gunmetal slate
+              Color(0xFF0E121A), // Mid mixer faceplate
+              Color(0xFF090C12), // Deep studio rack chassis
             ],
-            stops: [0.0, 0.45, 0.8, 1.0],
+            stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
@@ -126,12 +126,17 @@ class _DjMidiBoxPageState extends State<DjMidiBoxPage>
                   required List<int> knobIndices,
                   required int crossAxisCount,
                   double maxWidth = 680,
-                }) => DjKnobGrid(
-                  viewModel: vm,
-                  knobIndices: knobIndices,
-                  crossAxisCount: crossAxisCount,
-                  maxWidth: maxWidth,
-                );
+                }) => vm.isMixerDeskView
+                    ? MgMixingConsoleDesk(
+                        viewModel: vm,
+                        knobIndices: knobIndices,
+                      )
+                    : DjKnobGrid(
+                        viewModel: vm,
+                        knobIndices: knobIndices,
+                        crossAxisCount: crossAxisCount,
+                        maxWidth: maxWidth,
+                      );
                 Widget bottomControls() => DjBottomControls(viewModel: vm);
 
                 // 1. Tabletop / Flex Mode (Foldable device half-opened on a table)

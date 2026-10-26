@@ -84,6 +84,41 @@ class DjMidiBoxI18n {
   };
 
   // Bottom Controls & Visualizer
+  String get matrixSectionLabel => switch (language) {
+    AppLanguage.ko => '16채널 로터리 스템 매트릭스 // 48kHz DSP',
+    AppLanguage.ja => '16CH ロータリーステムマトリックス // 48kHz DSP',
+    AppLanguage.zh => '16 通道旋钮干声矩阵 // 48kHz DSP',
+    AppLanguage.en => '16-CH ROTARY STEM MATRIX // 48kHz DSP',
+  };
+
+  String get masterBusLabel => switch (language) {
+    AppLanguage.ko => 'MASTER L/R',
+    AppLanguage.ja => 'MASTER L/R',
+    AppLanguage.zh => '主输出 L/R',
+    AppLanguage.en => 'MASTER L/R',
+  };
+
+  String get bassCutLabel => switch (language) {
+    AppLanguage.ko => 'BASS CUT',
+    AppLanguage.ja => 'BASS CUT',
+    AppLanguage.zh => '低音切除',
+    AppLanguage.en => 'BASS CUT',
+  };
+
+  String get drumCutLabel => switch (language) {
+    AppLanguage.ko => 'DRUM CUT',
+    AppLanguage.ja => 'DRUM CUT',
+    AppLanguage.zh => '鼓组切除',
+    AppLanguage.en => 'DRUM CUT',
+  };
+
+  String get masterGainLabel => switch (language) {
+    AppLanguage.ko => 'MASTER DRIVE',
+    AppLanguage.ja => 'MASTER DRIVE',
+    AppLanguage.zh => '主总线激励',
+    AppLanguage.en => 'MASTER DRIVE',
+  };
+
   String get liveFftTitle => switch (language) {
     AppLanguage.ko => '실시간 FFT & 파형',
     AppLanguage.ja => 'ライブ FFT & 波形',

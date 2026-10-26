@@ -106,28 +106,34 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
       customPromptWeight: widget.customPromptWeight,
     );
 
+    // Compute stereo L/R levels from FFT bands for the hardware meter bridge
+    double leftLevel = 0.0;
+    double rightLevel = 0.0;
+    if (widget.isPlaying && _fftValues.isNotEmpty) {
+      for (var i = 0; i < 16; i++) {
+        leftLevel += _fftValues[i];
+        rightLevel += _fftValues[16 + i];
+      }
+      leftLevel = (leftLevel / 7.5).clamp(0.0, 1.0);
+      rightLevel = (rightLevel / 7.5).clamp(0.0, 1.0);
+    }
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       constraints: const BoxConstraints(maxWidth: 680),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF140D2B).withAlpha(220),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF080B11),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: widget.isPlaying
-              ? const Color(0xFFA855F7).withAlpha(140)
-              : Colors.white12,
+              ? const Color(0xFF38BDF8).withAlpha(130)
+              : const Color(0xFF263042),
           width: 1.5,
         ),
-        boxShadow: widget.isPlaying
-            ? [
-                BoxShadow(
-                  color: const Color(0xFFA855F7).withAlpha(45),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
+        boxShadow: const [
+          BoxShadow(color: Colors.black87, blurRadius: 8, offset: Offset(0, 3)),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -155,13 +161,20 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                i18n.liveFftTitle,
-                style: TextStyle(
-                  color: widget.isPlaying ? Colors.white : Colors.white38,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2,
+              Flexible(
+                child: Text(
+                  i18n.liveFftTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: widget.isPlaying
+                        ? const Color(0xFFE2E8F0)
+                        : Colors.white38,
+                    fontSize: 9.5,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -173,7 +186,7 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFFBBF24),
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
                   ),
@@ -181,10 +194,19 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
+
+          // Hardware Stereo L/R 16-Segment Peak LED VU Meter Bridge
+          _StereoVuMeterBridge(
+            label: i18n.masterBusLabel,
+            leftLevel: leftLevel,
+            rightLevel: rightLevel,
+          ),
+          const SizedBox(height: 6),
+
           // Custom Painter for FFT Bars & Waveform line
           SizedBox(
-            height: 48,
+            height: 40,
             width: double.infinity,
             child: CustomPaint(
               painter: DjVisualizerPainter(
@@ -206,7 +228,8 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Colors.white24,
+                    color: Colors.white38,
+                    fontFamily: 'monospace',
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
@@ -219,7 +242,8 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Colors.white24,
+                    color: Colors.white38,
+                    fontFamily: 'monospace',
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
@@ -232,7 +256,8 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Colors.white24,
+                    color: Colors.white38,
+                    fontFamily: 'monospace',
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
@@ -245,7 +270,8 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: const TextStyle(
-                    color: Colors.white24,
+                    color: Colors.white38,
+                    fontFamily: 'monospace',
                     fontSize: 8,
                     fontWeight: FontWeight.bold,
                   ),
@@ -255,6 +281,110 @@ class _DjAudioVisualizerState extends State<DjAudioVisualizer>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StereoVuMeterBridge extends StatelessWidget {
+  final String label;
+  final double leftLevel;
+  final double rightLevel;
+
+  const _StereoVuMeterBridge({
+    required this.label,
+    required this.leftLevel,
+    required this.rightLevel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1119),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: const Color(0xFF1E2636)),
+      ),
+      child: Column(
+        children: [
+          _buildChannelBar('L', leftLevel),
+          const SizedBox(height: 3),
+          _buildChannelBar('R', rightLevel),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChannelBar(String ch, double level) {
+    const segments = 18;
+    final activeSegments = (level * segments).round();
+    return Row(
+      children: [
+        SizedBox(
+          width: 12,
+          child: Text(
+            ch,
+            style: const TextStyle(
+              color: Color(0xFF94A3B8),
+              fontFamily: 'monospace',
+              fontSize: 8.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Row(
+            children: List.generate(segments, (i) {
+              final isLit = i < activeSegments;
+              final Color segColor;
+              if (i >= 15) {
+                segColor = const Color(0xFFEF4444); // Red Peak/Clip (+3..+6dB)
+              } else if (i >= 11) {
+                segColor = const Color(0xFFF59E0B); // Amber (0dB)
+              } else {
+                segColor = const Color(0xFF10B981); // Green (-24..-3dB)
+              }
+              return Expanded(
+                child: Container(
+                  height: 5,
+                  margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                  decoration: BoxDecoration(
+                    color: isLit ? segColor : segColor.withAlpha(32),
+                    borderRadius: BorderRadius.circular(1),
+                    boxShadow: isLit
+                        ? [
+                            BoxShadow(
+                              color: segColor.withAlpha(150),
+                              blurRadius: 3,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+          decoration: BoxDecoration(
+            color: level > 0.88
+                ? const Color(0xFFEF4444)
+                : const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Text(
+            'CLIP',
+            style: TextStyle(
+              color: level > 0.88 ? Colors.white : const Color(0xFF475569),
+              fontFamily: 'monospace',
+              fontSize: 7,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 // ============================================================================
-// Custom Knob Painter
+// Hardware Audio Mixer Potentiometer Knob Painter
 // ============================================================================
 
 class MidiKnobPainter extends CustomPainter {
@@ -22,52 +22,99 @@ class MidiKnobPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final radius = math.min(size.width, size.height) / 2;
 
-    // 1. Outer Circular Glow Halo when active
-    if (isActive) {
-      final glowPaint = Paint()
-        ..color = color.withAlpha((180 + pulse * 75).toInt().clamp(0, 255))
-        ..style = PaintingStyle.fill
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12 + pulse * 8);
-
-      canvas.drawCircle(center, radius * 0.95, glowPaint);
-
-      // Solid color halo ring behind the knob
-      final haloSolidPaint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, radius * 0.88, haloSolidPaint);
-    } else {
-      // Inactive dark outer well with subtle bevel
-      final wellPaint = Paint()
-        ..color = Colors.black.withAlpha(130)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(center, radius * 0.88, wellPaint);
-
-      final wellBorderPaint = Paint()
-        ..color = Colors.white.withAlpha(20)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawCircle(center, radius * 0.88, wellBorderPaint);
-    }
-
-    // 2. Arc Indicator Track (clockwise from 7 o'clock = 135 deg to 5 o'clock = 405 deg)
-    // Total sweep angle = 270 degrees (3 * pi / 2)
     const startAngle = 135.0 * (math.pi / 180.0);
     const totalSweep = 270.0 * (math.pi / 180.0);
-    final sweepAngle = totalSweep * weight.clamp(0.0, 1.0);
+    final clampedWeight = weight.clamp(0.0, 1.0);
+    final sweepAngle = totalSweep * clampedWeight;
 
-    if (isActive) {
-      // White clean active arc
-      final arcPaint = Paint()
-        ..color = Colors.white
+    // 1. Recessed Metallic Potentiometer Well
+    final wellRadius = radius * 0.86;
+    final wellRect = Rect.fromCircle(center: center, radius: wellRadius);
+    final wellPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF07090E), Color(0xFF161B26)],
+      ).createShader(wellRect);
+    canvas.drawCircle(center, wellRadius, wellPaint);
+
+    final wellBevelPaint = Paint()
+      ..color = isActive
+          ? color.withAlpha((100 + pulse * 80).toInt().clamp(0, 255))
+          : const Color(0xFF283142)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawCircle(center, wellRadius, wellBevelPaint);
+
+    // 2. Silk-Screened Scale Ticks & Segmented LED Collar (11 ticks from 7 o'clock to 5 o'clock)
+    const tickCount = 11;
+    for (var i = 0; i < tickCount; i++) {
+      final t = i / (tickCount - 1);
+      final angle = startAngle + totalSweep * t;
+      final isMajor = i == 0 || i == 5 || i == 8 || i == tickCount - 1;
+      final isLit = isActive && t <= clampedWeight + 0.02;
+
+      final innerTickR = radius * (isMajor ? 0.72 : 0.75);
+      final outerTickR = radius * 0.83;
+
+      final p1 = Offset(
+        center.dx + innerTickR * math.cos(angle),
+        center.dy + innerTickR * math.sin(angle),
+      );
+      final p2 = Offset(
+        center.dx + outerTickR * math.cos(angle),
+        center.dy + outerTickR * math.sin(angle),
+      );
+
+      final tickPaint = Paint()
+        ..color = isLit
+            ? (i >= 9 ? const Color(0xFFEF4444) : color)
+            : Colors.white.withAlpha(isMajor ? 95 : 45)
+        ..strokeWidth = isMajor ? 1.8 : 1.1
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawLine(p1, p2, tickPaint);
+    }
+
+    // 3. Illuminated LED Arc Collar inside the well
+    final arcRadius = radius * 0.67;
+    final trackPaint = Paint()
+      ..color = const Color(0xFF1E2533)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3.0;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: arcRadius),
+      startAngle,
+      totalSweep,
+      false,
+      trackPaint,
+    );
+
+    if (isActive && clampedWeight > 0.01) {
+      final glowArcPaint = Paint()
+        ..color = color.withAlpha((130 + pulse * 90).toInt().clamp(0, 255))
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = 3.5;
-
+        ..strokeWidth = 5.5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
       canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius * 0.68),
+        Rect.fromCircle(center: center, radius: arcRadius),
+        startAngle,
+        sweepAngle,
+        false,
+        glowArcPaint,
+      );
+
+      final arcPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 3.0;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: arcRadius),
         startAngle,
         sweepAngle,
         false,
@@ -75,64 +122,116 @@ class MidiKnobPainter extends CustomPainter {
       );
     }
 
-    // 3. Knob Drop Shadow
+    // 4. Potentiometer Cap Drop Shadow
+    final capRadius = radius * 0.56;
     final shadowPaint = Paint()
-      ..color = Colors.black.withAlpha(180)
+      ..color = Colors.black.withAlpha(210)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawCircle(center.translate(0, 3), radius * 0.54, shadowPaint);
+    canvas.drawCircle(center.translate(0, 2.5), capRadius, shadowPaint);
 
-    // 4. White/Silver 3D Physical Knob Cap
-    final knobRect = Rect.fromCircle(center: center, radius: radius * 0.54);
-    final knobGradient = RadialGradient(
-      center: const Alignment(-0.2, -0.3),
-      radius: 0.85,
-      colors: const [
-        Color(0xFFFFFFFF), // Highlight pure white
-        Color(0xFFF1F5F9), // Light silver
-        Color(0xFFE2E8F0), // Base white/grey
-        Color(0xFFCBD5E1), // Bevel shadow edge
-      ],
-      stops: const [0.0, 0.45, 0.85, 1.0],
-    );
+    // 5. Knurled Outer Skirt (Machined Aluminum Grip Ring)
+    final skirtPaint = Paint()
+      ..color = const Color(0xFF11151E)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, capRadius, skirtPaint);
 
-    final knobPaint = Paint()..shader = knobGradient.createShader(knobRect);
-    canvas.drawCircle(center, radius * 0.54, knobPaint);
-
-    // Subtle edge rim border
-    final rimPaint = Paint()
-      ..color = const Color(0xFF94A3B8).withAlpha(100)
-      ..style = PaintingStyle.stroke
+    const knurlCount = 20;
+    final knurlPaint = Paint()
+      ..color = Colors.white.withAlpha(32)
       ..strokeWidth = 1.0;
-    canvas.drawCircle(center, radius * 0.54, rimPaint);
+    for (var i = 0; i < knurlCount; i++) {
+      final kAngle = (2 * math.pi * i) / knurlCount;
+      final k1 = Offset(
+        center.dx + capRadius * 0.86 * math.cos(kAngle),
+        center.dy + capRadius * 0.86 * math.sin(kAngle),
+      );
+      final k2 = Offset(
+        center.dx + capRadius * 0.98 * math.cos(kAngle),
+        center.dy + capRadius * 0.98 * math.sin(kAngle),
+      );
+      canvas.drawLine(k1, k2, knurlPaint);
+    }
 
-    // 5. Min Reference Dot at 7 o'clock position (outside knob)
-    final minDotOffset = Offset(
-      center.dx + radius * 0.74 * math.cos(startAngle),
-      center.dy + radius * 0.74 * math.sin(startAngle),
+    // 6. Anodized Metallic Top Cap
+    final topCapRadius = capRadius * 0.84;
+    final knobRect = Rect.fromCircle(center: center, radius: topCapRadius);
+    final knobGradient = RadialGradient(
+      center: const Alignment(-0.28, -0.32),
+      radius: 0.95,
+      colors: const [
+        Color(0xFF3B4457), // Top-left specular highlight
+        Color(0xFF252C3B), // Brushed gunmetal body
+        Color(0xFF171C26), // Deep anodized shadow
+        Color(0xFF0E1118), // Bevel edge
+      ],
+      stops: const [0.0, 0.42, 0.82, 1.0],
     );
-    final minDotPaint = Paint()
-      ..color = Colors.white.withAlpha(isActive ? 120 : 60)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(minDotOffset, 1.8, minDotPaint);
+    canvas.drawCircle(
+      center,
+      topCapRadius,
+      Paint()..shader = knobGradient.createShader(knobRect),
+    );
 
-    // 6. Knob Position Dot Indicator (black dot on the knob cap)
+    // Subtle metallic rim on top cap
+    canvas.drawCircle(
+      center,
+      topCapRadius,
+      Paint()
+        ..color = isActive ? color.withAlpha(110) : Colors.white.withAlpha(38)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+
+    // 7. Recessed Inner Cap Dish
+    final dishRadius = topCapRadius * 0.56;
+    canvas.drawCircle(
+      center,
+      dishRadius,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF12161F), Color(0xFF232A38)],
+        ).createShader(Rect.fromCircle(center: center, radius: dishRadius)),
+    );
+
+    // 8. High-Visibility Pointer Notch Line on Knob Cap
     final currentAngle = startAngle + sweepAngle;
-    final dotDist = radius * 0.36;
-    final dotOffset = Offset(
-      center.dx + dotDist * math.cos(currentAngle),
-      center.dy + dotDist * math.sin(currentAngle),
+    final lineStart = Offset(
+      center.dx + (dishRadius * 0.35) * math.cos(currentAngle),
+      center.dy + (dishRadius * 0.35) * math.sin(currentAngle),
+    );
+    final lineEnd = Offset(
+      center.dx + (topCapRadius * 0.90) * math.cos(currentAngle),
+      center.dy + (topCapRadius * 0.90) * math.sin(currentAngle),
     );
 
-    final dotPaint = Paint()
-      ..color =
-          const Color(0xFF0F172A) // Dark slate black
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(dotOffset, 2.5, dotPaint);
+    if (isActive) {
+      canvas.drawLine(
+        lineStart,
+        lineEnd,
+        Paint()
+          ..color = color.withAlpha(160)
+          ..strokeWidth = 4.0
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+    }
+
+    canvas.drawLine(
+      lineStart,
+      lineEnd,
+      Paint()
+        ..color = isActive ? Colors.white : const Color(0xFF94A3B8)
+        ..strokeWidth = 2.2
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   @override
   bool shouldRepaint(covariant MidiKnobPainter oldDelegate) {
     return oldDelegate.weight != weight ||
+        oldDelegate.color != color ||
         oldDelegate.isActive != isActive ||
         oldDelegate.pulse != pulse;
   }
