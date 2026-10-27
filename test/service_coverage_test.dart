@@ -1412,6 +1412,169 @@ void main() {
       'TimeoutException: bad things happened',
     );
   });
+
+  group('Upstream Header Isolation & Credentials Parity (python-genai 0584c960 & js-genai fc5ad300b)', () {
+    test('buildRequestHeaders does not mutate client default headers and populates X-Server-Timeout', () async {
+      final apiClient = ApiClient(
+        apiKey: 'test_api_key',
+        httpOptions: const HttpOptions(
+          timeout: 10000,
+          headers: {'x-client-default': 'keep-me'},
+        ),
+      );
+      final headersBefore = Map<String, String>.from(
+        apiClient.httpOptions.headers ?? const {},
+      );
+
+      final reqHeaders = await apiClient.buildRequestHeaders(
+        const {'Content-Type': 'application/json'},
+      );
+
+      expect(reqHeaders['X-Server-Timeout'], '10');
+      expect(reqHeaders['x-client-default'], 'keep-me');
+      expect(apiClient.httpOptions.headers, equals(headersBefore));
+      expect(apiClient.httpOptions.headers!.containsKey('X-Server-Timeout'), isFalse);
+      apiClient.close();
+    });
+
+    test('per-request timeout is not overridden by earlier client-timeout request', () async {
+      final apiClient = ApiClient(
+        apiKey: 'test_api_key',
+        httpOptions: const HttpOptions(timeout: 10000),
+      );
+
+      final firstHeaders = await apiClient.buildRequestHeaders(
+        const {'Content-Type': 'application/json'},
+      );
+      expect(firstHeaders['X-Server-Timeout'], '10');
+
+      final secondHeaders = await apiClient.buildRequestHeaders(
+        const {'Content-Type': 'application/json'},
+        const HttpOptions(timeout: 3000),
+      );
+      expect(secondHeaders['X-Server-Timeout'], '3');
+      apiClient.close();
+    });
+
+    test('REST request does not leak Authorization or x-goog-user-project into client default headers', () async {
+      final httpClient = RecordingHttpClient(
+        responder: (_) async => http.Response('{}', 200),
+      );
+      final creds = GenAICredentials(
+        token: 'token-1',
+        quotaProjectId: 'test-quota-project',
+      );
+      final apiClient = ApiClient(
+        apiKey: 'test_api_key',
+        credentials: creds,
+        httpClient: httpClient,
+      );
+
+      await apiClient.post('sample/path', <String, dynamic>{});
+
+      expect(httpClient.requests, hasLength(1));
+      final sentHeaders = httpClient.requests.single.headers;
+      expect(sentHeaders['Authorization'], 'Bearer token-1');
+      expect(sentHeaders['x-goog-user-project'], 'test-quota-project');
+      expect(
+        apiClient.httpOptions.headers?.containsKey('Authorization') ?? false,
+        isFalse,
+      );
+      expect(
+        apiClient.httpOptions.headers?.containsKey('x-goog-user-project') ??
+            false,
+        isFalse,
+      );
+      apiClient.close();
+    });
+
+    test('LiveService.connect uses current rotated token after REST call and sets x-goog-user-project when present', () async {
+      final httpClient = RecordingHttpClient(
+        responder: (_) async => http.Response('{"name":"auth_tokens/t1"}', 200),
+      );
+      final creds = GenAICredentials(
+        token: 'token-1',
+        quotaProjectId: 'test-quota-project',
+      );
+      final genAI = GoogleGenAI(
+        apiKey: 'test_api_key',
+        credentials: creds,
+        httpClient: httpClient,
+      );
+
+      // 1. Issue a REST call with token-1
+      await genAI.authTokens.create(CreateAuthTokenConfig());
+      expect(
+        httpClient.requests.single.headers['Authorization'],
+        'Bearer token-1',
+      );
+      expect(
+        httpClient.requests.single.headers['x-goog-user-project'],
+        'test-quota-project',
+      );
+
+      // 2. Rotate token to token-2
+      creds.token = 'token-2';
+
+      Map<String, dynamic>? capturedWsHeaders;
+      final liveService = LiveService(
+        apiKey: 'test_api_key',
+        credentials: creds,
+        connector: (uri, headers) async {
+          capturedWsHeaders = headers;
+          final ch = FakeWebSocketChannel();
+          unawaited(
+            Future<void>.delayed(
+              Duration.zero,
+              () => ch.emit(jsonEncode({'setupComplete': <String, dynamic>{}})),
+            ),
+          );
+          return ch;
+        },
+      );
+
+      final session = await liveService.connect(
+        LiveConnectParameters(model: 'gemini-2.5-flash'),
+      );
+      await session.close();
+
+      expect(capturedWsHeaders, isNotNull);
+      expect(capturedWsHeaders!['Authorization'], 'Bearer token-2');
+      expect(capturedWsHeaders!['x-goog-user-project'], 'test-quota-project');
+
+      // 3. Without quotaProjectId, x-goog-user-project is omitted
+      Map<String, dynamic>? capturedNoQuotaHeaders;
+      final liveNoQuota = LiveService(
+        apiKey: 'test_api_key',
+        credentials: GenAICredentials(token: 'token-3'),
+        connector: (uri, headers) async {
+          capturedNoQuotaHeaders = headers;
+          final ch = FakeWebSocketChannel();
+          unawaited(
+            Future<void>.delayed(
+              Duration.zero,
+              () => ch.emit(jsonEncode({'setupComplete': <String, dynamic>{}})),
+            ),
+          );
+          return ch;
+        },
+      );
+
+      final session2 = await liveNoQuota.connect(
+        LiveConnectParameters(model: 'gemini-2.5-flash'),
+      );
+      await session2.close();
+
+      expect(capturedNoQuotaHeaders!['Authorization'], 'Bearer token-3');
+      expect(
+        capturedNoQuotaHeaders!.containsKey('x-goog-user-project'),
+        isFalse,
+      );
+      expect(liveNoQuota.supportsHeaders, isTrue);
+
+      genAI.close();
+    });
+  });
 }
 
 class RecordingHttpClient extends http.BaseClient {

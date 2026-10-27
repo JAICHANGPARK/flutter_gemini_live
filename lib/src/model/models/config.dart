@@ -536,6 +536,41 @@ class HttpOptions {
   }
 }
 
+/// Bearer token credentials and optional Google Cloud quota project configuration
+/// for API and Live WebSocket requests.
+///
+/// Mirrors `google.oauth2.credentials.Credentials` usage in the upstream
+/// `google-genai` SDK:
+/// - Per-request `Authorization: Bearer <token>` and `x-goog-user-project` headers
+///   are resolved dynamically per call and never leak into the client's default
+///   [HttpOptions.headers].
+class GenAICredentials {
+  /// Current bearer access token. Can be updated dynamically between requests.
+  String? token;
+
+  /// Optional synchronous or asynchronous callback returning the latest bearer token.
+  final FutureOr<String?> Function()? tokenProvider;
+
+  /// Optional Google Cloud quota project ID sent via the `x-goog-user-project` header.
+  final String? quotaProjectId;
+
+  /// Creates [GenAICredentials] with a static/mutable [token] or dynamic [tokenProvider],
+  /// and an optional [quotaProjectId].
+  GenAICredentials({
+    this.token,
+    this.tokenProvider,
+    this.quotaProjectId,
+  });
+
+  /// Resolves the current bearer token from [tokenProvider] or [token].
+  Future<String?> resolveToken() async {
+    if (tokenProvider != null) {
+      return await tokenProvider!();
+    }
+    return token;
+  }
+}
+
 /// Session configuration for Live API connections.
 ///
 /// Mirrors `LiveConnectConfig` in the upstream `@google/genai` (JS/TS) and

@@ -1,6 +1,11 @@
 // coverage:ignore-file
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+/// Whether the WebSocket transport forwards handshake HTTP headers.
+///
+/// Browser WebSocket implementations ignore custom headers and set this to `false`.
+const bool supportsHeaders = false;
+
 // 웹소켓 연결을 생성하는 함수
 // io 파일과 시그니처(입력/출력 타입)를 동일하게 맞춰줍니다.
 Future<WebSocketChannel> connect(Uri uri, Map<String, dynamic> headers) async {

@@ -408,6 +408,15 @@ class LiveService {
   /// `apiVersion`, `headers`).
   final HttpOptions? httpOptions;
 
+  /// Optional bearer token and quota project credentials resolved per connection.
+  final GenAICredentials? credentials;
+
+  /// Whether the underlying WebSocket transport forwards handshake HTTP headers.
+  ///
+  /// Defaults to `true` on `dart:io` platforms and `false` on browser (`dart:html`)
+  /// environments, matching `WebSocketFactory.supportsHeaders` in `@google/genai`.
+  final bool supportsHeaders;
+
   static const _functionResponseRequiresId =
       'FunctionResponse request must have an `id` field from the response of a ToolCall.functionCalls in Gemini Live.';
 
@@ -431,16 +440,19 @@ class LiveService {
   late final LiveMusicService music;
 
   /// Creates a [LiveService] client configured with [apiKey], [apiVersion],
-  /// and optional [httpOptions].
+  /// and optional [httpOptions] and [credentials].
   LiveService({
     required this.apiKey,
     String apiVersion = 'v1beta',
     Object? httpOptions,
+    this.credentials,
+    bool? supportsHeaders,
     this.logger,
     WebSocketConnector? connector,
     Duration setupTimeout = const Duration(seconds: 10),
     String Function()? dartVersionProvider,
   }) : httpOptions = LiveConnectParameters._parseHttpOptions(httpOptions),
+       supportsHeaders = supportsHeaders ?? ws_connector.supportsHeaders,
        apiVersion =
            LiveConnectParameters._parseHttpOptions(httpOptions)?.apiVersion ??
            apiVersion,
@@ -843,6 +855,20 @@ class LiveService {
         'user-agent': userAgent,
         if (mergedHttpOptions.headers != null) ...mergedHttpOptions.headers!,
       };
+      if (credentials != null) {
+        final bearerToken = await credentials!.resolveToken();
+        if (bearerToken != null &&
+            bearerToken.isNotEmpty &&
+            !headers.containsKey('Authorization')) {
+          headers['Authorization'] = 'Bearer $bearerToken';
+        }
+        final quotaProject = credentials!.quotaProjectId;
+        if (quotaProject != null &&
+            quotaProject.isNotEmpty &&
+            !headers.containsKey('x-goog-user-project')) {
+          headers['x-goog-user-project'] = quotaProject;
+        }
+      }
       final channel = await _connector(websocketUri, headers);
       final session = LiveSession._(channel, logger: logger);
       final setupCompleter = Completer<void>();

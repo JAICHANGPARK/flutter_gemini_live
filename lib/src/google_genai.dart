@@ -60,6 +60,10 @@ class GoogleGenAI {
   /// `apiVersion`, `headers`).
   final HttpOptions? httpOptions;
 
+  /// Optional bearer token and quota project credentials resolved per request
+  /// and per Live connection.
+  final GenAICredentials? credentials;
+
   /// An optional custom HTTP client for making network requests.
   ///
   /// This is useful for advanced scenarios, such as:
@@ -111,6 +115,7 @@ class GoogleGenAI {
     this.httpClient,
     String apiVersion = 'v1beta',
     Object? httpOptions,
+    this.credentials,
     this.logger,
   }) : httpOptions = _parseHttpOptions(httpOptions),
        apiVersion = _parseHttpOptions(httpOptions)?.apiVersion ?? apiVersion {
@@ -120,6 +125,8 @@ class GoogleGenAI {
       baseUrl: this.httpOptions?.baseUrl,
       apiVersion: this.apiVersion,
       headers: this.httpOptions?.headers,
+      httpOptions: this.httpOptions,
+      credentials: credentials,
       httpClient: httpClient,
     );
 
@@ -128,6 +135,7 @@ class GoogleGenAI {
       apiKey: apiKey,
       apiVersion: this.apiVersion,
       httpOptions: this.httpOptions,
+      credentials: credentials,
       logger: logger,
     );
 
