@@ -137,6 +137,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
   String? _latestSessionHandle;
   bool _isSessionResumable = false;
   LiveServerGoAway? _lastGoAway;
+  InteractionStatus? _interactionStatus;
+  String? _continuationToken;
 
   Content? _activeSystemInstruction;
   List<Tool> _activeTools = const [];
@@ -221,6 +223,16 @@ class GeminiLiveSessionController extends ChangeNotifier {
 
   /// Latest `GoAway` notice emitted by the server, if any.
   LiveServerGoAway? get lastGoAway => _lastGoAway;
+
+  /// Latest [InteractionStatus] emitted by the server in `serverContent`.
+  InteractionStatus? get interactionStatus => _interactionStatus;
+
+  /// Latest `continuationToken` emitted by the server when [requiresContinuation] is `true`.
+  String? get continuationToken => _continuationToken;
+
+  /// Whether the session's current interaction requires continuation (`REQUIRES_CONTINUATION`).
+  bool get requiresContinuation =>
+      _interactionStatus == InteractionStatus.REQUIRES_CONTINUATION;
 
   /// Currently active (in-flight) function calls requested by the model.
   List<FunctionCall> get activeToolCalls => List.unmodifiable(_activeToolCalls);
@@ -431,6 +443,16 @@ class GeminiLiveSessionController extends ChangeNotifier {
     // 2. Server content / Model turn
     final serverContent = message.serverContent;
     if (serverContent != null) {
+      if (serverContent.interactionStatus != null) {
+        _interactionStatus = serverContent.interactionStatus;
+      }
+      if (serverContent.continuationToken != null &&
+          serverContent.continuationToken!.isNotEmpty) {
+        _continuationToken = serverContent.continuationToken;
+      } else if (serverContent.interactionStatus == InteractionStatus.IDLE) {
+        _continuationToken = null;
+      }
+
       // Barge-in interruption
       if (serverContent.interrupted == true) {
         _isInterrupted = true;
@@ -901,6 +923,8 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _latestTranscript = null;
     _latestTranscriptRole = null;
     _lastCompletedTurnWav = null;
+    _interactionStatus = null;
+    _continuationToken = null;
     _currentTurnAudioBuffer.clear();
     tokenTracker.reset();
     connectionMetrics.reset();

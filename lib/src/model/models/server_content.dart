@@ -121,6 +121,10 @@ class LiveServerContent {
   /// The current activity status of the live session. Always sent alongside `turn_complete`.
   final InteractionStatus? interactionStatus;
 
+  /// Opaque token to resume a long decode when [interactionStatus] is
+  /// [InteractionStatus.REQUIRES_CONTINUATION].
+  final String? continuationToken;
+
   LiveServerContent({
     this.modelTurn,
     this.turnComplete,
@@ -134,6 +138,7 @@ class LiveServerContent {
     this.waitingForInput,
     this.interimInputTranscription,
     this.interactionStatus,
+    this.continuationToken,
   });
 
   /// Whether the server content indicates that the interaction is complete.
@@ -150,8 +155,24 @@ class LiveServerContent {
     return turnComplete ?? false;
   }
 
-  factory LiveServerContent.fromJson(Map<String, dynamic> json) =>
-      _$LiveServerContentFromJson(json);
+  /// Whether the interaction requires continuation using [continuationToken].
+  bool get requiresContinuation =>
+      interactionStatus == InteractionStatus.REQUIRES_CONTINUATION;
+
+  factory LiveServerContent.fromJson(Map<String, dynamic> json) {
+    final rawStatus =
+        json['interactionStatus'] ?? json['interaction_status'] ?? json['status'];
+    final normalizedStatus = rawStatus is String
+        ? rawStatus.toUpperCase()
+        : rawStatus;
+    return _$LiveServerContentFromJson({
+      ...json,
+      'interactionStatus': ?normalizedStatus,
+      if (!json.containsKey('continuationToken') &&
+          json.containsKey('continuation_token'))
+        'continuationToken': json['continuation_token'],
+    });
+  }
 }
 
 /// A tool call request emitted by the server.
@@ -270,8 +291,19 @@ class ModalityTokenCount {
 
   ModalityTokenCount({this.modality, this.tokenCount});
 
-  factory ModalityTokenCount.fromJson(Map<String, dynamic> json) =>
-      _$ModalityTokenCountFromJson(json);
+  factory ModalityTokenCount.fromJson(Map<String, dynamic> json) {
+    final rawModality = json['modality'];
+    final normalizedModality = rawModality is String
+        ? rawModality.toUpperCase()
+        : rawModality;
+    return _$ModalityTokenCountFromJson({
+      ...json,
+      'modality': ?normalizedModality,
+      if (!json.containsKey('tokenCount') &&
+          (json.containsKey('token_count') || json.containsKey('tokens')))
+        'tokenCount': json['token_count'] ?? json['tokens'],
+    });
+  }
 }
 
 /// Usage statistics attached to a server response.
@@ -312,39 +344,75 @@ class UsageMetadata {
       _$UsageMetadataFromJson({
         ...json,
         if (!json.containsKey('initialPromptTokenCount') &&
-            json.containsKey('initial_prompt_token_count'))
-          'initialPromptTokenCount': json['initial_prompt_token_count'],
+            (json.containsKey('initial_prompt_token_count') ||
+                json.containsKey('initialInputTokens') ||
+                json.containsKey('initial_input_tokens')))
+          'initialPromptTokenCount':
+              json['initial_prompt_token_count'] ??
+              json['initialInputTokens'] ??
+              json['initial_input_tokens'],
         if (!json.containsKey('promptTokenCount') &&
-            json.containsKey('prompt_token_count'))
-          'promptTokenCount': json['prompt_token_count'],
+            (json.containsKey('prompt_token_count') ||
+                json.containsKey('total_input_tokens')))
+          'promptTokenCount':
+              json['prompt_token_count'] ?? json['total_input_tokens'],
         if (!json.containsKey('cachedContentTokenCount') &&
-            json.containsKey('cached_content_token_count'))
-          'cachedContentTokenCount': json['cached_content_token_count'],
+            (json.containsKey('cached_content_token_count') ||
+                json.containsKey('total_cached_tokens')))
+          'cachedContentTokenCount':
+              json['cached_content_token_count'] ?? json['total_cached_tokens'],
         if (!json.containsKey('responseTokenCount') &&
             (json.containsKey('response_token_count') ||
                 json.containsKey('candidatesTokenCount') ||
-                json.containsKey('candidates_token_count')))
+                json.containsKey('candidates_token_count') ||
+                json.containsKey('total_output_tokens')))
           'responseTokenCount':
               json['response_token_count'] ??
               json['candidatesTokenCount'] ??
-              json['candidates_token_count'],
+              json['candidates_token_count'] ??
+              json['total_output_tokens'],
         if (!json.containsKey('toolUsePromptTokenCount') &&
-            json.containsKey('tool_use_prompt_token_count'))
-          'toolUsePromptTokenCount': json['tool_use_prompt_token_count'],
+            (json.containsKey('tool_use_prompt_token_count') ||
+                json.containsKey('total_tool_use_tokens')))
+          'toolUsePromptTokenCount':
+              json['tool_use_prompt_token_count'] ??
+              json['total_tool_use_tokens'],
         if (!json.containsKey('thoughtsTokenCount') &&
-            json.containsKey('thoughts_token_count'))
-          'thoughtsTokenCount': json['thoughts_token_count'],
+            (json.containsKey('thoughts_token_count') ||
+                json.containsKey('total_thought_tokens')))
+          'thoughtsTokenCount':
+              json['thoughts_token_count'] ?? json['total_thought_tokens'],
         if (!json.containsKey('totalTokenCount') &&
-            json.containsKey('total_token_count'))
-          'totalTokenCount': json['total_token_count'],
+            (json.containsKey('total_token_count') ||
+                json.containsKey('total_tokens')))
+          'totalTokenCount':
+              json['total_token_count'] ?? json['total_tokens'],
+        if (!json.containsKey('promptTokensDetails') &&
+            (json.containsKey('prompt_tokens_details') ||
+                json.containsKey('input_tokens_by_modality')))
+          'promptTokensDetails':
+              json['prompt_tokens_details'] ?? json['input_tokens_by_modality'],
+        if (!json.containsKey('cacheTokensDetails') &&
+            (json.containsKey('cache_tokens_details') ||
+                json.containsKey('cached_tokens_by_modality')))
+          'cacheTokensDetails':
+              json['cache_tokens_details'] ?? json['cached_tokens_by_modality'],
         if (!json.containsKey('responseTokensDetails') &&
             (json.containsKey('response_tokens_details') ||
                 json.containsKey('candidatesTokensDetails') ||
-                json.containsKey('candidates_tokens_details')))
+                json.containsKey('candidates_tokens_details') ||
+                json.containsKey('output_tokens_by_modality')))
           'responseTokensDetails':
               json['response_tokens_details'] ??
               json['candidatesTokensDetails'] ??
-              json['candidates_tokens_details'],
+              json['candidates_tokens_details'] ??
+              json['output_tokens_by_modality'],
+        if (!json.containsKey('toolUsePromptTokensDetails') &&
+            (json.containsKey('tool_use_prompt_tokens_details') ||
+                json.containsKey('tool_use_tokens_by_modality')))
+          'toolUsePromptTokensDetails':
+              json['tool_use_prompt_tokens_details'] ??
+              json['tool_use_tokens_by_modality'],
       });
 }
 

@@ -235,6 +235,8 @@ enum InteractionStatus {
   @Deprecated('Use IDLE instead.')
   @JsonValue('REQUIRES_ACTION')
   REQUIRES_ACTION,
+  @JsonValue('REQUIRES_CONTINUATION')
+  REQUIRES_CONTINUATION,
   @JsonValue('IDLE')
   IDLE,
 }

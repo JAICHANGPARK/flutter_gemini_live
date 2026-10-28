@@ -1563,6 +1563,7 @@ LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
         _$InteractionStatusEnumMap,
         json['interactionStatus'],
       ),
+      continuationToken: json['continuationToken'] as String?,
     );
 
 const _$TurnCompleteReasonEnumMap = {
@@ -1610,6 +1611,7 @@ const _$InteractionStatusEnumMap = {
       'INTERACTION_STATUS_UNSPECIFIED',
   InteractionStatus.IN_PROGRESS: 'IN_PROGRESS',
   InteractionStatus.REQUIRES_ACTION: 'REQUIRES_ACTION',
+  InteractionStatus.REQUIRES_CONTINUATION: 'REQUIRES_CONTINUATION',
   InteractionStatus.IDLE: 'IDLE',
 };
 
