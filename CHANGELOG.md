@@ -1,3 +1,36 @@
+## 2026.10.29
+
+### Added (Upstream Parity with `js-genai` & `python-genai`)
+- **Video Understanding in Tool Responses (`FunctionResponsePart.mediaProcessing`)**:
+  - Added `mediaProcessing` (`MediaProcessing.STATIC` / `MediaProcessing.AGENTIC`) to `FunctionResponsePart` and its `.fromBytes()` / `.fromUri()` factories.
+  - Added snake_case (`media_processing`) and camelCase (`mediaProcessing`) deserialization support across `FunctionResponsePart.fromJson()` and `Part.fromJson()`.
+- **Long Decode Continuation & Interaction Status (`REQUIRES_CONTINUATION`, `continuationToken`, `continuationIds`)**:
+  - Added `InteractionStatus.REQUIRES_CONTINUATION` to `InteractionStatus` with case-insensitive deserialization (`requires_continuation` / `REQUIRES_CONTINUATION`).
+  - Added `continuationToken`, `continuationIds`, and `requiresContinuation` to `LiveServerContent` and `GeminiLiveSessionController`.
+  - Added `ContinuationInterruptedError` to preserve partial progress, `continuationToken`, `interactionId`, and `continuationIds` across multi-hop continuation boundaries.
+- **Interaction Usage Metadata Aliases**:
+  - Extended `UsageMetadata.fromJson()` and `ModalityTokenCount.fromJson()` to support `initial_input_tokens` (`initialInputTokens`), `total_input_tokens`, `total_output_tokens`, `total_cached_tokens`, `total_tool_use_tokens`, `total_thought_tokens`, `total_tokens`, and `*_tokens_by_modality` (`tokens` and lowercase modality names).
+- **Per-Request Header Isolation, `GenAICredentials`, `X-Server-Timeout`, & SDK Headers**:
+  - Added `GenAICredentials` for dynamic bearer token (`Authorization: Bearer ...`) and quota project (`x-goog-user-project`) resolution across `GoogleGenAI`, `LiveService`, and `ApiClient`.
+  - Added `ApiClient.populateServerTimeoutHeader()` (`X-Server-Timeout` in whole seconds rounded up from `HttpOptions.timeout`) and ensured per-request headers never mutate client default headers.
+  - Aligned `ApiClient.buildRequestHeaders()` to include default `User-Agent` and `x-goog-api-client` SDK headers (`google-genai-sdk/2.33.0 dart/<version>`) while preserving caller-supplied overrides.
+  - Added `LiveService.supportsHeaders` matching `WebSocketFactory.supportsHeaders` in `@google/genai`, and supported `HttpOptions` (`baseUrl`, `apiVersion`, `headers`, `timeout`, `extraBody`, `retryOptions`) on `LiveConnectConfig` and `LiveConnectParameters`.
+
+### Added (Pre-Built Widgets, Foldable/Adaptive UI & Developer Utilities)
+- **Foldable & Adaptive Responsive Layouts (`GeminiLiveViewportInfo`, `GeminiLiveAdaptiveSplitView`)**:
+  - Added `GeminiLiveViewportInfo` (`GeminiLiveSizeClass`, `GeminiLiveFoldPosture`) detecting `DisplayFeature` foldable hinges (`book`, `tabletop`), ultra-narrow screens (`< 360px`), and tablet/desktop breakpoints.
+  - Added `GeminiLiveAdaptiveSplitView` and adapted `GeminiLiveTranslateSplitView`, `GeminiLiveChatView`, `GeminiLiveControlBar`, `GeminiLiveMusicControlDeck`, `GeminiLiveLogOverlay`, and all 4 bottom sheets (`GeminiLiveVoiceSelectorSheet`, `GeminiLiveVoiceStudioSheet`, `GeminiLiveSessionInfoSheet`, `GeminiLiveContextConfigSheet`) for foldable hinges and compact viewports.
+- **Universal In-App WebSocket & Diagnostic Log Overlay (`GeminiLiveLogOverlay`, `GeminiLiveLogConsole`)**:
+  - Added `GeminiLiveLogController`, `GeminiLiveLogOverlay`, `GeminiLiveLogConsole`, and `.withGeminiLiveLogOverlay()` widget extension to attach a draggable floating log button and filterable diagnostic console to any widget.
+- **Additional Widgets & Developer Utilities**:
+  - Added `GeminiLiveMusicControlDeck`, `GeminiLiveReconnectBanner`, `GeminiLiveVoiceStudioSheet`, and `GeminiLiveSessionInfoSheet` / `GeminiLiveSessionInfoBadge`.
+  - Added `GeminiLiveFunctionTool` & `GeminiLiveToolRegistry` (inline tool declaration & auto-execution), `GeminiLiveTranscriptExporter` (`HistoryConfig`, Markdown, JSON, WebVTT, SRT), `GeminiLiveFrameRateLimiter` (camera frame throttling), and `GeminiLiveAudioUtils` (PCM16 resampling, stereo/mono conversion, silence detection, WAV header parsing).
+
+### Refactored & Example App
+- Removed unused `web_socket_client` dependency and standardized WebSocket handshake via `WebSocketChannel.ready`.
+- Added 4-language (`en`, `ko`, `ja`, `zh`) runtime localization, global log overlay integration, and MG16XU hardware mixer strips across all 13 example screens.
+- Applied Effective Dart documentation guidelines across public API classes and methods.
+
 ## 2026.10.23
 
 ### Added (Upstream Parity with `js-genai` 2.31.0 & `python-genai` 2.33.0)
