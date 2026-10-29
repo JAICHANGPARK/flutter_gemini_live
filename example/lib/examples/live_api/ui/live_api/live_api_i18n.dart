@@ -58,6 +58,20 @@ class LiveApiI18n {
     AppLanguage.en => 'Context Compression',
   };
 
+  String get toggleServerTimeout => switch (lang) {
+    AppLanguage.ko => 'X-Server-Timeout (30s)',
+    AppLanguage.ja => 'X-Server-Timeout (30s)',
+    AppLanguage.zh => 'X-Server-Timeout (30s)',
+    AppLanguage.en => 'X-Server-Timeout (30s)',
+  };
+
+  String supportsHeadersBadge(bool supported) => switch (lang) {
+    AppLanguage.ko => 'WS 헤더 지원: ${supported ? "ON (IO)" : "OFF (Web)"}',
+    AppLanguage.ja => 'WSヘッダー: ${supported ? "ON (IO)" : "OFF (Web)"}',
+    AppLanguage.zh => 'WS 请求头: ${supported ? "ON (IO)" : "OFF (Web)"}',
+    AppLanguage.en => 'WS Headers: ${supported ? "ON (IO)" : "OFF (Web)"}',
+  };
+
   // Connection button
   String get connecting => switch (lang) {
     AppLanguage.ko => '연결 중...',
@@ -165,6 +179,21 @@ class LiveApiI18n {
     AppLanguage.ja => 'Gemini 3.8 Live API に接続中...',
     AppLanguage.zh => '正在连接到 Gemini 3.8 Live API...',
     AppLanguage.en => 'Connecting to Gemini 3.8 Live API...',
+  };
+
+  String logTransportInfo({
+    required bool supportsHeaders,
+    required int? serverTimeoutSec,
+    required bool hasCredentials,
+  }) => switch (lang) {
+    AppLanguage.ko =>
+      '🌐 전송 설정: supportsHeaders=$supportsHeaders, X-Server-Timeout=${serverTimeoutSec != null ? "${serverTimeoutSec}s" : "없음"}, GenAICredentials=${hasCredentials ? "활성" : "기본 API 키"}',
+    AppLanguage.ja =>
+      '🌐 トランスポート: supportsHeaders=$supportsHeaders, X-Server-Timeout=${serverTimeoutSec != null ? "${serverTimeoutSec}s" : "なし"}, GenAICredentials=${hasCredentials ? "有効" : "APIキー"}',
+    AppLanguage.zh =>
+      '🌐 传输配置: supportsHeaders=$supportsHeaders, X-Server-Timeout=${serverTimeoutSec != null ? "${serverTimeoutSec}s" : "无"}, GenAICredentials=${hasCredentials ? "已启用" : "默认 API 密钥"}',
+    AppLanguage.en =>
+      '🌐 Transport: supportsHeaders=$supportsHeaders, X-Server-Timeout=${serverTimeoutSec != null ? "${serverTimeoutSec}s" : "off"}, GenAICredentials=${hasCredentials ? "active" : "API key"}',
   };
 
   String get logConnectedSuccess => switch (lang) {

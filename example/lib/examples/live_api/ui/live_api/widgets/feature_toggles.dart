@@ -43,6 +43,24 @@ class FeatureToggles extends StatelessWidget {
             viewModel.enableContextCompression,
             (v) => viewModel.enableContextCompression = v,
           ),
+          _buildToggle(
+            t.toggleServerTimeout,
+            viewModel.enableServerTimeout,
+            (v) => viewModel.enableServerTimeout = v,
+          ),
+          Chip(
+            visualDensity: VisualDensity.compact,
+            avatar: Icon(
+              viewModel.supportsHeaders
+                  ? Icons.verified_outlined
+                  : Icons.public_outlined,
+              size: 16,
+            ),
+            label: Text(
+              t.supportsHeadersBadge(viewModel.supportsHeaders),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
         ],
       ),
     );
@@ -50,7 +68,9 @@ class FeatureToggles extends StatelessWidget {
 
   Widget _buildToggle(String label, bool value, Function(bool) onChanged) {
     return FilterChip(
-      label: Text(label),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      label: Text(label, style: const TextStyle(fontSize: 12)),
       selected: value,
       onSelected: viewModel.isConnected ? null : onChanged,
     );

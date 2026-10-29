@@ -57,6 +57,13 @@ class _RealtimeMediaDemoPageState extends State<RealtimeMediaDemoPage>
             actions: [
               ScrollableAppBarActions(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: GeminiLiveUsageBadge(
+                      tracker: vm.usageTracker,
+                      compact: true,
+                    ),
+                  ),
                   const LanguageSelectorButton(compact: true),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),

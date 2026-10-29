@@ -173,7 +173,7 @@ class GenerationConfigSection extends StatelessWidget {
                     children: [
                       const Expanded(
                         child: Text(
-                          'MG-STUDIO DSP ROTARY STRIP // 48kHz',
+                          'STUDIO DSP ROTARY STRIP // 48kHz',
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Color(0xFF38BDF8),

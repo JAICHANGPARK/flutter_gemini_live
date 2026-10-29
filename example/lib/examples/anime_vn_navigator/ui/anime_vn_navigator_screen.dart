@@ -2,6 +2,7 @@ import 'package:example/app_settings_dialog.dart';
 import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import '../domain/models/vn_character_models.dart';
 import 'anime_vn_i18n.dart';
@@ -396,6 +397,14 @@ class _AnimeVnNavigatorPageState extends State<AnimeVnNavigatorPage> {
                                     compact: true,
                                   ),
                                 ),
+                              ),
+
+                              // Real-time Token Usage & Cost Badge
+                              GeminiLiveUsageBadge(
+                                tracker: vm.usageTracker,
+                                compact: true,
+                                backgroundColor: Colors.black54,
+                                foregroundColor: Colors.white,
                               ),
 
                               // Affection Indicator Pill (Individual Heroine Affection in Dual Mode)

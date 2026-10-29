@@ -84,6 +84,11 @@ class RealtimeMediaViewModel extends ChangeNotifier {
   int get audioChunksSent => _audioChunksSent;
   int get videoFramesSent => _videoFramesSent;
   List<MediaLog> get logs => _logRepo.logs;
+
+  /// Real-time token usage and cost tracker for the Realtime Media session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: kLatestRealtimeLiveModel,
+  );
   List<CameraDescription> get availableCameras => _availableCameras;
   CameraController? get cameraController => _cameraController;
 
@@ -118,6 +123,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
     unawaited(_cameraController?.dispose() ?? Future<void>.value());
     unawaited(_live.close());
     unawaited(_audio.dispose());
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -343,6 +349,7 @@ class RealtimeMediaViewModel extends ChangeNotifier {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    usageTracker.recordMessage(message);
     final serverContent = message.serverContent;
     final turnFinished =
         (serverContent?.turnComplete ?? false) ||

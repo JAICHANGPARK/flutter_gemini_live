@@ -5,6 +5,7 @@ import 'package:example/foldable_utils.dart';
 import 'package:example/examples/pro_dj_console/ui/pro_dj_console/pro_dj_console_screen.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import '../music_studio_i18n.dart';
 import 'foldable_pill.dart';
@@ -12,9 +13,14 @@ import 'foldable_pill.dart';
 /// App bar with title, foldable badge, DJ page shortcuts, language and
 /// settings buttons.
 class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const MusicStudioAppBar({super.key, required this.foldableInfo});
+  const MusicStudioAppBar({
+    super.key,
+    required this.foldableInfo,
+    required this.usageTracker,
+  });
 
   final FoldableLayoutInfo foldableInfo;
+  final GeminiTokenUsageTracker usageTracker;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -123,6 +129,13 @@ class MusicStudioAppBar extends StatelessWidget implements PreferredSizeWidget {
                   vertical: 0,
                 ),
               ),
+            ),
+            const SizedBox(width: 6),
+            GeminiLiveUsageBadge(
+              tracker: usageTracker,
+              compact: true,
+              backgroundColor: Colors.white.withAlpha(20),
+              foregroundColor: Colors.white,
             ),
             const SizedBox(width: 6),
             const LanguageSelectorButton(compact: true),

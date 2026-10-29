@@ -43,18 +43,26 @@ class LiveApiViewModel extends ChangeNotifier {
   final List<LogEntry> _logs = [];
   List<LogEntry> get logs => _logs;
 
+  /// Real-time token usage and cost tracker for the Live API session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: kLatestRealtimeLiveModel,
+  );
+
   // Feature toggles
   bool _enableRealtimeConfig = true;
   bool _enableTranscription = true;
   bool _useSmartTranscription = false;
   bool _enableSessionResumption = false;
   bool _enableContextCompression = true;
+  bool _enableServerTimeout = true;
 
   bool get enableRealtimeConfig => _enableRealtimeConfig;
   bool get enableTranscription => _enableTranscription;
   bool get useSmartTranscription => _useSmartTranscription;
   bool get enableSessionResumption => _enableSessionResumption;
   bool get enableContextCompression => _enableContextCompression;
+  bool get enableServerTimeout => _enableServerTimeout;
+  bool get supportsHeaders => _live.supportsHeaders;
 
   set enableRealtimeConfig(bool v) {
     _enableRealtimeConfig = v;
@@ -81,6 +89,11 @@ class LiveApiViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  set enableServerTimeout(bool v) {
+    _enableServerTimeout = v;
+    notifyListeners();
+  }
+
   // Session handle for resumption
   String? _sessionHandle;
 
@@ -89,6 +102,7 @@ class LiveApiViewModel extends ChangeNotifier {
     _disposed = true;
     _live.close();
     unawaited(_audio.dispose());
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -119,6 +133,14 @@ class LiveApiViewModel extends ChangeNotifier {
       'SYSTEM',
       LiveApiI18n.current.logConnecting,
     );
+    _addLog(
+      'TRANSPORT',
+      LiveApiI18n.current.logTransportInfo(
+        supportsHeaders: _live.supportsHeaders,
+        serverTimeoutSec: _enableServerTimeout ? 30 : null,
+        hasCredentials: ApiKeyStore.credentials != null,
+      ),
+    );
     await _audio.stop();
 
     try {
@@ -128,6 +150,7 @@ class LiveApiViewModel extends ChangeNotifier {
         useSmartTranscription: _useSmartTranscription,
         enableSessionResumption: _enableSessionResumption,
         enableContextCompression: _enableContextCompression,
+        enableServerTimeout: _enableServerTimeout,
         sessionHandle: _sessionHandle,
         onOpen: () {
           _addLog('CONNECTION', LiveApiI18n.current.logConnectedSuccess);
@@ -170,6 +193,7 @@ class LiveApiViewModel extends ChangeNotifier {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    usageTracker.recordMessage(message);
     final serverContent = message.serverContent;
     final turnFinished =
         (serverContent?.turnComplete ?? false) ||

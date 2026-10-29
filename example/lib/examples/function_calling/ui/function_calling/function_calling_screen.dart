@@ -1,6 +1,7 @@
 import 'package:example/app_translations.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import 'function_calling_i18n.dart';
 import 'view_models/function_calling_view_model.dart';
@@ -57,6 +58,13 @@ class _FunctionCallingDemoPageState extends State<FunctionCallingDemoPage> {
             actions: [
               ScrollableAppBarActions(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: GeminiLiveUsageBadge(
+                      tracker: vm.usageTracker,
+                      compact: true,
+                    ),
+                  ),
                   const LanguageSelectorButton(compact: true),
                   if (vm.isConnected)
                     IconButton(

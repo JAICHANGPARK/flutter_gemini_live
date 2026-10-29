@@ -5,12 +5,17 @@ import 'package:gemini_live/gemini_live.dart';
 
 /// Owns the Gemini Live WebSocket session and every outbound message.
 class LiveApiLiveService {
-  LiveApiLiveService() : _genAI = GoogleGenAI(apiKey: ApiKeyStore.apiKey);
+  LiveApiLiveService();
 
-  final GoogleGenAI _genAI;
+  GoogleGenAI? _genAI;
   LiveSession? _session;
 
   bool get hasSession => _session != null;
+
+  /// Whether the underlying WebSocket transport forwards handshake HTTP headers
+  /// (`true` on `dart:io`, `false` on Web browsers).
+  bool get supportsHeaders =>
+      (_genAI ?? GoogleGenAI(apiKey: ApiKeyStore.apiKey)).live.supportsHeaders;
 
   /// Opens a session. Does NOT store it; call [attach] with the result so the
   /// caller controls ordering relative to its own state updates.
@@ -20,6 +25,7 @@ class LiveApiLiveService {
     required bool useSmartTranscription,
     required bool enableSessionResumption,
     required bool enableContextCompression,
+    bool enableServerTimeout = true,
     required String? sessionHandle,
     required VoidCallback onOpen,
     required void Function(LiveServerMessage message) onMessage,
@@ -30,7 +36,19 @@ class LiveApiLiveService {
         ? ApiKeyStore.liveModel
         : kCompatibilityLiveModel;
 
-    return _genAI.live.connect(
+    // Recreate GoogleGenAI with latest API key, optional GenAICredentials
+    // (dynamic Bearer token + x-goog-user-project), and isolated HttpOptions.
+    final genAI = GoogleGenAI(
+      apiKey: ApiKeyStore.apiKey,
+      credentials: ApiKeyStore.credentials,
+      httpOptions: HttpOptions(
+        timeout: enableServerTimeout ? 30000 : null,
+        headers: const {'x-client-source': 'flutter_gemini_live_example'},
+      ),
+    );
+    _genAI = genAI;
+
+    return genAI.live.connect(
       LiveConnectParameters(
         model: modelToUse,
         config: buildExampleAudioGenerationConfig(temperature: 0.7),
@@ -82,9 +100,10 @@ class LiveApiLiveService {
           'app': 'gemini_live_example',
           'screen': 'live_api',
         },
-        // Session-level HTTP / WebSocket transport options
-        httpOptions: const HttpOptions(
-          headers: {'x-example-screen': 'live_api'},
+        // Session-level HTTP / WebSocket transport options (with X-Server-Timeout)
+        httpOptions: HttpOptions(
+          timeout: enableServerTimeout ? 30000 : null,
+          headers: const {'x-example-screen': 'live_api'},
         ),
         callbacks: LiveCallbacks(
           onOpen: onOpen,

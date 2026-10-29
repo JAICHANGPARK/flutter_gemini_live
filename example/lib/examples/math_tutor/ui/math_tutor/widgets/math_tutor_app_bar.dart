@@ -1,6 +1,7 @@
 import 'package:example/app_translations.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import '../math_tutor_i18n.dart';
 import '../view_models/math_tutor_view_model.dart';
@@ -78,6 +79,13 @@ class MathTutorAppBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             // Extended Thinking status indicator
             ThinkingStatusPill(viewModel: vm, pulse: pulse, i18n: i18n),
+            const SizedBox(width: 4),
+            GeminiLiveUsageBadge(
+              tracker: vm.usageTracker,
+              compact: true,
+              backgroundColor: Colors.white.withAlpha(20),
+              foregroundColor: Colors.white,
+            ),
             IconButton(
               icon: const Icon(Icons.tune_rounded),
               tooltip: i18n.systemInstructionTitle,

@@ -89,7 +89,10 @@ class _LiveMusicStudioPageState extends State<LiveMusicStudioPage>
       ]),
       builder: (context, _) => Scaffold(
         backgroundColor: darkSurface,
-        appBar: MusicStudioAppBar(foldableInfo: foldableInfo),
+        appBar: MusicStudioAppBar(
+          foldableInfo: foldableInfo,
+          usageTracker: _viewModel.usageTracker,
+        ),
         body: LayoutBuilder(
           builder: (context, constraints) {
             final vm = _viewModel;

@@ -111,7 +111,10 @@ class _ProDjConsolePageState extends State<ProDjConsolePage>
         final vm = _viewModel;
         return Scaffold(
           backgroundColor: const Color(0xFF0C0E12),
-          appBar: ProDjConsoleAppBar(isPlaying: vm.isPlaying),
+          appBar: ProDjConsoleAppBar(
+            isPlaying: vm.isPlaying,
+            usageTracker: vm.usageTracker,
+          ),
           body: SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {

@@ -6,7 +6,7 @@ import '../../../domain/models/midi_knob_data.dart';
 import '../view_models/dj_midi_box_view_model.dart';
 import 'edit_knob_dialog.dart';
 
-/// Authentic Yamaha MG12XU / MG16XU Hardware Analog/Digital Mixing Console Desk.
+/// Hardware Analog/Digital 16-Channel Audio Mixing Console Desk.
 ///
 /// Features per-channel vertical strips with color-coded rotary potentiometers:
 /// - GAIN (White cap, +20..+64 dB)
@@ -15,9 +15,9 @@ import 'edit_knob_dialog.dart';
 /// - AUX1 (Cyan cap, 0..10) & AUX2/FX (White cap, 0..10)
 /// - PAN/BAL (Red-Orange cap, L..R)
 /// - Illuminated Amber [ON] toggle switch
-/// - Signature Cyan-Blue horizontal ribbed separator bar
+/// - Cyan-Blue horizontal ribbed separator bar
 /// - Vertical Channel Fader with Silver ribbed cap, PEAK LED, and 1-2 / ST / PFL routing switches
-/// - Right-hand SPX Digital Multi-Effect Processor (2-digit 7-segment Amber LED) +
+/// - Right-hand Digital Multi-Effect Processor (2-digit 7-segment Amber LED) +
 ///   Stereo L/R 12-segment Master Level Meter + GROUP 1-2 (Black fader) & STEREO (Red fader) master bay.
 class MgMixingConsoleDesk extends StatelessWidget {
   final DjMidiBoxViewModel viewModel;
@@ -97,7 +97,7 @@ class MgMixingConsoleDesk extends StatelessWidget {
                     ),
                   ),
 
-                // Right-Hand Master Section (PHANTOM +48V, SPX 24 LED, Master VU, GROUP 1-2 & STEREO Faders)
+                // Right-Hand Master Section (PHANTOM +48V, FX 24 LED, Master VU, GROUP 1-2 & STEREO Faders)
                 _MgMasterSection(viewModel: vm),
 
                 // Right Chassis Side Rail with Hex Screws
@@ -313,7 +313,7 @@ class _MgChannelStrip extends StatelessWidget {
 
           const SizedBox(height: 5),
 
-          // 10. Signature Yamaha Blue Horizontal Ribbed Band
+          // 10. Blue Horizontal Ribbed Band
           const _MgBlueRibbedBand(),
 
           const SizedBox(height: 5),
@@ -463,7 +463,7 @@ class _MgChannelStrip extends StatelessWidget {
 }
 
 // ============================================================================
-// Right-Hand Master & SPX Digital Multi Effect Processor Section (MG16XU)
+// Right-Hand Master & Digital Multi Effect Processor Section
 // ============================================================================
 
 class _MgMasterSection extends StatelessWidget {
@@ -471,7 +471,7 @@ class _MgMasterSection extends StatelessWidget {
 
   const _MgMasterSection({required this.viewModel});
 
-  static const List<String> _spxPresetsLeft = [
+  static const List<String> _fxPresetsLeft = [
     '1 REV HALL 1',
     '2 REV HALL 2',
     '3 REV ROOM 1',
@@ -486,7 +486,7 @@ class _MgMasterSection extends StatelessWidget {
     '12 DELAY',
   ];
 
-  static const List<String> _spxPresetsRight = [
+  static const List<String> _fxPresetsRight = [
     '13 VOCAL ECHO',
     '14 KARAOKE',
     '15 PHASER',
@@ -529,30 +529,37 @@ class _MgMasterSection extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MIXING CONSOLE',
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontFamily: 'monospace',
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
+                const Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'MIXING CONSOLE',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontFamily: 'monospace',
+                          fontSize: 7,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'MG16XU',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0,
+                      Text(
+                        '16-CH DESK',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'monospace',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 4),
                 // PHANTOM +48V Red Switch Box
                 GestureDetector(
                   onTap: vm.togglePhantom48v,
@@ -619,13 +626,13 @@ class _MgMasterSection extends StatelessWidget {
             ),
           ),
 
-          // 2. SPX Digital Multi Effect Processor + Stereo L/1 R/2 12-Segment LED Meter
+          // 2. Digital Multi Effect Processor + Stereo L/1 R/2 12-Segment LED Meter
           Padding(
             padding: const EdgeInsets.all(6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left: SPX Digital Multi Effect Processor Unit
+                // Left: Digital Multi Effect Processor Unit
                 Expanded(
                   flex: 6,
                   child: Container(
@@ -639,7 +646,7 @@ class _MgMasterSection extends StatelessWidget {
                       children: [
                         // 2-Digit Amber 7-Segment LED Display ("24")
                         GestureDetector(
-                          onTap: vm.cycleSpxProgram,
+                          onTap: vm.cycleFxProgram,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -652,7 +659,7 @@ class _MgMasterSection extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                vm.spxProgram.toString().padLeft(2, '0'),
+                                vm.fxProgram.toString().padLeft(2, '0'),
                                 style: const TextStyle(
                                   color: Color(0xFFFF9800),
                                   fontFamily: 'monospace',
@@ -672,14 +679,14 @@ class _MgMasterSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
 
-                        // 24 SPX Preset Silk-Screen Table
+                        // 24 Digital FX Preset Silk-Screen Table
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: _spxPresetsLeft
+                                children: _fxPresetsLeft
                                     .map(
                                       (p) => Text(
                                         p,
@@ -700,7 +707,7 @@ class _MgMasterSection extends StatelessWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: _spxPresetsRight
+                                children: _fxPresetsRight
                                     .map(
                                       (p) => Text(
                                         p,
@@ -729,13 +736,13 @@ class _MgMasterSection extends StatelessWidget {
                               label: 'PROGRAM',
                               subLabelLeft: '-',
                               subLabelRight: '+',
-                              value: (vm.spxProgram - 1) / 23.0,
+                              value: (vm.fxProgram - 1) / 23.0,
                               capColor: const Color(0xFF1E293B),
                               pointerColor: Colors.white70,
                               onChanged: (v) {
                                 final target = (v * 23).round() + 1;
-                                final delta = target - vm.spxProgram;
-                                if (delta != 0) vm.cycleSpxProgram(delta);
+                                final delta = target - vm.fxProgram;
+                                if (delta != 0) vm.cycleFxProgram(delta);
                               },
                             ),
                             _MgRotaryPot(
@@ -754,7 +761,7 @@ class _MgMasterSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
 
-                        // Brushed Silver SPX Badge
+                        // Brushed Silver DSP FX Badge
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 2),
@@ -765,7 +772,7 @@ class _MgMasterSection extends StatelessWidget {
                             borderRadius: BorderRadius.circular(2),
                           ),
                           child: const Text(
-                            'SPX DIGITAL MULTI EFFECT',
+                            'DSP DIGITAL MULTI EFFECT',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFF0F172A),
@@ -1544,7 +1551,7 @@ class _MgMiniPushSwitch extends StatelessWidget {
 }
 
 // ============================================================================
-// 12-Segment Stereo L/1 R/2 Master Level Meter (MG12XU / MG16XU)
+// 12-Segment Stereo L/1 R/2 Master Level Meter
 // ============================================================================
 
 class _MgStereoMasterMeter extends StatelessWidget {

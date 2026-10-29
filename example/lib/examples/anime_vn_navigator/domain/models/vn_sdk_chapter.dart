@@ -1923,21 +1923,27 @@ await musicSession.play();''',
         summaryJa: 'APIキーを隠蔽する一時トークン発行と、通信切断時のセッション自動再開。',
         summaryKo: '마스터 API 키 노출을 막는 일회용 임시 토큰과 네트워크 단절 시 세션을 이어가는 복구 설정입니다.',
         codeSnippet: '''
-// 🔐 1. 백엔드에서 단기 임시 토큰(Ephemeral Token) 발급 (클라이언트에 API 키 노출 방지)
+// 🔐 1. 백엔드 임시 토큰(Ephemeral Token) 또는 동적 GenAICredentials(Bearer + Quota Project)
 final token = await backendGenAI.authTokens.create(
   CreateAuthTokenParameters(
     config: CreateAuthTokenConfig(uses: 1),
   ),
 );
-// 클라이언트 앱은 발급받은 token.name을 apiKey 자리에 넣어 안전하게 연결!
-final clientGenAI = GoogleGenAI(apiKey: token.name!);
+final clientGenAI = GoogleGenAI(
+  apiKey: token.name!,
+  // 요청별 Authorization / x-goog-user-project 헤더를 클라이언트 기본 헤더 오염 없이 동적 주입!
+  credentials: GenAICredentials(
+    tokenProvider: () async => fetchLatestOAuthBearerToken(),
+    quotaProjectId: 'my-gcp-quota-project',
+  ),
+);
 
-// 🔄 2. 모바일 네트워크 끊김(1006) 및 GoAway 대비 세션 핸들 자동 저장 & 복구
+// 🔄 2. 모바일 네트워크 끊김(1006) 대비 세션 복구 & X-Server-Timeout(timeout: ms)
 final params = LiveConnectParameters(
   model: 'gemini-3.1-flash-live-preview',
   config: LiveConnectConfig(
-    // 세션 단위 httpOptions로 v1alpha / 커스텀 프록시 baseUrl / headers 오버라이드 가능!
-    httpOptions: const HttpOptions(apiVersion: 'v1alpha'),
+    // timeout(ms) 지정 시 X-Server-Timeout(초 단위 올림) 헤더 자동 주입!
+    httpOptions: const HttpOptions(apiVersion: 'v1alpha', timeout: 30000),
   ),
   sessionResumption: SessionResumptionConfig(
     handle: savedResumeHandle, // 재연결 시 이전 핸들을 넘기면 대화 맥락 100% 복구!

@@ -119,6 +119,11 @@ class ProDjConsoleViewModel extends ChangeNotifier {
   final List<String> _consoleLogs = [];
   List<String> get consoleLogs => _consoleLogs;
 
+  /// Real-time token usage and cost tracker for the Lyria Live session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: LiveMusicModels.lyriaRealtimeExp,
+  );
+
   // Hot Cue Pad Presets
   final List<HotCuePadData> _hotCuePads = defaultHotCuePads;
   List<HotCuePadData> get hotCuePads => _hotCuePads;
@@ -141,6 +146,7 @@ class ProDjConsoleViewModel extends ChangeNotifier {
     disposeJog?.call();
     _music.close();
     _audio.dispose();
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -244,6 +250,19 @@ class ProDjConsoleViewModel extends ChangeNotifier {
         if (!_isPlaying) return;
 
         _audio.appendPcmBytes(bytes);
+        final audioOutTokens = (bytes.length / 6000).ceil();
+        usageTracker.recordUsage(
+          UsageMetadata(
+            responseTokenCount: audioOutTokens,
+            totalTokenCount: audioOutTokens,
+            responseTokensDetails: [
+              ModalityTokenCount(
+                modality: MediaModality.AUDIO,
+                tokenCount: audioOutTokens,
+              ),
+            ],
+          ),
+        );
 
         // Calculate RMS for DJ VU meters & Jog display
         final rms = GeminiLiveAudioUtils.calculateRms(bytes);
@@ -324,6 +343,21 @@ class ProDjConsoleViewModel extends ChangeNotifier {
     ];
 
     _music.setWeightedPrompts(prompts);
+    final promptTokens = ((_deckAPrompt.length + _deckBPrompt.length) / 4)
+        .ceil()
+        .clamp(1, 4096);
+    usageTracker.recordUsage(
+      UsageMetadata(
+        promptTokenCount: promptTokens,
+        totalTokenCount: promptTokens,
+        promptTokensDetails: [
+          ModalityTokenCount(
+            modality: MediaModality.TEXT,
+            tokenCount: promptTokens,
+          ),
+        ],
+      ),
+    );
   }
 
   void _sendGenerationConfig() {

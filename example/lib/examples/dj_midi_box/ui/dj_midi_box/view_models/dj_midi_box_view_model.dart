@@ -70,7 +70,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   bool _showSidePanel = false;
   bool _isMixerDeskView = true;
   bool _phantom48v = true;
-  int _spxProgram = 24;
+  int _fxProgram = 24;
   double _groupBusLevel = 0.78;
   double _stereoMasterLevel = 0.85;
   double _customPromptWeight = 0.85;
@@ -79,7 +79,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   bool get showSidePanel => _showSidePanel;
   bool get isMixerDeskView => _isMixerDeskView;
   bool get phantom48v => _phantom48v;
-  int get spxProgram => _spxProgram;
+  int get fxProgram => _fxProgram;
   double get groupBusLevel => _groupBusLevel;
   double get stereoMasterLevel => _stereoMasterLevel;
   double get customPromptWeight => _customPromptWeight;
@@ -110,6 +110,11 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   List<MidiLogEntry> get logs => _logs;
   int _chunkCounter = 0;
 
+  /// Real-time token usage and cost tracker for the Lyria Live session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: LiveMusicModels.lyriaRealtimeExp,
+  );
+
   // Real-time audio RMS for beat pulse
   double _rmsLevel = 0.0;
   double get rmsLevel => _rmsLevel;
@@ -133,6 +138,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     _knobDebounceTimer?.cancel();
     _music.close();
     _audio.dispose();
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -273,6 +279,21 @@ class DjMidiBoxViewModel extends ChangeNotifier {
           }
         }
       }
+      if (totalBytes > 0) {
+        final audioOutTokens = (totalBytes / 6000).ceil();
+        usageTracker.recordUsage(
+          UsageMetadata(
+            responseTokenCount: audioOutTokens,
+            totalTokenCount: audioOutTokens,
+            responseTokensDetails: [
+              ModalityTokenCount(
+                modality: MediaModality.AUDIO,
+                tokenCount: audioOutTokens,
+              ),
+            ],
+          ),
+        );
+      }
       _chunkCounter++;
       if (_chunkCounter % 16 == 0) {
         _addLog(
@@ -286,6 +307,19 @@ class DjMidiBoxViewModel extends ChangeNotifier {
         final bytes = chunk.bytes;
         if (bytes != null && bytes.isNotEmpty && _isPlaying) {
           _audio.appendPcmBytes(bytes);
+          final audioOutTokens = (bytes.length / 6000).ceil();
+          usageTracker.recordUsage(
+            UsageMetadata(
+              responseTokenCount: audioOutTokens,
+              totalTokenCount: audioOutTokens,
+              responseTokensDetails: [
+                ModalityTokenCount(
+                  modality: MediaModality.AUDIO,
+                  tokenCount: audioOutTokens,
+                ),
+              ],
+            ),
+          );
           final rms = GeminiLiveAudioUtils.calculateRms(bytes);
           final visualScale = GeminiLiveAudioUtils.toVisualScale(
             rms,
@@ -348,7 +382,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       if (k.mid > 0.68) modifiers.add('forward punchy 2.5kHz midrange');
       if (k.low > 0.68) modifiers.add('deep booming 100Hz low-end bass');
       if (k.comp > 0.68) modifiers.add('tightly compressed studio dynamics');
-      if (k.aux2 > 0.60) modifiers.add('lush SPX hall reverb tail');
+      if (k.aux2 > 0.60) modifiers.add('lush studio hall reverb tail');
 
       final promptText = modifiers.isEmpty
           ? k.prompt
@@ -371,6 +405,23 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     }
 
     _music.setWeightedPrompts(prompts);
+    final promptChars = prompts.fold<int>(
+      0,
+      (sum, p) => sum + (p.text?.length ?? 0),
+    );
+    final promptTokens = (promptChars / 4).ceil().clamp(1, 4096);
+    usageTracker.recordUsage(
+      UsageMetadata(
+        promptTokenCount: promptTokens,
+        totalTokenCount: promptTokens,
+        promptTokensDetails: [
+          ModalityTokenCount(
+            modality: MediaModality.TEXT,
+            tokenCount: promptTokens,
+          ),
+        ],
+      ),
+    );
     final summary = prompts
         .map((p) {
           final text = p.text ?? '';
@@ -495,8 +546,8 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void cycleSpxProgram([int delta = 1]) {
-    _spxProgram = ((_spxProgram - 1 + delta) % 24) + 1;
+  void cycleFxProgram([int delta = 1]) {
+    _fxProgram = ((_fxProgram - 1 + delta) % 24) + 1;
     notifyListeners();
   }
 

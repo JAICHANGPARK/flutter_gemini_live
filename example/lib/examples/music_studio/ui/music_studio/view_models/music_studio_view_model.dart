@@ -86,6 +86,11 @@ class MusicStudioViewModel extends ChangeNotifier {
   int get totalBytesReceived => _totalBytesReceived;
   List<String> get logs => _logRepo.logs;
 
+  /// Real-time token usage and cost tracker for the Lyria Live session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: LiveMusicModels.lyriaRealtimeExp,
+  );
+
   // Weighted Prompts
   final List<TextEditingController> _promptControllers = [];
   final List<double> _promptWeights = [];
@@ -151,6 +156,7 @@ class MusicStudioViewModel extends ChangeNotifier {
       controller.dispose();
     }
     visualizerTick.dispose();
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -323,6 +329,19 @@ class MusicStudioViewModel extends ChangeNotifier {
         _audio.appendPcmBytes(bytes);
         _receivedChunksCount++;
         _totalBytesReceived += bytes.length;
+        final audioOutTokens = (bytes.length / 6000).ceil();
+        usageTracker.recordUsage(
+          UsageMetadata(
+            responseTokenCount: audioOutTokens,
+            totalTokenCount: audioOutTokens,
+            responseTokensDetails: [
+              ModalityTokenCount(
+                modality: MediaModality.AUDIO,
+                tokenCount: audioOutTokens,
+              ),
+            ],
+          ),
+        );
         notifyListeners();
       }
     }
@@ -391,6 +410,23 @@ class MusicStudioViewModel extends ChangeNotifier {
 
     _log('🎛️ Updating weighted prompts (${prompts.length} active)...');
     _session!.setWeightedPrompts(prompts);
+    final promptChars = prompts.fold<int>(
+      0,
+      (sum, p) => sum + (p.text?.length ?? 0),
+    );
+    final promptTokens = (promptChars / 4).ceil().clamp(1, 4096);
+    usageTracker.recordUsage(
+      UsageMetadata(
+        promptTokenCount: promptTokens,
+        totalTokenCount: promptTokens,
+        promptTokensDetails: [
+          ModalityTokenCount(
+            modality: MediaModality.TEXT,
+            tokenCount: promptTokens,
+          ),
+        ],
+      ),
+    );
     _notice(
       MusicStudioI18n.current.noticeAppliedPrompts(prompts.length),
       duration: const Duration(seconds: 1),

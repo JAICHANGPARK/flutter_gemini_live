@@ -48,11 +48,17 @@ class FunctionCallingViewModel extends ChangeNotifier {
   List<ChatMessage> get messages => _messages;
   List<FunctionCall> get pendingFunctionCalls => _pendingFunctionCalls;
 
+  /// Real-time token usage and cost tracker for the Function Calling session.
+  final GeminiTokenUsageTracker usageTracker = GeminiTokenUsageTracker(
+    model: kLatestRealtimeLiveModel,
+  );
+
   @override
   void dispose() {
     _disposed = true;
     _live.close();
     unawaited(_audio.dispose());
+    usageTracker.dispose();
     super.dispose();
   }
 
@@ -102,6 +108,7 @@ class FunctionCallingViewModel extends ChangeNotifier {
   }
 
   void _handleMessage(LiveServerMessage message) {
+    usageTracker.recordMessage(message);
     final serverContent = message.serverContent;
     final turnFinished =
         (serverContent?.turnComplete ?? false) ||

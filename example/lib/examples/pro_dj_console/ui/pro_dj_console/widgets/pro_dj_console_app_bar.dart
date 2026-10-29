@@ -4,6 +4,7 @@ import 'package:example/examples/dj_midi_box/ui/dj_midi_box/dj_midi_box_screen.d
 import 'package:example/foldable_utils.dart';
 import 'package:example/scrollable_app_bar_actions.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import '../pro_dj_console_i18n.dart';
 
@@ -12,8 +13,13 @@ import '../pro_dj_console_i18n.dart';
 class ProDjConsoleAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final bool isPlaying;
+  final GeminiTokenUsageTracker usageTracker;
 
-  const ProDjConsoleAppBar({super.key, required this.isPlaying});
+  const ProDjConsoleAppBar({
+    super.key,
+    required this.isPlaying,
+    required this.usageTracker,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -125,6 +131,15 @@ class ProDjConsoleAppBar extends StatelessWidget
                   MaterialPageRoute(builder: (_) => const DjMidiBoxPage()),
                 );
               },
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: GeminiLiveUsageBadge(
+                tracker: usageTracker,
+                compact: true,
+                backgroundColor: Colors.white.withAlpha(20),
+                foregroundColor: Colors.white,
+              ),
             ),
             const LanguageSelectorButton(compact: true),
             IconButton(

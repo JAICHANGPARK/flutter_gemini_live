@@ -50,6 +50,13 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
             actions: [
               ScrollableAppBarActions(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: GeminiLiveUsageBadge(
+                      tracker: vm.usageTracker,
+                      compact: true,
+                    ),
+                  ),
                   const LanguageSelectorButton(compact: true),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -69,31 +76,48 @@ class _LiveAPIDemoPageState extends State<LiveAPIDemoPage> {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              // Feature toggles
-              FeatureToggles(viewModel: vm),
-              const Divider(),
-              // Connection button
-              ConnectionButton(
-                isConnected: vm.isConnected,
-                isConnecting: vm.isConnecting,
-                onConnect: vm.connect,
-              ),
-              const Divider(),
-              // Action buttons
-              if (vm.isConnected)
-                ActionButtons(
-                  onSendText: _showTextInputDialog,
-                  onSendClientContent: vm.sendClientContent,
-                  onSendRealtimeInput: vm.sendRealtimeInput,
-                  onToggleActivity: vm.toggleActivity,
-                  onSendContextUpdate: vm.sendContextUpdate,
-                ),
-              const Divider(),
-              // Logs
-              Expanded(child: LogList(logs: vm.logs)),
-            ],
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * 0.55,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Feature toggles
+                          FeatureToggles(viewModel: vm),
+                          const Divider(height: 1),
+                          // Connection button
+                          ConnectionButton(
+                            isConnected: vm.isConnected,
+                            isConnecting: vm.isConnecting,
+                            onConnect: vm.connect,
+                          ),
+                          const Divider(height: 1),
+                          // Action buttons
+                          if (vm.isConnected) ...[
+                            ActionButtons(
+                              onSendText: _showTextInputDialog,
+                              onSendClientContent: vm.sendClientContent,
+                              onSendRealtimeInput: vm.sendRealtimeInput,
+                              onToggleActivity: vm.toggleActivity,
+                              onSendContextUpdate: vm.sendContextUpdate,
+                            ),
+                            const Divider(height: 1),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Logs
+                  Expanded(child: LogList(logs: vm.logs)),
+                ],
+              );
+            },
           ),
         );
       },

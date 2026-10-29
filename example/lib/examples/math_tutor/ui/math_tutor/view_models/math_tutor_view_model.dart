@@ -217,6 +217,7 @@ class MathTutorViewModel extends ChangeNotifier {
   final GeminiTokenUsageTracker _usageTracker = GeminiTokenUsageTracker(
     model: LiveModels.gemini38LiveExtendedThinking,
   );
+  GeminiTokenUsageTracker get usageTracker => _usageTracker;
 
   // ---------------------------------------------------------------------------
   // Lifecycle

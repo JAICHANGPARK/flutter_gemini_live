@@ -1,6 +1,7 @@
 import 'package:example/app_settings_dialog.dart';
 import 'package:example/app_translations.dart';
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 
 import '../dj_midi_box_i18n.dart';
 import '../view_models/dj_midi_box_view_model.dart';
@@ -103,7 +104,7 @@ class DjTopHeader extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            vm.isMixerDeskView ? 'MG16XU' : '4x4 PAD',
+                            vm.isMixerDeskView ? '16-CH MIXER' : '4x4 PAD',
                             style: TextStyle(
                               color: vm.isMixerDeskView
                                   ? const Color(0xFF38BDF8)
@@ -204,6 +205,15 @@ class DjTopHeader extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Real-time token usage & cost badge
+                  GeminiLiveUsageBadge(
+                    tracker: vm.usageTracker,
+                    compact: true,
+                    backgroundColor: Colors.white.withAlpha(20),
+                    foregroundColor: Colors.white,
                   ),
                   const SizedBox(width: 4),
 

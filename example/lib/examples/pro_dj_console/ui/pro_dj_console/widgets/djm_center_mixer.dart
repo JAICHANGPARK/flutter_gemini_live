@@ -82,7 +82,7 @@ class DjmCenterMixer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Mixer Top Silk Screen Brand + SPX 24 LED + PHANTOM +48V + Corner Screws
+          // Mixer Top Silk Screen Header + FX 24 LED + PHANTOM +48V + Corner Screws
           Row(
             children: [
               const _MixerScrew(),
@@ -101,7 +101,7 @@ class DjmCenterMixer extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              // SPX 7-Segment Amber LED Badge ("24")
+              // FX 7-Segment Amber LED Badge ("24")
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
@@ -110,7 +110,7 @@ class DjmCenterMixer extends StatelessWidget {
                   border: Border.all(color: const Color(0xFF283244)),
                 ),
                 child: const Text(
-                  'SPX 24',
+                  'FX 24',
                   style: TextStyle(
                     color: Color(0xFFFF9800),
                     fontFamily: 'monospace',

@@ -1,9 +1,12 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:gemini_live/gemini_live.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiKeyStore {
   static const _key = 'gemini_api_key';
+  static const _bearerTokenKey = 'gemini_bearer_token';
+  static const _quotaProjectIdKey = 'gemini_quota_project_id';
   static const _modelKey = 'gemini_live_model';
   static const _voiceKey = 'gemini_live_voice';
   static const _audioDeviceIdKey = 'gemini_selected_audio_device_id';
@@ -54,6 +57,8 @@ class ApiKeyStore {
   ];
 
   static String _apiKey = '';
+  static String _bearerToken = '';
+  static String _quotaProjectId = '';
   static String _liveModel = defaultModel;
   static String _voice = defaultVoice;
   static String _audioDeviceId = '';
@@ -61,7 +66,24 @@ class ApiKeyStore {
   static bool _isCameraFlipped = true;
 
   static String get apiKey => _apiKey;
-  static bool get hasApiKey => _apiKey.trim().isNotEmpty;
+  static String get bearerToken => _bearerToken;
+  static String get quotaProjectId => _quotaProjectId;
+  static bool get hasApiKey =>
+      _apiKey.trim().isNotEmpty || _bearerToken.trim().isNotEmpty;
+
+  /// Optional [GenAICredentials] resolved per request and per Live WebSocket
+  /// connection without leaking `Authorization` or `x-goog-user-project` into
+  /// client-level default headers.
+  static GenAICredentials? get credentials {
+    final token = _bearerToken.trim();
+    final project = _quotaProjectId.trim();
+    if (token.isEmpty && project.isEmpty) return null;
+    return GenAICredentials(
+      tokenProvider: () =>
+          _bearerToken.trim().isNotEmpty ? _bearerToken.trim() : null,
+      quotaProjectId: project.isNotEmpty ? project : null,
+    );
+  }
 
   static String get liveModel =>
       _liveModel.trim().isEmpty ? defaultModel : _liveModel.trim();
@@ -89,6 +111,8 @@ class ApiKeyStore {
       _apiKey = systemEnvKey.trim();
     }
 
+    _bearerToken = prefs.getString(_bearerTokenKey) ?? '';
+    _quotaProjectId = prefs.getString(_quotaProjectIdKey) ?? '';
     _liveModel = prefs.getString(_modelKey) ?? defaultModel;
     _voice = prefs.getString(_voiceKey) ?? defaultVoice;
     _audioDeviceId = prefs.getString(_audioDeviceIdKey) ?? '';
@@ -107,6 +131,29 @@ class ApiKeyStore {
     }
 
     await prefs.setString(_key, trimmed);
+  }
+
+  static Future<void> saveCredentials({
+    String? bearerToken,
+    String? quotaProjectId,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (bearerToken != null) {
+      _bearerToken = bearerToken.trim();
+      if (_bearerToken.isEmpty) {
+        await prefs.remove(_bearerTokenKey);
+      } else {
+        await prefs.setString(_bearerTokenKey, _bearerToken);
+      }
+    }
+    if (quotaProjectId != null) {
+      _quotaProjectId = quotaProjectId.trim();
+      if (_quotaProjectId.isEmpty) {
+        await prefs.remove(_quotaProjectIdKey);
+      } else {
+        await prefs.setString(_quotaProjectIdKey, _quotaProjectId);
+      }
+    }
   }
 
   static Future<void> saveModel(String model) async {

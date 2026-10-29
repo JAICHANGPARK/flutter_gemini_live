@@ -17,6 +17,7 @@ import 'package:example/examples/translation/ui/translation/translation_screen.d
 import 'package:example/examples/vision_call/ui/vision_call/vision_call_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gemini_live/gemini_live.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:example/main.dart';
@@ -227,6 +228,13 @@ void main() {
           if (err != null) {
             failures.add('${entry.key} @ $size: $err');
           }
+          if (entry.key != 'HomePage') {
+            expect(
+              find.byType(GeminiLiveUsageBadge),
+              findsWidgets,
+              reason: '${entry.key} should display GeminiLiveUsageBadge',
+            );
+          }
         }
       }
       expect(failures, isEmpty, reason: failures.join('\n'));
@@ -282,7 +290,7 @@ void main() {
   );
 
   testWidgets(
-    'DjMidiBoxPage (MG16XU Mixer Desk & 4x4 Pad Matrix) and ProDjConsolePage hardware controls work without errors across viewports',
+    'DjMidiBoxPage (16-CH Mixer Desk & 4x4 Pad Matrix) and ProDjConsolePage hardware controls work without errors across viewports',
     (WidgetTester tester) async {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -297,18 +305,18 @@ void main() {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
 
-        // 1. DjMidiBoxPage in MG16XU Mixer Desk mode
+        // 1. DjMidiBoxPage in 16-CH Mixer Desk mode
         await tester.pumpWidget(const MaterialApp(home: DjMidiBoxPage()));
         await tester.pump(const Duration(milliseconds: 100));
         expect(
           tester.takeException(),
           isNull,
-          reason: 'DjMidiBoxPage MG16XU mode at $size',
+          reason: 'DjMidiBoxPage 16-CH Mixer mode at $size',
         );
-        expect(find.text('MG16XU'), findsWidgets);
+        expect(find.text('16-CH MIXER'), findsOneWidget);
 
         // Toggle to 4x4 PAD Matrix mode and verify layout at all sizes
-        await tester.tap(find.text('MG16XU').first);
+        await tester.tap(find.text('16-CH MIXER'));
         await tester.pump(const Duration(milliseconds: 150));
         expect(
           tester.takeException(),
@@ -317,13 +325,13 @@ void main() {
         );
         expect(find.text('4x4 PAD'), findsOneWidget);
 
-        // Toggle back to MG16XU mode
+        // Toggle back to 16-CH Mixer mode
         await tester.tap(find.text('4x4 PAD'));
         await tester.pump(const Duration(milliseconds: 150));
         expect(
           tester.takeException(),
           isNull,
-          reason: 'DjMidiBoxPage back to MG16XU mode at $size',
+          reason: 'DjMidiBoxPage back to 16-CH Mixer mode at $size',
         );
 
         // 2. ProDjConsolePage hardware mixer at all sizes

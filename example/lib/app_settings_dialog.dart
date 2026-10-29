@@ -22,6 +22,8 @@ class AppSettingsDialog extends StatefulWidget {
 
 class _AppSettingsDialogState extends State<AppSettingsDialog> {
   late final TextEditingController _keyController;
+  late final TextEditingController _bearerTokenController;
+  late final TextEditingController _quotaProjectController;
   late final TextEditingController _customModelController;
 
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -38,6 +40,12 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
   void initState() {
     super.initState();
     _keyController = TextEditingController(text: ApiKeyStore.apiKey);
+    _bearerTokenController = TextEditingController(
+      text: ApiKeyStore.bearerToken,
+    );
+    _quotaProjectController = TextEditingController(
+      text: ApiKeyStore.quotaProjectId,
+    );
     _selectedAudioDeviceId = ApiKeyStore.audioDeviceId;
     _selectedVoice = ApiKeyStore.voice;
 
@@ -76,6 +84,8 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
   @override
   void dispose() {
     _keyController.dispose();
+    _bearerTokenController.dispose();
+    _quotaProjectController.dispose();
     _customModelController.dispose();
     _audioRecorder.dispose();
     super.dispose();
@@ -88,6 +98,10 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
         : _selectedModel;
 
     await ApiKeyStore.save(newKey);
+    await ApiKeyStore.saveCredentials(
+      bearerToken: _bearerTokenController.text.trim(),
+      quotaProjectId: _quotaProjectController.text.trim(),
+    );
     await ApiKeyStore.saveModel(newModel);
     await ApiKeyStore.saveVoice(_selectedVoice);
 
@@ -359,6 +373,44 @@ class _AppSettingsDialogState extends State<AppSettingsDialog> {
                   Text(
                     t.audioDeviceDesc,
                     style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 5. Optional GenAICredentials (Bearer Token & GCP Quota Project)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(top: 6, bottom: 4),
+                    title: const Text(
+                      'GenAICredentials (OAuth Bearer / Quota Project)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    children: [
+                      TextField(
+                        controller: _bearerTokenController,
+                        obscureText: _obscureKey,
+                        decoration: const InputDecoration(
+                          labelText: 'OAuth Bearer Token (Optional)',
+                          hintText: 'ya29.a0...',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          prefixIcon: Icon(Icons.security_rounded, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _quotaProjectController,
+                        decoration: const InputDecoration(
+                          labelText: 'x-goog-user-project (Optional)',
+                          hintText: 'my-gcp-project-id',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          prefixIcon: Icon(Icons.cloud_outlined, size: 18),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
