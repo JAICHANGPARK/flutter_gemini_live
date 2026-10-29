@@ -139,6 +139,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
   LiveServerGoAway? _lastGoAway;
   InteractionStatus? _interactionStatus;
   String? _continuationToken;
+  List<String> _continuationIds = const [];
 
   Content? _activeSystemInstruction;
   List<Tool> _activeTools = const [];
@@ -224,13 +225,19 @@ class GeminiLiveSessionController extends ChangeNotifier {
   /// Latest `GoAway` notice emitted by the server, if any.
   LiveServerGoAway? get lastGoAway => _lastGoAway;
 
-  /// Latest [InteractionStatus] emitted by the server in `serverContent`.
+  /// The latest [InteractionStatus] emitted by the server in [LiveServerContent].
   InteractionStatus? get interactionStatus => _interactionStatus;
 
-  /// Latest `continuationToken` emitted by the server when [requiresContinuation] is `true`.
+  /// The latest continuation token emitted by the server when [requiresContinuation] is `true`.
   String? get continuationToken => _continuationToken;
 
-  /// Whether the session's current interaction requires continuation (`REQUIRES_CONTINUATION`).
+  /// The ordered list of server interaction hop IDs merged into the current turn.
+  List<String> get continuationIds => List.unmodifiable(_continuationIds);
+
+  /// Whether the session's current interaction requires continuation.
+  ///
+  /// Returns `true` when [interactionStatus] equals
+  /// [InteractionStatus.REQUIRES_CONTINUATION].
   bool get requiresContinuation =>
       _interactionStatus == InteractionStatus.REQUIRES_CONTINUATION;
 
@@ -451,6 +458,9 @@ class GeminiLiveSessionController extends ChangeNotifier {
         _continuationToken = serverContent.continuationToken;
       } else if (serverContent.interactionStatus == InteractionStatus.IDLE) {
         _continuationToken = null;
+      }
+      if (serverContent.continuationIds != null) {
+        _continuationIds = List<String>.from(serverContent.continuationIds!);
       }
 
       // Barge-in interruption
@@ -925,6 +935,7 @@ class GeminiLiveSessionController extends ChangeNotifier {
     _lastCompletedTurnWav = null;
     _interactionStatus = null;
     _continuationToken = null;
+    _continuationIds = const [];
     _currentTurnAudioBuffer.clear();
     tokenTracker.reset();
     connectionMetrics.reset();

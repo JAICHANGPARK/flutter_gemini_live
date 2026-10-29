@@ -32,9 +32,18 @@ void main() {
           'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0:generateContent?key=secret-key',
         );
         expect(client.requests.single.method, 'POST');
-        expect(client.requests.single.headers, {
-          'Content-Type': 'application/json',
-        });
+        expect(
+          client.requests.single.headers['Content-Type'],
+          'application/json',
+        );
+        expect(
+          client.requests.single.headers['User-Agent'],
+          startsWith('google-genai-sdk/'),
+        );
+        expect(
+          client.requests.single.headers['x-goog-api-client'],
+          startsWith('google-genai-sdk/'),
+        );
         expect(
           jsonDecode(client.requests.single.body) as Map<String, dynamic>,
           {'prompt': 'hello'},

@@ -5,6 +5,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../model/models.dart';
+import '../platform/runtime_info_stub.dart'
+    if (dart.library.io) '../platform/runtime_info_io.dart'
+    if (dart.library.html) '../platform/runtime_info_web.dart'
+    as runtime_info;
 
 /// A low-level client responsible for making authenticated HTTP requests to the
 /// Google Generative AI API backend.
@@ -13,6 +17,7 @@ import '../model/models.dart';
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
+  static const _sdkVersion = '2.33.0';
   /// The API key for authenticating with the Google AI services.
   final String apiKey;
 
@@ -114,18 +119,35 @@ class ApiClient {
     return baseUri.replace(queryParameters: query);
   }
 
-  /// Builds a fresh per-request headers map without mutating [headers] or
-  /// [httpOptions.headers].
+  /// Builds a fresh per-request headers map from [defaultHeaders] and [requestHttpOptions].
+  ///
+  /// Includes the default `User-Agent` and `x-goog-api-client` SDK headers
+  /// while preserving any caller-supplied overrides in [headers] or
+  /// [requestHttpOptions], without mutating [headers] or [httpOptions].
   Future<Map<String, String>> buildRequestHeaders(
     Map<String, String> defaultHeaders, [
     HttpOptions? requestHttpOptions,
   ]) async {
     final patched = httpOptions.merge(requestHttpOptions);
+    final sdkHeader =
+        'google-genai-sdk/$_sdkVersion dart/${runtime_info.dartVersion()}';
     // Copy so per-request headers do not become client defaults.
     final reqHeaders = <String, String>{
+      'User-Agent': sdkHeader,
+      'x-goog-api-client': sdkHeader,
       ...defaultHeaders,
-      ...?patched.headers,
     };
+    if (patched.headers != null) {
+      for (final entry in patched.headers!.entries) {
+        if (entry.key.toLowerCase() == 'user-agent') {
+          reqHeaders.remove('User-Agent');
+          reqHeaders.remove('user-agent');
+        } else if (entry.key.toLowerCase() == 'x-goog-api-client') {
+          reqHeaders.remove('x-goog-api-client');
+        }
+        reqHeaders[entry.key] = entry.value;
+      }
+    }
 
     populateServerTimeoutHeader(reqHeaders, patched.timeout);
 

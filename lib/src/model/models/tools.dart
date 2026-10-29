@@ -153,40 +153,66 @@ class FunctionResponseFileData {
   fieldRename: FieldRename.snake,
 )
 class FunctionResponsePart {
+  /// Inline media bytes included in the function response.
   final FunctionResponseBlob? inlineData;
+
+  /// URI-referenced media data included in the function response.
   final FunctionResponseFileData? fileData;
 
-  FunctionResponsePart({this.inlineData, this.fileData});
+  /// The processing mode used by the model to understand this part's media.
+  ///
+  /// Only meaningful for video parts ([inlineData] or [fileData] with a video
+  /// MIME type). Non-video parts ignore this field.
+  final MediaProcessing? mediaProcessing;
+
+  /// Creates a [FunctionResponsePart].
+  FunctionResponsePart({
+    this.inlineData,
+    this.fileData,
+    this.mediaProcessing,
+  });
 
   /// Creates an inline binary [FunctionResponsePart] by base64-encoding [data].
+  ///
+  /// Optionally attaches a [displayName] and video [mediaProcessing] mode.
   factory FunctionResponsePart.fromBytes({
     required List<int> data,
     required String mimeType,
     String? displayName,
+    MediaProcessing? mediaProcessing,
   }) => FunctionResponsePart(
     inlineData: FunctionResponseBlob.fromBytes(
       bytes: data,
       mimeType: mimeType,
       displayName: displayName,
     ),
+    mediaProcessing: mediaProcessing,
   );
 
   /// Creates a URI-referenced [FunctionResponsePart] pointing to [fileUri].
+  ///
+  /// Optionally attaches a [mimeType], [displayName], and video
+  /// [mediaProcessing] mode.
   factory FunctionResponsePart.fromUri({
     required String fileUri,
     String? mimeType,
     String? displayName,
+    MediaProcessing? mediaProcessing,
   }) => FunctionResponsePart(
     fileData: FunctionResponseFileData(
       fileUri: fileUri,
       mimeType: mimeType,
       displayName: displayName,
     ),
+    mediaProcessing: mediaProcessing,
   );
 
+  /// Creates a [FunctionResponsePart] from a JSON map.
   factory FunctionResponsePart.fromJson(Map<String, dynamic> json) {
     final rawInline = json['inline_data'] ?? json['inlineData'];
     final rawFile = json['file_data'] ?? json['fileData'];
+    final rawMediaProcessing =
+        json['media_processing'] ?? json['mediaProcessing'];
     return _$FunctionResponsePartFromJson({
       ...json,
       if (rawInline != null)
@@ -197,9 +223,14 @@ class FunctionResponsePart {
         'file_data': rawFile is FunctionResponseFileData
             ? rawFile.toJson()
             : rawFile,
+      if (rawMediaProcessing != null)
+        'media_processing': rawMediaProcessing is MediaProcessing
+            ? _$MediaProcessingEnumMap[rawMediaProcessing]
+            : rawMediaProcessing,
     });
   }
 
+  /// Converts this [FunctionResponsePart] to a JSON map.
   Map<String, dynamic> toJson() => _$FunctionResponsePartToJson(this);
 }
 

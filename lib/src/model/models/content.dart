@@ -128,6 +128,9 @@ class Part {
       if (!json.containsKey('codeExecutionResult') &&
           json.containsKey('code_execution_result'))
         'codeExecutionResult': json['code_execution_result'],
+      if (!json.containsKey('mediaProcessing') &&
+          json.containsKey('media_processing'))
+        'mediaProcessing': json['media_processing'],
     };
     return _$PartFromJson(normalized);
   }

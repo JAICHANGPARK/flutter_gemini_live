@@ -81,5 +81,21 @@ void main() {
       final ai = GoogleGenAI(apiKey: 'key');
       expect(ai.authTokens, isNotNull);
     });
+
+    test('ApiClient forwards SDK User-Agent and x-goog-api-client while preserving caller overrides', () async {
+      final defaultClient = ApiClient(apiKey: 'key');
+      final defaultHeaders = await defaultClient.buildRequestHeaders(const {});
+      expect(defaultHeaders['User-Agent'], startsWith('google-genai-sdk/'));
+      expect(defaultHeaders['x-goog-api-client'], startsWith('google-genai-sdk/'));
+
+      final overriddenHeaders = await defaultClient.buildRequestHeaders(
+        const {},
+        HttpOptions(headers: {'user-agent': 'custom-agent/1.0'}),
+      );
+      expect(overriddenHeaders['user-agent'], 'custom-agent/1.0');
+      expect(overriddenHeaders.containsKey('User-Agent'), isFalse);
+      expect(overriddenHeaders['x-goog-api-client'], startsWith('google-genai-sdk/'));
+      defaultClient.close();
+    });
   });
 }

@@ -118,13 +118,24 @@ class LiveServerContent {
   /// Low-latency transcription updated while the user is speaking.
   final Transcription? interimInputTranscription;
 
-  /// The current activity status of the live session. Always sent alongside `turn_complete`.
+  /// The current activity status of the live session.
+  ///
+  /// Always sent alongside [turnComplete].
   final InteractionStatus? interactionStatus;
 
-  /// Opaque token to resume a long decode when [interactionStatus] is
+  /// The opaque token used to resume a long decode.
+  ///
+  /// Populated when [interactionStatus] is
   /// [InteractionStatus.REQUIRES_CONTINUATION].
   final String? continuationToken;
 
+  /// The ordered IDs of all server interactions merged into this response.
+  ///
+  /// Populated when automatic continuation is enabled, ending with the final
+  /// hop's ID.
+  final List<String>? continuationIds;
+
+  /// Creates a [LiveServerContent] update.
   LiveServerContent({
     this.modelTurn,
     this.turnComplete,
@@ -139,6 +150,7 @@ class LiveServerContent {
     this.interimInputTranscription,
     this.interactionStatus,
     this.continuationToken,
+    this.continuationIds,
   });
 
   /// Whether the server content indicates that the interaction is complete.
@@ -159,6 +171,7 @@ class LiveServerContent {
   bool get requiresContinuation =>
       interactionStatus == InteractionStatus.REQUIRES_CONTINUATION;
 
+  /// Creates a [LiveServerContent] from a JSON map.
   factory LiveServerContent.fromJson(Map<String, dynamic> json) {
     final rawStatus =
         json['interactionStatus'] ?? json['interaction_status'] ?? json['status'];
@@ -171,6 +184,9 @@ class LiveServerContent {
       if (!json.containsKey('continuationToken') &&
           json.containsKey('continuation_token'))
         'continuationToken': json['continuation_token'],
+      if (!json.containsKey('continuationIds') &&
+          json.containsKey('continuation_ids'))
+        'continuationIds': json['continuation_ids'],
     });
   }
 }
@@ -431,6 +447,45 @@ class LiveServerError {
   @override
   String toString() =>
       'LiveServerError(code: $code, status: $status, message: $message)';
+}
+
+/// An exception thrown when automatic continuation fails after partial progress.
+///
+/// Preserves the [partialInteraction], [continuationToken], [interactionId],
+/// and [continuationIds] so decoding can be resumed from the last checkpoint
+/// without losing earlier hops.
+class ContinuationInterruptedError implements Exception {
+  /// The human-readable message describing why continuation was interrupted.
+  final String message;
+
+  /// The partial interaction payload accumulated before interruption, if any.
+  final Object? partialInteraction;
+
+  /// The latest resumable continuation token to pass when resuming decoding.
+  final String? continuationToken;
+
+  /// The ID of the stored interaction that issued [continuationToken], if any.
+  final String? interactionId;
+
+  /// The ordered IDs of every hop created during the call.
+  final List<String> continuationIds;
+
+  /// The underlying error cause that triggered the interruption, if any.
+  final Object? cause;
+
+  /// Creates a [ContinuationInterruptedError] with [message] and checkpoint state.
+  ContinuationInterruptedError(
+    this.message, {
+    this.partialInteraction,
+    this.continuationToken,
+    this.interactionId,
+    List<String>? continuationIds,
+    this.cause,
+  }) : continuationIds = List<String>.unmodifiable(continuationIds ?? const []);
+
+  @override
+  String toString() =>
+      'ContinuationInterruptedError($message, continuationToken: $continuationToken, continuationIds: $continuationIds)';
 }
 
 /// A top-level server message received over the Live API socket.

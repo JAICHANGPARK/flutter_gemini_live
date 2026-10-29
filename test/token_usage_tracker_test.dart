@@ -213,6 +213,60 @@ void main() {
       controller.dispose();
       genAI.close();
     });
+
+    test('FunctionResponsePart.mediaProcessing, continuationIds, and ContinuationInterruptedError', () {
+      final partFromBytes = FunctionResponsePart.fromBytes(
+        data: [1, 2, 3, 4],
+        mimeType: 'video/mp4',
+        displayName: 'clip.mp4',
+        mediaProcessing: MediaProcessing.AGENTIC,
+      );
+      expect(partFromBytes.mediaProcessing, MediaProcessing.AGENTIC);
+      final jsonBytes = partFromBytes.toJson();
+      expect(jsonBytes['media_processing'], 'AGENTIC');
+
+      final parsedPart = FunctionResponsePart.fromJson({
+        'fileData': {'file_uri': 'gs://bucket/video.mp4', 'mime_type': 'video/mp4'},
+        'mediaProcessing': 'STATIC',
+      });
+      expect(parsedPart.mediaProcessing, MediaProcessing.STATIC);
+      expect(parsedPart.fileData?.fileUri, 'gs://bucket/video.mp4');
+
+      final partModel = Part.fromJson({
+        'text': 'video frame',
+        'media_processing': 'AGENTIC',
+      });
+      expect(partModel.mediaProcessing, MediaProcessing.AGENTIC);
+
+      final content = LiveServerContent.fromJson({
+        'interaction_status': 'idle',
+        'continuation_ids': ['hop_1', 'hop_2'],
+      });
+      expect(content.continuationIds, ['hop_1', 'hop_2']);
+
+      final genAI = GoogleGenAI(apiKey: 'test-key');
+      final controller = GeminiLiveSessionController(liveService: genAI.live);
+      controller.handleServerMessageForTesting(
+        LiveServerMessage(serverContent: content),
+      );
+      expect(controller.continuationIds, ['hop_1', 'hop_2']);
+      controller.clearHistory();
+      expect(controller.continuationIds, isEmpty);
+      controller.dispose();
+      genAI.close();
+
+      final err = ContinuationInterruptedError(
+        'Failed on hop 2',
+        continuationToken: 'tok_2',
+        interactionId: 'int_1',
+        continuationIds: ['int_1'],
+      );
+      expect(err.message, 'Failed on hop 2');
+      expect(err.continuationToken, 'tok_2');
+      expect(err.interactionId, 'int_1');
+      expect(err.continuationIds, ['int_1']);
+      expect(err.toString(), contains('tok_2'));
+    });
   });
 
   group('GeminiLiveUsageBadge & Dialog', () {

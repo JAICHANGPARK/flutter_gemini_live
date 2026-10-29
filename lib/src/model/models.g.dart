@@ -1079,6 +1079,10 @@ FunctionResponsePart _$FunctionResponsePartFromJson(
       : FunctionResponseFileData.fromJson(
           json['file_data'] as Map<String, dynamic>,
         ),
+  mediaProcessing: $enumDecodeNullable(
+    _$MediaProcessingEnumMap,
+    json['media_processing'],
+  ),
 );
 
 Map<String, dynamic> _$FunctionResponsePartToJson(
@@ -1086,6 +1090,7 @@ Map<String, dynamic> _$FunctionResponsePartToJson(
 ) => <String, dynamic>{
   'inline_data': ?instance.inlineData?.toJson(),
   'file_data': ?instance.fileData?.toJson(),
+  'media_processing': ?_$MediaProcessingEnumMap[instance.mediaProcessing],
 };
 
 FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
@@ -1564,6 +1569,9 @@ LiveServerContent _$LiveServerContentFromJson(Map<String, dynamic> json) =>
         json['interactionStatus'],
       ),
       continuationToken: json['continuationToken'] as String?,
+      continuationIds: (json['continuationIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 const _$TurnCompleteReasonEnumMap = {
