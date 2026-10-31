@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gemini_live/gemini_live.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Supported application languages.
@@ -29,7 +30,9 @@ enum AppLanguage {
 /// Global language state controller with persistent storage.
 class AppLanguageController extends ChangeNotifier {
   static final AppLanguageController instance = AppLanguageController._();
-  AppLanguageController._();
+  AppLanguageController._() {
+    GeminiLiveUsageBadge.defaultLanguageCode = _currentLanguage.code;
+  }
 
   static const String _prefKey = 'gemini_live_example_language';
 
@@ -49,9 +52,11 @@ class AppLanguageController extends ChangeNotifier {
       } else {
         _currentLanguage = AppLanguage.en;
       }
+      GeminiLiveUsageBadge.defaultLanguageCode = _currentLanguage.code;
       notifyListeners();
     } catch (_) {
       _currentLanguage = AppLanguage.en;
+      GeminiLiveUsageBadge.defaultLanguageCode = _currentLanguage.code;
     }
   }
 
@@ -59,6 +64,7 @@ class AppLanguageController extends ChangeNotifier {
   Future<void> setLanguage(AppLanguage language) async {
     if (_currentLanguage == language) return;
     _currentLanguage = language;
+    GeminiLiveUsageBadge.defaultLanguageCode = _currentLanguage.code;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();

@@ -27,14 +27,14 @@ enum VnHeroineCharacter {
     nameKo: '레이나',
     nameEn: 'Reina',
     nameZh: '玲奈',
-    subtitleJa: '渋谷系ハイテンション・ギャル開発者',
-    subtitleKo: '하이텐션 시부야 갸루 개발자',
+    subtitleJa: '渋谷系サイバーテック・ギャル開発者',
+    subtitleKo: '하이텐션 시부야 테크 갸루 개발자',
     subtitleEn: 'High-Tension Shibuya Tech-Gyaru Dev',
-    subtitleZh: '涉谷系元气辣妹开发者',
-    badgeEmoji: '🌺',
+    subtitleZh: '涉谷系赛博科技辣妹开发者',
+    badgeEmoji: '⚡',
     defaultVoiceId: 'Autonoe',
     defaultPitchShift: 1.14,
-    accentColor: Color(0xFFFF4D94),
+    accentColor: Color(0xFFC084FC),
   );
 
   final String id;

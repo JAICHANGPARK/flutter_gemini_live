@@ -32,81 +32,92 @@ class MgMixingConsoleDesk extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFF101318),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF283242), width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black87,
-            blurRadius: 16,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SingleChildScrollView(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final rowContent = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left Chassis Side Rail with Hex Screws
+            const _ChassisSideRail(),
+
+            // 16 Vertical Hardware Channel Strips
+            for (final index in knobIndices)
+              _MgChannelStrip(
+                channelNumber: index + 1,
+                data: vm.knobs[index],
+                rmsLevel: vm.isPlaying ? vm.rmsLevel : 0.0,
+                onFaderChanged: (v) => vm.onKnobChanged(index, v),
+                onToggleOn: () => vm.onKnobTapped(index),
+                onEditPrompt: () =>
+                    showEditKnobDialog(context, vm, vm.knobs[index]),
+                onParamChanged: ({
+                  gain,
+                  comp,
+                  high,
+                  mid,
+                  low,
+                  aux1,
+                  aux2,
+                  pan,
+                  groupAssigned,
+                  stAssigned,
+                  pflActive,
+                }) => vm.updateChannelParam(
+                  index,
+                  gain: gain,
+                  comp: comp,
+                  high: high,
+                  mid: mid,
+                  low: low,
+                  aux1: aux1,
+                  aux2: aux2,
+                  pan: pan,
+                  groupAssigned: groupAssigned,
+                  stAssigned: stAssigned,
+                  pflActive: pflActive,
+                ),
+              ),
+
+            // Right-Hand Master Section (PHANTOM +48V, FX 24 LED, Master VU, GROUP 1-2 & STEREO Faders)
+            _MgMasterSection(viewModel: vm),
+
+            // Right Chassis Side Rail with Hex Screws
+            const _ChassisSideRail(),
+          ],
+        );
+
+        final scrollableDesk = SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Chassis Side Rail with Hex Screws
-                const _ChassisSideRail(),
+          child: constraints.hasBoundedHeight
+              ? FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: rowContent,
+                )
+              : rowContent,
+        );
 
-                // 16 Vertical Hardware Channel Strips
-                for (final index in knobIndices)
-                  _MgChannelStrip(
-                    channelNumber: index + 1,
-                    data: vm.knobs[index],
-                    rmsLevel: vm.isPlaying ? vm.rmsLevel : 0.0,
-                    onFaderChanged: (v) => vm.onKnobChanged(index, v),
-                    onToggleOn: () => vm.onKnobTapped(index),
-                    onEditPrompt: () =>
-                        showEditKnobDialog(context, vm, vm.knobs[index]),
-                    onParamChanged: ({
-                      gain,
-                      comp,
-                      high,
-                      mid,
-                      low,
-                      aux1,
-                      aux2,
-                      pan,
-                      groupAssigned,
-                      stAssigned,
-                      pflActive,
-                    }) => vm.updateChannelParam(
-                      index,
-                      gain: gain,
-                      comp: comp,
-                      high: high,
-                      mid: mid,
-                      low: low,
-                      aux1: aux1,
-                      aux2: aux2,
-                      pan: pan,
-                      groupAssigned: groupAssigned,
-                      stAssigned: stAssigned,
-                      pflActive: pflActive,
-                    ),
-                  ),
-
-                // Right-Hand Master Section (PHANTOM +48V, FX 24 LED, Master VU, GROUP 1-2 & STEREO Faders)
-                _MgMasterSection(viewModel: vm),
-
-                // Right Chassis Side Rail with Hex Screws
-                const _ChassisSideRail(),
-              ],
-            ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF101318),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFF283242), width: 2),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black87,
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
-        ),
-      ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: scrollableDesk,
+          ),
+        );
+      },
     );
   }
 }
@@ -1746,7 +1757,7 @@ class _ChassisSideRail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 18,
-      height: 670,
+      height: 715,
       color: const Color(0xFF0B0D12),
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: const Column(

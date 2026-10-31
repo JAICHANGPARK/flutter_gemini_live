@@ -222,9 +222,16 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       _isConnecting = false;
       notifyListeners();
 
-      // Send initial active knob prompts and config
+      // Send initial active knob prompts and config, and start playback immediately
       _sendWeightedPrompts();
       _sendGenerationConfig();
+      _music.play();
+      _isPlaying = true;
+      notifyListeners();
+      _addLog(
+        '▶️ Live 48kHz Stereo stream auto-started',
+        color: const Color(0xFFA855F7),
+      );
 
       onNotice?.call(
         DjMidiBoxNotice(
@@ -250,6 +257,107 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   /// Tapping the ONLINE pill: closes the session (callbacks report the rest).
   void closeSession() => _music.close();
 
+  /// Computes the active channels' weighted DSP parameters (preamp gain,
+  /// compressor, 3-band EQ, stereo pan, and master bus level) for 0ms-latency
+  /// 48kHz stereo PCM processing.
+  ({
+    double masterGain,
+    double preGain,
+    double compAmount,
+    double lowEq,
+    double midEq,
+    double highEq,
+    double pan,
+  })
+  _computeActiveDspParams() {
+    final pflChannels = knobs.where((k) => k.pflActive).toList();
+    final active = pflChannels.isNotEmpty
+        ? pflChannels
+        : knobs
+              .where((k) => k.weight > 0.01 && (k.stAssigned || k.groupAssigned))
+              .toList();
+
+    if (active.isEmpty) {
+      return (
+        masterGain: 0.0,
+        preGain: 0.5,
+        compAmount: 0.35,
+        lowEq: 0.5,
+        midEq: 0.5,
+        highEq: 0.5,
+        pan: 0.5,
+      );
+    }
+
+    var totalWeight = 0.0;
+    var sumGain = 0.0;
+    var sumComp = 0.0;
+    var sumLow = 0.0;
+    var sumMid = 0.0;
+    var sumHigh = 0.0;
+    var sumPan = 0.0;
+    var maxChannelOut = 0.0;
+
+    for (final k in active) {
+      final w = k.pflActive ? (k.weight > 0.1 ? k.weight : 0.75) : k.weight;
+      final busFactor = k.groupAssigned ? _groupBusLevel : 1.0;
+      final chLevel = w * busFactor;
+      if (chLevel > maxChannelOut) maxChannelOut = chLevel;
+
+      totalWeight += w;
+      sumGain += k.gain * w;
+      sumComp += k.comp * w;
+      sumLow += k.low * w;
+      sumMid += k.mid * w;
+      sumHigh += k.high * w;
+      sumPan += k.pan * w;
+    }
+
+    final inv = totalWeight > 0.0001 ? (1.0 / totalWeight) : 1.0;
+    final masterGain = (maxChannelOut * _stereoMasterLevel * 1.15).clamp(
+      0.0,
+      1.35,
+    );
+
+    return (
+      masterGain: masterGain,
+      preGain: (sumGain * inv).clamp(0.0, 1.0),
+      compAmount: (sumComp * inv).clamp(0.0, 1.0),
+      lowEq: _muteBass ? 0.08 : (sumLow * inv).clamp(0.0, 1.0),
+      midEq: (sumMid * inv).clamp(0.0, 1.0),
+      highEq: (sumHigh * inv).clamp(0.0, 1.0),
+      pan: (sumPan * inv).clamp(0.0, 1.0),
+    );
+  }
+
+  static String _fxProgramDescriptor(int program) => switch (program) {
+    1 => 'large concert hall reverb',
+    2 => 'warm acoustic hall reverb',
+    3 => 'studio room ambience',
+    4 => 'intimate live room reverb',
+    5 => 'arena stage reverb',
+    6 => 'wide stage reverb tail',
+    7 => 'vintage metallic plate reverb',
+    8 => 'tight drum room ambience',
+    9 => 'crisp early reflections',
+    10 => '80s gated snare reverb',
+    11 => 'slapback single delay',
+    12 => 'tempo-synced stereo delay echo',
+    13 => 'dub vocal tape echo',
+    14 => 'stereo karaoke echo',
+    15 => 'sweeping analog phaser modulation',
+    16 => 'jet stereo flanger sweep',
+    17 => 'lush ensemble chorus',
+    18 => 'deep dimensional chorus',
+    19 => 'wide symphonic orchestral detune',
+    20 => 'vintage tube tremolo pulse',
+    21 => 'funky envelope auto-wah filter',
+    22 => 'lo-fi bandpass radio voice filter',
+    23 => 'warm overdriven harmonic distortion',
+    24 => 'octave harmonic pitch shift',
+    _ => 'studio hall reverb',
+  };
+
   void _handleServerMessage(LiveMusicServerMessage message) {
     if (message.filteredPrompt != null) {
       _addLog(
@@ -258,6 +366,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       );
     }
 
+    final dsp = _computeActiveDspParams();
     final chunks = message.serverContent?.audioChunks;
     if (chunks != null && chunks.isNotEmpty) {
       if (!_isPlaying) return;
@@ -266,8 +375,18 @@ class DjMidiBoxViewModel extends ChangeNotifier {
         final bytes = chunk.bytes;
         if (bytes != null && bytes.isNotEmpty) {
           totalBytes += bytes.length;
-          _audio.appendPcmBytes(bytes);
-          final rms = GeminiLiveAudioUtils.calculateRms(bytes);
+          final processed = _audio.appendPcmBytes(
+            bytes,
+            masterGain: dsp.masterGain,
+            preGain: dsp.preGain,
+            compAmount: dsp.compAmount,
+            lowEq: dsp.lowEq,
+            midEq: dsp.midEq,
+            highEq: dsp.highEq,
+            pan: dsp.pan,
+            phantom48v: _phantom48v,
+          );
+          final rms = GeminiLiveAudioUtils.calculateRms(processed);
           final visualScale = GeminiLiveAudioUtils.toVisualScale(
             rms,
             factor: 2.2,
@@ -306,7 +425,17 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       if (chunk != null && chunk.data != null) {
         final bytes = chunk.bytes;
         if (bytes != null && bytes.isNotEmpty && _isPlaying) {
-          _audio.appendPcmBytes(bytes);
+          final processed = _audio.appendPcmBytes(
+            bytes,
+            masterGain: dsp.masterGain,
+            preGain: dsp.preGain,
+            compAmount: dsp.compAmount,
+            lowEq: dsp.lowEq,
+            midEq: dsp.midEq,
+            highEq: dsp.highEq,
+            pan: dsp.pan,
+            phantom48v: _phantom48v,
+          );
           final audioOutTokens = (bytes.length / 6000).ceil();
           usageTracker.recordUsage(
             UsageMetadata(
@@ -320,7 +449,7 @@ class DjMidiBoxViewModel extends ChangeNotifier {
               ],
             ),
           );
-          final rms = GeminiLiveAudioUtils.calculateRms(bytes);
+          final rms = GeminiLiveAudioUtils.calculateRms(processed);
           final visualScale = GeminiLiveAudioUtils.toVisualScale(
             rms,
             factor: 2.2,
@@ -371,25 +500,40 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       );
     }
 
-    // 2. Rotary Dial / Channel Strip Prompts
-    final active = knobs
-        .where((k) => k.weight > 0.01 && (k.stAssigned || k.groupAssigned))
-        .toList();
+    // 2. Rotary Dial / Channel Strip Prompts (PFL Solo takes priority when active)
+    final pflChannels = knobs.where((k) => k.pflActive).toList();
+    final active = pflChannels.isNotEmpty
+        ? pflChannels
+        : knobs
+              .where((k) => k.weight > 0.01 && (k.stAssigned || k.groupAssigned))
+              .toList();
+    final fxDesc = _fxProgramDescriptor(_fxProgram);
+
     for (final k in active) {
       final modifiers = <String>[];
-      if (k.high > 0.68) modifiers.add('crisp sparkling 10kHz high-end');
-      if (k.high < 0.32) modifiers.add('warm rolled-off highs');
-      if (k.mid > 0.68) modifiers.add('forward punchy 2.5kHz midrange');
-      if (k.low > 0.68) modifiers.add('deep booming 100Hz low-end bass');
-      if (k.comp > 0.68) modifiers.add('tightly compressed studio dynamics');
-      if (k.aux2 > 0.60) modifiers.add('lush studio hall reverb tail');
+      if (k.high > 0.65) modifiers.add('crisp sparkling 10kHz high-end');
+      if (k.high < 0.35) modifiers.add('warm rolled-off highs');
+      if (k.mid > 0.65) modifiers.add('forward punchy 2.5kHz midrange');
+      if (k.mid < 0.35) modifiers.add('scooped midrange');
+      if (k.low > 0.65) modifiers.add('deep booming 100Hz low-end bass');
+      if (k.low < 0.35) modifiers.add('tight high-passed low-end');
+      if (k.comp > 0.65) modifiers.add('tightly compressed studio dynamics');
+      if (k.comp < 0.25) modifiers.add('open natural dynamic range');
+      if (k.aux1 > 0.60) modifiers.add('wide stereo rhythmic layering');
+      if (k.aux2 > 0.45) modifiers.add('with $fxDesc');
+      if (k.pan < 0.35) modifiers.add('panned left stereo image');
+      if (k.pan > 0.65) modifiers.add('panned right stereo image');
+      if (_phantom48v && k.gain > 0.60) {
+        modifiers.add('+48V condenser air presence');
+      }
 
       final promptText = modifiers.isEmpty
           ? k.prompt
           : '${k.prompt} (${modifiers.join(", ")})';
       final busFactor = k.groupAssigned ? _groupBusLevel : 1.0;
+      final baseWeight = k.pflActive && k.weight < 0.1 ? 0.75 : k.weight;
       final effectiveWeight =
-          (k.weight * (0.5 + k.gain * 0.7) * busFactor * _stereoMasterLevel)
+          (baseWeight * (0.5 + k.gain * 0.7) * busFactor * _stereoMasterLevel)
               .clamp(0.05, 1.0);
       prompts.add(WeightedPrompt(text: promptText, weight: effectiveWeight));
     }
@@ -485,6 +629,11 @@ class DjMidiBoxViewModel extends ChangeNotifier {
       knobs[index].weight = 0.0;
     } else {
       knobs[index].weight = 0.75;
+      // If connected and paused, turning a channel ON starts playback automatically
+      if (_isConnected && !_isPlaying) {
+        _music.play();
+        _isPlaying = true;
+      }
     }
     notifyListeners();
     if (_isConnected) {
@@ -527,11 +676,24 @@ class DjMidiBoxViewModel extends ChangeNotifier {
     if (groupAssigned != null) k.groupAssigned = groupAssigned;
     if (stAssigned != null) k.stAssigned = stAssigned;
     if (pflActive != null) k.pflActive = pflActive;
+
+    // Sync active channels' HIGH / MID EQ with Lyria brightness & density
+    if (high != null || mid != null) {
+      final dsp = _computeActiveDspParams();
+      _brightness = dsp.highEq;
+      _density = dsp.midEq;
+    }
+
     notifyListeners();
     if (_isConnected) {
       _knobDebounceTimer?.cancel();
       _knobDebounceTimer = Timer(const Duration(milliseconds: 140), () {
-        if (_isConnected) _sendWeightedPrompts();
+        if (_isConnected) {
+          _sendWeightedPrompts();
+          if (high != null || mid != null) {
+            _sendGenerationConfig();
+          }
+        }
       });
     }
   }
@@ -544,11 +706,28 @@ class DjMidiBoxViewModel extends ChangeNotifier {
   void togglePhantom48v() {
     _phantom48v = !_phantom48v;
     notifyListeners();
+    _addLog(
+      '⚡ PHANTOM +48V ${_phantom48v ? "ENABLED (Condenser Air Boost)" : "OFF"}',
+      color: const Color(0xFFEF4444),
+    );
+    if (_isConnected) {
+      _sendWeightedPrompts();
+    }
   }
 
   void cycleFxProgram([int delta = 1]) {
     _fxProgram = ((_fxProgram - 1 + delta) % 24) + 1;
     notifyListeners();
+    _addLog(
+      '🎛️ DSP FX Program #${_fxProgram.toString().padLeft(2, "0")}: ${_fxProgramDescriptor(_fxProgram)}',
+      color: const Color(0xFFFF9800),
+    );
+    if (_isConnected) {
+      _knobDebounceTimer?.cancel();
+      _knobDebounceTimer = Timer(const Duration(milliseconds: 140), () {
+        if (_isConnected) _sendWeightedPrompts();
+      });
+    }
   }
 
   void setGroupBusLevel(double val) {

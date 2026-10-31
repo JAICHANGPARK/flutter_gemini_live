@@ -355,6 +355,39 @@ class GeminiTokenUsageTracker extends ChangeNotifier {
     return '$usdStr ($krwStr)';
   }
 
+  /// Formats the estimated cost with localized currency approximation for
+  /// `'en'`, `'ko'`, `'ja'`, or `'zh'`.
+  String formatCostForLanguage(String languageCode) {
+    final lang = languageCode.toLowerCase();
+    if (lang == 'ko') {
+      return formatCost(showKrw: true);
+    }
+
+    final usd = estimatedCostUsd;
+    final usdStr = usd < 0.0001 && usd > 0
+        ? '< \$0.0001'
+        : '\$${usd.toStringAsFixed(4)}';
+
+    if (lang == 'ja') {
+      final jpy = usd * 155.0;
+      final jpyRounded = jpy.round();
+      final jpyStr = jpyRounded > 0
+          ? '約 ¥${_formatNumber(jpyRounded)}'
+          : (jpy > 0 ? '< ¥1' : '¥0');
+      return '$usdStr ($jpyStr)';
+    }
+
+    if (lang == 'zh') {
+      final cny = usd * 7.2;
+      final cnyStr = cny >= 0.01
+          ? '约 ¥${cny.toStringAsFixed(2)}'
+          : (cny > 0 ? '< ¥0.01' : '¥0.00');
+      return '$usdStr ($cnyStr)';
+    }
+
+    return usdStr;
+  }
+
   static String _formatNumber(int number) {
     final str = number.toString();
     final buffer = StringBuffer();

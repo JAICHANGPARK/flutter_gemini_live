@@ -472,7 +472,7 @@ class AnimeVnViewModel extends ChangeNotifier {
     final actingDirection = useGyaruTone
         ? switch (beat.emotion) {
             VnCharacterEmotion.happy =>
-              'テンションMAXでノリノリな17歳の渋谷系アニメギャル美少女声優トーン（喜多川海夢やブルアカの陽キャギャルヒロイン風！明るく弾む高めのギャル声で語尾を可愛く跳ね上げて）で',
+              'テンションMAXでノリノリな17歳の渋谷系サイバーテック・ギャル美少女声優トーン（明るく弾む高めの陽キャギャル声で語尾を可愛く跳ね上げて）で',
             VnCharacterEmotion.explaining =>
               '自信たっぷりで面倒見のいい陽キャギャル美少女アニメ声優トーン（明るくてテンポが良く、フレンドリーで超キュートなギャル声）で',
             VnCharacterEmotion.surprised =>
@@ -480,7 +480,7 @@ class AnimeVnViewModel extends ChangeNotifier {
             VnCharacterEmotion.thinking =>
               'コギャル風の甘くてキュートな高めのアニメ美少女声で、いたずらっぽくウインクしながら',
             VnCharacterEmotion.normal =>
-              '明るくてフレンドリー、距離感が近くて超かわいいアニメギャルヒロイン（喜多川海夢風）の声で',
+              '明るくてフレンドリー、距離感が近くて超かわいい渋谷系テックギャルヒロインの声で',
           }
         : switch (beat.emotion) {
             VnCharacterEmotion.happy =>

@@ -214,9 +214,13 @@ class ProDjConsoleViewModel extends ChangeNotifier {
       notifyListeners();
       _log('Connected to Lyria RealTime! Initializing DJ Decks...');
 
-      // Apply initial setup
+      // Apply initial setup and start live playback immediately
       _sendWeightedPrompts();
       _sendGenerationConfig();
+      _music.play();
+      _isPlaying = true;
+      startJog?.call();
+      notifyListeners();
 
       onNotice?.call(
         ProDjConsoleNotice(
@@ -249,7 +253,15 @@ class ProDjConsoleViewModel extends ChangeNotifier {
         // Discard in-flight server chunks if user paused or stopped
         if (!_isPlaying) return;
 
-        _audio.appendPcmBytes(bytes);
+        final processedBytes = _audio.appendPcmBytes(
+          bytes,
+          masterGain: ((_deckAWeight + _deckBWeight) * 0.65).clamp(0.05, 1.3),
+          compAmount: (_temperature / 2.5).clamp(0.0, 1.0),
+          lowEq: _muteBass ? 0.0 : ((_guidance - 1.0) / 5.0).clamp(0.0, 1.0),
+          midEq: _density.clamp(0.0, 1.0),
+          highEq: _brightness.clamp(0.0, 1.0),
+          pan: _crossfader.clamp(0.0, 1.0),
+        );
         final audioOutTokens = (bytes.length / 6000).ceil();
         usageTracker.recordUsage(
           UsageMetadata(
@@ -265,7 +277,7 @@ class ProDjConsoleViewModel extends ChangeNotifier {
         );
 
         // Calculate RMS for DJ VU meters & Jog display
-        final rms = GeminiLiveAudioUtils.calculateRms(bytes);
+        final rms = GeminiLiveAudioUtils.calculateRms(processedBytes);
         final visualScale = GeminiLiveAudioUtils.toVisualScale(
           rms,
           factor: 2.2,

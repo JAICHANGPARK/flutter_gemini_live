@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../utils/token_usage_tracker.dart';
+import 'live_usage_badge.dart';
 
 /// An iOS / Cupertino-styled token usage badge displaying real-time token metrics
 /// and estimated cost for Gemini Live sessions.
@@ -29,6 +30,9 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
   /// Padding around badge content.
   final EdgeInsetsGeometry padding;
 
+  /// Optional explicit language code (`'en'`, `'ko'`, `'ja'`, `'zh'`).
+  final String? languageCode;
+
   /// Creates a Cupertino token usage badge wired to [tracker].
   const CupertinoGeminiLiveUsageBadge({
     super.key,
@@ -39,15 +43,24 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.padding = const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+    this.languageCode,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: tracker,
+      listenable: Listenable.merge([
+        tracker,
+        GeminiLiveUsageBadge.languageNotifier,
+      ]),
       builder: (context, _) {
         final isDark =
             CupertinoTheme.of(context).brightness == Brightness.dark;
+        final lang = GeminiLiveUsageBadge.resolveLanguageCode(
+          context,
+          explicitCode: languageCode,
+          fallback: 'en',
+        );
 
         final bg = backgroundColor ??
             (isDark
@@ -57,7 +70,7 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
             CupertinoColors.label.resolveFrom(context);
 
         final tokenText = tracker.formatTokens();
-        final costText = tracker.formatCost();
+        final costText = tracker.formatCostForLanguage(lang);
 
         return GestureDetector(
           onTap: onTap ?? () => _showDetailsDialog(context),
@@ -127,8 +140,10 @@ class CupertinoGeminiLiveUsageBadge extends StatelessWidget {
   void _showDetailsDialog(BuildContext context) {
     showCupertinoDialog(
       context: context,
-      builder: (context) =>
-          CupertinoGeminiLiveUsageDetailsDialog(tracker: tracker),
+      builder: (context) => CupertinoGeminiLiveUsageDetailsDialog(
+        tracker: tracker,
+        languageCode: languageCode,
+      ),
     );
   }
 }
@@ -138,19 +153,80 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
   /// The usage tracker providing real-time metrics.
   final GeminiTokenUsageTracker tracker;
 
+  /// Optional explicit language code (`'en'`, `'ko'`, `'ja'`, `'zh'`).
+  final String? languageCode;
+
   /// Creates a Cupertino dialog displaying detailed token metrics from [tracker].
   const CupertinoGeminiLiveUsageDetailsDialog({
     super.key,
     required this.tracker,
+    this.languageCode,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: tracker,
+      listenable: Listenable.merge([
+        tracker,
+        GeminiLiveUsageBadge.languageNotifier,
+      ]),
       builder: (context, _) {
         final isDark =
             CupertinoTheme.of(context).brightness == Brightness.dark;
+        final lang = GeminiLiveUsageBadge.resolveLanguageCode(
+          context,
+          explicitCode: languageCode,
+          fallback: 'en',
+        );
+
+        final titleText = switch (lang) {
+          'ko' => 'Gemini Live 사용량',
+          'ja' => 'Gemini Live 使用量',
+          'zh' => 'Gemini Live 用量',
+          _ => 'Gemini Live Usage',
+        };
+        final totalLabel = switch (lang) {
+          'ko' => '총 토큰',
+          'ja' => '総トークン数',
+          'zh' => '总 Token 数',
+          _ => 'Total Tokens',
+        };
+        final estimatedPrefix = switch (lang) {
+          'ko' => '예상 비용',
+          'ja' => '推定コスト',
+          'zh' => '预估费用',
+          _ => 'Estimated',
+        };
+        final promptLabel = switch (lang) {
+          'ko' => '입력 프롬프트 토큰',
+          'ja' => '入力プロンプトトークン',
+          'zh' => '输入提示词 Token',
+          _ => 'Prompt Tokens',
+        };
+        final responseLabel = switch (lang) {
+          'ko' => '응답 생성 토큰',
+          'ja' => '応答生成トークン',
+          'zh' => '响应生成 Token',
+          _ => 'Response Tokens',
+        };
+        final cachedLabel = switch (lang) {
+          'ko' => '캐시된 토큰',
+          'ja' => 'キャッシュ済みトークン',
+          'zh' => '已缓存 Token',
+          _ => 'Cached Tokens',
+        };
+        final resetLabel = switch (lang) {
+          'ko' => '초기화',
+          'ja' => 'リセット',
+          'zh' => '重置',
+          _ => 'Reset',
+        };
+        final doneLabel = switch (lang) {
+          'ko' => '완료',
+          'ja' => '完了',
+          'zh' => '完成',
+          _ => 'Done',
+        };
 
         return CupertinoAlertDialog(
           title: Padding(
@@ -165,10 +241,10 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
                   color: CupertinoColors.systemBlue.resolveFrom(context),
                 ),
                 const SizedBox(width: 6),
-                const Flexible(
+                Flexible(
                   child: Text(
-                    'Gemini Live Usage',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    titleText,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -191,7 +267,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Total Tokens',
+                      totalLabel,
                       style: TextStyle(
                         fontSize: 11,
                         color: CupertinoColors.secondaryLabel
@@ -208,7 +284,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Estimated: ${tracker.formatCost(showKrw: false)}',
+                      '$estimatedPrefix: ${tracker.formatCostForLanguage(lang)}',
                       style: TextStyle(
                         fontSize: 11,
                         color: CupertinoColors.secondaryLabel
@@ -220,7 +296,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               _buildMetricRow(
-                'Prompt Tokens',
+                promptLabel,
                 '${tracker.promptTokens}',
                 context,
               ),
@@ -232,7 +308,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
                 _buildSubMetricRow('Text In', '${tracker.textInputTokens}', context),
               const SizedBox(height: 4),
               _buildMetricRow(
-                'Response Tokens',
+                responseLabel,
                 '${tracker.responseTokens}',
                 context,
               ),
@@ -243,7 +319,7 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
               if (tracker.cachedTokens > 0) ...[
                 const SizedBox(height: 4),
                 _buildMetricRow(
-                  'Cached Tokens',
+                  cachedLabel,
                   '${tracker.cachedTokens}',
                   context,
                 ),
@@ -254,12 +330,12 @@ class CupertinoGeminiLiveUsageDetailsDialog extends StatelessWidget {
             CupertinoDialogAction(
               onPressed: () => tracker.reset(),
               isDestructiveAction: true,
-              child: const Text('Reset'),
+              child: Text(resetLabel),
             ),
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(),
               isDefaultAction: true,
-              child: const Text('Done'),
+              child: Text(doneLabel),
             ),
           ],
         );

@@ -322,5 +322,56 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('0 tokens'), findsOneWidget);
     });
+
+    testWidgets('supports dynamic localization across en, ko, ja, and zh', (tester) async {
+      addTearDown(() => GeminiLiveUsageBadge.defaultLanguageCode = null);
+      final tracker = GeminiTokenUsageTracker(
+        model: 'gemini-3.5-live-translate-preview',
+      );
+      tracker.recordUsage(
+        UsageMetadata(
+          promptTokenCount: 1000,
+          responseTokenCount: 250,
+          totalTokenCount: 1250,
+          promptTokensDetails: [
+            ModalityTokenCount(modality: MediaModality.AUDIO, tokenCount: 1000),
+          ],
+          responseTokensDetails: [
+            ModalityTokenCount(modality: MediaModality.AUDIO, tokenCount: 250),
+          ],
+        ),
+      );
+
+      GeminiLiveUsageBadge.defaultLanguageCode = 'ja';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(child: GeminiLiveUsageBadge(tracker: tracker)),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(GeminiLiveUsageBadge));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gemini Live 使用量とコスト'), findsOneWidget);
+      expect(find.text('モダリティ別使用内訳'), findsOneWidget);
+      expect(find.text('閉じる'), findsOneWidget);
+
+      // Switch dynamically to English while dialog is open
+      GeminiLiveUsageBadge.defaultLanguageCode = 'en';
+      await tester.pump();
+      expect(find.text('Gemini Live Usage & Cost'), findsOneWidget);
+      expect(find.text('Modality Usage Breakdown'), findsOneWidget);
+
+      // Switch dynamically to Chinese while dialog is open
+      GeminiLiveUsageBadge.defaultLanguageCode = 'zh';
+      await tester.pump();
+      expect(find.text('Gemini Live 用量与费用'), findsOneWidget);
+      expect(find.text('各模态详细用量明细'), findsOneWidget);
+
+      await tester.tap(find.text('关闭'));
+      await tester.pumpAndSettle();
+    });
   });
 }
