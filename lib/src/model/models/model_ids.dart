@@ -30,6 +30,9 @@ abstract final class LiveModels {
   static const String gemini35LiveTranslatePreview =
       'gemini-3.5-live-translate-preview';
 
+  /// Speech transcription model (`gemini-3.5-transcribe`).
+  static const String gemini35Transcribe = 'gemini-3.5-transcribe';
+
   /// Gemini 3.8 Flash TTS model for text-to-speech generation.
   @Deprecated('Not a Live API model. TTS models are served by the Interactions/generateContent APIs, not BidiGenerateContent. Will be removed in a future release.')
   static const String gemini38FlashTts = 'gemini-3.8-flash-tts';

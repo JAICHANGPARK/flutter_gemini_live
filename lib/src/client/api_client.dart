@@ -17,7 +17,7 @@ import '../platform/runtime_info_stub.dart'
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
-  static const _sdkVersion = '2.33.0';
+  static const _sdkVersion = '2.34.0';
   /// The API key for authenticating with the Google AI services.
   final String apiKey;
 

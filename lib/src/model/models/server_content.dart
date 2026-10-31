@@ -430,6 +430,79 @@ class UsageMetadata {
               json['tool_use_prompt_tokens_details'] ??
               json['tool_use_tokens_by_modality'],
       });
+
+  /// Merges this [UsageMetadata] with [other] across continuation hops.
+  ///
+  /// Sums cumulative token fields (`promptTokenCount`, `responseTokenCount`,
+  /// `cachedContentTokenCount`, `toolUsePromptTokenCount`, `thoughtsTokenCount`,
+  /// `totalTokenCount`) and per-modality token lists while preserving
+  /// [initialPromptTokenCount] from the first hop that reported it.
+  UsageMetadata merge(UsageMetadata other) {
+    int? sumOpt(int? a, int? b) {
+      if (a == null && b == null) return null;
+      return (a ?? 0) + (b ?? 0);
+    }
+
+    List<ModalityTokenCount>? sumModalityLists(
+      List<ModalityTokenCount>? a,
+      List<ModalityTokenCount>? b,
+    ) {
+      if (a == null && b == null) return null;
+      final totals = <MediaModality, int>{};
+      final untyped = <ModalityTokenCount>[];
+      for (final list in [a, b]) {
+        if (list == null) continue;
+        for (final item in list) {
+          final mod = item.modality;
+          if (mod == null) {
+            untyped.add(item);
+          } else {
+            totals[mod] = (totals[mod] ?? 0) + (item.tokenCount ?? 0);
+          }
+        }
+      }
+      return [
+        for (final entry in totals.entries)
+          ModalityTokenCount(modality: entry.key, tokenCount: entry.value),
+        ...untyped,
+      ];
+    }
+
+    return UsageMetadata(
+      initialPromptTokenCount:
+          initialPromptTokenCount ?? other.initialPromptTokenCount,
+      promptTokenCount: sumOpt(promptTokenCount, other.promptTokenCount),
+      cachedContentTokenCount: sumOpt(
+        cachedContentTokenCount,
+        other.cachedContentTokenCount,
+      ),
+      responseTokenCount: sumOpt(responseTokenCount, other.responseTokenCount),
+      toolUsePromptTokenCount: sumOpt(
+        toolUsePromptTokenCount,
+        other.toolUsePromptTokenCount,
+      ),
+      thoughtsTokenCount: sumOpt(thoughtsTokenCount, other.thoughtsTokenCount),
+      totalTokenCount: sumOpt(totalTokenCount, other.totalTokenCount),
+      promptTokensDetails: sumModalityLists(
+        promptTokensDetails,
+        other.promptTokensDetails,
+      ),
+      cacheTokensDetails: sumModalityLists(
+        cacheTokensDetails,
+        other.cacheTokensDetails,
+      ),
+      responseTokensDetails: sumModalityLists(
+        responseTokensDetails,
+        other.responseTokensDetails,
+      ),
+      toolUsePromptTokensDetails: sumModalityLists(
+        toolUsePromptTokensDetails,
+        other.toolUsePromptTokensDetails,
+      ),
+      trafficType: other.trafficType ?? trafficType,
+      serviceTier: other.serviceTier ?? serviceTier,
+    );
+  }
 }
 
 /// An error returned by the Live API server.
@@ -486,6 +559,79 @@ class ContinuationInterruptedError implements Exception {
   @override
   String toString() =>
       'ContinuationInterruptedError($message, continuationToken: $continuationToken, continuationIds: $continuationIds)';
+}
+
+/// An exception thrown when a per-call timeout expires before automatic
+/// continuation finishes.
+class ContinuationTimeoutError implements Exception {
+  /// The human-readable message describing the continuation timeout.
+  final String message;
+
+  /// Creates a [ContinuationTimeoutError] with [message].
+  const ContinuationTimeoutError(this.message);
+
+  @override
+  String toString() => 'ContinuationTimeoutError($message)';
+}
+
+/// A wall-clock deadline bounding an entire multi-hop continuation call.
+///
+/// When [timeoutMs] is positive, each continuation hop receives the remaining
+/// time budget via [hopTimeoutMs], and [check] throws a
+/// [ContinuationTimeoutError] once the budget is exhausted.
+class CallDeadline {
+  /// The total wall-clock timeout in milliseconds, or `null` when unbounded.
+  final int? timeoutMs;
+
+  final int Function() _nowMs;
+  late final int? _deadlineMs;
+
+  /// Creates a [CallDeadline] with an optional [timeoutMs] budget.
+  ///
+  /// An optional [nowMs] clock provider can be supplied for deterministic testing.
+  CallDeadline([int? timeoutMs, int Function()? nowMs])
+    : timeoutMs = (timeoutMs != null && timeoutMs > 0) ? timeoutMs : null,
+      _nowMs = nowMs ?? (() => DateTime.now().millisecondsSinceEpoch) {
+    _deadlineMs = this.timeoutMs != null ? _nowMs() + this.timeoutMs! : null;
+  }
+
+  /// Whether this deadline enforces a finite wall-clock timeout.
+  bool get bounded => _deadlineMs != null;
+
+  /// Returns the remaining time in milliseconds, or `null` when unbounded.
+  int? remainingMs() {
+    if (_deadlineMs == null) return null;
+    final rem = _deadlineMs - _nowMs();
+    return rem > 0 ? rem : 0;
+  }
+
+  /// Whether the deadline has expired.
+  bool expired() {
+    final rem = remainingMs();
+    return rem != null && rem <= 0;
+  }
+
+  /// Returns the positive timeout in milliseconds for the next hop, or throws
+  /// [ContinuationTimeoutError] if the deadline has already expired.
+  int? hopTimeoutMs() {
+    if (!bounded) return null;
+    final rem = remainingMs()!;
+    if (rem <= 0) {
+      throw ContinuationTimeoutError(
+        'automatic_continuation timed out after ${timeoutMs}ms',
+      );
+    }
+    return rem;
+  }
+
+  /// Throws [ContinuationTimeoutError] if the deadline has expired.
+  void check() {
+    if (expired()) {
+      throw ContinuationTimeoutError(
+        'automatic_continuation timed out after ${timeoutMs}ms',
+      );
+    }
+  }
 }
 
 /// A top-level server message received over the Live API socket.

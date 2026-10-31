@@ -267,6 +267,82 @@ void main() {
       expect(err.continuationIds, ['int_1']);
       expect(err.toString(), contains('tok_2'));
     });
+
+    test('UsageMetadata.merge, CallDeadline, ContinuationTimeoutError, and gemini35Transcribe', () {
+      expect(LiveModels.gemini35Transcribe, 'gemini-3.5-transcribe');
+      final transcribeRates = GeminiPricingRates.forModel(
+        LiveModels.gemini35Transcribe,
+      );
+      expect(transcribeRates.audioInputPerM, 3.50);
+      expect(transcribeRates.textOutputPerM, 21.00);
+
+      final hop1 = UsageMetadata(
+        initialPromptTokenCount: 120,
+        promptTokenCount: 120,
+        responseTokenCount: 300,
+        cachedContentTokenCount: 20,
+        thoughtsTokenCount: 40,
+        totalTokenCount: 460,
+        promptTokensDetails: [
+          ModalityTokenCount(modality: MediaModality.TEXT, tokenCount: 120),
+        ],
+        responseTokensDetails: [
+          ModalityTokenCount(modality: MediaModality.TEXT, tokenCount: 300),
+        ],
+      );
+      final hop2 = UsageMetadata(
+        initialPromptTokenCount: 999,
+        promptTokenCount: 420,
+        responseTokenCount: 250,
+        cachedContentTokenCount: 30,
+        thoughtsTokenCount: 10,
+        totalTokenCount: 680,
+        promptTokensDetails: [
+          ModalityTokenCount(modality: MediaModality.TEXT, tokenCount: 420),
+        ],
+        responseTokensDetails: [
+          ModalityTokenCount(modality: MediaModality.TEXT, tokenCount: 200),
+          ModalityTokenCount(modality: MediaModality.AUDIO, tokenCount: 50),
+        ],
+        trafficType: TrafficType.ON_DEMAND,
+      );
+
+      final merged = hop1.merge(hop2);
+      expect(merged.initialPromptTokenCount, 120);
+      expect(merged.promptTokenCount, 540);
+      expect(merged.responseTokenCount, 550);
+      expect(merged.cachedContentTokenCount, 50);
+      expect(merged.thoughtsTokenCount, 50);
+      expect(merged.totalTokenCount, 1140);
+      expect(merged.trafficType, TrafficType.ON_DEMAND);
+      expect(merged.promptTokensDetails?.single.tokenCount, 540);
+      expect(merged.responseTokensDetails?.length, 2);
+
+      var now = 1000;
+      final deadline = CallDeadline(500, () => now);
+      expect(deadline.bounded, isTrue);
+      expect(deadline.remainingMs(), 500);
+      expect(deadline.hopTimeoutMs(), 500);
+      deadline.check();
+
+      now = 1500;
+      expect(deadline.expired(), isTrue);
+      expect(deadline.remainingMs(), 0);
+      expect(
+        () => deadline.hopTimeoutMs(),
+        throwsA(isA<ContinuationTimeoutError>()),
+      );
+      expect(
+        () => deadline.check(),
+        throwsA(isA<ContinuationTimeoutError>()),
+      );
+
+      final unbounded = CallDeadline();
+      expect(unbounded.bounded, isFalse);
+      expect(unbounded.remainingMs(), isNull);
+      expect(unbounded.hopTimeoutMs(), isNull);
+      expect(unbounded.expired(), isFalse);
+    });
   });
 
   group('GeminiLiveUsageBadge & Dialog', () {

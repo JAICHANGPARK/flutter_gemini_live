@@ -1,3 +1,14 @@
+## 2026.11.1
+
+### Added (Upstream Parity with `js-genai` 2.32.0 & `python-genai` 2.34.0)
+- **Automatic Continuation Deadline, Timeout & Multi-Hop Usage Aggregation (`UsageMetadata.merge`, `CallDeadline`, `ContinuationTimeoutError`)**:
+  - Added `UsageMetadata.merge(UsageMetadata other)` to sum cumulative token fields (`promptTokenCount`, `responseTokenCount`, `cachedContentTokenCount`, `toolUsePromptTokenCount`, `thoughtsTokenCount`, `totalTokenCount`) and per-modality `ModalityTokenCount` lists across continuation hops while preserving `initialPromptTokenCount` from the first hop.
+  - Added `CallDeadline` (`timeoutMs`, `bounded`, `remainingMs()`, `expired()`, `hopTimeoutMs()`, `check()`) and `ContinuationTimeoutError` to bound wall-clock execution across multi-hop continuation turns.
+- **Speech Transcription Model Identifier (`LiveModels.gemini35Transcribe`)**:
+  - Added `LiveModels.gemini35Transcribe` (`'gemini-3.5-transcribe'`) aligned with upstream speech transcription model support.
+- **SDK Client Header Version Alignment (`2.34.0`)**:
+  - Updated default `User-Agent` and `x-goog-api-client` SDK version headers across `LiveService`, `LiveMusicService`, and `ApiClient` to `google-genai-sdk/2.34.0`.
+
 ## 2026.10.29
 
 ### Added (Upstream Parity with `js-genai` & `python-genai`)
