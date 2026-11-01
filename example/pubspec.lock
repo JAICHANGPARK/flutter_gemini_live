@@ -326,7 +326,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "2026.10.29"
+    version: "2026.11.1"
   glob:
     dependency: transitive
     description:
