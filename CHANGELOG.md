@@ -1,3 +1,21 @@
+## 2026.11.6
+
+### Added & Fixed (Upstream Parity with `js-genai` 3.0.0 & `python-genai` 3.0.0)
+- **Voice-Driven Editing & Transcription (`AudioTranscriptionConfig.sourceText`, `SmartTranscriptionMode`)**:
+  - Added `sourceText`, `wordTimestamp`, and `diarization` to `AudioTranscriptionConfig` with snake_case (`source_text`, `word_timestamp`) and camelCase (`sourceText`, `wordTimestamp`) JSON serialization support.
+  - Added `SmartTranscriptionMode` (`type: 'smart'`, `sourceText`) for voice-driven text editing and replacement in smart transcription mode.
+- **Finish Reason Enum & `MALFORMED_RESPONSE` (`FinishReason`)**:
+  - Added `FinishReason` enum including `CONTINUATION` and `MALFORMED_RESPONSE` aligned with upstream `js-genai` 3.0.0 and `python-genai` 3.0.0.
+- **Pre-Setup WebSocket Close & Error Rejection (`LiveService.connect`, `LiveMusicService.connect`)**:
+  - Fixed `LiveService.connect()` and `LiveMusicService.connect()` to immediately reject with a `StateError` (`Live connection closed before setup completed (code <code>): <reason>`) when the WebSocket closes before `setupComplete` arrives instead of waiting for setup timeout, while still invoking user `onError` and `onClose` callbacks and closing the underlying socket on setup failure.
+- **API Version Environment Variable & `{api_version}` Path Placeholder (`ApiClient`)**:
+  - Added `ApiClient.resolveDefaultApiVersion()`, `ApiClient.setDefaultGoogleAiApiVersion()`, and `GOOGLE_GENAI_API_VERSION` environment variable support (`beta` -> `v1beta`, or verbatim version string when no explicit `apiVersion` is passed in code).
+  - Added `ApiClient.resolveApiVersionInPath()` and `{api_version}` path placeholder substitution in `ApiClient` for versioned upload and resource paths.
+  - Verified `AuthTokensService` `fieldMask` generation keeps repeated/array fields (`tools`, `safetySettings`, `generationConfig.response_modalities`) bare without array indices.
+- **SDK Client Header Version & Documentation Links (`3.0.0`)**:
+  - Updated default `User-Agent` and `x-goog-api-client` SDK version headers across `LiveService`, `LiveMusicService`, and `ApiClient` to `google-genai-sdk/3.0.0`.
+  - Updated `codegen_instructions.md` reference links from `ai.google.dev` to `aistudio.google.com/docs`.
+
 ## 2026.11.1
 
 ### Added (Upstream Parity with `js-genai` 2.32.0 & `python-genai` 2.34.0)

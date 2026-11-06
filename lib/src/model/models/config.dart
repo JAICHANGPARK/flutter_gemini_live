@@ -237,32 +237,53 @@ enum AudioTranscriptionConfigMode {
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class AudioTranscriptionConfig {
   /// BCP-47 language codes providing hints about the languages present in the audio.
+  ///
   /// If omitted or empty, defaults to automatic language detection. Standard upstream
   /// field (preferred over deprecated [languageHints] and [languageAuto]).
   final List<String>? languageCodes;
 
-  /// The model will detect the language automatically. Do not use together
-  /// with [languageHints].
+  /// The model will detect the language automatically.
+  ///
+  /// Do not use together with [languageHints].
   final LanguageAuto? languageAuto;
 
-  /// Specifies one or more languages in the audio. Do not use together with
-  /// [languageAuto].
+  /// Specifies one or more languages in the audio.
+  ///
+  /// Do not use together with [languageAuto].
   final LanguageHints? languageHints;
 
   /// A list of custom vocabulary phrases which bias the ASR model to improve
-  /// recognition of these specific terms. Prefer this over [adaptationPhrases].
+  /// recognition of these specific terms.
+  ///
+  /// Prefer this over [adaptationPhrases].
   final List<String>? customVocabulary;
 
-  /// Deprecated: use [customVocabulary] instead. A list of phrases used for
-  /// speech adaptation, which biases the ASR model to improve recognition of
-  /// these specific terms.
+  /// Deprecated: use [customVocabulary] instead.
+  ///
+  /// A list of phrases used for speech adaptation, which biases the ASR model
+  /// to improve recognition of these specific terms.
   @Deprecated('Use customVocabulary instead.')
   final List<String>? adaptationPhrases;
 
-  /// Optional. Configures transcription mode. Supported values: `VERBATIM`, `SMART`.
+  /// Whether word-level timestamp generation is enabled.
+  final bool? wordTimestamp;
+
+  /// Whether speaker diarization is enabled.
+  final bool? diarization;
+
+  /// Configures transcription mode (`VERBATIM` or `SMART`).
+  ///
   /// Defaults to `VERBATIM` transcription if unspecified.
   final AudioTranscriptionConfigMode? mode;
 
+  /// The source text to be edited or rewritten via voice instructions.
+  ///
+  /// When provided in [AudioTranscriptionConfigMode.SMART] mode, the model
+  /// evaluates the audio input against this text and emits the complete
+  /// replacement text in the candidate response rather than appending to it.
+  final String? sourceText;
+
+  /// Creates an [AudioTranscriptionConfig].
   AudioTranscriptionConfig({
     this.languageCodes,
     this.languageAuto,
@@ -270,13 +291,52 @@ class AudioTranscriptionConfig {
     this.customVocabulary,
     // ignore: deprecated_member_use_from_same_package
     this.adaptationPhrases,
+    this.wordTimestamp,
+    this.diarization,
     this.mode,
+    this.sourceText,
   });
 
+  /// Creates an [AudioTranscriptionConfig] from a JSON map.
   factory AudioTranscriptionConfig.fromJson(Map<String, dynamic> json) =>
-      _$AudioTranscriptionConfigFromJson(json);
+      _$AudioTranscriptionConfigFromJson({
+        ...json,
+        if (!json.containsKey('word_timestamp') &&
+            json.containsKey('wordTimestamp'))
+          'word_timestamp': json['wordTimestamp'],
+        if (!json.containsKey('source_text') && json.containsKey('sourceText'))
+          'source_text': json['sourceText'],
+      });
 
+  /// Serializes this [AudioTranscriptionConfig] to a JSON map.
   Map<String, dynamic> toJson() => _$AudioTranscriptionConfigToJson(this);
+}
+
+/// Configuration for smart transcription mode in interactions.
+@JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
+class SmartTranscriptionMode {
+  /// The mode type identifier, always `'smart'`.
+  final String type;
+
+  /// The source text to be edited or rewritten via voice instructions.
+  ///
+  /// When provided, the model performs voice-driven editing and outputs the
+  /// finalized replacement text.
+  final String? sourceText;
+
+  /// Creates a [SmartTranscriptionMode] configuration.
+  SmartTranscriptionMode({this.type = 'smart', this.sourceText});
+
+  /// Creates a [SmartTranscriptionMode] from a JSON map.
+  factory SmartTranscriptionMode.fromJson(Map<String, dynamic> json) =>
+      _$SmartTranscriptionModeFromJson({
+        ...json,
+        if (!json.containsKey('source_text') && json.containsKey('sourceText'))
+          'source_text': json['sourceText'],
+      });
+
+  /// Serializes this [SmartTranscriptionMode] to a JSON map.
+  Map<String, dynamic> toJson() => _$SmartTranscriptionModeToJson(this);
 }
 
 /// Proactivity options for realtime audio sessions.

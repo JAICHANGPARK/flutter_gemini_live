@@ -409,9 +409,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/2.34.0 dart/9.9',
+          'google-genai-sdk/3.0.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/2.34.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.0.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -1582,6 +1582,174 @@ void main() {
       expect(liveNoQuota.supportsHeaders, isTrue);
 
       genAI.close();
+    });
+
+    test('LiveService.connect rejects when WebSocket closes before setupComplete and closes channel on error', () async {
+      final channel = FakeWebSocketChannel();
+      int? observedCloseCode;
+      String? observedCloseReason;
+      final service = LiveService(
+        apiKey: 'plain-key',
+        connector: (uri, headers) async {
+          unawaited(
+            Future<void>.delayed(
+              Duration.zero,
+              () => channel.finish(1011, 'You exceeded your current quota.'),
+            ),
+          );
+          return channel;
+        },
+      );
+
+      await expectLater(
+        () => service.connect(
+          LiveConnectParameters(
+            model: 'gemini-live-test',
+            callbacks: LiveCallbacks(
+              onClose: (code, reason) {
+                observedCloseCode = code;
+                observedCloseReason = reason;
+              },
+            ),
+          ),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('code 1011): You exceeded your current quota.'),
+          ),
+        ),
+      );
+      expect(observedCloseCode, 1011);
+      expect(observedCloseReason, 'You exceeded your current quota.');
+      expect(channel.sinkCloseCalls, greaterThanOrEqualTo(1));
+
+      // Fallback when close event has no code or reason
+      final fallbackChannel = FakeWebSocketChannel();
+      final fallbackService = LiveService(
+        apiKey: 'plain-key',
+        connector: (uri, headers) async {
+          unawaited(
+            Future<void>.delayed(
+              Duration.zero,
+              () => fallbackChannel.finish(),
+            ),
+          );
+          return fallbackChannel;
+        },
+      );
+
+      await expectLater(
+        () => fallbackService.connect(
+          LiveConnectParameters(model: 'gemini-live-test'),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('code 1006): Abnormal closure.'),
+          ),
+        ),
+      );
+    });
+
+    test('AudioTranscriptionConfig sourceText, SmartTranscriptionMode, and FinishReason', () {
+      final transcriptionConfig = AudioTranscriptionConfig(
+        languageCodes: const ['en-US', 'ko-KR'],
+        wordTimestamp: true,
+        diarization: false,
+        mode: AudioTranscriptionConfigMode.SMART,
+        sourceText: 'Original draft text',
+      );
+      final json = transcriptionConfig.toJson();
+      expect(json['word_timestamp'], isTrue);
+      expect(json['diarization'], isFalse);
+      expect(json['mode'], 'SMART');
+      expect(json['source_text'], 'Original draft text');
+
+      final parsedCamel = AudioTranscriptionConfig.fromJson(const {
+        'wordTimestamp': true,
+        'diarization': true,
+        'mode': 'SMART',
+        'sourceText': 'Camel draft',
+      });
+      expect(parsedCamel.wordTimestamp, isTrue);
+      expect(parsedCamel.diarization, isTrue);
+      expect(parsedCamel.mode, AudioTranscriptionConfigMode.SMART);
+      expect(parsedCamel.sourceText, 'Camel draft');
+
+      final smartMode = SmartTranscriptionMode(sourceText: 'Rewrite this');
+      expect(smartMode.toJson(), {
+        'type': 'smart',
+        'source_text': 'Rewrite this',
+      });
+      final smartFromCamel = SmartTranscriptionMode.fromJson(const {
+        'sourceText': 'Edit via voice',
+      });
+      expect(smartFromCamel.type, 'smart');
+      expect(smartFromCamel.sourceText, 'Edit via voice');
+
+      expect(
+        FinishReason.values,
+        containsAll([
+          FinishReason.STOP,
+          FinishReason.CONTINUATION,
+          FinishReason.MALFORMED_RESPONSE,
+        ]),
+      );
+    });
+
+    test('ApiClient resolves {api_version} placeholder and GOOGLE_GENAI_API_VERSION overrides', () async {
+      expect(
+        ApiClient.resolveApiVersionInPath('upload/{api_version}/files', 'v1alpha'),
+        'upload/v1alpha/files',
+      );
+      expect(
+        ApiClient.resolveApiVersionInPath('upload/{api_version}/files', ''),
+        'upload/files',
+      );
+      expect(
+        ApiClient.resolveDefaultApiVersion(
+          environmentOverride: const {'GOOGLE_GENAI_API_VERSION': 'beta'},
+        ),
+        'v1beta',
+      );
+      expect(
+        ApiClient.resolveDefaultApiVersion(
+          environmentOverride: const {'GOOGLE_GENAI_API_VERSION': 'v1alpha'},
+        ),
+        'v1alpha',
+      );
+
+      ApiClient.setDefaultGoogleAiApiVersion('v1');
+      try {
+        expect(
+          ApiClient.resolveDefaultApiVersion(environmentOverride: const {}),
+          'v1',
+        );
+      } finally {
+        ApiClient.setDefaultGoogleAiApiVersion(null);
+      }
+
+      final recorder = RecordingHttpClient(
+        responder: (_) async => http.Response('{}', 200),
+      );
+      final client = ApiClient(
+        apiKey: 'secret-key',
+        apiVersion: 'v1beta',
+        httpClient: recorder,
+      );
+      await client.post(
+        'upload/{api_version}/files',
+        const {'displayName': 'sample.txt'},
+        httpOptions: const HttpOptions(apiVersion: 'v1alpha'),
+      );
+      expect(
+        recorder.requests.single.uri.toString(),
+        'https://generativelanguage.googleapis.com/upload/v1alpha/files?key=secret-key',
+      );
+      client.close();
     });
   });
 }

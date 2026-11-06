@@ -225,7 +225,7 @@ class LiveMusicSession {
 
 /// Service for connecting to Gemini Realtime Music generation (Lyria Live).
 class LiveMusicService {
-  static const _sdkVersion = '2.34.0';
+  static const _sdkVersion = '3.0.0';
 
   /// The Gemini API key used for authentication.
   final String apiKey;
@@ -334,26 +334,40 @@ class LiveMusicService {
         },
         onError: (Object error, StackTrace stackTrace) {
           logger?.call('LiveMusic WebSocket Error: $error');
-          if (!setupCompleter.isCompleted) {
-            setupCompleter.completeError(error, stackTrace);
+          try {
+            session._emitError(error, stackTrace);
+            params.callbacks.onError?.call(error, stackTrace);
+          } finally {
+            if (!setupCompleter.isCompleted) {
+              setupCompleter.completeError(error, stackTrace);
+            }
           }
-          session._emitError(error, stackTrace);
-          params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
           logger?.call(
             'LiveMusic WebSocket closed: code=${channel.closeCode} reason=${channel.closeReason}',
           );
-          if (!setupCompleter.isCompleted) {
-            setupCompleter.completeError(
-              StateError('WebSocket closed before setup completed.'),
+          try {
+            unawaited(session._closeMessageController());
+            params.callbacks.onClose?.call(
+              channel.closeCode,
+              channel.closeReason,
             );
+          } finally {
+            if (!setupCompleter.isCompleted) {
+              final code = channel.closeCode ?? 1006;
+              final reason =
+                  (channel.closeReason != null &&
+                      channel.closeReason!.isNotEmpty)
+                  ? channel.closeReason!
+                  : 'Abnormal closure.';
+              setupCompleter.completeError(
+                StateError(
+                  'Live connection closed before setup completed (code $code): $reason',
+                ),
+              );
+            }
           }
-          unawaited(session._closeMessageController());
-          params.callbacks.onClose?.call(
-            channel.closeCode,
-            channel.closeReason,
-          );
         },
         cancelOnError: false,
       );
@@ -367,15 +381,19 @@ class LiveMusicService {
       );
       session._send(setupMessage);
 
-      await setupCompleter.future.timeout(
-        _setupTimeout,
-        onTimeout: () {
-          unawaited(session.close());
-          throw TimeoutException(
-            'Timeout waiting for setupComplete message from Live Music server.',
-          );
-        },
-      );
+      try {
+        await setupCompleter.future.timeout(
+          _setupTimeout,
+          onTimeout: () {
+            throw TimeoutException(
+              'Timeout waiting for setupComplete message from Live Music server.',
+            );
+          },
+        );
+      } catch (e) {
+        unawaited(session.close());
+        rethrow;
+      }
 
       sessionResolved = true;
       for (final msg in messageQueue) {

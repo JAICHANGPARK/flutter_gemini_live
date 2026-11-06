@@ -107,18 +107,24 @@ class GoogleGenAI {
   ///
   /// [apiKey] is your Google AI API key, which is required for all requests.
   /// [httpClient] is an optional client to use for making HTTP requests.
+  /// [apiVersion] is the target API version. When neither [apiVersion] nor
+  /// `httpOptions.apiVersion` is set, the `GOOGLE_GENAI_API_VERSION`
+  /// environment variable is used if present; otherwise `'v1beta'` is used.
   /// [httpOptions] is an optional [HttpOptions] or `Map<String, dynamic>` for
   /// configuring `baseUrl`, `apiVersion`, and default `headers`.
   /// [logger] is an optional logging callback for network & WebSocket events.
   GoogleGenAI({
     required this.apiKey,
     this.httpClient,
-    String apiVersion = 'v1beta',
+    String? apiVersion,
     Object? httpOptions,
     this.credentials,
     this.logger,
   }) : httpOptions = _parseHttpOptions(httpOptions),
-       apiVersion = _parseHttpOptions(httpOptions)?.apiVersion ?? apiVersion {
+       apiVersion =
+           _parseHttpOptions(httpOptions)?.apiVersion ??
+           apiVersion ??
+           ApiClient.resolveDefaultApiVersion() {
     // Initialize the internal API client with the provided credentials and HTTP client.
     _apiClient = ApiClient(
       apiKey: apiKey,

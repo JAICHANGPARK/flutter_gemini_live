@@ -17,7 +17,56 @@ import '../platform/runtime_info_stub.dart'
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
-  static const _sdkVersion = '2.34.0';
+  static const _sdkVersion = '3.0.0';
+
+  /// Default API version for the Gemini Developer API.
+  static const googleAiApiDefaultVersion = 'v1beta';
+
+  static String? _defaultGoogleAiApiVersionOverride;
+
+  /// Overrides the default API version for the Gemini Developer API when no
+  /// explicit version is configured.
+  static void setDefaultGoogleAiApiVersion([String? version]) {
+    _defaultGoogleAiApiVersionOverride = version;
+  }
+
+  /// Resolves the effective default API version from the
+  /// `GOOGLE_GENAI_API_VERSION` environment variable, any override configured
+  /// via [setDefaultGoogleAiApiVersion], or [fallback].
+  ///
+  /// When `GOOGLE_GENAI_API_VERSION` is `'beta'`, resolves to `'v1beta'`. Any
+  /// other non-empty value is returned verbatim.
+  static String resolveDefaultApiVersion({
+    String fallback = googleAiApiDefaultVersion,
+    Map<String, String>? environmentOverride,
+  }) {
+    final rawEnv = environmentOverride != null
+        ? environmentOverride['GOOGLE_GENAI_API_VERSION']
+        : runtime_info.getEnvironmentVariable('GOOGLE_GENAI_API_VERSION');
+    final envVersion = rawEnv?.trim();
+    if (envVersion != null && envVersion.isNotEmpty) {
+      return envVersion == 'beta' ? 'v1beta' : envVersion;
+    }
+    return _defaultGoogleAiApiVersionOverride ?? fallback;
+  }
+
+  /// Substitutes `{api_version}` in a request [path] template.
+  ///
+  /// For example, `'upload/{api_version}/files'` becomes
+  /// `'upload/v1beta/files'`. If [apiVersion] is empty or `null`, the
+  /// `{api_version}` segment is omitted without leaving a double slash
+  /// (e.g., `'upload/files'`).
+  static String resolveApiVersionInPath(String path, String? apiVersion) {
+    const placeholder = '{api_version}';
+    if (apiVersion != null && apiVersion.isNotEmpty) {
+      return path.replaceAll(placeholder, apiVersion);
+    }
+    return path
+        .replaceAll('$placeholder/', '')
+        .replaceAll('/$placeholder', '')
+        .replaceAll(placeholder, '');
+  }
+
   /// The API key for authenticating with the Google AI services.
   final String apiKey;
 
@@ -49,13 +98,14 @@ class ApiClient {
   ApiClient({
     required this.apiKey,
     String? baseUrl,
-    String apiVersion = 'v1beta',
+    String? apiVersion,
     Map<String, String>? headers,
     HttpOptions? httpOptions,
     this.credentials,
     http.Client? httpClient,
   }) : baseUrl = baseUrl ?? httpOptions?.baseUrl,
-       apiVersion = httpOptions?.apiVersion ?? apiVersion,
+       apiVersion =
+           httpOptions?.apiVersion ?? apiVersion ?? resolveDefaultApiVersion(),
        headers = (headers != null || httpOptions?.headers != null)
            ? Map<String, String>.unmodifiable(<String, String>{
                ...?httpOptions?.headers,
@@ -64,7 +114,10 @@ class ApiClient {
            : null,
        httpOptions = HttpOptions(
          baseUrl: baseUrl ?? httpOptions?.baseUrl,
-         apiVersion: httpOptions?.apiVersion ?? apiVersion,
+         apiVersion:
+             httpOptions?.apiVersion ??
+             apiVersion ??
+             resolveDefaultApiVersion(),
          headers: Map<String, String>.unmodifiable(<String, String>{
            ...?httpOptions?.headers,
            ...?headers,
@@ -102,13 +155,29 @@ class ApiClient {
       throw ArgumentError('Ephemeral tokens can only be used with the live API.');
     }
     final patched = httpOptions.merge(requestHttpOptions);
-    final effectiveBaseUrl =
+    final rawBaseUrl =
         patched.baseUrl ??
         baseUrl ??
         'https://generativelanguage.googleapis.com';
+    final effectiveBaseUrl = rawBaseUrl.replaceAll(RegExp(r'/+$'), '');
     final effectiveApiVersion =
-        requestHttpOptions?.apiVersion ?? customApiVersion ?? patched.apiVersion ?? apiVersion;
-    final baseUri = Uri.parse('$effectiveBaseUrl/$effectiveApiVersion/$path');
+        requestHttpOptions?.apiVersion ??
+        customApiVersion ??
+        patched.apiVersion ??
+        apiVersion;
+    final Uri baseUri;
+    if (path.contains('{api_version}')) {
+      final resolvedPath = resolveApiVersionInPath(path, effectiveApiVersion);
+      baseUri = Uri.parse(
+        resolvedPath.isEmpty
+            ? effectiveBaseUrl
+            : '$effectiveBaseUrl/$resolvedPath',
+      );
+    } else if (effectiveApiVersion.isEmpty) {
+      baseUri = Uri.parse('$effectiveBaseUrl/$path');
+    } else {
+      baseUri = Uri.parse('$effectiveBaseUrl/$effectiveApiVersion/$path');
+    }
     final query = Map<String, String>.from(baseUri.queryParameters);
     if (apiKey.isNotEmpty) {
       query['key'] = apiKey;

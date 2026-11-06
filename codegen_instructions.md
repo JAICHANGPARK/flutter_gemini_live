@@ -355,8 +355,8 @@ session.sendClientContent(
 
 ## Useful Links
 
--   Documentation: ai.google.dev/gemini-api/docs/live
--   API Keys and Authentication: ai.google.dev/gemini-api/docs/api-key
--   Models: ai.google.dev/models
--   API Pricing: ai.google.dev/pricing
--   Rate Limits: ai.google.dev/rate-limits
+-   Documentation: aistudio.google.com/docs
+-   API Keys and Authentication: aistudio.google.com/docs/api-key
+-   Models: aistudio.google.com/docs/models
+-   API Pricing: aistudio.google.com/docs/pricing
+-   Rate Limits: aistudio.google.com/docs/rate-limits

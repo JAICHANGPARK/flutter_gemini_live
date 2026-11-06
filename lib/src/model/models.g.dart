@@ -735,10 +735,13 @@ AudioTranscriptionConfig _$AudioTranscriptionConfigFromJson(
   adaptationPhrases: (json['adaptation_phrases'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
+  wordTimestamp: json['word_timestamp'] as bool?,
+  diarization: json['diarization'] as bool?,
   mode: $enumDecodeNullable(
     _$AudioTranscriptionConfigModeEnumMap,
     json['mode'],
   ),
+  sourceText: json['source_text'] as String?,
 );
 
 Map<String, dynamic> _$AudioTranscriptionConfigToJson(
@@ -749,7 +752,24 @@ Map<String, dynamic> _$AudioTranscriptionConfigToJson(
   'language_hints': ?instance.languageHints,
   'custom_vocabulary': ?instance.customVocabulary,
   'adaptation_phrases': ?instance.adaptationPhrases,
+  'word_timestamp': ?instance.wordTimestamp,
+  'diarization': ?instance.diarization,
   'mode': ?_$AudioTranscriptionConfigModeEnumMap[instance.mode],
+  'source_text': ?instance.sourceText,
+};
+
+SmartTranscriptionMode _$SmartTranscriptionModeFromJson(
+  Map<String, dynamic> json,
+) => SmartTranscriptionMode(
+  type: json['type'] as String? ?? 'smart',
+  sourceText: json['source_text'] as String?,
+);
+
+Map<String, dynamic> _$SmartTranscriptionModeToJson(
+  SmartTranscriptionMode instance,
+) => <String, dynamic>{
+  'type': instance.type,
+  'source_text': ?instance.sourceText,
 };
 
 const _$AudioTranscriptionConfigModeEnumMap = {

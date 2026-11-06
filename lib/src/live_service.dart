@@ -14,6 +14,7 @@ import './platform/runtime_info_stub.dart'
     if (dart.library.html) './platform/runtime_info_web.dart'
     as runtime_info;
 
+import 'client/api_client.dart';
 import 'model/models.dart';
 import 'music_service.dart';
 
@@ -396,7 +397,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket.
 class LiveService {
-  static const _sdkVersion = '2.34.0';
+  static const _sdkVersion = '3.0.0';
 
   /// The Gemini Developer API key or ephemeral client auth token.
   final String apiKey;
@@ -443,7 +444,7 @@ class LiveService {
   /// and optional [httpOptions] and [credentials].
   LiveService({
     required this.apiKey,
-    String apiVersion = 'v1beta',
+    String? apiVersion,
     Object? httpOptions,
     this.credentials,
     bool? supportsHeaders,
@@ -455,7 +456,8 @@ class LiveService {
        supportsHeaders = supportsHeaders ?? ws_connector.supportsHeaders,
        apiVersion =
            LiveConnectParameters._parseHttpOptions(httpOptions)?.apiVersion ??
-           apiVersion,
+           apiVersion ??
+           ApiClient.resolveDefaultApiVersion(),
        _connector = connector ?? ws_connector.connect,
        _setupTimeout = setupTimeout,
        _dartVersionProvider = dartVersionProvider ?? dartVersion {
@@ -905,22 +907,41 @@ class LiveService {
         },
         onError: (error, stackTrace) {
           logger?.call('🚨 WebSocket stream error: $error');
-          if (!setupCompleter.isCompleted) {
-            setupCompleter.completeError(error, stackTrace);
+          try {
+            session._emitError(error, stackTrace);
+            params.callbacks.onError?.call(error, stackTrace);
+          } finally {
+            if (!setupCompleter.isCompleted) {
+              setupCompleter.completeError(error, stackTrace);
+            }
           }
-          session._emitError(error, stackTrace);
-          params.callbacks.onError?.call(error, stackTrace);
         },
         onDone: () {
           logger?.call(
             '🔒 WebSocket connection closed (code: ${channel.closeCode}, reason: ${channel.closeReason})',
           );
-          unawaited(session._closeMessageController());
-          params.callbacks.onClose?.call(
-            channel.closeCode,
-            channel.closeReason,
-          );
-          streamSubscription?.cancel();
+          try {
+            unawaited(session._closeMessageController());
+            params.callbacks.onClose?.call(
+              channel.closeCode,
+              channel.closeReason,
+            );
+          } finally {
+            if (!setupCompleter.isCompleted) {
+              final code = channel.closeCode ?? 1006;
+              final reason =
+                  (channel.closeReason != null &&
+                      channel.closeReason!.isNotEmpty)
+                  ? channel.closeReason!
+                  : 'Abnormal closure.';
+              setupCompleter.completeError(
+                StateError(
+                  'Live connection closed before setup completed (code $code): $reason',
+                ),
+              );
+            }
+            streamSubscription?.cancel();
+          }
         },
         cancelOnError: true,
       );
@@ -932,14 +953,21 @@ class LiveService {
       );
       session.sendMessage(setupMessage);
 
-      await setupCompleter.future.timeout(
-        _setupTimeout,
-        onTimeout: () {
-          throw TimeoutException(
-            'WebSocket setup timed out after $_setupTimeout.',
-          );
-        },
-      );
+      try {
+        await setupCompleter.future.timeout(
+          _setupTimeout,
+          onTimeout: () {
+            throw TimeoutException(
+              'WebSocket setup timed out after $_setupTimeout.',
+            );
+          },
+        );
+      } catch (e) {
+        // An error event or timeout does not always close the socket, so close it here.
+        unawaited(channel.sink.close());
+        unawaited(session._closeMessageController());
+        rethrow;
+      }
 
       sessionResolved = true;
       for (final message in messageQueue) {

@@ -97,5 +97,58 @@ void main() {
       expect(overriddenHeaders['x-goog-api-client'], startsWith('google-genai-sdk/'));
       defaultClient.close();
     });
+
+    test('fieldMask keeps array fields bare without emitting array indices', () async {
+      late Map<String, dynamic> requestPayload;
+      final mockClient = MockClient((request) async {
+        requestPayload = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({'name': 'auth_tokens/test-token'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final apiClient = ApiClient(
+        apiKey: 'master-api-key',
+        httpClient: mockClient,
+      );
+      final service = AuthTokensService(apiClient);
+
+      await service.create(
+        CreateAuthTokenConfig(
+          liveConnectConstraints: LiveConnectConstraints(
+            model: 'gemini-3.8-live',
+            config: GenerationConfig(
+              responseModalities: [Modality.AUDIO, Modality.TEXT],
+              temperature: 0.5,
+            ),
+            tools: [
+              Tool(googleSearch: GoogleSearch()),
+              Tool(codeExecution: const {}),
+            ],
+            safetySettings: [
+              SafetySetting(
+                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+              ),
+              SafetySetting(
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+              ),
+            ],
+          ),
+          lockAdditionalFields: const [],
+        ),
+      );
+
+      final fieldMask = (requestPayload['fieldMask'] as String).split(',');
+      expect(fieldMask, contains('tools'));
+      expect(fieldMask, contains('safetySettings'));
+      expect(fieldMask, contains('generationConfig.response_modalities'));
+      expect(fieldMask, isNot(contains('tools.0')));
+      expect(fieldMask, isNot(contains('safetySettings.0')));
+      apiClient.close();
+    });
   });
 }
