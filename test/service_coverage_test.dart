@@ -1751,6 +1751,188 @@ void main() {
       );
       client.close();
     });
+
+    test('FinishReason, ReinforcementTuningThinkingLevel, DocumentMimeTypes, multimodal CodeExecutionResult, ApiClientError/ApiServerError, and AFC extractCuratedHistory', () async {
+      expect(
+        FinishReason.values,
+        containsAll([
+          FinishReason.MISSING_THOUGHT_SIGNATURE,
+          FinishReason.ESCALATION,
+          FinishReason.PUP_LIMITED_DISABLED,
+          FinishReason.MODEL_ARMOR,
+        ]),
+      );
+      expect(
+        ReinforcementTuningThinkingLevel.values,
+        containsAll([
+          ReinforcementTuningThinkingLevel.MINIMAL,
+          ReinforcementTuningThinkingLevel.LOW,
+          ReinforcementTuningThinkingLevel.MEDIUM,
+          ReinforcementTuningThinkingLevel.HIGH,
+        ]),
+      );
+
+      expect(DocumentMimeTypes.all.length, 12);
+      expect(DocumentMimeTypes.isSupported(DocumentMimeTypes.pptx), isTrue);
+      expect(DocumentMimeTypes.isSupported(DocumentMimeTypes.docx), isTrue);
+      expect(DocumentMimeTypes.isSupported(DocumentMimeTypes.xlsx), isTrue);
+      expect(DocumentMimeTypes.isSupported(DocumentMimeTypes.odt), isTrue);
+      expect(DocumentMimeTypes.isSupported('application/octet-stream'), isFalse);
+
+      // CodeExecutionResult text & multimodal content union
+      final textExec = CodeExecutionResult.fromJson(const {
+        'call_id': 'call_1',
+        'is_error': false,
+        'result': '42\n',
+        'signature': 'sig_abc',
+      });
+      expect(textExec.id, 'call_1');
+      expect(textExec.isError, isFalse);
+      expect(textExec.output, '42\n');
+      expect(textExec.result, '42\n');
+      expect(textExec.signature, 'sig_abc');
+
+      final multimodalExec = CodeExecutionResult.fromJson({
+        'call_id': 'call_2',
+        'result': [
+          {
+            'role': 'model',
+            'parts': [
+              {'text': 'Generated chart'},
+              {
+                'inlineData': {'mimeType': 'image/png', 'data': 'aGVsbG8='},
+              },
+            ],
+          },
+        ],
+      });
+      expect(multimodalExec.content, hasLength(1));
+      expect(multimodalExec.result, isA<List<Content>>());
+      expect(multimodalExec.toJson()['content'], isA<List<dynamic>>());
+
+      // UsageMetadata snake_case traffic_type and service_tier
+      final usage = UsageMetadata.fromJson(const {
+        'prompt_token_count': 10,
+        'candidates_token_count': 20,
+        'traffic_type': 'ON_DEMAND_PRIORITY',
+        'service_tier': 'priority',
+      });
+      expect(usage.promptTokenCount, 10);
+      expect(usage.responseTokenCount, 20);
+      expect(usage.trafficType, TrafficType.ON_DEMAND_PRIORITY);
+      expect(usage.serviceTier, ServiceTier.PRIORITY);
+
+      // Typed 4XX ApiClientError and 5XX ApiServerError
+      final error400Client = ApiClient(
+        apiKey: 'secret-key',
+        httpClient: RecordingHttpClient(
+          responder: (_) async => http.Response(
+            jsonEncode({
+              'error': {
+                'code': 400,
+                'message': 'Invalid model parameter',
+                'status': 'INVALID_ARGUMENT',
+              },
+            }),
+            400,
+          ),
+        ),
+      );
+      await expectLater(
+        () => error400Client.get('voices'),
+        throwsA(
+          isA<ApiClientError>()
+              .having((e) => e.statusCode, 'statusCode', 400)
+              .having((e) => e.message, 'message', 'Invalid model parameter')
+              .having((e) => e.error?.status, 'status', 'INVALID_ARGUMENT'),
+        ),
+      );
+      error400Client.close();
+
+      final error503Client = ApiClient(
+        apiKey: 'secret-key',
+        httpClient: RecordingHttpClient(
+          responder: (_) async => http.Response(
+            jsonEncode({
+              'error': {
+                'code': 503,
+                'message': 'Service temporarily unavailable',
+                'status': 'UNAVAILABLE',
+              },
+            }),
+            503,
+          ),
+        ),
+      );
+      await expectLater(
+        () => error503Client.post('voices', const {}),
+        throwsA(
+          isA<ApiServerError>()
+              .having((e) => e.statusCode, 'statusCode', 503)
+              .having(
+                (e) => e.message,
+                'message',
+                'Service temporarily unavailable',
+              ),
+        ),
+      );
+      error503Client.close();
+
+      // Curated history drops entire AFC exchange when final model turn is invalid
+      final priorUser = Content(role: 'user', parts: [Part(text: 'hi')]);
+      final priorModel = Content(role: 'model', parts: [Part(text: 'hello')]);
+      final afcUser = Content(
+        role: 'user',
+        parts: [Part(text: 'what is the weather in Paris')],
+      );
+      final afcCall = Content(
+        role: 'model',
+        parts: [
+          Part(
+            functionCall: FunctionCall(
+              name: 'get_weather',
+              args: const {'city': 'Paris'},
+            ),
+          ),
+        ],
+      );
+      final afcResp = Content(
+        role: 'user',
+        parts: [
+          Part(
+            functionResponse: FunctionResponse(
+              name: 'get_weather',
+              response: const {'result': 'sunny, 21C'},
+            ),
+          ),
+        ],
+      );
+      final emptyModel = Content(role: 'model', parts: const []);
+
+      final curated = GeminiLiveTranscriptExporter.extractCuratedHistory([
+        priorUser,
+        priorModel,
+        afcUser,
+        afcCall,
+        afcResp,
+        afcCall,
+        afcResp,
+        emptyModel,
+      ]);
+      expect(curated, [priorUser, priorModel]);
+
+      // Spent-budget unanswered function call survives a rejected subsequent plain turn
+      final spentBudgetHistory = [
+        afcUser,
+        afcCall,
+        Content(role: 'user', parts: [Part(text: 'and in Rome?')]),
+        emptyModel,
+      ];
+      expect(
+        GeminiLiveTranscriptExporter.extractCuratedHistory(spentBudgetHistory),
+        [afcUser, afcCall],
+      );
+    });
   });
 }
 

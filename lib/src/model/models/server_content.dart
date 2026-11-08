@@ -89,15 +89,61 @@ class ExecutableCode {
 /// The result of model-executed code.
 @JsonSerializable(includeIfNull: false)
 class CodeExecutionResult {
+  /// The execution outcome status (e.g., `'OUTCOME_OK'`).
   final String? outcome;
+
+  /// Plain-text output produced by the executed code.
   final String? output;
+
+  /// Multimodal content items (such as text and generated images) produced by
+  /// the code execution step.
+  final List<Content>? content;
+
+  /// Whether the code execution resulted in an error.
+  final bool? isError;
+
+  /// A signature hash for backend validation.
+  final String? signature;
+
+  /// Optional identifier of the code execution call.
   final String? id;
 
-  CodeExecutionResult({this.outcome, this.output, this.id});
+  /// Creates a [CodeExecutionResult].
+  ///
+  /// When [result] is provided as a [String], it populates [output]; when
+  /// provided as a `List<Content>`, it populates [content].
+  CodeExecutionResult({
+    this.outcome,
+    String? output,
+    List<Content>? content,
+    Object? result,
+    this.isError,
+    this.signature,
+    this.id,
+  }) : output = output ?? (result is String ? result : null),
+       content = content ?? (result is List<Content> ? result : null);
 
-  factory CodeExecutionResult.fromJson(Map<String, dynamic> json) =>
-      _$CodeExecutionResultFromJson(json);
+  /// The code execution result as either a `List<Content>` (when multimodal
+  /// [content] is present) or a plain [String] ([output]).
+  Object? get result => content ?? output;
 
+  /// Creates a [CodeExecutionResult] from a JSON map.
+  factory CodeExecutionResult.fromJson(Map<String, dynamic> json) {
+    final rawResult = json['result'];
+    return _$CodeExecutionResultFromJson({
+      ...json,
+      if (!json.containsKey('output') && rawResult is String)
+        'output': rawResult,
+      if (!json.containsKey('content') && rawResult is List)
+        'content': rawResult,
+      if (!json.containsKey('isError') && json.containsKey('is_error'))
+        'isError': json['is_error'],
+      if (!json.containsKey('id') && json.containsKey('call_id'))
+        'id': json['call_id'],
+    });
+  }
+
+  /// Serializes this [CodeExecutionResult] to a JSON map.
   Map<String, dynamic> toJson() => _$CodeExecutionResultToJson(this);
 }
 
@@ -429,6 +475,10 @@ class UsageMetadata {
           'toolUsePromptTokensDetails':
               json['tool_use_prompt_tokens_details'] ??
               json['tool_use_tokens_by_modality'],
+        if (!json.containsKey('trafficType') && json.containsKey('traffic_type'))
+          'trafficType': json['traffic_type'],
+        if (!json.containsKey('serviceTier') && json.containsKey('service_tier'))
+          'serviceTier': json['service_tier'],
       });
 
   /// Merges this [UsageMetadata] with [other] across continuation hops.

@@ -29,6 +29,10 @@ export 'music_service.dart'
 // Re-export ephemeral auth tokens service.
 export 'auth_tokens_service.dart' show AuthTokensService;
 
+// Re-export HTTP API error classes.
+export 'client/api_client.dart'
+    show ApiError, GoogleGenAiError, ApiClientError, ApiServerError;
+
 // Re-export all model classes (e.g., Content, Part, GenerateContentResponse).
 // This provides a single, convenient import for all data structures
 // used by the API.

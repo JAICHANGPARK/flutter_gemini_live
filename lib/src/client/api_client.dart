@@ -255,7 +255,7 @@ class ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('API Error: ${response.statusCode} ${response.body}');
+      throw _buildHttpError(response);
     }
   }
 
@@ -284,7 +284,7 @@ class ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('API Error: ${response.statusCode} ${response.body}');
+      throw _buildHttpError(response);
     }
   }
 
@@ -305,12 +305,149 @@ class ApiClient {
       if (response.body.isEmpty) return <String, dynamic>{};
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('API Error: ${response.statusCode} ${response.body}');
+      throw _buildHttpError(response);
     }
+  }
+
+  static GoogleGenAiError _buildHttpError(http.Response response) {
+    final parsedError = ApiError.tryParseEnvelope(response.body);
+    if (response.statusCode >= 400 && response.statusCode < 500) {
+      return ApiClientError(
+        statusCode: response.statusCode,
+        body: response.body,
+        error: parsedError,
+      );
+    }
+    if (response.statusCode >= 500) {
+      return ApiServerError(
+        statusCode: response.statusCode,
+        body: response.body,
+        error: parsedError,
+      );
+    }
+    return GoogleGenAiError(
+      statusCode: response.statusCode,
+      body: response.body,
+      error: parsedError,
+    );
   }
 
   /// Closes the underlying HTTP client, releasing associated resources.
   void close() {
     _httpClient.close();
   }
+}
+
+/// Structured error details returned by an HTTP API error response.
+class ApiError {
+  /// Numeric HTTP/RPC status code or symbolic error identifier.
+  final Object? code;
+
+  /// Developer-facing error message from the backend.
+  final String? message;
+
+  /// Symbolic status code (for example, `'INVALID_ARGUMENT'`).
+  final Object? status;
+
+  /// Additional structured error details.
+  final List<Map<String, dynamic>>? details;
+
+  /// Creates an [ApiError].
+  const ApiError({this.code, this.message, this.status, this.details});
+
+  /// Creates an [ApiError] from a JSON map.
+  factory ApiError.fromJson(Map<String, dynamic> json) {
+    final rawDetails = json['details'];
+    return ApiError(
+      code: json['code'],
+      message: json['message'] as String?,
+      status: json['status'],
+      details: rawDetails is List
+          ? rawDetails
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
+          : null,
+    );
+  }
+
+  /// Attempts to parse an `{"error": {...}}` JSON envelope from [body].
+  static ApiError? tryParseEnvelope(String body) {
+    if (body.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final inner = decoded['error'];
+        if (inner is Map<String, dynamic>) {
+          return ApiError.fromJson(inner);
+        }
+        if (decoded.containsKey('message') || decoded.containsKey('code')) {
+          return ApiError.fromJson(decoded);
+        }
+      }
+    } catch (_) {
+      // Ignore non-JSON error bodies.
+    }
+    return null;
+  }
+
+  /// Serializes this [ApiError] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'code': ?code,
+    'message': ?message,
+    'status': ?status,
+    'details': ?details,
+  };
+}
+
+/// Base exception thrown when an HTTP request to the Google GenAI API fails.
+class GoogleGenAiError implements Exception {
+  /// HTTP status code of the response.
+  final int statusCode;
+
+  /// Raw HTTP response body.
+  final String body;
+
+  /// Parsed backend [ApiError] details when available.
+  final ApiError? error;
+
+  /// Developer-facing error message surfaced from [error] or [body].
+  final String message;
+
+  /// Creates a [GoogleGenAiError].
+  GoogleGenAiError({
+    required this.statusCode,
+    required this.body,
+    this.error,
+    String? message,
+  }) : message =
+           message ??
+           ((error?.message != null && error!.message!.isNotEmpty)
+               ? error.message!
+               : 'API Error: $statusCode $body');
+
+  @override
+  String toString() => 'Exception: API Error: $statusCode $body';
+}
+
+/// Exception thrown for 4XX client error responses from the Google GenAI API.
+class ApiClientError extends GoogleGenAiError {
+  /// Creates an [ApiClientError] for a 4XX HTTP response.
+  ApiClientError({
+    required super.statusCode,
+    required super.body,
+    super.error,
+    super.message,
+  });
+}
+
+/// Exception thrown for 5XX server error responses from the Google GenAI API.
+class ApiServerError extends GoogleGenAiError {
+  /// Creates an [ApiServerError] for a 5XX HTTP response.
+  ApiServerError({
+    required super.statusCode,
+    required super.body,
+    super.error,
+    super.message,
+  });
 }

@@ -216,4 +216,90 @@ class GeminiLiveTranscriptExporter {
   static String _formatSrtDuration(Duration d) {
     return _formatVttDuration(d).replaceAll('.', ',');
   }
+
+  /// Returns `true` when [content] has at least one non-empty [Part].
+  static bool validateContent(Content content) {
+    final parts = content.parts;
+    if (parts == null || parts.isEmpty) {
+      return false;
+    }
+    for (final part in parts) {
+      if (part.toJson().isEmpty) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _hasFunctionCall(Content content) =>
+      (content.parts ?? const <Part>[]).any((part) => part.functionCall != null);
+
+  static bool _hasFunctionResponse(Content content) => (content.parts ??
+          const <Part>[])
+      .any((part) => part.functionResponse != null);
+
+  static void _dropRejectedInput(List<Content> curatedHistory) {
+    while (curatedHistory.isNotEmpty) {
+      final rejectedInput = curatedHistory.removeLast();
+      if (!_hasFunctionResponse(rejectedInput)) {
+        return;
+      }
+      var callStart = curatedHistory.length;
+      while (callStart > 0 && curatedHistory[callStart - 1].role == 'model') {
+        callStart -= 1;
+      }
+      final hasCall = curatedHistory
+          .sublist(callStart)
+          .any((c) => _hasFunctionCall(c));
+      if (!hasCall) {
+        return;
+      }
+      curatedHistory.removeRange(callStart, curatedHistory.length);
+    }
+  }
+
+  /// Extracts the curated (valid) history from [comprehensiveHistory].
+  ///
+  /// Drops rejected/invalid model turns and their preceding user input. If the
+  /// rejected turn's input is a function response from an automatic function
+  /// calling (AFC) exchange, the entire AFC exchange back to the user input
+  /// that started it is dropped.
+  static List<Content> extractCuratedHistory(
+    List<Content> comprehensiveHistory,
+  ) {
+    if (comprehensiveHistory.isEmpty) {
+      return <Content>[];
+    }
+    final curatedHistory = <Content>[];
+    final length = comprehensiveHistory.length;
+    var i = 0;
+    while (i < length) {
+      final role = comprehensiveHistory[i].role;
+      if (role != 'user' && role != 'model') {
+        throw ArgumentError(
+          'Role must be user or model, but got $role',
+        );
+      }
+      if (role == 'user') {
+        curatedHistory.add(comprehensiveHistory[i]);
+        i += 1;
+      } else {
+        final currentOutput = <Content>[];
+        var isValid = true;
+        while (i < length && comprehensiveHistory[i].role == 'model') {
+          currentOutput.add(comprehensiveHistory[i]);
+          if (isValid && !validateContent(comprehensiveHistory[i])) {
+            isValid = false;
+          }
+          i += 1;
+        }
+        if (isValid) {
+          curatedHistory.addAll(currentOutput);
+        } else {
+          _dropRejectedInput(curatedHistory);
+        }
+      }
+    }
+    return curatedHistory;
+  }
 }

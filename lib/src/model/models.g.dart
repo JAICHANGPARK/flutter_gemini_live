@@ -1543,6 +1543,11 @@ CodeExecutionResult _$CodeExecutionResultFromJson(Map<String, dynamic> json) =>
     CodeExecutionResult(
       outcome: json['outcome'] as String?,
       output: json['output'] as String?,
+      content: (json['content'] as List<dynamic>?)
+          ?.map((e) => Content.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      isError: json['isError'] as bool?,
+      signature: json['signature'] as String?,
       id: json['id'] as String?,
     );
 
@@ -1551,6 +1556,9 @@ Map<String, dynamic> _$CodeExecutionResultToJson(
 ) => <String, dynamic>{
   'outcome': ?instance.outcome,
   'output': ?instance.output,
+  'content': ?instance.content?.map((e) => e.toJson()).toList(),
+  'isError': ?instance.isError,
+  'signature': ?instance.signature,
   'id': ?instance.id,
 };
 

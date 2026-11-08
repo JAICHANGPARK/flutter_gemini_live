@@ -283,6 +283,10 @@ enum FinishReason {
   @JsonValue('TOO_MANY_TOOL_CALLS')
   TOO_MANY_TOOL_CALLS,
 
+  /// Request has at least one thought signature missing.
+  @JsonValue('MISSING_THOUGHT_SIGNATURE')
+  MISSING_THOUGHT_SIGNATURE,
+
   /// Image generation stopped because the generated images have prohibited content.
   @JsonValue('IMAGE_PROHIBITED_CONTENT')
   IMAGE_PROHIBITED_CONTENT,
@@ -308,6 +312,106 @@ enum FinishReason {
   /// Token generation stopped because the response was malformed.
   @JsonValue('MALFORMED_RESPONSE')
   MALFORMED_RESPONSE,
+
+  /// Request was filtered by an escalation rule.
+  @JsonValue('ESCALATION')
+  ESCALATION,
+
+  /// Token generation stopped because the user account is limited or disabled due to Prohibited Use Policy (PUP) violations.
+  @JsonValue('PUP_LIMITED_DISABLED')
+  PUP_LIMITED_DISABLED,
+
+  /// The model response was blocked by Model Armor.
+  @JsonValue('MODEL_ARMOR')
+  MODEL_ARMOR,
+}
+
+/// Indicates the maximum thinking depth during reinforcement tuning.
+@JsonEnum(alwaysCreate: true)
+enum ReinforcementTuningThinkingLevel {
+  /// Unspecified thinking level.
+  @JsonValue('REINFORCEMENT_TUNING_THINKING_LEVEL_UNSPECIFIED')
+  REINFORCEMENT_TUNING_THINKING_LEVEL_UNSPECIFIED,
+
+  /// Little to no thinking.
+  @JsonValue('MINIMAL')
+  MINIMAL,
+
+  /// Low thinking level.
+  @JsonValue('LOW')
+  LOW,
+
+  /// Medium thinking level.
+  @JsonValue('MEDIUM')
+  MEDIUM,
+
+  /// High thinking level.
+  @JsonValue('HIGH')
+  HIGH,
+}
+
+/// Standard document, Office, and OpenDocument MIME types supported in interactions.
+class DocumentMimeTypes {
+  DocumentMimeTypes._(); // coverage:ignore-line
+
+  /// Portable Document Format (`application/pdf`).
+  static const String pdf = 'application/pdf';
+
+  /// Comma-Separated Values (`text/csv`).
+  static const String csv = 'text/csv';
+
+  /// Microsoft PowerPoint OpenXML presentation (`.pptx`).
+  static const String pptx =
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+  /// Legacy Microsoft PowerPoint presentation (`.ppt`).
+  static const String ppt = 'application/vnd.ms-powerpoint';
+
+  /// OpenDocument presentation (`.odp`).
+  static const String odp = 'application/vnd.oasis.opendocument.presentation';
+
+  /// Microsoft Word OpenXML document (`.docx`).
+  static const String docx =
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  /// Legacy Microsoft Word document (`.doc`).
+  static const String doc = 'application/msword';
+
+  /// Microsoft Word OpenXML template (`.dotx`).
+  static const String dotx =
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.template';
+
+  /// OpenDocument text document (`.odt`).
+  static const String odt = 'application/vnd.oasis.opendocument.text';
+
+  /// Microsoft Excel OpenXML spreadsheet (`.xlsx`).
+  static const String xlsx =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+  /// Legacy Microsoft Excel spreadsheet (`.xls`).
+  static const String xls = 'application/vnd.ms-excel';
+
+  /// OpenDocument spreadsheet (`.ods`).
+  static const String ods = 'application/vnd.oasis.opendocument.spreadsheet';
+
+  /// All supported standard document, Office, and OpenDocument MIME types.
+  static const List<String> all = <String>[
+    pdf,
+    csv,
+    pptx,
+    ppt,
+    odp,
+    docx,
+    doc,
+    dotx,
+    odt,
+    xlsx,
+    xls,
+    ods,
+  ];
+
+  /// Whether [mimeType] is one of the standard document MIME types in [all].
+  static bool isSupported(String mimeType) => all.contains(mimeType);
 }
 
 /// The different activity states of the live session.

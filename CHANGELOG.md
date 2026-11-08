@@ -1,3 +1,18 @@
+## 2026.11.8
+
+### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)
+- **Expanded `FinishReason` & `ReinforcementTuningThinkingLevel` Enums**:
+  - Added `MISSING_THOUGHT_SIGNATURE`, `ESCALATION`, `PUP_LIMITED_DISABLED`, and `MODEL_ARMOR` to `FinishReason`.
+  - Added `ReinforcementTuningThinkingLevel` (`REINFORCEMENT_TUNING_THINKING_LEVEL_UNSPECIFIED`, `MINIMAL`, `LOW`, `MEDIUM`, `HIGH`).
+- **Typed 4XX/5XX HTTP API Error Responses (`ApiError`, `GoogleGenAiError`, `ApiClientError`, `ApiServerError`)**:
+  - Added `ApiError` (`code`, `message`, `status`, `details`), `GoogleGenAiError`, `ApiClientError` (thrown on 4XX HTTP responses), and `ApiServerError` (thrown on 5XX HTTP responses) in `ApiClient`, surfacing structured backend error messages while preserving `API Error: <statusCode> <body>` string formatting.
+- **Multimodal `CodeExecutionResult` & Office/OpenDocument MIME Types (`DocumentMimeTypes`)**:
+  - Extended `CodeExecutionResult` with multimodal `content` (`List<Content>?`), `result` union getter/constructor parameter (`String` or `List<Content>`), `isError`, `signature`, and `call_id` JSON alias support.
+  - Added `DocumentMimeTypes` constants and `DocumentMimeTypes.isSupported()` covering PDF, CSV, Microsoft Office (`.pptx`, `.ppt`, `.docx`, `.doc`, `.dotx`, `.xlsx`, `.xls`), and OpenDocument (`.odp`, `.odt`, `.ods`) MIME types.
+  - Extended `UsageMetadata.fromJson()` to normalize snake_case `traffic_type` and `service_tier` fields.
+- **Curated History AFC Exchange Trimming (`GeminiLiveTranscriptExporter.extractCuratedHistory`)**:
+  - Added `GeminiLiveTranscriptExporter.extractCuratedHistory()` and `validateContent()`, dropping the entire automatic function calling (AFC) exchange from curated chat history when the final model turn is invalid while preserving unanswered spent-budget function calls.
+
 ## 2026.11.6
 
 ### Added & Fixed (Upstream Parity with `js-genai` 3.0.0 & `python-genai` 3.0.0)
