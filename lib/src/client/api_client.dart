@@ -17,7 +17,7 @@ import '../platform/runtime_info_stub.dart'
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
-  static const _sdkVersion = '3.0.0';
+  static const _sdkVersion = '3.2.0';
 
   /// Default API version for the Gemini Developer API.
   static const googleAiApiDefaultVersion = 'v1beta';

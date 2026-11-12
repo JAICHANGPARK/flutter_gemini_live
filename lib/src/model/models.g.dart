@@ -491,6 +491,7 @@ const _$ThinkingLevelEnumMap = {
   ThinkingLevel.LOW: 'LOW',
   ThinkingLevel.MEDIUM: 'MEDIUM',
   ThinkingLevel.HIGH: 'HIGH',
+  ThinkingLevel.XHIGH: 'XHIGH',
 };
 
 TranslationConfig _$TranslationConfigFromJson(Map<String, dynamic> json) =>
@@ -779,10 +780,16 @@ const _$AudioTranscriptionConfigModeEnumMap = {
 };
 
 ProactivityConfig _$ProactivityConfigFromJson(Map<String, dynamic> json) =>
-    ProactivityConfig(proactiveAudio: json['proactive_audio'] as bool?);
+    ProactivityConfig(
+      proactiveAudio: json['proactive_audio'] as bool?,
+      proactiveVideo: json['proactive_video'] as bool?,
+    );
 
 Map<String, dynamic> _$ProactivityConfigToJson(ProactivityConfig instance) =>
-    <String, dynamic>{'proactive_audio': ?instance.proactiveAudio};
+    <String, dynamic>{
+      'proactive_audio': ?instance.proactiveAudio,
+      'proactive_video': ?instance.proactiveVideo,
+    };
 
 HistoryConfig _$HistoryConfigFromJson(Map<String, dynamic> json) =>
     HistoryConfig(

@@ -1,3 +1,16 @@
+## 2026.11.12
+
+### Added & Fixed (Upstream Parity with `js-genai` 3.2.0 & `python-genai` 3.2.0)
+- **Live API Proactive Video (`ProactivityConfig.proactiveVideo`)**:
+  - Added `proactiveVideo` (`proactive_video` / `proactiveVideo`) to `ProactivityConfig` for triggering model generation on incoming Live video frames when `proactiveAudio` is enabled, and ensured `LiveClientSetup.toJson()` serializes nested `proactivity` maps directly.
+- **Extra-High Thinking Effort (`ThinkingLevel.XHIGH`)**:
+  - Added `ThinkingLevel.XHIGH` (`'XHIGH'`) and updated `ThinkingConfig.fromJson()` to normalize both `snake_case`/`camelCase` keys and lowercase `'xhigh'` wire values across Gemini API and Interactions API payloads.
+- **Decisions API (`DecisionsService` / `genAI.decisions.create`)**:
+  - Added `DecisionsService` (`POST /{api_version}/decisions`) on `GoogleGenAI.decisions`, along with `CreateDecisionRequest`, `CreateDecisionResponse`, `DecisionQuestion` (`NoulQuestion`, `ChoiceQuestion`, `ScoreQuestion`), `DecisionAnswer` (`NoulAnswer`, `ChoiceAnswer`, `ScoreAnswer`), `NoulCriteria`, `DecisionPromptFeedback`, and `DecisionBlockReason`.
+- **Interactions Model/Agent Identifiers, `EnvironmentMode`, & SDK Telemetry (`3.2.0`)**:
+  - Added `InteractionModels` (`gemini-4-carbon`, `gemini-omni-1.2-flash`, etc.), `InteractionAgents` (`antigravity-preview-09-2026`, etc.), and `EnvironmentMode` (`on_demand`, `self_hosted`).
+  - Updated `google-genai-sdk` telemetry headers to `3.2.0`, refreshed Dartdoc descriptions for `FinishReason`, `MediaProcessing`, `MediaResolution`, and `Modality`, and updated Gemini API documentation links from `ai.google.dev` to `aistudio.google.com`.
+
 ## 2026.11.8
 
 ### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)

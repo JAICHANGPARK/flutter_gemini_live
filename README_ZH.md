@@ -8,7 +8,7 @@
 
 ---
 
-- 用于 [Gemini Live API](https://ai.google.dev/gemini-api/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
+- 用于 [Gemini Live API](https://aistudio.google.com/docs/live) 的 Flutter 软件包，实现与 Google Gemini 模型的实时多模态对话。
 - **零 Firebase 依赖**：无须安装 Firebase 或 Firebase AI Logic，直接通过 WebSocket 建立连接。
 - **兼容 Firebase AI Logic**：可选的兼容层，与 `firebase_ai` 的 Live API 形式一致，只需替换 import 即可在两个包之间迁移。参见 [Firebase AI Logic 兼容](#firebase-ai-logic-兼容)。
 - 支持最新的 Gemini Live、翻译和 Lyria 音乐模型。参见 [Supported Models](#supported-models)。
@@ -92,7 +92,7 @@ curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/ma
 > - `thinkingConfig` 只能传给 `gemini-3.8-live-extended-thinking`，传给 `gemini-3.8-live` 会报错。
 > - `gemini-3.8-live` 默认以非阻塞方式（`Behavior.NON_BLOCKING`）执行工具调用。
 > - Live 输出音频为 16-bit PCM 24 kHz 单声道，Lyria 输出为 16-bit PCM 48 kHz 立体声。
-> - 模型可用性可能会变化，最新状态请查看 [Gemini API 模型页面](https://ai.google.dev/gemini-api/docs/models)。
+> - 模型可用性可能会变化，最新状态请查看 [Gemini API 模型页面](https://aistudio.google.com/docs/models)。
 
 ## 安装 (Installation)
 

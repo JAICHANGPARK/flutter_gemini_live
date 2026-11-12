@@ -76,6 +76,11 @@ class Part {
   final CodeExecutionResult? codeExecutionResult;
   @JsonKey(name: 'audio_transcription')
   final AudioTranscriptionConfig? audioTranscription;
+
+  /// How the model processes this part's media for understanding.
+  ///
+  /// Only meaningful for video parts ([inlineData] or [fileData] with a video
+  /// MIME type). Non-video parts ignore this setting.
   final MediaProcessing? mediaProcessing;
   @JsonKey(name: 'speech_metadata')
   final SpeechMetadata? speechMetadata;

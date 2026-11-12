@@ -397,7 +397,7 @@ class LiveConnectParameters {
 
 /// Service for connecting to the Gemini Live API via WebSocket.
 class LiveService {
-  static const _sdkVersion = '3.0.0';
+  static const _sdkVersion = '3.2.0';
 
   /// The Gemini Developer API key or ephemeral client auth token.
   final String apiKey;

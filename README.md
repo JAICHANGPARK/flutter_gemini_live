@@ -8,7 +8,7 @@
 
 ---
 
-- A Flutter package for the [Gemini Live API](https://ai.google.dev/gemini-api/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
+- A Flutter package for the [Gemini Live API](https://aistudio.google.com/docs/live), enabling real-time, multimodal conversations with Google's Gemini models.
 - **Zero Firebase Dependency**: Direct WebSocket connection without Firebase or Firebase AI Logic.
 - **Firebase AI Logic compatible**: Optional drop-in layer that mirrors the `firebase_ai` Live API, so code moves between the two packages by swapping imports. See [Firebase AI Logic Compatibility](#firebase-ai-logic-compatibility).
 - Supports the latest Gemini Live, translation, and Lyria music models. See [Supported Models](#supported-models).
@@ -94,7 +94,7 @@ Use the model ID string, or the matching constant from `LiveModels` / `LiveMusic
 > - Pass `thinkingConfig` only to `gemini-3.8-live-extended-thinking`. `gemini-3.8-live` rejects it.
 > - `gemini-3.8-live` runs tool calls as non-blocking by default (`Behavior.NON_BLOCKING`).
 > - Live output audio is 16-bit PCM 24 kHz mono. Lyria output is 16-bit PCM 48 kHz stereo.
-> - Model availability changes over time. Check the [Gemini API models page](https://ai.google.dev/gemini-api/docs/models) for the latest status.
+> - Model availability changes over time. Check the [Gemini API models page](https://aistudio.google.com/docs/models) for the latest status.
 
 ## Installation
 

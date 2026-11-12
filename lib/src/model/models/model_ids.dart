@@ -72,3 +72,45 @@ abstract final class LiveMusicModels {
   static const String lyria3ProPreview = 'models/lyria-3-pro-preview';
 }
 
+/// Well-known model identifiers supported by the Gemini Interactions API.
+abstract final class InteractionModels {
+  /// Gemini 4 Carbon model (`gemini-4-carbon`).
+  static const String gemini4Carbon = 'gemini-4-carbon';
+
+  /// Gemini 4 Argon model (`gemini-4-argon`).
+  static const String gemini4Argon = 'gemini-4-argon';
+
+  /// Gemini 3.8 Flash model (`gemini-3.8-flash`).
+  static const String gemini38Flash = 'gemini-3.8-flash';
+
+  /// Default Gemini Omni 1.2 Flash video generation model (`gemini-omni-1.2-flash`).
+  static const String geminiOmni12Flash = 'gemini-omni-1.2-flash';
+
+  /// Previous Gemini Omni 1.1 Flash video generation model (`gemini-omni-1.1-flash`).
+  static const String geminiOmni11Flash = 'gemini-omni-1.1-flash';
+
+  /// Gemini Omni Flash preview video generation model (`gemini-omni-flash-preview`).
+  static const String geminiOmniFlashPreview = 'gemini-omni-flash-preview';
+}
+
+/// Well-known agent identifiers supported by the Gemini Interactions API.
+abstract final class InteractionAgents {
+  /// Antigravity preview agent (`antigravity-preview-09-2026`).
+  static const String antigravityPreview092026 = 'antigravity-preview-09-2026';
+
+  /// Antigravity preview agent (`antigravity-preview-05-2026`).
+  static const String antigravityPreview052026 = 'antigravity-preview-05-2026';
+
+  /// Deep Research Pro preview agent (`deep-research-pro-preview-12-2025`).
+  static const String deepResearchProPreview122025 =
+      'deep-research-pro-preview-12-2025';
+
+  /// Deep Research preview agent (`deep-research-preview-04-2026`).
+  static const String deepResearchPreview042026 =
+      'deep-research-preview-04-2026';
+
+  /// Deep Research Max preview agent (`deep-research-max-preview-04-2026`).
+  static const String deepResearchMaxPreview042026 =
+      'deep-research-max-preview-04-2026';
+}
+

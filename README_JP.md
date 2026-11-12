@@ -8,7 +8,7 @@
 
 ---
 
-- GoogleのGeminiモデルとリアルタイムでマルチモーダルな会話を実現する[Gemini Live API](https://ai.google.dev/gemini-api/docs/live)用のFlutterパッケージです。
+- GoogleのGeminiモデルとリアルタイムでマルチモーダルな会話を実現する[Gemini Live API](https://aistudio.google.com/docs/live)用のFlutterパッケージです。
 - **Firebase 依存なし**: Firebase や Firebase AI Logic を使用せず、直接 WebSocket で接続可能です。
 - **Firebase AI Logic 互換**: `firebase_ai` の Live API と同じ形の互換レイヤーを任意で提供します。import を差し替えるだけで両パッケージ間を移行できます。[Firebase AI Logic 互換](#firebase-ai-logic-互換) を参照してください。
 - 最新の Gemini Live・翻訳・Lyria 音楽モデルをサポートします。[Supported Models](#supported-models) を参照してください。
@@ -91,7 +91,7 @@ curl -fsSL https://raw.githubusercontent.com/JAICHANGPARK/flutter_gemini_live/ma
 > - `thinkingConfig` は `gemini-3.8-live-extended-thinking` にのみ渡してください。`gemini-3.8-live` ではエラーになります。
 > - `gemini-3.8-live` はツール呼び出しをデフォルトで non-blocking (`Behavior.NON_BLOCKING`) で実行します。
 > - Live の出力音声は 16-bit PCM 24 kHz モノラル、Lyria の出力は 16-bit PCM 48 kHz ステレオです。
-> - モデルの提供状況は変わる可能性があります。最新情報は [Gemini API モデルページ](https://ai.google.dev/gemini-api/docs/models) を確認してください。
+> - モデルの提供状況は変わる可能性があります。最新情報は [Gemini API モデルページ](https://aistudio.google.com/docs/models) を確認してください。
 
 ## インストール (Installation)
 

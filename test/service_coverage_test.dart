@@ -409,9 +409,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/3.0.0 dart/9.9',
+          'google-genai-sdk/3.2.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.0.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.2.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -1933,6 +1933,184 @@ void main() {
         [afcUser, afcCall],
       );
     });
+
+    test(
+      'Upstream v3.1.0/v3.2.0 parity: ProactivityConfig.proactiveVideo, ThinkingLevel.XHIGH, InteractionModels/Agents, EnvironmentMode, and DecisionsService',
+      () async {
+        // 1. ProactivityConfig.proactiveVideo (snake_case & camelCase + LiveClientSetup)
+        final proactivity = ProactivityConfig(
+          proactiveAudio: true,
+          proactiveVideo: true,
+        );
+        expect(proactivity.toJson(), {
+          'proactive_audio': true,
+          'proactive_video': true,
+        });
+        final fromCamel = ProactivityConfig.fromJson(const {
+          'proactiveAudio': true,
+          'proactiveVideo': true,
+        });
+        expect(fromCamel.proactiveAudio, isTrue);
+        expect(fromCamel.proactiveVideo, isTrue);
+
+        final setup = LiveClientSetup(
+          model: LiveModels.gemini38Live,
+          proactivity: proactivity,
+        );
+        expect(setup.toJson()['proactivity'], {
+          'proactive_audio': true,
+          'proactive_video': true,
+        });
+
+        // 2. ThinkingLevel.XHIGH & lowercase 'xhigh' normalization
+        final xhighConfig = ThinkingConfig(
+          includeThoughts: true,
+          thinkingLevel: ThinkingLevel.XHIGH,
+        );
+        expect(xhighConfig.toJson(), {
+          'include_thoughts': true,
+          'thinking_level': 'XHIGH',
+        });
+        final parsedLowerXhigh = ThinkingConfig.fromJson(const {
+          'includeThoughts': true,
+          'thinkingBudget': 4096,
+          'thinkingLevel': 'xhigh',
+        });
+        expect(parsedLowerXhigh.includeThoughts, isTrue);
+        expect(parsedLowerXhigh.thinkingBudget, 4096);
+        expect(parsedLowerXhigh.thinkingLevel, ThinkingLevel.XHIGH);
+
+        // 3. InteractionModels, InteractionAgents, and EnvironmentMode
+        expect(InteractionModels.gemini4Carbon, 'gemini-4-carbon');
+        expect(InteractionModels.geminiOmni12Flash, 'gemini-omni-1.2-flash');
+        expect(
+          InteractionAgents.antigravityPreview092026,
+          'antigravity-preview-09-2026',
+        );
+        expect(
+          EnvironmentMode.fromJson('SELF_HOSTED'),
+          EnvironmentMode.SELF_HOSTED,
+        );
+        expect(EnvironmentMode.ON_DEMAND.toJson(), 'on_demand');
+
+        // 4. DecisionsService (client.decisions.create)
+        late RecordedRequest capturedRequest;
+        final recorder = RecordingHttpClient(
+          responder: (request) async {
+            capturedRequest = request;
+            return http.Response(
+              jsonEncode({
+                'answers': {
+                  'q1': {'type': 'noul', 'noul': 0.95, 'confidence': 0.95},
+                  'q2': {
+                    'type': 'choice',
+                    'choice': 'replace',
+                    'confidence': 0.88,
+                    'probabilities': {'refund': 0.12, 'replace': 0.88},
+                  },
+                  'q3': {
+                    'type': 'score',
+                    'score': 1.8,
+                    'confidence': 0.8,
+                    'probabilities': {'0': 0.0, '1': 0.2, '2': 0.8},
+                    'legend': {
+                      '0': 'Poor',
+                      '1': 'Acceptable',
+                      '2': 'Excellent',
+                    },
+                  },
+                },
+                'prompt_feedback': {
+                  'block_reason': 'safety',
+                  'block_reason_message': 'none',
+                },
+                'usage': {'total_tokens': 42},
+              }),
+              200,
+              headers: const {'content-type': 'application/json'},
+            );
+          },
+        );
+        final genAI = GoogleGenAI(
+          apiKey: 'test-api-key',
+          httpClient: recorder,
+          httpOptions: const HttpOptions(
+            apiVersion: 'v1beta',
+            baseUrl: 'https://example.googleapis.com',
+          ),
+        );
+
+        final response = await genAI.decisions.create(
+          CreateDecisionRequest(
+            model: 'decisions-prerelease',
+            input: 'User prompt context',
+            questions: {
+              'q1': const NoulQuestion(
+                instructions: 'Does the user want a summary?',
+                criteria: NoulCriteria(
+                  trueDescription: 'User asks for summary',
+                  falseDescription: 'User asks for full text',
+                ),
+              ),
+              'q2': const ChoiceQuestion(
+                instructions: 'Pick action.',
+                criteria: {'refund': '', 'replace': 'Ship a new unit.'},
+              ),
+              'q3': const {
+                'type': 'score',
+                'instructions': 'Rate quality.',
+                'criteria': ['Poor', 'Acceptable', 'Excellent'],
+              },
+            },
+          ),
+        );
+
+        expect(
+          capturedRequest.uri.toString(),
+          'https://example.googleapis.com/v1beta/decisions?key=test-api-key',
+        );
+        expect(capturedRequest.method, 'POST');
+        final sentJson =
+            jsonDecode(capturedRequest.body) as Map<String, dynamic>;
+        expect(sentJson['model'], 'decisions-prerelease');
+        expect(sentJson['input'], 'User prompt context');
+        expect(
+          (sentJson['questions'] as Map<String, dynamic>)['q2'],
+          {
+            'type': 'choice',
+            'instructions': 'Pick action.',
+            'criteria': {'refund': '', 'replace': 'Ship a new unit.'},
+          },
+        );
+
+        final a1 = response.answers?['q1'];
+        expect(a1, isA<NoulAnswer>());
+        expect((a1 as NoulAnswer).noul, 0.95);
+        expect(a1.confidence, 0.95);
+
+        final a2 = response.answers?['q2'];
+        expect(a2, isA<ChoiceAnswer>());
+        expect((a2 as ChoiceAnswer).choice, 'replace');
+        expect(a2.probabilities['replace'], 0.88);
+
+        final a3 = response.answers?['q3'];
+        expect(a3, isA<ScoreAnswer>());
+        expect((a3 as ScoreAnswer).score, 1.8);
+        expect(a3.legend['2'], 'Excellent');
+
+        expect(
+          response.promptFeedback?.blockReason,
+          DecisionBlockReason.SAFETY,
+        );
+        expect(response.usage?['total_tokens'], 42);
+        expect(
+          CreateDecisionResponse.fromJson(response.toJson()).answers?.keys,
+          containsAll(['q1', 'q2', 'q3']),
+        );
+
+        genAI.close();
+      },
+    );
   });
 }
 

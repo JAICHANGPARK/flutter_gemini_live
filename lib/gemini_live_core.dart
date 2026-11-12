@@ -5,6 +5,7 @@
 library;
 
 export 'src/auth_tokens_service.dart';
+export 'src/decisions_service.dart';
 export 'src/google_genai.dart';
 export 'src/music_service.dart';
 export 'src/utils/audio_utils.dart';

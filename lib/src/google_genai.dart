@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import 'auth_tokens_service.dart';
 import 'client/api_client.dart';
+import 'decisions_service.dart';
 import 'live_service.dart';
 import 'model/models.dart';
 import 'music_service.dart';
@@ -28,6 +29,9 @@ export 'music_service.dart'
 
 // Re-export ephemeral auth tokens service.
 export 'auth_tokens_service.dart' show AuthTokensService;
+
+// Re-export structured decisions evaluation service.
+export 'decisions_service.dart' show DecisionsService;
 
 // Re-export HTTP API error classes.
 export 'client/api_client.dart'
@@ -98,6 +102,9 @@ class GoogleGenAI {
   /// This is marked as `late` because it is initialized in the constructor.
   late final AuthTokensService authTokens;
 
+  /// Provides access to the Decisions API for structured decision evaluation.
+  late final DecisionsService decisions;
+
   /// Provides access to the Realtime Music generation (Lyria Live) service.
   LiveMusicService get music => live.music;
 
@@ -154,6 +161,9 @@ class GoogleGenAI {
 
     // Initialize the AuthTokensService for ephemeral token generation.
     authTokens = AuthTokensService(_apiClient);
+
+    // Initialize the DecisionsService for structured decision evaluation.
+    decisions = DecisionsService(_apiClient);
   }
 
   static HttpOptions? _parseHttpOptions(Object? value) {

@@ -503,7 +503,7 @@ final class JSONSchema extends Schema {
 
   /// Convert to standard JSON JSONSchema object.
   ///
-  /// Reference: https://ai.google.dev/api/caching#FunctionDeclaration
+  /// Reference: https://aistudio.google.com/api-reference
   @override
   Map<String, Object> toJson() => {
         if (type != SchemaType.anyOf && type != SchemaType.ref)

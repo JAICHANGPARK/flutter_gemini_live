@@ -6,19 +6,44 @@ part of '../models.dart';
 /// Thinking controls for models that can emit thought content.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ThinkingConfig {
+  /// Whether thought summaries are included in model responses.
   final bool? includeThoughts;
+
+  /// Maximum token budget reserved for internal reasoning.
   final int? thinkingBudget;
+
+  /// Discrete thinking effort level (from [ThinkingLevel.MINIMAL] to [ThinkingLevel.XHIGH]).
   final ThinkingLevel? thinkingLevel;
 
+  /// Creates a [ThinkingConfig].
   ThinkingConfig({
     this.includeThoughts,
     this.thinkingBudget,
     this.thinkingLevel,
   });
 
-  factory ThinkingConfig.fromJson(Map<String, dynamic> json) =>
-      _$ThinkingConfigFromJson(json);
+  /// Creates a [ThinkingConfig] from a JSON map.
+  ///
+  /// Supports both `snake_case` and `camelCase` keys, as well as uppercase
+  /// (`'XHIGH'`) and lowercase (`'xhigh'`) [thinkingLevel] wire values.
+  factory ThinkingConfig.fromJson(Map<String, dynamic> json) {
+    final rawLevel = json['thinking_level'] ?? json['thinkingLevel'];
+    return _$ThinkingConfigFromJson({
+      ...json,
+      if (!json.containsKey('include_thoughts') &&
+          json.containsKey('includeThoughts'))
+        'include_thoughts': json['includeThoughts'],
+      if (!json.containsKey('thinking_budget') &&
+          json.containsKey('thinkingBudget'))
+        'thinking_budget': json['thinkingBudget'],
+      if (rawLevel != null)
+        'thinking_level': rawLevel is String
+            ? rawLevel.toUpperCase()
+            : rawLevel,
+    });
+  }
 
+  /// Serializes this [ThinkingConfig] to a JSON map.
   Map<String, dynamic> toJson() => _$ThinkingConfigToJson(this);
 }
 
@@ -339,16 +364,41 @@ class SmartTranscriptionMode {
   Map<String, dynamic> toJson() => _$SmartTranscriptionModeToJson(this);
 }
 
-/// Proactivity options for realtime audio sessions.
+/// Proactivity options for realtime audio and video Live sessions.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class ProactivityConfig {
+  /// Whether proactive audio is enabled.
+  ///
+  /// When enabled, the model can ignore out-of-context speech or stay silent
+  /// when the user has not made a request yet.
   final bool? proactiveAudio;
 
-  ProactivityConfig({this.proactiveAudio});
+  /// Whether proactive video generation is enabled.
+  ///
+  /// When enabled, the system may trigger a generation on each received image.
+  /// Requires [proactiveAudio] to be enabled. The rate of generation depends on
+  /// the incoming image frame rate and can significantly increase token cost.
+  final bool? proactiveVideo;
 
+  /// Creates a [ProactivityConfig].
+  ProactivityConfig({this.proactiveAudio, this.proactiveVideo});
+
+  /// Creates a [ProactivityConfig] from a JSON map.
+  ///
+  /// Supports both `snake_case` (`proactive_audio`, `proactive_video`) and
+  /// `camelCase` (`proactiveAudio`, `proactiveVideo`) keys.
   factory ProactivityConfig.fromJson(Map<String, dynamic> json) =>
-      _$ProactivityConfigFromJson(json);
+      _$ProactivityConfigFromJson({
+        ...json,
+        if (!json.containsKey('proactive_audio') &&
+            json.containsKey('proactiveAudio'))
+          'proactive_audio': json['proactiveAudio'],
+        if (!json.containsKey('proactive_video') &&
+            json.containsKey('proactiveVideo'))
+          'proactive_video': json['proactiveVideo'],
+      });
 
+  /// Serializes this [ProactivityConfig] to a JSON map.
   Map<String, dynamic> toJson() => _$ProactivityConfigToJson(this);
 }
 
@@ -487,6 +537,9 @@ class LiveClientSetup {
     }
     if (outputAudioTranscription != null) {
       json['outputAudioTranscription'] = outputAudioTranscription!.toJson();
+    }
+    if (proactivity != null) {
+      json['proactivity'] = proactivity!.toJson();
     }
     if (explicitVadSignal != null) {
       json['explicitVadSignal'] = explicitVadSignal;
