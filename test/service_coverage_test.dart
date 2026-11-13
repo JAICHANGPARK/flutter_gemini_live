@@ -409,9 +409,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/3.2.0 dart/9.9',
+          'google-genai-sdk/3.3.0 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.2.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.3.0 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -2109,6 +2109,172 @@ void main() {
         );
 
         genAI.close();
+      },
+    );
+
+    test(
+      'Upstream v3.3.0 parity: InteractionModels.gemini4Hydrogen, default UTF-8 HTTP/SSE decoding, and GEMINI_API_KEY / GOOGLE_GENAI_DEBUG env helpers',
+      () async {
+        // 1. InteractionModels.gemini4Hydrogen and full Interactions model catalog
+        expect(InteractionModels.gemini4Hydrogen, 'gemini-4-hydrogen');
+        expect(InteractionModels.gemini4Carbon, 'gemini-4-carbon');
+        expect(InteractionModels.gemini4Argon, 'gemini-4-argon');
+        expect(InteractionModels.gemma4_26bA4bIt, 'gemma-4-26b-a4b-it');
+        expect(InteractionModels.gemma4_31bIt, 'gemma-4-31b-it');
+        expect(InteractionModels.geminiFlashLatest, 'gemini-flash-latest');
+        expect(
+          InteractionModels.geminiFlashLiteLatest,
+          'gemini-flash-lite-latest',
+        );
+        expect(InteractionModels.geminiProLatest, 'gemini-pro-latest');
+        expect(InteractionModels.gemini37Flash, 'gemini-3.7-flash');
+        expect(InteractionModels.gemini36Flash, 'gemini-3.6-flash');
+        expect(InteractionModels.gemini35Flash, 'gemini-3.5-flash');
+        expect(InteractionModels.gemini35FlashLite, 'gemini-3.5-flash-lite');
+        expect(InteractionModels.gemini38FlashTts, 'gemini-3.8-flash-tts');
+        expect(
+          InteractionModels.gemini38FlashLiteTts,
+          'gemini-3.8-flash-lite-tts',
+        );
+        expect(InteractionModels.gemini35Transcribe, 'gemini-3.5-transcribe');
+        expect(
+          InteractionModels.geminiNanoBanana21,
+          'gemini-nano-banana-2.1',
+        );
+        expect(
+          InteractionModels.geminiRoboticsEr2Preview,
+          'gemini-robotics-er-2-preview',
+        );
+        expect(
+          InteractionModels.geminiRoboticsEr16Preview,
+          'gemini-robotics-er-1.6-preview',
+        );
+        expect(InteractionModels.lyria35, 'lyria-3.5');
+        expect(InteractionModels.lyria3ClipPreview, 'lyria-3-clip-preview');
+        expect(InteractionModels.lyria3ProPreview, 'lyria-3-pro-preview');
+
+        // 2. Default UTF-8 HTTP decoding when Content-Type omits charset
+        final utf8PayloadBytes = utf8.encode(
+          '{"text":"café 🎉 안녕하세요"}',
+        );
+        var mode = 'utf8_no_charset';
+        final recorder = RecordingHttpClient(
+          responder: (request) async {
+            if (mode == 'utf8_no_charset') {
+              return http.Response.bytes(
+                utf8PayloadBytes,
+                200,
+                headers: const {'content-type': 'application/json'},
+              );
+            }
+            if (mode == 'explicit_latin1') {
+              return http.Response.bytes(
+                latin1.encode('{"text":"café"}'),
+                200,
+                headers: const {
+                  'content-type': 'application/json; charset=iso-8859-1',
+                },
+              );
+            }
+            return http.Response.bytes(
+              utf8.encode(
+                '{"error":{"code":400,"message":"잘못된 요청 café 🎉","status":"INVALID_ARGUMENT"}}',
+              ),
+              400,
+              headers: const {'content-type': 'application/json'},
+            );
+          },
+        );
+        final client = ApiClient(apiKey: 'test-key', httpClient: recorder);
+
+        final utf8Result = await client.get('models');
+        expect(utf8Result['text'], 'café 🎉 안녕하세요');
+
+        // Explicit non-UTF-8 charset is still respected
+        mode = 'explicit_latin1';
+        final latin1Result = await client.get('models');
+        expect(latin1Result['text'], 'café');
+
+        // Error envelopes without charset also decode multi-byte UTF-8 cleanly
+        mode = 'utf8_error';
+        await expectLater(
+          () => client.get('models'),
+          throwsA(
+            isA<ApiClientError>().having(
+              (e) => e.message,
+              'message',
+              '잘못된 요청 café 🎉',
+            ),
+          ),
+        );
+        client.close();
+
+        // 3. SSE stream UTF-8 decoding across chunk boundaries
+        final fullSseBytes = utf8.encode(
+          ': keep-alive\n\n'
+          'data: {"delta":"café 🎉 안녕하세요"}\n\n'
+          'data: [DONE]\n\n',
+        );
+        // Split right inside the 4-byte UTF-8 sequence for 🎉 (0xF0 0x9F 0x8E 0x89)
+        final emojiStart = fullSseBytes.indexOf(0xF0);
+        expect(emojiStart, greaterThan(0));
+        final chunk1 = fullSseBytes.sublist(0, emojiStart + 2);
+        final chunk2 = fullSseBytes.sublist(emojiStart + 2);
+        final events = await ApiClient.decodeSseJsonStream(
+          Stream<List<int>>.fromIterable([chunk1, chunk2]),
+          headers: const {'content-type': 'text/event-stream'},
+        ).toList();
+        expect(events, [
+          {'delta': 'café 🎉 안녕하세요'},
+        ]);
+
+        // 4. GEMINI_API_KEY / GOOGLE_API_KEY precedence & GOOGLE_GENAI_DEBUG
+        expect(
+          ApiClient.resolveDefaultApiKey(
+            environmentOverride: const {
+              'GEMINI_API_KEY': 'gemini-env-key',
+              'GOOGLE_API_KEY': 'google-env-key',
+            },
+          ),
+          'gemini-env-key',
+        );
+        expect(
+          ApiClient.resolveDefaultApiKey(
+            environmentOverride: const {'GOOGLE_API_KEY': '  google-env-key  '},
+          ),
+          'google-env-key',
+        );
+        expect(
+          ApiClient.resolveDefaultApiKey(environmentOverride: const {}),
+          '',
+        );
+
+        for (final truthy in ['true', 'TRUE', '1', 'yes', 'Yes', 'on', ' ON ']) {
+          expect(
+            ApiClient.isDebugEnabled(
+              environmentOverride: {'GOOGLE_GENAI_DEBUG': truthy},
+            ),
+            isTrue,
+            reason: 'Expected "$truthy" to enable debug mode',
+          );
+        }
+        for (final falsy in ['false', '0', 'no', 'off', '']) {
+          expect(
+            ApiClient.isDebugEnabled(
+              environmentOverride: {'GOOGLE_GENAI_DEBUG': falsy},
+            ),
+            isFalse,
+            reason: 'Expected "$falsy" not to enable debug mode',
+          );
+        }
+        expect(ApiClient.isDebugEnabled(environmentOverride: const {}), isFalse);
+
+        // GoogleGenAI() can be constructed without an explicit apiKey
+        final keylessGenAI = GoogleGenAI(
+          credentials: GenAICredentials(token: 'bearer-token'),
+        );
+        expect(keylessGenAI.apiKey, isA<String>());
+        keylessGenAI.close();
       },
     );
   });

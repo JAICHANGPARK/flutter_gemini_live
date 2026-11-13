@@ -1,3 +1,15 @@
+## 2026.11.13
+
+### Added & Fixed (Upstream Parity with `js-genai` 3.3.0 & `python-genai` 3.3.0)
+- **Gemini 4 Hydrogen & Full Interactions Model Catalog (`InteractionModels.gemini4Hydrogen`)**:
+  - Added `InteractionModels.gemini4Hydrogen` (`'gemini-4-hydrogen'`) for fast, dependable frontier execution across coding, agentic workflows, and multimodal knowledge work, along with the full upstream Interactions model constants (`gemma-4-26b-a4b-it`, `gemma-4-31b-it`, `gemini-flash-latest`, `gemini-flash-lite-latest`, `gemini-pro-latest`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.8-flash-tts`, `gemini-3.8-flash-lite-tts`, `gemini-3.5-transcribe`, `gemini-nano-banana-2.1`, `gemini-robotics-er-2-preview`, `gemini-robotics-er-1.6-preview`, `lyria-3.5`, `lyria-3-clip-preview`, and `lyria-3-pro-preview`).
+- **Default UTF-8 HTTP & Streaming SSE Response Decoding (`ApiClient`)**:
+  - Added `ApiClient.resolveResponseEncoding()`, `ApiClient.decodeResponseBody()`, and `ApiClient.decodeSseJsonStream()` so JSON, error-envelope, and `text/event-stream` responses without an explicit `Content-Type` `charset` parameter decode as UTF-8 by default (instead of `package:http`'s `ISO-8859-1` / `latin1` fallback) while preserving explicit server charsets and reassembling multi-byte UTF-8 sequences split across stream chunks.
+- **Environment Variable API Key & Debug Flag Resolution (`GEMINI_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_GENAI_DEBUG`)**:
+  - Added `ApiClient.resolveDefaultApiKey()` (`GEMINI_API_KEY` with fallback to `GOOGLE_API_KEY`) and optional `apiKey` parameter support on `GoogleGenAI` and `ApiClient`, plus `ApiClient.isDebugEnabled()` recognizing `'true'`, `'1'`, `'yes'`, and `'on'` in `GOOGLE_GENAI_DEBUG`.
+- **SDK Client Telemetry Alignment (`3.3.0`)**:
+  - Updated `google-genai-sdk` telemetry headers across `ApiClient`, `LiveService`, and `LiveMusicService` to `3.3.0`.
+
 ## 2026.11.12
 
 ### Added & Fixed (Upstream Parity with `js-genai` 3.2.0 & `python-genai` 3.2.0)

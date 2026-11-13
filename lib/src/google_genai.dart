@@ -116,7 +116,9 @@ class GoogleGenAI {
 
   /// Creates a new instance of the [GoogleGenAI] client.
   ///
-  /// [apiKey] is your Google AI API key, which is required for all requests.
+  /// [apiKey] is your Google AI API key. When omitted, the `GEMINI_API_KEY` or
+  /// `GOOGLE_API_KEY` environment variable is used if present; otherwise an
+  /// empty string is used (for example, when authenticating via [credentials]).
   /// [httpClient] is an optional client to use for making HTTP requests.
   /// [apiVersion] is the target API version. When neither [apiVersion] nor
   /// `httpOptions.apiVersion` is set, the `GOOGLE_GENAI_API_VERSION`
@@ -125,20 +127,21 @@ class GoogleGenAI {
   /// configuring `baseUrl`, `apiVersion`, and default `headers`.
   /// [logger] is an optional logging callback for network & WebSocket events.
   GoogleGenAI({
-    required this.apiKey,
+    String? apiKey,
     this.httpClient,
     String? apiVersion,
     Object? httpOptions,
     this.credentials,
     this.logger,
-  }) : httpOptions = _parseHttpOptions(httpOptions),
+  }) : apiKey = apiKey ?? ApiClient.resolveDefaultApiKey(),
+       httpOptions = _parseHttpOptions(httpOptions),
        apiVersion =
            _parseHttpOptions(httpOptions)?.apiVersion ??
            apiVersion ??
            ApiClient.resolveDefaultApiVersion() {
     // Initialize the internal API client with the provided credentials and HTTP client.
     _apiClient = ApiClient(
-      apiKey: apiKey,
+      apiKey: this.apiKey,
       baseUrl: this.httpOptions?.baseUrl,
       apiVersion: this.apiVersion,
       headers: this.httpOptions?.headers,
@@ -149,7 +152,7 @@ class GoogleGenAI {
 
     // Initialize the LiveService, which handles real-time interactions.
     live = LiveService(
-      apiKey: apiKey,
+      apiKey: this.apiKey,
       apiVersion: this.apiVersion,
       httpOptions: this.httpOptions,
       credentials: credentials,

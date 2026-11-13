@@ -74,14 +74,75 @@ abstract final class LiveMusicModels {
 
 /// Well-known model identifiers supported by the Gemini Interactions API.
 abstract final class InteractionModels {
-  /// Gemini 4 Carbon model (`gemini-4-carbon`).
+  /// Gemma 4 26B A4B instruction-tuned model (`gemma-4-26b-a4b-it`).
+  static const String gemma4_26bA4bIt = 'gemma-4-26b-a4b-it';
+
+  /// Gemma 4 31B instruction-tuned model (`gemma-4-31b-it`).
+  static const String gemma4_31bIt = 'gemma-4-31b-it';
+
+  /// Latest release alias of Gemini Flash (`gemini-flash-latest`).
+  static const String geminiFlashLatest = 'gemini-flash-latest';
+
+  /// Latest release alias of Gemini Flash-Lite (`gemini-flash-lite-latest`).
+  static const String geminiFlashLiteLatest = 'gemini-flash-lite-latest';
+
+  /// Latest release alias of Gemini Pro (`gemini-pro-latest`).
+  static const String geminiProLatest = 'gemini-pro-latest';
+
+  /// Gemini 4 Carbon frontier reasoning model (`gemini-4-carbon`).
   static const String gemini4Carbon = 'gemini-4-carbon';
 
-  /// Gemini 4 Argon model (`gemini-4-argon`).
+  /// Gemini 4 Argon frontier engineering and knowledge model (`gemini-4-argon`).
   static const String gemini4Argon = 'gemini-4-argon';
+
+  /// Gemini 4 Hydrogen frontier fast execution model (`gemini-4-hydrogen`).
+  ///
+  /// Built for fast, dependable execution across coding, agentic workflows,
+  /// and multimodal knowledge work.
+  static const String gemini4Hydrogen = 'gemini-4-hydrogen';
 
   /// Gemini 3.8 Flash model (`gemini-3.8-flash`).
   static const String gemini38Flash = 'gemini-3.8-flash';
+
+  /// Gemini 3.7 Flash model (`gemini-3.7-flash`).
+  static const String gemini37Flash = 'gemini-3.7-flash';
+
+  /// Gemini 3.6 Flash model (`gemini-3.6-flash`).
+  static const String gemini36Flash = 'gemini-3.6-flash';
+
+  /// Gemini 3.5 Flash model (`gemini-3.5-flash`).
+  static const String gemini35Flash = 'gemini-3.5-flash';
+
+  /// Gemini 3.5 Flash-Lite model (`gemini-3.5-flash-lite`).
+  static const String gemini35FlashLite = 'gemini-3.5-flash-lite';
+
+  /// Gemini 3.8 Flash TTS speech generation model (`gemini-3.8-flash-tts`).
+  static const String gemini38FlashTts = 'gemini-3.8-flash-tts';
+
+  /// Gemini 3.8 Flash Lite TTS speech generation model (`gemini-3.8-flash-lite-tts`).
+  static const String gemini38FlashLiteTts = 'gemini-3.8-flash-lite-tts';
+
+  /// Gemini 3.5 Transcribe speech-to-text model (`gemini-3.5-transcribe`).
+  static const String gemini35Transcribe = 'gemini-3.5-transcribe';
+
+  /// Gemini Nano Banana 2.1 image generation model (`gemini-nano-banana-2.1`).
+  static const String geminiNanoBanana21 = 'gemini-nano-banana-2.1';
+
+  /// Gemini Robotics Embodied Reasoning 2 preview model (`gemini-robotics-er-2-preview`).
+  static const String geminiRoboticsEr2Preview = 'gemini-robotics-er-2-preview';
+
+  /// Gemini Robotics-ER 1.6 preview model (`gemini-robotics-er-1.6-preview`).
+  static const String geminiRoboticsEr16Preview =
+      'gemini-robotics-er-1.6-preview';
+
+  /// Lyria 3.5 full-length music generation model (`lyria-3.5`).
+  static const String lyria35 = 'lyria-3.5';
+
+  /// Lyria 3 Clip preview music generation model (`lyria-3-clip-preview`).
+  static const String lyria3ClipPreview = 'lyria-3-clip-preview';
+
+  /// Lyria 3 Pro preview music generation model (`lyria-3-pro-preview`).
+  static const String lyria3ProPreview = 'lyria-3-pro-preview';
 
   /// Default Gemini Omni 1.2 Flash video generation model (`gemini-omni-1.2-flash`).
   static const String geminiOmni12Flash = 'gemini-omni-1.2-flash';

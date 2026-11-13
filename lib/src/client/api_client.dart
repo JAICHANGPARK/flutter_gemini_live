@@ -17,7 +17,19 @@ import '../platform/runtime_info_stub.dart'
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
-  static const _sdkVersion = '3.2.0';
+  static const _sdkVersion = '3.3.0';
+
+  static final RegExp _charsetPattern = RegExp(
+    r';\s*charset\s*=\s*"?([^\s;"]+)"?',
+    caseSensitive: false,
+  );
+
+  static const Set<String> _truthyDebugFlags = <String>{
+    'true',
+    '1',
+    'yes',
+    'on',
+  };
 
   /// Default API version for the Gemini Developer API.
   static const googleAiApiDefaultVersion = 'v1beta';
@@ -28,6 +40,109 @@ class ApiClient {
   /// explicit version is configured.
   static void setDefaultGoogleAiApiVersion([String? version]) {
     _defaultGoogleAiApiVersionOverride = version;
+  }
+
+  /// Resolves the default API key from the `GEMINI_API_KEY` or
+  /// `GOOGLE_API_KEY` environment variables, or returns an empty string when
+  /// neither variable is set.
+  ///
+  /// Precedence gives `GEMINI_API_KEY` priority over `GOOGLE_API_KEY`.
+  static String resolveDefaultApiKey({
+    Map<String, String>? environmentOverride,
+  }) {
+    String? readEnv(String name) => environmentOverride != null
+        ? environmentOverride[name]
+        : runtime_info.getEnvironmentVariable(name);
+
+    final geminiKey = readEnv('GEMINI_API_KEY')?.trim();
+    if (geminiKey != null && geminiKey.isNotEmpty) {
+      return geminiKey;
+    }
+    final googleKey = readEnv('GOOGLE_API_KEY')?.trim();
+    if (googleKey != null && googleKey.isNotEmpty) {
+      return googleKey;
+    }
+    return '';
+  }
+
+  /// Returns whether SDK debug logging is enabled via the `GOOGLE_GENAI_DEBUG`
+  /// environment variable.
+  ///
+  /// Recognizes `'true'`, `'1'`, `'yes'`, and `'on'` (case-insensitive).
+  static bool isDebugEnabled({Map<String, String>? environmentOverride}) {
+    final raw = environmentOverride != null
+        ? environmentOverride['GOOGLE_GENAI_DEBUG']
+        : runtime_info.getEnvironmentVariable('GOOGLE_GENAI_DEBUG');
+    final normalized = raw?.trim().toLowerCase();
+    return normalized != null && _truthyDebugFlags.contains(normalized);
+  }
+
+  /// Resolves the text [Encoding] declared in HTTP [headers], defaulting to
+  /// [utf8] when `Content-Type` omits an explicit `charset` parameter.
+  ///
+  /// Unlike `package:http`'s default `ISO-8859-1` (`latin1`) fallback, JSON and
+  /// `text/event-stream` responses without an explicit charset are decoded as
+  /// UTF-8 while preserving any explicit charset declared by the server.
+  static Encoding resolveResponseEncoding(Map<String, String>? headers) {
+    if (headers != null) {
+      for (final entry in headers.entries) {
+        if (entry.key.toLowerCase() == 'content-type') {
+          final match = _charsetPattern.firstMatch(entry.value);
+          final charset = match?.group(1)?.trim();
+          if (charset != null && charset.isNotEmpty) {
+            final explicit = Encoding.getByName(charset);
+            if (explicit != null) {
+              return explicit;
+            }
+          }
+          break;
+        }
+      }
+    }
+    return utf8;
+  }
+
+  /// Decodes an HTTP [response] body using its declared `Content-Type` charset,
+  /// or UTF-8 by default when no explicit `charset` parameter is present.
+  static String decodeResponseBody(http.Response response) {
+    final encoding = resolveResponseEncoding(response.headers);
+    if (identical(encoding, utf8)) {
+      return utf8.decode(response.bodyBytes, allowMalformed: true);
+    }
+    return encoding.decode(response.bodyBytes);
+  }
+
+  /// Decodes a streaming Server-Sent Events (`text/event-stream`) [byteStream]
+  /// into parsed JSON event maps using UTF-8 by default unless [headers]
+  /// specifies an explicit `charset`.
+  ///
+  /// Uses a stateful stream decoder so multi-byte UTF-8 sequences split across
+  /// chunk boundaries are reassembled without corruption.
+  static Stream<Map<String, dynamic>> decodeSseJsonStream(
+    Stream<List<int>> byteStream, {
+    Map<String, String>? headers,
+  }) async* {
+    final encoding = resolveResponseEncoding(headers);
+    final lines = encoding.decoder
+        .bind(byteStream)
+        .transform(const LineSplitter());
+    await for (final rawLine in lines) {
+      final line = rawLine.trim();
+      if (line.isEmpty || line.startsWith(':')) {
+        continue;
+      }
+      if (!line.startsWith('data:')) {
+        continue;
+      }
+      final payload = line.substring(5).trim();
+      if (payload.isEmpty || payload == '[DONE]') {
+        continue;
+      }
+      final decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        yield decoded;
+      }
+    }
   }
 
   /// Resolves the effective default API version from the
@@ -95,15 +210,19 @@ class ApiClient {
   final http.Client _httpClient;
 
   /// Creates an instance of [ApiClient].
+  ///
+  /// When [apiKey] is omitted, resolves the key from `GEMINI_API_KEY` or
+  /// `GOOGLE_API_KEY` via [resolveDefaultApiKey].
   ApiClient({
-    required this.apiKey,
+    String? apiKey,
     String? baseUrl,
     String? apiVersion,
     Map<String, String>? headers,
     HttpOptions? httpOptions,
     this.credentials,
     http.Client? httpClient,
-  }) : baseUrl = baseUrl ?? httpOptions?.baseUrl,
+  }) : apiKey = apiKey ?? resolveDefaultApiKey(),
+       baseUrl = baseUrl ?? httpOptions?.baseUrl,
        apiVersion =
            httpOptions?.apiVersion ?? apiVersion ?? resolveDefaultApiVersion(),
        headers = (headers != null || httpOptions?.headers != null)
@@ -253,7 +372,7 @@ class ApiClient {
     final response = await _httpClient.get(uri, headers: reqHeaders);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
     } else {
       throw _buildHttpError(response);
     }
@@ -282,7 +401,7 @@ class ApiClient {
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
     } else {
       throw _buildHttpError(response);
     }
@@ -302,32 +421,34 @@ class ApiClient {
     final response = await _httpClient.delete(uri, headers: reqHeaders);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isEmpty) return <String, dynamic>{};
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      final decodedBody = decodeResponseBody(response);
+      if (decodedBody.isEmpty) return <String, dynamic>{};
+      return jsonDecode(decodedBody) as Map<String, dynamic>;
     } else {
       throw _buildHttpError(response);
     }
   }
 
   static GoogleGenAiError _buildHttpError(http.Response response) {
-    final parsedError = ApiError.tryParseEnvelope(response.body);
+    final decodedBody = decodeResponseBody(response);
+    final parsedError = ApiError.tryParseEnvelope(decodedBody);
     if (response.statusCode >= 400 && response.statusCode < 500) {
       return ApiClientError(
         statusCode: response.statusCode,
-        body: response.body,
+        body: decodedBody,
         error: parsedError,
       );
     }
     if (response.statusCode >= 500) {
       return ApiServerError(
         statusCode: response.statusCode,
-        body: response.body,
+        body: decodedBody,
         error: parsedError,
       );
     }
     return GoogleGenAiError(
       statusCode: response.statusCode,
-      body: response.body,
+      body: decodedBody,
       error: parsedError,
     );
   }
