@@ -81,12 +81,18 @@ abstract final class InteractionModels {
   static const String gemma4_31bIt = 'gemma-4-31b-it';
 
   /// Latest release alias of Gemini Flash (`gemini-flash-latest`).
+  ///
+  /// Served on `v1beta` only; not available on `v1`.
   static const String geminiFlashLatest = 'gemini-flash-latest';
 
   /// Latest release alias of Gemini Flash-Lite (`gemini-flash-lite-latest`).
+  ///
+  /// Served on `v1beta` only; not available on `v1`.
   static const String geminiFlashLiteLatest = 'gemini-flash-lite-latest';
 
   /// Latest release alias of Gemini Pro (`gemini-pro-latest`).
+  ///
+  /// Served on `v1beta` only; not available on `v1`.
   static const String geminiProLatest = 'gemini-pro-latest';
 
   /// Gemini 4 Carbon frontier reasoning model (`gemini-4-carbon`).

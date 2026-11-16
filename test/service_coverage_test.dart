@@ -2277,6 +2277,400 @@ void main() {
         keylessGenAI.close();
       },
     );
+
+    test(
+      'Upstream 2026-11-16 parity: FunctionResponsePart Files API URIs, header case-variant merging, SSE CR/LF/CRLF & RawJsonLineBuffer, static media processing, ToolSearch, and recursive union schemas',
+      () async {
+        // 1. FunctionResponsePart.fromBytes / fromUri displayName, auto MIME, and Files API URIs
+        final bytesPart = FunctionResponsePart.fromBytes(
+          data: const [1, 2, 3],
+          mimeType: 'image/png',
+          displayName: 'chart.png',
+        );
+        expect(bytesPart.inlineData?.displayName, 'chart.png');
+
+        final gcsPart = FunctionResponsePart.fromUri(
+          fileUri: 'gs://generativeai-downloads/images/scones.jpg',
+          displayName: 'scones.jpg',
+        );
+        expect(gcsPart.fileData?.mimeType, 'image/jpeg');
+        expect(gcsPart.fileData?.displayName, 'scones.jpg');
+
+        for (final filesUri in const [
+          'https://generativelanguage.googleapis.com/v1beta/files/abc123',
+          'https://autopush-generativelanguage.sandbox.googleapis.com/v1beta/files/abc123',
+          'https://generativelanguage.googleapis.com/v1beta/files/abc123:download?alt=media',
+        ]) {
+          final filesPart = FunctionResponsePart.fromUri(fileUri: filesUri);
+          expect(filesPart.fileData?.fileUri, filesUri);
+          expect(filesPart.fileData?.mimeType, isNull);
+        }
+
+        for (final invalidUri in const [
+          'gs://bucket/no_extension',
+          'files/abc123',
+          'https://example.com/v1beta/files/abc123',
+          'https://generativelanguage.googleapis.com/v1beta/models/x?q=/files/a.jpg',
+        ]) {
+          expect(
+            () => FunctionResponsePart.fromUri(fileUri: invalidUri),
+            throwsArgumentError,
+            reason: 'Expected unknown MIME error for $invalidUri',
+          );
+        }
+
+        // 2. Collapse & merge User-Agent and x-goog-api-client case variants
+        final mixedHeaders = <String, String>{
+          'User-Agent': 'first/1',
+          'user-agent': 'second/2',
+          'USER-AGENT': 'first/1',
+          'X-Goog-Api-Client': 'custom-sdk/1.0',
+        };
+        ApiClient.appendLibraryVersionHeaders(mixedHeaders);
+        expect(
+          mixedHeaders.keys.where((k) => k.toLowerCase() == 'user-agent'),
+          ['user-agent'],
+        );
+        expect(
+          mixedHeaders.keys
+              .where((k) => k.toLowerCase() == 'x-goog-api-client'),
+          ['x-goog-api-client'],
+        );
+        expect(mixedHeaders['user-agent'], contains('first/1 second/2'));
+        expect(mixedHeaders['user-agent'], contains('google-genai-sdk/3.3.0'));
+        expect(
+          'first/1'.allMatches(mixedHeaders['user-agent']!).length,
+          1,
+        );
+        final snapshotUa = mixedHeaders['user-agent'];
+        ApiClient.appendLibraryVersionHeaders(mixedHeaders);
+        expect(mixedHeaders['user-agent'], snapshotUa);
+
+        final apiClient = ApiClient(
+          apiKey: 'test-key',
+          headers: const {'User-Agent': 'client-agent/1.0'},
+        );
+        final builtHeaders = await apiClient.buildRequestHeaders(
+          const {},
+          const HttpOptions(
+            headers: {
+              'user-agent': 'request-agent/2.0',
+              'X-Goog-Api-Client': 'custom-client/3.0',
+            },
+          ),
+        );
+        expect(
+          builtHeaders.keys.where((k) => k.toLowerCase() == 'user-agent'),
+          ['user-agent'],
+        );
+        expect(
+          builtHeaders['user-agent'],
+          'client-agent/1.0 request-agent/2.0',
+        );
+        expect(
+          builtHeaders.keys
+              .where((k) => k.toLowerCase() == 'x-goog-api-client'),
+          ['x-goog-api-client'],
+        );
+        expect(builtHeaders['x-goog-api-client'], 'custom-client/3.0');
+        apiClient.close();
+
+        // 3. SSE line splitting on CR/LF/CRLF only (ignoring U+2028/U+2029/U+0085)
+        //    and RawJsonLineBuffer ignoring braces inside JSON strings
+        final ssePayload =
+            'data: {"text":"line1\u2028line2\u2029line3\u0085end"}\r\n'
+            '\r\n';
+        final sseBytes = utf8.encode(ssePayload);
+        final crIndex = sseBytes.indexOf(0x0D);
+        // Split right between \r and \n to verify CRLF across chunk boundaries
+        final sseChunks = [
+          sseBytes.sublist(0, crIndex + 1),
+          sseBytes.sublist(crIndex + 1),
+        ];
+        final decodedSse = await ApiClient.decodeSseJsonStream(
+          Stream<List<int>>.fromIterable(sseChunks),
+        ).toList();
+        expect(decodedSse, [
+          {'text': 'line1\u2028line2\u2029line3\u0085end'},
+        ]);
+
+        // Raw multi-line JSON stream with unmatched braces & escaped quotes inside strings
+        final rawJsonLines = [
+          '{\n',
+          '  "error": {\n',
+          '    "code": 400,\n',
+          '    "message": "Unmatched } and \\"{\\" inside string"\n',
+          '  }\n',
+          '}\n',
+        ];
+        final rawEvents = await ApiClient.decodeSseJsonStream(
+          Stream<List<int>>.fromIterable(rawJsonLines.map(utf8.encode)),
+        ).toList();
+        expect(rawEvents, [
+          {
+            'error': {
+              'code': 400,
+              'message': 'Unmatched } and "{" inside string',
+            },
+          },
+        ]);
+
+        // 4. Static media processing options (video, audio, document page & spreadsheet)
+        const videoProc = StaticMediaProcessing(
+          contentLayers: [
+            VideoContentLayer.frames,
+            VideoContentLayer.audio,
+            VideoContentLayer.transcript,
+          ],
+          startOffset: '5s',
+          endOffset: '25.5s',
+          fps: 2.0,
+        );
+        expect(
+          StaticMediaProcessing.fromJson(videoProc.toJson()).toJson(),
+          {
+            'type': 'static',
+            'content_layers': ['frames', 'audio', 'transcript'],
+            'start_offset': '5s',
+            'end_offset': '25.5s',
+            'fps': 2.0,
+          },
+        );
+
+        const audioProc = AudioStaticMediaProcessing(
+          startOffset: '10.5s',
+          endOffset: '30s',
+        );
+        expect(
+          AudioStaticMediaProcessing.fromJson(audioProc.toJson()).toJson(),
+          {'type': 'static', 'start_offset': '10.5s', 'end_offset': '30s'},
+        );
+
+        const docProc = DocumentStaticMediaProcessing(
+          pageOptions: PageProcessingOptions(
+            contentLayers: [
+              PageContentLayer.pageImage,
+              PageContentLayer.pageText,
+            ],
+            startPage: 1,
+            endPage: 5,
+          ),
+          spreadsheetOptions: SpreadsheetProcessingOptions(
+            contentLayers: [
+              SpreadsheetContentLayer.visual,
+              SpreadsheetContentLayer.data,
+              SpreadsheetContentLayer.formulas,
+            ],
+            sheetIndex: 2,
+            visibleCells: 'A1:D10',
+          ),
+        );
+        expect(
+          DocumentStaticMediaProcessing.fromJson(docProc.toJson()).toJson(),
+          {
+            'type': 'static',
+            'page_options': {
+              'content_layers': ['page_image', 'page_text'],
+              'start_page': 1,
+              'end_page': 5,
+            },
+            'spreadsheet_options': {
+              'content_layers': ['visual', 'data', 'formulas'],
+              'sheet_index': 2,
+              'visible_cells': 'A1:D10',
+            },
+          },
+        );
+
+        // 5. Interactions ToolSearch, deferred FunctionDeclaration, steps & deltas
+        final deferredDecl = FunctionDeclaration(
+          name: 'lookup_order',
+          description: 'Looks up full order details by ID.',
+          shortDescription: 'Lookup order by ID',
+          deferLoading: true,
+        );
+        expect(FunctionDeclaration.fromJson(deferredDecl.toJson()).toJson(), {
+          'description': 'Looks up full order details by ID.',
+          'name': 'lookup_order',
+          'defer_loading': true,
+          'short_description': 'Lookup order by ID',
+        });
+
+        const toolSearch = ToolSearch(
+          execution: ToolSearchExecution.client,
+          name: 'search_tools',
+          description: 'Searches deferred client tools',
+          parameters: {'type': 'object'},
+        );
+        expect(ToolSearch.fromJson(toolSearch.toJson()).toJson(), {
+          'type': 'tool_search',
+          'execution': 'client',
+          'name': 'search_tools',
+          'description': 'Searches deferred client tools',
+          'parameters': {'type': 'object'},
+        });
+
+        const callStep = ToolSearchCallStep(
+          id: 'ts-1',
+          arguments: ToolSearchCallArguments(functionNames: ['lookup_order']),
+          signature: 'sig-call',
+        );
+        expect(ToolSearchCallStep.fromJson(callStep.toJson()).toJson(), {
+          'type': 'tool_search_call',
+          'id': 'ts-1',
+          'arguments': {
+            'function_names': ['lookup_order'],
+          },
+          'signature': 'sig-call',
+        });
+
+        const resultStep = ToolSearchResultStep(
+          callId: 'ts-1',
+          result: [
+            InteractionFunction(
+              name: 'lookup_order',
+              description: 'Looks up full order details by ID.',
+              shortDescription: 'Lookup order by ID',
+              deferLoading: true,
+            ),
+          ],
+          signature: 'sig-res',
+        );
+        expect(ToolSearchResultStep.fromJson(resultStep.toJson()).toJson(), {
+          'type': 'tool_search_result',
+          'call_id': 'ts-1',
+          'result': [
+            {
+              'type': 'function',
+              'name': 'lookup_order',
+              'description': 'Looks up full order details by ID.',
+              'short_description': 'Lookup order by ID',
+              'defer_loading': true,
+            },
+          ],
+          'signature': 'sig-res',
+        });
+
+        const callDelta = ToolSearchCallDelta(
+          arguments: ToolSearchCallArguments(functionNames: ['lookup_order']),
+          signature: 'sig-d1',
+        );
+        expect(ToolSearchCallDelta.fromJson(callDelta.toJson()).toJson(), {
+          'type': 'tool_search_call',
+          'arguments': {
+            'function_names': ['lookup_order'],
+          },
+          'signature': 'sig-d1',
+        });
+
+        const resultDelta = ToolSearchResultDelta(
+          result: [InteractionFunction(name: 'lookup_order')],
+          signature: 'sig-d2',
+        );
+        expect(ToolSearchResultDelta.fromJson(resultDelta.toJson()).toJson(), {
+          'type': 'tool_search_result',
+          'result': [
+            {'type': 'function', 'name': 'lookup_order'},
+          ],
+          'signature': 'sig-d2',
+        });
+
+        // 6. Recursive union schema $defs / $ref resolution per path
+        final recursiveUnionSchema = <String, dynamic>{
+          r'$ref': r'#/$defs/Root',
+          r'$defs': {
+            'Shared': {
+              'type': 'OBJECT',
+              'properties': {
+                'a': {'type': 'STRING'},
+                'b': {'type': 'STRING'},
+              },
+            },
+            'A': {
+              'type': 'OBJECT',
+              'properties': {
+                's': {r'$ref': r'#/$defs/Shared'},
+                'root': {r'$ref': r'#/$defs/Root'},
+              },
+            },
+            'B': {
+              'type': 'OBJECT',
+              'properties': {
+                's': {r'$ref': r'#/$defs/Shared'},
+              },
+            },
+            'Root': {
+              'anyOf': [
+                {r'$ref': r'#/$defs/A'},
+                {r'$ref': r'#/$defs/B'},
+              ],
+            },
+          },
+        };
+        JsonSchemaTransformer.processSchema(recursiveUnionSchema);
+        expect(recursiveUnionSchema, {
+          'anyOf': [
+            {
+              'type': 'OBJECT',
+              'properties': {
+                's': {
+                  'type': 'OBJECT',
+                  'properties': {
+                    'a': {'type': 'STRING'},
+                    'b': {'type': 'STRING'},
+                  },
+                  'property_ordering': ['a', 'b'],
+                },
+                'root': <String, dynamic>{},
+              },
+              'property_ordering': ['s', 'root'],
+            },
+            {
+              'type': 'OBJECT',
+              'properties': {
+                's': {
+                  'type': 'OBJECT',
+                  'properties': {
+                    'a': {'type': 'STRING'},
+                    'b': {'type': 'STRING'},
+                  },
+                  'property_ordering': ['a', 'b'],
+                },
+              },
+            },
+          ],
+        });
+
+        final nullableSelfRefSchema = <String, dynamic>{
+          r'$ref': r'#/$defs/Node',
+          r'$defs': {
+            'Node': {
+              'type': 'OBJECT',
+              'properties': {
+                'value': {'type': 'INTEGER'},
+                'next': {
+                  'anyOf': [
+                    {r'$ref': r'#/$defs/Node'},
+                    {'type': 'null'},
+                  ],
+                  'default': null,
+                },
+              },
+            },
+          },
+        };
+        JsonSchemaTransformer.processSchema(nullableSelfRefSchema);
+        expect(nullableSelfRefSchema, {
+          'type': 'OBJECT',
+          'properties': {
+            'value': {'type': 'INTEGER'},
+            'next': {'default': null, 'nullable': true},
+          },
+          'property_ordering': ['value', 'next'],
+        });
+        expect(() => jsonEncode(nullableSelfRefSchema), returnsNormally);
+      },
+    );
   });
 }
 

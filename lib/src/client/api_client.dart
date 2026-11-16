@@ -1,6 +1,7 @@
 // lib/src/api_client.dart
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -32,6 +33,11 @@ class ApiClient {
   };
 
   /// Default API version for the Gemini Developer API.
+  ///
+  /// Defaults to `'v1beta'` so Gemini Live (`BidiGenerateContent`), `-latest`
+  /// model aliases (`gemini-flash-latest`, `gemini-flash-lite-latest`,
+  /// `gemini-pro-latest`), and `-preview` models work out of the box (several
+  /// of these models and endpoints are unavailable on `'v1'`).
   static const googleAiApiDefaultVersion = 'v1beta';
 
   static String? _defaultGoogleAiApiVersionOverride;
@@ -112,35 +118,201 @@ class ApiClient {
     return encoding.decode(response.bodyBytes);
   }
 
+  /// Merges all case variants of [headerKey] in [headers] into a single key
+  /// ([targetKey] when provided, otherwise lowercase [headerKey]), preserving
+  /// value order and dropping duplicate values.
+  static void collapseHeaderCaseVariants(
+    Map<String, String> headers,
+    String headerKey, {
+    String? targetKey,
+  }) {
+    final lowerKey = headerKey.toLowerCase();
+    final variantKeys = headers.keys
+        .where((k) => k.toLowerCase() == lowerKey)
+        .toList();
+    if (variantKeys.isEmpty) {
+      return;
+    }
+    final seenValues = <String>{};
+    final orderedValues = <String>[];
+    for (final key in variantKeys) {
+      final value = headers.remove(key);
+      if (value != null && seenValues.add(value)) {
+        orderedValues.add(value);
+      }
+    }
+    headers[targetKey ?? lowerKey] = orderedValues.join(' ');
+  }
+
+  /// Collapses case variants of `User-Agent` and `x-goog-api-client` in
+  /// [headers] and appends the SDK and Dart runtime telemetry labels
+  /// idempotently.
+  static void appendLibraryVersionHeaders(Map<String, String> headers) {
+    collapseHeaderCaseVariants(headers, 'user-agent');
+    collapseHeaderCaseVariants(headers, 'x-goog-api-client');
+    final libraryLabel = 'google-genai-sdk/$_sdkVersion';
+    final languageLabel = 'dart/${runtime_info.dartVersion()}';
+    final versionHeaderValue = '$libraryLabel $languageLabel';
+
+    for (final key in const <String>['user-agent', 'x-goog-api-client']) {
+      final existing = headers[key];
+      if (existing != null && !existing.contains(libraryLabel)) {
+        headers[key] =
+            existing.isEmpty ? versionHeaderValue : '$versionHeaderValue $existing';
+      } else if (existing != null && !existing.contains(languageLabel)) {
+        headers[key] = '$existing $languageLabel';
+      } else if (existing == null) {
+        headers[key] = versionHeaderValue;
+      }
+    }
+  }
+
+  /// Splits an SSE [byteStream] into decoded lines strictly at CR (`\r`), LF
+  /// (`\n`), or CRLF (`\r\n`) boundaries.
+  ///
+  /// Unlike generic Unicode line splitters, characters such as `U+2028`,
+  /// `U+2029`, and `U+0085` inside JSON strings are never treated as line
+  /// terminators, and a CRLF pair split across chunk boundaries produces a
+  /// single line break.
+  static Stream<String> splitSseLines(
+    Stream<List<int>> byteStream, {
+    Encoding encoding = utf8,
+  }) async* {
+    final lineBuffer = BytesBuilder(copy: false);
+    var trailingCr = false;
+
+    String decodeLine(Uint8List bytes) {
+      if (identical(encoding, utf8)) {
+        return utf8.decode(bytes, allowMalformed: true);
+      }
+      return encoding.decode(bytes);
+    }
+
+    await for (final chunk in byteStream) {
+      if (chunk.isEmpty) {
+        continue;
+      }
+      var index = 0;
+      if (trailingCr) {
+        trailingCr = false;
+        if (chunk[0] == 0x0A) {
+          index = 1;
+        }
+        yield decodeLine(lineBuffer.takeBytes());
+      }
+      var segmentStart = index;
+      while (index < chunk.length) {
+        final byte = chunk[index];
+        if (byte == 0x0D) {
+          if (index > segmentStart) {
+            lineBuffer.add(chunk.sublist(segmentStart, index));
+          }
+          if (index + 1 < chunk.length) {
+            if (chunk[index + 1] == 0x0A) {
+              index += 2;
+            } else {
+              index += 1;
+            }
+            yield decodeLine(lineBuffer.takeBytes());
+            segmentStart = index;
+          } else {
+            trailingCr = true;
+            index += 1;
+            segmentStart = index;
+          }
+        } else if (byte == 0x0A) {
+          if (index > segmentStart) {
+            lineBuffer.add(chunk.sublist(segmentStart, index));
+          }
+          yield decodeLine(lineBuffer.takeBytes());
+          index += 1;
+          segmentStart = index;
+        } else {
+          index += 1;
+        }
+      }
+      if (segmentStart < chunk.length) {
+        lineBuffer.add(chunk.sublist(segmentStart));
+      }
+    }
+
+    if (trailingCr || lineBuffer.isNotEmpty) {
+      yield decodeLine(lineBuffer.takeBytes());
+    }
+  }
+
   /// Decodes a streaming Server-Sent Events (`text/event-stream`) [byteStream]
   /// into parsed JSON event maps using UTF-8 by default unless [headers]
   /// specifies an explicit `charset`.
   ///
-  /// Uses a stateful stream decoder so multi-byte UTF-8 sequences split across
-  /// chunk boundaries are reassembled without corruption.
+  /// Splits lines strictly on CR, LF, and CRLF, reassembles multi-byte UTF-8
+  /// sequences across chunk boundaries, supports multi-line `data:` blocks, and
+  /// buffers raw multi-line JSON payloads via [RawJsonLineBuffer] while
+  /// ignoring braces inside JSON string literals.
   static Stream<Map<String, dynamic>> decodeSseJsonStream(
     Stream<List<int>> byteStream, {
     Map<String, String>? headers,
   }) async* {
     final encoding = resolveResponseEncoding(headers);
-    final lines = encoding.decoder
-        .bind(byteStream)
-        .transform(const LineSplitter());
-    await for (final rawLine in lines) {
-      final line = rawLine.trim();
-      if (line.isEmpty || line.startsWith(':')) {
-        continue;
-      }
-      if (!line.startsWith('data:')) {
-        continue;
-      }
-      final payload = line.substring(5).trim();
+    final rawBuffer = RawJsonLineBuffer();
+    final dataBuffer = <String>[];
+
+    Map<String, dynamic>? tryDecodeEvent(String rawPayload) {
+      final payload = rawPayload.trim();
       if (payload.isEmpty || payload == '[DONE]') {
-        continue;
+        return null;
       }
       final decoded = jsonDecode(payload);
-      if (decoded is Map<String, dynamic>) {
-        yield decoded;
+      return decoded is Map<String, dynamic> ? decoded : null;
+    }
+
+    await for (final line in splitSseLines(byteStream, encoding: encoding)) {
+      if (line.isEmpty) {
+        if (dataBuffer.isNotEmpty) {
+          final joined = dataBuffer.join('\n');
+          dataBuffer.clear();
+          final event = tryDecodeEvent(joined);
+          if (event != null) {
+            yield event;
+          }
+        }
+        continue;
+      }
+      if (line.startsWith(':')) {
+        continue;
+      }
+      if (line.startsWith('data:')) {
+        final content = line.startsWith('data: ')
+            ? line.substring(6)
+            : line.substring(5);
+        dataBuffer.add(content);
+        continue;
+      }
+      if (line.startsWith('event:') ||
+          line.startsWith('id:') ||
+          line.startsWith('retry:')) {
+        continue;
+      }
+      final completedJson = rawBuffer.addLine(line);
+      if (completedJson != null) {
+        final event = tryDecodeEvent(completedJson);
+        if (event != null) {
+          yield event;
+        }
+      }
+    }
+
+    final remainingRaw = rawBuffer.flush();
+    if (remainingRaw.isNotEmpty) {
+      final event = tryDecodeEvent(remainingRaw);
+      if (event != null) {
+        yield event;
+      }
+    }
+    if (dataBuffer.isNotEmpty) {
+      final event = tryDecodeEvent(dataBuffer.join('\n'));
+      if (event != null) {
+        yield event;
       }
     }
   }
@@ -326,12 +498,13 @@ class ApiClient {
       ...defaultHeaders,
     };
     if (patched.headers != null) {
-      for (final entry in patched.headers!.entries) {
-        if (entry.key.toLowerCase() == 'user-agent') {
-          reqHeaders.remove('User-Agent');
-          reqHeaders.remove('user-agent');
-        } else if (entry.key.toLowerCase() == 'x-goog-api-client') {
-          reqHeaders.remove('x-goog-api-client');
+      final callerHeaders = Map<String, String>.from(patched.headers!);
+      collapseHeaderCaseVariants(callerHeaders, 'user-agent');
+      collapseHeaderCaseVariants(callerHeaders, 'x-goog-api-client');
+      for (final entry in callerHeaders.entries) {
+        final lower = entry.key.toLowerCase();
+        if (lower == 'user-agent' || lower == 'x-goog-api-client') {
+          reqHeaders.removeWhere((k, _) => k.toLowerCase() == lower);
         }
         reqHeaders[entry.key] = entry.value;
       }
@@ -456,6 +629,62 @@ class ApiClient {
   /// Closes the underlying HTTP client, releasing associated resources.
   void close() {
     _httpClient.close();
+  }
+}
+
+/// Buffers raw JSON stream lines until outer curly braces balance outside JSON
+/// string literals.
+///
+/// Braces (`{` and `}`) inside double-quoted strings and escaped quotes (`\"`)
+/// are ignored so multi-line JSON error or stream payloads containing literal
+/// brace characters are never split prematurely.
+class RawJsonLineBuffer {
+  final List<String> _lines = <String>[];
+  int _depth = 0;
+  bool _inString = false;
+  bool _escaped = false;
+
+  /// Appends [line] to the buffer and returns the concatenated JSON payload
+  /// once outer braces return to balance (`0`), or `null` if more lines are
+  /// needed.
+  String? addLine(String line) {
+    for (var i = 0; i < line.length; i++) {
+      final ch = line.codeUnitAt(i);
+      if (_inString) {
+        if (_escaped) {
+          _escaped = false;
+        } else if (ch == 0x5C) {
+          // '\'
+          _escaped = true;
+        } else if (ch == 0x22) {
+          // '"'
+          _inString = false;
+        }
+      } else if (ch == 0x22) {
+        _inString = true;
+      } else if (ch == 0x7B) {
+        // '{'
+        _depth += 1;
+      } else if (ch == 0x7D) {
+        // '}'
+        _depth -= 1;
+      }
+    }
+    _lines.add(line);
+    if (_depth == 0) {
+      return flush();
+    }
+    return null;
+  }
+
+  /// Flushes and returns any remaining buffered lines, resetting parser state.
+  String flush() {
+    final chunk = _lines.join();
+    _lines.clear();
+    _depth = 0;
+    _inString = false;
+    _escaped = false;
+    return chunk;
   }
 }
 

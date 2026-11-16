@@ -19,6 +19,7 @@ part 'models/server_content.dart';
 part 'models/parameters.dart';
 part 'models/auth_token.dart';
 part 'models/decisions.dart';
+part 'models/interactions.dart';
 part 'models/music.dart';
 
 Object? _computerUseFromJson(Object? json) => json;

@@ -1,3 +1,19 @@
+## 2026.11.16
+
+### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)
+- **Interactions Static Media Processing Options (`StaticMediaProcessing`, `AudioStaticMediaProcessing`, `DocumentStaticMediaProcessing`)**:
+  - Added `StaticMediaProcessing` (`VideoContentLayer`), `AudioStaticMediaProcessing`, `DocumentStaticMediaProcessing`, `PageProcessingOptions` (`PageContentLayer`: `page_image`, `page_text`), and `SpreadsheetProcessingOptions` (`SpreadsheetContentLayer`: `visual`, `data`, `formulas`) for configuring video, audio, paginated document, and spreadsheet extraction in the Interactions API.
+- **Interactions Dynamic Tool Search & Deferred Function Loading (`ToolSearch`, `InteractionFunction`)**:
+  - Added `ToolSearch` (`ToolSearchExecution.server` / `client`), `InteractionFunction`, `ToolSearchCallArguments`, `ToolSearchCallStep`, `ToolSearchResultStep`, `ToolSearchCallDelta`, and `ToolSearchResultDelta`, plus `deferLoading` and `shortDescription` support on `FunctionDeclaration`.
+- **`FunctionResponsePart.fromUri` MIME Inference & Gemini Files API URIs**:
+  - Updated `FunctionResponsePart.fromUri()` (`inferMimeType`, `isFilesApiUri`) to automatically infer MIME types from file extensions when `mimeType` is omitted, leave `mimeType` unset for Gemini Files API URIs (`https://generativelanguage.googleapis.com/.../files/...`) so the server uses uploaded file metadata, validate unknown non-Files-API URIs, and forward `displayName`.
+- **Header Case-Variant Collapsing & SSE / JSON Stream Parsing Fixes (`ApiClient`, `RawJsonLineBuffer`)**:
+  - Added `ApiClient.collapseHeaderCaseVariants()` and `ApiClient.appendLibraryVersionHeaders()` and updated `ApiClient.buildRequestHeaders()` and `LiveService.connect()` to merge case variants of `User-Agent` and `x-goog-api-client` without emitting duplicate headers.
+  - Added `ApiClient.splitSseLines()` (splitting strictly on CR, LF, and CRLF while preserving `U+2028`, `U+2029`, and `U+0085` inside JSON strings and handling split CRLF chunks) and `RawJsonLineBuffer` (ignoring `{` / `}` inside quoted JSON strings).
+- **Recursive Union JSON Schema `$defs` / `$ref` Resolution (`JsonSchemaTransformer.processSchema`) & `v1beta` Model Docs**:
+  - Added `JsonSchemaTransformer.processSchema()` to expand `$defs` / `$ref` per recursion path without clobbering shared `anyOf` union branches while terminating cyclic back-edges as `{}`.
+  - Documented `v1beta` requirement for `-latest` aliases (`gemini-flash-latest`, `gemini-flash-lite-latest`, `gemini-pro-latest`) and `-preview` models.
+
 ## 2026.11.13
 
 ### Added & Fixed (Upstream Parity with `js-genai` 3.3.0 & `python-genai` 3.3.0)

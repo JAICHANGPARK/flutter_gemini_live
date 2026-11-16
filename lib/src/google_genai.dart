@@ -33,9 +33,14 @@ export 'auth_tokens_service.dart' show AuthTokensService;
 // Re-export structured decisions evaluation service.
 export 'decisions_service.dart' show DecisionsService;
 
-// Re-export HTTP API error classes.
+// Re-export HTTP API error and stream buffer classes.
 export 'client/api_client.dart'
-    show ApiError, GoogleGenAiError, ApiClientError, ApiServerError;
+    show
+        ApiError,
+        GoogleGenAiError,
+        ApiClientError,
+        ApiServerError,
+        RawJsonLineBuffer;
 
 // Re-export all model classes (e.g., Content, Part, GenerateContentResponse).
 // This provides a single, convenient import for all data structures

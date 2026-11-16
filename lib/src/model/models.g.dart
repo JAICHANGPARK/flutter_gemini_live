@@ -1161,6 +1161,8 @@ FunctionDeclaration _$FunctionDeclarationFromJson(Map<String, dynamic> json) =>
       response: json['response'] as Map<String, dynamic>?,
       responseJsonSchema: json['response_json_schema'],
       behavior: $enumDecodeNullable(_$BehaviorEnumMap, json['behavior']),
+      deferLoading: json['defer_loading'] as bool?,
+      shortDescription: json['short_description'] as String?,
     );
 
 Map<String, dynamic> _$FunctionDeclarationToJson(
@@ -1173,6 +1175,8 @@ Map<String, dynamic> _$FunctionDeclarationToJson(
   'response': ?instance.response,
   'response_json_schema': ?instance.responseJsonSchema,
   'behavior': ?_$BehaviorEnumMap[instance.behavior],
+  'defer_loading': ?instance.deferLoading,
+  'short_description': ?instance.shortDescription,
 };
 
 const _$BehaviorEnumMap = {

@@ -172,6 +172,79 @@ class FunctionResponsePart {
     this.mediaProcessing,
   });
 
+  static final RegExp _filesApiUriPattern = RegExp(
+    r'^https://(?:[a-z0-9-]+-)?generativelanguage(?:\.sandbox)?'
+    r'\.googleapis\.com/(?:v1|v1beta|v1alpha|v1main)/files/[a-z0-9-]+'
+    r'(?::download(?:\?alt=media)?)?$',
+  );
+
+  static const Map<String, String> _extensionMimeTypes = <String, String>{
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'webp': 'image/webp',
+    'gif': 'image/gif',
+    'heic': 'image/heic',
+    'heif': 'image/heif',
+    'bmp': 'image/bmp',
+    'svg': 'image/svg+xml',
+    'pdf': DocumentMimeTypes.pdf,
+    'csv': DocumentMimeTypes.csv,
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'html': 'text/html',
+    'htm': 'text/html',
+    'json': 'application/json',
+    'xml': 'application/xml',
+    'rtf': 'application/rtf',
+    'doc': DocumentMimeTypes.doc,
+    'docx': DocumentMimeTypes.docx,
+    'dotx': DocumentMimeTypes.dotx,
+    'ppt': DocumentMimeTypes.ppt,
+    'pptx': DocumentMimeTypes.pptx,
+    'xls': DocumentMimeTypes.xls,
+    'xlsx': DocumentMimeTypes.xlsx,
+    'odt': DocumentMimeTypes.odt,
+    'odp': DocumentMimeTypes.odp,
+    'ods': DocumentMimeTypes.ods,
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'ogg': 'audio/ogg',
+    'flac': 'audio/flac',
+    'aac': 'audio/aac',
+    'm4a': 'audio/mp4',
+    'opus': 'audio/opus',
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'mov': 'video/quicktime',
+    'mpeg': 'video/mpeg',
+    'mpg': 'video/mpeg',
+    'avi': 'video/x-msvideo',
+    '3gp': 'video/3gpp',
+    'flv': 'video/x-flv',
+    'wmv': 'video/x-ms-wmv',
+  };
+
+  /// Returns whether [fileUri] is a Gemini Files API resource URI whose MIME
+  /// type is resolved server-side from the uploaded file metadata.
+  static bool isFilesApiUri(String fileUri) =>
+      _filesApiUriPattern.hasMatch(fileUri);
+
+  /// Infers the MIME type from the path extension of [fileUri], or returns
+  /// `null` when no known file extension is present.
+  static String? inferMimeType(String fileUri) {
+    final parsed = Uri.tryParse(fileUri);
+    final path = parsed?.path ?? fileUri;
+    final lastSlash = path.lastIndexOf('/');
+    final fileName = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+    final lastDot = fileName.lastIndexOf('.');
+    if (lastDot <= 0 || lastDot == fileName.length - 1) {
+      return null;
+    }
+    final ext = fileName.substring(lastDot + 1).toLowerCase();
+    return _extensionMimeTypes[ext];
+  }
+
   /// Creates an inline binary [FunctionResponsePart] by base64-encoding [data].
   ///
   /// Optionally attaches a [displayName] and video [mediaProcessing] mode.
@@ -191,21 +264,38 @@ class FunctionResponsePart {
 
   /// Creates a URI-referenced [FunctionResponsePart] pointing to [fileUri].
   ///
-  /// Optionally attaches a [mimeType], [displayName], and video
-  /// [mediaProcessing] mode.
+  /// When [mimeType] is omitted, it is automatically inferred from [fileUri]'s
+  /// file extension. For Gemini Files API URIs (for example,
+  /// `'https://generativelanguage.googleapis.com/v1beta/files/abc123'`),
+  /// [mimeType] is left unset so the backend uses the uploaded file's MIME
+  /// type. Throws an [ArgumentError] when [mimeType] cannot be determined for a
+  /// non-Files-API URI.
   factory FunctionResponsePart.fromUri({
     required String fileUri,
     String? mimeType,
     String? displayName,
     MediaProcessing? mediaProcessing,
-  }) => FunctionResponsePart(
-    fileData: FunctionResponseFileData(
-      fileUri: fileUri,
-      mimeType: mimeType,
-      displayName: displayName,
-    ),
-    mediaProcessing: mediaProcessing,
-  );
+  }) {
+    var resolvedMimeType = mimeType;
+    if (resolvedMimeType == null) {
+      resolvedMimeType = inferMimeType(fileUri);
+      if (resolvedMimeType == null && !isFilesApiUri(fileUri)) {
+        throw ArgumentError.value(
+          fileUri,
+          'fileUri',
+          'Failed to determine mime type for file: $fileUri',
+        );
+      }
+    }
+    return FunctionResponsePart(
+      fileData: FunctionResponseFileData(
+        fileUri: fileUri,
+        mimeType: resolvedMimeType,
+        displayName: displayName,
+      ),
+      mediaProcessing: mediaProcessing,
+    );
+  }
 
   /// Creates a [FunctionResponsePart] from a JSON map.
   factory FunctionResponsePart.fromJson(Map<String, dynamic> json) {
@@ -283,6 +373,13 @@ class FunctionDeclaration {
   final dynamic responseJsonSchema;
   final Behavior? behavior;
 
+  /// Whether loading of the full function schema is deferred until requested
+  /// via [ToolSearch].
+  final bool? deferLoading;
+
+  /// Brief summary shown to the model when [deferLoading] is `true`.
+  final String? shortDescription;
+
   FunctionDeclaration({
     this.description,
     this.name,
@@ -291,10 +388,20 @@ class FunctionDeclaration {
     this.response,
     this.responseJsonSchema,
     this.behavior,
+    this.deferLoading,
+    this.shortDescription,
   });
 
   factory FunctionDeclaration.fromJson(Map<String, dynamic> json) =>
-      _$FunctionDeclarationFromJson(json);
+      _$FunctionDeclarationFromJson({
+        ...json,
+        if (!json.containsKey('defer_loading') &&
+            json.containsKey('deferLoading'))
+          'defer_loading': json['deferLoading'],
+        if (!json.containsKey('short_description') &&
+            json.containsKey('shortDescription'))
+          'short_description': json['shortDescription'],
+      });
 
   Map<String, dynamic> toJson() => _$FunctionDeclarationToJson(this);
 }

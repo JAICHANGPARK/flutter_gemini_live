@@ -850,12 +850,22 @@ class LiveService {
     logger?.call('🔌 Connecting to WebSocket at $websocketUri');
 
     try {
+      final callerHeaders = mergedHttpOptions.headers != null
+          ? Map<String, String>.from(mergedHttpOptions.headers!)
+          : null;
+      if (callerHeaders != null) {
+        ApiClient.collapseHeaderCaseVariants(callerHeaders, 'user-agent');
+        ApiClient.collapseHeaderCaseVariants(
+          callerHeaders,
+          'x-goog-api-client',
+        );
+      }
       final headers = <String, dynamic>{
         'Content-Type': 'application/json',
         if (apiKey.isNotEmpty) 'x-goog-api-key': apiKey,
         'x-goog-api-client': apiClientHeader,
         'user-agent': userAgent,
-        if (mergedHttpOptions.headers != null) ...mergedHttpOptions.headers!,
+        ...?callerHeaders,
       };
       if (credentials != null) {
         final bearerToken = await credentials!.resolveToken();
