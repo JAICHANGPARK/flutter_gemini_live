@@ -88,6 +88,19 @@ Part _$PartFromJson(Map<String, dynamic> json) => Part(
       : SpeechMetadata.fromJson(
           json['speech_metadata'] as Map<String, dynamic>,
         ),
+  documentMetadata: json['documentMetadata'] == null
+      ? null
+      : DocumentMetadata.fromJson(
+          json['documentMetadata'] as Map<String, dynamic>,
+        ),
+  spreadsheetMetadata: json['spreadsheetMetadata'] == null
+      ? null
+      : SpreadsheetMetadata.fromJson(
+          json['spreadsheetMetadata'] as Map<String, dynamic>,
+        ),
+  audioMetadata: json['audioMetadata'] == null
+      ? null
+      : AudioMetadata.fromJson(json['audioMetadata'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
@@ -108,6 +121,9 @@ Map<String, dynamic> _$PartToJson(Part instance) => <String, dynamic>{
   'audio_transcription': ?instance.audioTranscription,
   'mediaProcessing': ?_$MediaProcessingEnumMap[instance.mediaProcessing],
   'speech_metadata': ?instance.speechMetadata,
+  'documentMetadata': ?instance.documentMetadata?.toJson(),
+  'spreadsheetMetadata': ?instance.spreadsheetMetadata?.toJson(),
+  'audioMetadata': ?instance.audioMetadata?.toJson(),
 };
 
 const _$MediaProcessingEnumMap = {
@@ -145,6 +161,11 @@ VideoMetadata _$VideoMetadataFromJson(Map<String, dynamic> json) =>
       startOffset: json['start_offset'] as String?,
       endOffset: json['end_offset'] as String?,
       fps: (json['fps'] as num?)?.toDouble(),
+      contentLayers: (json['content_layers'] as List<dynamic>?)
+          ?.map(
+            (e) => $enumDecode(_$VideoMetadataContentLayerEnumMap, e),
+          )
+          .toList(),
     );
 
 Map<String, dynamic> _$VideoMetadataToJson(VideoMetadata instance) =>
@@ -152,7 +173,18 @@ Map<String, dynamic> _$VideoMetadataToJson(VideoMetadata instance) =>
       'start_offset': ?instance.startOffset,
       'end_offset': ?instance.endOffset,
       'fps': ?instance.fps,
+      'content_layers': ?instance.contentLayers
+          ?.map((e) => _$VideoMetadataContentLayerEnumMap[e]!)
+          .toList(),
     };
+
+const _$VideoMetadataContentLayerEnumMap = {
+  VideoMetadataContentLayer.CONTENT_LAYER_UNSPECIFIED:
+      'CONTENT_LAYER_UNSPECIFIED',
+  VideoMetadataContentLayer.FRAMES: 'FRAMES',
+  VideoMetadataContentLayer.AUDIO: 'AUDIO',
+  VideoMetadataContentLayer.TRANSCRIPT: 'TRANSCRIPT',
+};
 
 PartMediaResolution _$PartMediaResolutionFromJson(Map<String, dynamic> json) =>
     PartMediaResolution(
@@ -1110,6 +1142,27 @@ FunctionResponsePart _$FunctionResponsePartFromJson(
     _$MediaProcessingEnumMap,
     json['media_processing'],
   ),
+  mediaResolution: json['media_resolution'] == null
+      ? null
+      : PartMediaResolution.fromJson(
+          json['media_resolution'] as Map<String, dynamic>,
+        ),
+  videoMetadata: json['video_metadata'] == null
+      ? null
+      : VideoMetadata.fromJson(json['video_metadata'] as Map<String, dynamic>),
+  documentMetadata: json['document_metadata'] == null
+      ? null
+      : DocumentMetadata.fromJson(
+          json['document_metadata'] as Map<String, dynamic>,
+        ),
+  spreadsheetMetadata: json['spreadsheet_metadata'] == null
+      ? null
+      : SpreadsheetMetadata.fromJson(
+          json['spreadsheet_metadata'] as Map<String, dynamic>,
+        ),
+  audioMetadata: json['audio_metadata'] == null
+      ? null
+      : AudioMetadata.fromJson(json['audio_metadata'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$FunctionResponsePartToJson(
@@ -1118,6 +1171,11 @@ Map<String, dynamic> _$FunctionResponsePartToJson(
   'inline_data': ?instance.inlineData?.toJson(),
   'file_data': ?instance.fileData?.toJson(),
   'media_processing': ?_$MediaProcessingEnumMap[instance.mediaProcessing],
+  'media_resolution': ?instance.mediaResolution?.toJson(),
+  'video_metadata': ?instance.videoMetadata?.toJson(),
+  'document_metadata': ?instance.documentMetadata?.toJson(),
+  'spreadsheet_metadata': ?instance.spreadsheetMetadata?.toJson(),
+  'audio_metadata': ?instance.audioMetadata?.toJson(),
 };
 
 FunctionResponse _$FunctionResponseFromJson(Map<String, dynamic> json) =>
@@ -1332,11 +1390,13 @@ McpServer _$McpServerFromJson(Map<String, dynamic> json) => McpServer(
       : StreamableHttpTransport.fromJson(
           json['streamable_http_transport'] as Map<String, dynamic>,
         ),
+  deferLoading: json['defer_loading'] as bool?,
 );
 
 Map<String, dynamic> _$McpServerToJson(McpServer instance) => <String, dynamic>{
   'name': ?instance.name,
   'streamable_http_transport': ?instance.streamableHttpTransport?.toJson(),
+  'defer_loading': ?instance.deferLoading,
 };
 
 Tool _$ToolFromJson(Map<String, dynamic> json) => Tool(

@@ -107,6 +107,12 @@ abstract final class InteractionModels {
   /// and multimodal knowledge work.
   static const String gemini4Hydrogen = 'gemini-4-hydrogen';
 
+  /// Gemini 4 Neon frontier task-completion model (`gemini-4-neon`).
+  ///
+  /// Frontier-level intelligence with fast end-to-end task completion across
+  /// complex software engineering, analytical, and science workflows.
+  static const String gemini4Neon = 'gemini-4-neon';
+
   /// Gemini 3.8 Flash model (`gemini-3.8-flash`).
   static const String gemini38Flash = 'gemini-3.8-flash';
 

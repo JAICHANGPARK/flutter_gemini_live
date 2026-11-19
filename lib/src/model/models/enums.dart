@@ -677,6 +677,62 @@ enum MediaProcessing {
   AGENTIC,
 }
 
+/// Content layers to extract from a document in [DocumentMetadata].
+@JsonEnum(alwaysCreate: true)
+enum DocumentMetadataContentLayer {
+  /// Default value.
+  @JsonValue('CONTENT_LAYER_UNSPECIFIED')
+  CONTENT_LAYER_UNSPECIFIED,
+
+  /// Rendered page images.
+  @JsonValue('PAGE_IMAGE')
+  PAGE_IMAGE,
+
+  /// Extracted page text.
+  @JsonValue('PAGE_TEXT')
+  PAGE_TEXT,
+}
+
+/// Content layers to extract from a spreadsheet in [SpreadsheetMetadata].
+@JsonEnum(alwaysCreate: true)
+enum SpreadsheetMetadataContentLayer {
+  /// Default value.
+  @JsonValue('CONTENT_LAYER_UNSPECIFIED')
+  CONTENT_LAYER_UNSPECIFIED,
+
+  /// Cell values, merges, and formats.
+  @JsonValue('DATA')
+  DATA,
+
+  /// Formula expressions and their computed results.
+  @JsonValue('FORMULAS')
+  FORMULAS,
+
+  /// A rendered image of the sheet.
+  @JsonValue('VISUAL')
+  VISUAL,
+}
+
+/// Content layers to extract from a video in [VideoMetadata].
+@JsonEnum(alwaysCreate: true)
+enum VideoMetadataContentLayer {
+  /// Default value.
+  @JsonValue('CONTENT_LAYER_UNSPECIFIED')
+  CONTENT_LAYER_UNSPECIFIED,
+
+  /// Extract video frames.
+  @JsonValue('FRAMES')
+  FRAMES,
+
+  /// Extract audio track.
+  @JsonValue('AUDIO')
+  AUDIO,
+
+  /// Extract audio transcript.
+  @JsonValue('TRANSCRIPT')
+  TRANSCRIPT,
+}
+
 /// Musical scale of generated music.
 @JsonEnum(alwaysCreate: true)
 enum Scale {

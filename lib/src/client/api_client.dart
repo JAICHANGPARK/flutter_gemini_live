@@ -18,7 +18,7 @@ import '../platform/runtime_info_stub.dart'
 /// per-request bearer credentials, populating `X-Server-Timeout`, and processing
 /// HTTP responses without leaking per-request headers into client defaults.
 class ApiClient {
-  static const _sdkVersion = '3.3.0';
+  static const _sdkVersion = '3.6.1';
 
   static final RegExp _charsetPattern = RegExp(
     r';\s*charset\s*=\s*"?([^\s;"]+)"?',

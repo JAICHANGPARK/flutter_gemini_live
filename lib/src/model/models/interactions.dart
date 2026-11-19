@@ -845,3 +845,526 @@ abstract final class JsonSchemaTransformer {
     return value;
   }
 }
+
+
+// ============================================================================
+// Live Interactions Auth Tokens & Wire Event Models
+// ============================================================================
+
+/// Parameters for creating a short-lived auth token bound to an interaction.
+class InteractionAuthTokenCreateParams {
+  /// Optional RFC 3339 hard deadline after which client messages are rejected.
+  final String? expireTime;
+
+  /// Creates [InteractionAuthTokenCreateParams].
+  const InteractionAuthTokenCreateParams({this.expireTime});
+
+  /// Creates [InteractionAuthTokenCreateParams] from a JSON map.
+  factory InteractionAuthTokenCreateParams.fromJson(
+    Map<String, dynamic> json,
+  ) => InteractionAuthTokenCreateParams(
+    expireTime: (json['expire_time'] ?? json['expireTime']) as String?,
+  );
+
+  /// Serializes this [InteractionAuthTokenCreateParams] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (expireTime != null) 'expire_time': expireTime,
+  };
+}
+
+/// Short-lived authentication token minted for a Live Interaction session.
+class InteractionAuthToken {
+  /// Opaque authentication token string.
+  final String? authToken;
+
+  /// RFC 3339 expiration timestamp of [authToken].
+  final String? expiresAt;
+
+  /// Creates an [InteractionAuthToken].
+  const InteractionAuthToken({this.authToken, this.expiresAt});
+
+  /// Creates an [InteractionAuthToken] from a JSON map.
+  factory InteractionAuthToken.fromJson(Map<String, dynamic> json) =>
+      InteractionAuthToken(
+        authToken: (json['auth_token'] ?? json['authToken']) as String?,
+        expiresAt: (json['expires_at'] ?? json['expiresAt']) as String?,
+      );
+
+  /// Serializes this [InteractionAuthToken] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (authToken != null) 'auth_token': authToken,
+    if (expiresAt != null) 'expires_at': expiresAt,
+  };
+}
+
+/// Client wire event that starts a new Live Interaction.
+class CreateInteractionEvent {
+  /// Fixed wire event discriminator (`'interaction.create'`).
+  final String eventType;
+
+  /// Optional model identifier for the live interaction.
+  final String? model;
+
+  /// Optional previous completed interaction ID whose output is prepended.
+  final String? previousInteractionId;
+
+  /// Whether to store the interaction for later retrieval.
+  final bool? store;
+
+  /// Optional system instruction for the interaction.
+  final String? systemInstruction;
+
+  /// Optional list of tool declarations (maps or serialized [Tool] payloads).
+  final List<Map<String, dynamic>>? tools;
+
+  /// Creates a [CreateInteractionEvent].
+  const CreateInteractionEvent({
+    this.eventType = 'interaction.create',
+    this.model,
+    this.previousInteractionId,
+    this.store,
+    this.systemInstruction,
+    this.tools,
+  });
+
+  /// Creates a [CreateInteractionEvent] from a JSON map.
+  factory CreateInteractionEvent.fromJson(Map<String, dynamic> json) {
+    final rawTools = json['tools'];
+    return CreateInteractionEvent(
+      eventType:
+          (json['event_type'] ?? json['eventType']) as String? ??
+          'interaction.create',
+      model: json['model'] as String?,
+      previousInteractionId:
+          (json['previous_interaction_id'] ?? json['previousInteractionId'])
+              as String?,
+      store: json['store'] as bool?,
+      systemInstruction:
+          (json['system_instruction'] ?? json['systemInstruction']) as String?,
+      tools: rawTools is List
+          ? rawTools
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
+          : null,
+    );
+  }
+
+  /// Serializes this [CreateInteractionEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (model != null) 'model': model,
+    if (previousInteractionId != null)
+      'previous_interaction_id': previousInteractionId,
+    if (store != null) 'store': store,
+    if (systemInstruction != null) 'system_instruction': systemInstruction,
+    if (tools != null) 'tools': tools,
+  };
+}
+
+/// Client wire event that reconnects to an existing Live Interaction.
+class ConnectInteractionEvent {
+  /// Fixed wire event discriminator (`'interaction.connect'`).
+  final String eventType;
+
+  /// Existing interaction identifier to reconnect to.
+  final String? id;
+
+  /// Whether the client intends to disconnect while the server keeps running.
+  final bool? background;
+
+  /// Creates a [ConnectInteractionEvent].
+  const ConnectInteractionEvent({
+    this.eventType = 'interaction.connect',
+    this.id,
+    this.background,
+  });
+
+  /// Creates a [ConnectInteractionEvent] from a JSON map.
+  factory ConnectInteractionEvent.fromJson(Map<String, dynamic> json) =>
+      ConnectInteractionEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.connect',
+        id: json['id'] as String?,
+        background: json['background'] as bool?,
+      );
+
+  /// Serializes this [ConnectInteractionEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (id != null) 'id': id,
+    if (background != null) 'background': background,
+  };
+}
+
+/// Client wire event that half-closes input while awaiting remaining output.
+class CompleteInteractionEvent {
+  /// Fixed wire event discriminator (`'interaction.complete'`).
+  final String eventType;
+
+  /// Creates a [CompleteInteractionEvent].
+  const CompleteInteractionEvent({this.eventType = 'interaction.complete'});
+
+  /// Creates a [CompleteInteractionEvent] from a JSON map.
+  factory CompleteInteractionEvent.fromJson(Map<String, dynamic> json) =>
+      CompleteInteractionEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.complete',
+      );
+
+  /// Serializes this [CompleteInteractionEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{'event_type': eventType};
+}
+
+/// Client wire event that permanently aborts an in-flight Live Interaction.
+class CancelInteractionEvent {
+  /// Fixed wire event discriminator (`'interaction.cancel'`).
+  final String eventType;
+
+  /// Creates a [CancelInteractionEvent].
+  const CancelInteractionEvent({this.eventType = 'interaction.cancel'});
+
+  /// Creates a [CancelInteractionEvent] from a JSON map.
+  factory CancelInteractionEvent.fromJson(Map<String, dynamic> json) =>
+      CancelInteractionEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.cancel',
+      );
+
+  /// Serializes this [CancelInteractionEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{'event_type': eventType};
+}
+
+/// Client wire event requesting graceful disconnection without ending the
+/// interaction.
+class DisconnectEvent {
+  /// Fixed wire event discriminator (`'interaction.disconnect'`).
+  final String eventType;
+
+  /// Creates a [DisconnectEvent].
+  const DisconnectEvent({this.eventType = 'interaction.disconnect'});
+
+  /// Creates a [DisconnectEvent] from a JSON map.
+  factory DisconnectEvent.fromJson(Map<String, dynamic> json) =>
+      DisconnectEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.disconnect',
+      );
+
+  /// Serializes this [DisconnectEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{'event_type': eventType};
+}
+
+/// Server wire event confirming that a new Live Interaction was created.
+class LiveInteractionCreatedEvent {
+  /// Fixed wire event discriminator (`'interaction.created'`).
+  final String eventType;
+
+  /// Identifier of the newly created interaction.
+  final String? interactionId;
+
+  /// Creates a [LiveInteractionCreatedEvent].
+  const LiveInteractionCreatedEvent({
+    this.eventType = 'interaction.created',
+    this.interactionId,
+  });
+
+  /// Creates a [LiveInteractionCreatedEvent] from a JSON map.
+  factory LiveInteractionCreatedEvent.fromJson(Map<String, dynamic> json) =>
+      LiveInteractionCreatedEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.created',
+        interactionId:
+            (json['interaction_id'] ?? json['interactionId']) as String?,
+      );
+
+  /// Serializes this [LiveInteractionCreatedEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (interactionId != null) 'interaction_id': interactionId,
+  };
+}
+
+/// Server wire event confirming reconnection to an existing Live Interaction.
+class InteractionConnectedEvent {
+  /// Fixed wire event discriminator (`'interaction.connected'`).
+  final String eventType;
+
+  /// Creates an [InteractionConnectedEvent].
+  const InteractionConnectedEvent({this.eventType = 'interaction.connected'});
+
+  /// Creates an [InteractionConnectedEvent] from a JSON map.
+  factory InteractionConnectedEvent.fromJson(Map<String, dynamic> json) =>
+      InteractionConnectedEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.connected',
+      );
+
+  /// Serializes this [InteractionConnectedEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{'event_type': eventType};
+}
+
+/// Server wire event signaling that a Live Interaction completed.
+class LiveInteractionCompletedEvent {
+  /// Fixed wire event discriminator (`'interaction.completed'`).
+  final String eventType;
+
+  /// Optional ISO 8601 creation timestamp.
+  final String? created;
+
+  /// Optional ISO 8601 last-update timestamp.
+  final String? updated;
+
+  /// Optional RPC status payload describing terminal status or error details.
+  final Map<String, dynamic>? status;
+
+  /// Optional token usage statistics payload.
+  final Map<String, dynamic>? usage;
+
+  /// Creates a [LiveInteractionCompletedEvent].
+  const LiveInteractionCompletedEvent({
+    this.eventType = 'interaction.completed',
+    this.created,
+    this.updated,
+    this.status,
+    this.usage,
+  });
+
+  /// Creates a [LiveInteractionCompletedEvent] from a JSON map.
+  factory LiveInteractionCompletedEvent.fromJson(Map<String, dynamic> json) =>
+      LiveInteractionCompletedEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.completed',
+        created: json['created'] as String?,
+        updated: json['updated'] as String?,
+        status: json['status'] is Map
+            ? Map<String, dynamic>.from(json['status'] as Map)
+            : null,
+        usage: json['usage'] is Map
+            ? Map<String, dynamic>.from(json['usage'] as Map)
+            : null,
+      );
+
+  /// Serializes this [LiveInteractionCompletedEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (created != null) 'created': created,
+    if (updated != null) 'updated': updated,
+    if (status != null) 'status': status,
+    if (usage != null) 'usage': usage,
+  };
+}
+
+/// Server wire event signaling that a Live Interaction was cancelled.
+class InteractionCancelledEvent {
+  /// Fixed wire event discriminator (`'interaction.cancelled'`).
+  final String eventType;
+
+  /// Optional token usage statistics payload.
+  final Map<String, dynamic>? usage;
+
+  /// Creates an [InteractionCancelledEvent].
+  const InteractionCancelledEvent({
+    this.eventType = 'interaction.cancelled',
+    this.usage,
+  });
+
+  /// Creates an [InteractionCancelledEvent] from a JSON map.
+  factory InteractionCancelledEvent.fromJson(Map<String, dynamic> json) =>
+      InteractionCancelledEvent(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'interaction.cancelled',
+        usage: json['usage'] is Map
+            ? Map<String, dynamic>.from(json['usage'] as Map)
+            : null,
+      );
+
+  /// Serializes this [InteractionCancelledEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (usage != null) 'usage': usage,
+  };
+}
+
+/// Text prompt describing a simulated world for [WorldSetupEvent].
+class WorldPromptContent {
+  /// Required text content describing the world to simulate.
+  final String text;
+
+  /// Creates a [WorldPromptContent].
+  const WorldPromptContent({required this.text});
+
+  /// Creates a [WorldPromptContent] from a JSON map.
+  factory WorldPromptContent.fromJson(Map<String, dynamic> json) =>
+      WorldPromptContent(text: json['text'] as String);
+
+  /// Serializes this [WorldPromptContent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{'text': text};
+}
+
+/// Reference image initializing the first frame of a [WorldSetupEvent].
+class WorldReferenceImage {
+  /// Optional base64-encoded image bytes.
+  final String? data;
+
+  /// Optional image MIME type (for example, `'image/jpeg'` or `'image/png'`).
+  final String? mimeType;
+
+  /// Optional URI referencing the image.
+  final String? uri;
+
+  /// Creates a [WorldReferenceImage].
+  const WorldReferenceImage({this.data, this.mimeType, this.uri});
+
+  /// Creates a [WorldReferenceImage] from a JSON map.
+  factory WorldReferenceImage.fromJson(Map<String, dynamic> json) =>
+      WorldReferenceImage(
+        data: json['data'] as String?,
+        mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
+        uri: json['uri'] as String?,
+      );
+
+  /// Serializes this [WorldReferenceImage] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (data != null) 'data': data,
+    if (mimeType != null) 'mime_type': mimeType,
+    if (uri != null) 'uri': uri,
+  };
+}
+
+/// World setup configuration sent after [CreateInteractionEvent] for
+/// world-simulation models.
+class WorldSetupEvent {
+  /// Fixed wire event discriminator (`'world_setup'`).
+  final String eventType;
+
+  /// Optional reference image for the initial world frame.
+  final WorldReferenceImage? referenceImage;
+
+  /// Optional text prompt describing the world (`String` or
+  /// [WorldPromptContent]).
+  final Object? worldPrompt;
+
+  /// Creates a [WorldSetupEvent].
+  const WorldSetupEvent({
+    this.eventType = 'world_setup',
+    this.referenceImage,
+    this.worldPrompt,
+  });
+
+  /// Creates a [WorldSetupEvent] from a JSON map.
+  factory WorldSetupEvent.fromJson(Map<String, dynamic> json) {
+    final rawRef = json['reference_image'] ?? json['referenceImage'];
+    final rawPrompt = json['world_prompt'] ?? json['worldPrompt'];
+    return WorldSetupEvent(
+      eventType:
+          (json['event_type'] ?? json['eventType']) as String? ?? 'world_setup',
+      referenceImage: rawRef is Map
+          ? WorldReferenceImage.fromJson(Map<String, dynamic>.from(rawRef))
+          : null,
+      worldPrompt: rawPrompt is Map
+          ? WorldPromptContent.fromJson(Map<String, dynamic>.from(rawPrompt))
+          : rawPrompt,
+    );
+  }
+
+  /// Serializes this [WorldSetupEvent] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (referenceImage != null) 'reference_image': referenceImage!.toJson(),
+    if (worldPrompt != null)
+      'world_prompt': worldPrompt is WorldPromptContent
+          ? (worldPrompt! as WorldPromptContent).toJson()
+          : worldPrompt,
+  };
+}
+
+/// Interactive action types for [UserActionInput].
+abstract final class UserActionType {
+  /// Key press down (`'key_down'`).
+  static const String keyDown = 'key_down';
+
+  /// Key release (`'key_up'`).
+  static const String keyUp = 'key_up';
+
+  /// Discrete key press and release (`'key_click'`).
+  static const String keyClick = 'key_click';
+}
+
+/// Interactive keyboard targets for [UserActionInput].
+abstract final class UserActionKey {
+  /// Down arrow key (`'arrow_down'`).
+  static const String arrowDown = 'arrow_down';
+
+  /// Left arrow key (`'arrow_left'`).
+  static const String arrowLeft = 'arrow_left';
+
+  /// Right arrow key (`'arrow_right'`).
+  static const String arrowRight = 'arrow_right';
+
+  /// Up arrow key (`'arrow_up'`).
+  static const String arrowUp = 'arrow_up';
+
+  /// Letter A key (`'key_a'`).
+  static const String keyA = 'key_a';
+
+  /// Letter D key (`'key_d'`).
+  static const String keyD = 'key_d';
+
+  /// Letter E key (`'key_e'`).
+  static const String keyE = 'key_e';
+
+  /// Letter S key (`'key_s'`).
+  static const String keyS = 'key_s';
+
+  /// Letter W key (`'key_w'`).
+  static const String keyW = 'key_w';
+
+  /// Spacebar key (`'space'`).
+  static const String space = 'space';
+}
+
+/// Interactive client user action event for world simulation and interactive
+/// media sessions.
+class UserActionInput {
+  /// Fixed wire event discriminator (`'user_action'`).
+  final String eventType;
+
+  /// Optional action type (`'key_down'`, `'key_up'`, `'key_click'`).
+  final String? action;
+
+  /// Optional target key identifier (see [UserActionKey]).
+  final String? input;
+
+  /// Creates a [UserActionInput] event.
+  const UserActionInput({
+    this.eventType = 'user_action',
+    this.action,
+    this.input,
+  });
+
+  /// Creates a [UserActionInput] from a JSON map.
+  factory UserActionInput.fromJson(Map<String, dynamic> json) =>
+      UserActionInput(
+        eventType:
+            (json['event_type'] ?? json['eventType']) as String? ??
+            'user_action',
+        action: json['action'] as String?,
+        input: json['input'] as String?,
+      );
+
+  /// Serializes this [UserActionInput] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'event_type': eventType,
+    if (action != null) 'action': action,
+    if (input != null) 'input': input,
+  };
+}

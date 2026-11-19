@@ -85,6 +85,16 @@ class Part {
   @JsonKey(name: 'speech_metadata')
   final SpeechMetadata? speechMetadata;
 
+  /// Document preprocessing metadata for document [inlineData] or [fileData].
+  final DocumentMetadata? documentMetadata;
+
+  /// Spreadsheet preprocessing metadata for spreadsheet [inlineData] or
+  /// [fileData].
+  final SpreadsheetMetadata? spreadsheetMetadata;
+
+  /// Audio preprocessing metadata for audio [inlineData] or [fileData].
+  final AudioMetadata? audioMetadata;
+
   Part({
     this.mediaResolution,
     this.text,
@@ -103,6 +113,9 @@ class Part {
     this.audioTranscription,
     this.mediaProcessing,
     this.speechMetadata,
+    this.documentMetadata,
+    this.spreadsheetMetadata,
+    this.audioMetadata,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) {
@@ -136,6 +149,15 @@ class Part {
       if (!json.containsKey('mediaProcessing') &&
           json.containsKey('media_processing'))
         'mediaProcessing': json['media_processing'],
+      if (!json.containsKey('documentMetadata') &&
+          json.containsKey('document_metadata'))
+        'documentMetadata': json['document_metadata'],
+      if (!json.containsKey('spreadsheetMetadata') &&
+          json.containsKey('spreadsheet_metadata'))
+        'spreadsheetMetadata': json['spreadsheet_metadata'],
+      if (!json.containsKey('audioMetadata') &&
+          json.containsKey('audio_metadata'))
+        'audioMetadata': json['audio_metadata'],
     };
     return _$PartFromJson(normalized);
   }
@@ -202,16 +224,169 @@ class FileData {
 /// Additional video metadata attached to inline or URI-based media.
 @JsonSerializable(includeIfNull: false, fieldRename: FieldRename.snake)
 class VideoMetadata {
+  /// Optional start offset of the video (for example, `'10.5s'`).
   final String? startOffset;
+
+  /// Optional end offset of the video (for example, `'30s'`).
   final String? endOffset;
+
+  /// Optional frame rate of the video sent to the model in `(0.0, 24.0]`.
   final double? fps;
 
-  VideoMetadata({this.startOffset, this.endOffset, this.fps});
+  /// Optional content layers to extract from the video.
+  ///
+  /// When empty, defaults to `[FRAMES, AUDIO]`.
+  final List<VideoMetadataContentLayer>? contentLayers;
 
+  /// Creates [VideoMetadata] for video preprocessing.
+  VideoMetadata({
+    this.startOffset,
+    this.endOffset,
+    this.fps,
+    this.contentLayers,
+  });
+
+  /// Creates [VideoMetadata] from a JSON map.
   factory VideoMetadata.fromJson(Map<String, dynamic> json) =>
-      _$VideoMetadataFromJson(json);
+      _$VideoMetadataFromJson({
+        ...json,
+        if (!json.containsKey('start_offset') &&
+            json.containsKey('startOffset'))
+          'start_offset': json['startOffset'],
+        if (!json.containsKey('end_offset') && json.containsKey('endOffset'))
+          'end_offset': json['endOffset'],
+        if (!json.containsKey('content_layers') &&
+            json.containsKey('contentLayers'))
+          'content_layers': json['contentLayers'],
+      });
 
+  /// Serializes this [VideoMetadata] to a JSON map.
   Map<String, dynamic> toJson() => _$VideoMetadataToJson(this);
+}
+
+/// Metadata configuring static document preprocessing on [Part] or
+/// [FunctionResponsePart].
+class DocumentMetadata {
+  /// Optional 1-indexed inclusive start page.
+  final int? startPage;
+
+  /// Optional 1-indexed inclusive end page.
+  final int? endPage;
+
+  /// Content layers to return (defaults to `[PAGE_IMAGE]` when empty).
+  final List<DocumentMetadataContentLayer>? contentLayers;
+
+  /// Creates [DocumentMetadata] for document preprocessing.
+  const DocumentMetadata({this.startPage, this.endPage, this.contentLayers});
+
+  /// Creates [DocumentMetadata] from a JSON map.
+  factory DocumentMetadata.fromJson(Map<String, dynamic> json) {
+    final rawStart = json['start_page'] ?? json['startPage'];
+    final rawEnd = json['end_page'] ?? json['endPage'];
+    final rawLayers = json['content_layers'] ?? json['contentLayers'];
+    return DocumentMetadata(
+      startPage: rawStart is num ? rawStart.toInt() : null,
+      endPage: rawEnd is num ? rawEnd.toInt() : null,
+      contentLayers: rawLayers is List
+          ? rawLayers
+                .map(
+                  (e) => e is DocumentMetadataContentLayer
+                      ? e
+                      : DocumentMetadataContentLayer.values.firstWhere(
+                          (v) => v.name == e.toString().toUpperCase(),
+                          orElse: () => DocumentMetadataContentLayer
+                              .CONTENT_LAYER_UNSPECIFIED,
+                        ),
+                )
+                .toList()
+          : null,
+    );
+  }
+
+  /// Serializes this [DocumentMetadata] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (startPage != null) 'start_page': startPage,
+    if (endPage != null) 'end_page': endPage,
+    if (contentLayers != null)
+      'content_layers': contentLayers!.map((e) => e.name).toList(),
+  };
+}
+
+/// Metadata configuring static spreadsheet preprocessing on [Part] or
+/// [FunctionResponsePart].
+class SpreadsheetMetadata {
+  /// Range of cells to extract in A1 notation (for example, `'A1:D10'`).
+  final String? visibleCells;
+
+  /// 1-indexed index of the sheet to extract in workbook order.
+  final int? sheetIndex;
+
+  /// Content layers to return (defaults to `[DATA, FORMULAS]` when empty).
+  final List<SpreadsheetMetadataContentLayer>? contentLayers;
+
+  /// Creates [SpreadsheetMetadata] for spreadsheet preprocessing.
+  const SpreadsheetMetadata({
+    this.visibleCells,
+    this.sheetIndex,
+    this.contentLayers,
+  });
+
+  /// Creates [SpreadsheetMetadata] from a JSON map.
+  factory SpreadsheetMetadata.fromJson(Map<String, dynamic> json) {
+    final rawSheet = json['sheet_index'] ?? json['sheetIndex'];
+    final rawLayers = json['content_layers'] ?? json['contentLayers'];
+    return SpreadsheetMetadata(
+      visibleCells:
+          (json['visible_cells'] ?? json['visibleCells']) as String?,
+      sheetIndex: rawSheet is num ? rawSheet.toInt() : null,
+      contentLayers: rawLayers is List
+          ? rawLayers
+                .map(
+                  (e) => e is SpreadsheetMetadataContentLayer
+                      ? e
+                      : SpreadsheetMetadataContentLayer.values.firstWhere(
+                          (v) => v.name == e.toString().toUpperCase(),
+                          orElse: () => SpreadsheetMetadataContentLayer
+                              .CONTENT_LAYER_UNSPECIFIED,
+                        ),
+                )
+                .toList()
+          : null,
+    );
+  }
+
+  /// Serializes this [SpreadsheetMetadata] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (visibleCells != null) 'visible_cells': visibleCells,
+    if (sheetIndex != null) 'sheet_index': sheetIndex,
+    if (contentLayers != null)
+      'content_layers': contentLayers!.map((e) => e.name).toList(),
+  };
+}
+
+/// Metadata configuring static audio preprocessing on [Part] or
+/// [FunctionResponsePart].
+class AudioMetadata {
+  /// Start offset of the audio relative to the start of the stream.
+  final String? startOffset;
+
+  /// End offset of the audio relative to the start of the stream.
+  final String? endOffset;
+
+  /// Creates [AudioMetadata] for audio preprocessing.
+  const AudioMetadata({this.startOffset, this.endOffset});
+
+  /// Creates [AudioMetadata] from a JSON map.
+  factory AudioMetadata.fromJson(Map<String, dynamic> json) => AudioMetadata(
+    startOffset: (json['start_offset'] ?? json['startOffset']) as String?,
+    endOffset: (json['end_offset'] ?? json['endOffset']) as String?,
+  );
+
+  /// Serializes this [AudioMetadata] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (startOffset != null) 'start_offset': startOffset,
+    if (endOffset != null) 'end_offset': endOffset,
+  };
 }
 
 /// Input media tokenization hints attached to a part.

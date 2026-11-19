@@ -1,3 +1,18 @@
+## 2026.11.19
+
+### Added & Fixed (Upstream Parity with `js-genai` 3.6.1 & `python-genai` 3.6.1)
+- **Gemini 4 Neon Model Identifier (`InteractionModels.gemini4Neon`)**:
+  - Added `InteractionModels.gemini4Neon` (`'gemini-4-neon'`) for frontier-level intelligence with fast end-to-end task completion across complex software engineering, analytical, and science workflows.
+- **Public File Processing Metadata on `Part` & `FunctionResponsePart` (`DocumentMetadata`, `SpreadsheetMetadata`, `AudioMetadata`, `VideoMetadata.contentLayers`)**:
+  - Added `DocumentMetadata` (`DocumentMetadataContentLayer`: `PAGE_IMAGE`, `PAGE_TEXT`), `SpreadsheetMetadata` (`SpreadsheetMetadataContentLayer`: `DATA`, `FORMULAS`, `VISUAL`), `AudioMetadata`, and `VideoMetadata.contentLayers` (`VideoMetadataContentLayer`: `FRAMES`, `AUDIO`, `TRANSCRIPT`).
+  - Wired `documentMetadata`, `spreadsheetMetadata`, and `audioMetadata` on `Part`, and `mediaResolution`, `videoMetadata`, `documentMetadata`, `spreadsheetMetadata`, and `audioMetadata` on `FunctionResponsePart` (including `fromBytes` and `fromUri`).
+- **Live Interactions Auth Tokens, Wire Events & Deferred MCP Tool Loading**:
+  - Added `AuthTokensService.createForInteraction()` (`POST /{api_version}/interactions/{id}/auth_tokens`) and `AuthTokensService.deleteForInteraction()` (`DELETE /{api_version}/interactions/{id}/auth_tokens/{token}`), along with `InteractionAuthToken` and `InteractionAuthTokenCreateParams`.
+  - Added Live Interactions & World Simulation event models (`CreateInteractionEvent`, `ConnectInteractionEvent`, `CompleteInteractionEvent`, `CancelInteractionEvent`, `DisconnectEvent`, `LiveInteractionCreatedEvent`, `InteractionConnectedEvent`, `LiveInteractionCompletedEvent`, `InteractionCancelledEvent`, `WorldPromptContent`, `WorldReferenceImage`, `WorldSetupEvent`, `UserActionType`, `UserActionKey`, `UserActionInput`).
+  - Added `McpServer.deferLoading` (`defer_loading` / `deferLoading`) for deferred MCP tool loading.
+- **SDK Client Telemetry Alignment (`3.6.1`)**:
+  - Updated `google-genai-sdk` telemetry headers across `ApiClient`, `LiveService`, and `LiveMusicService` to `3.6.1`.
+
 ## 2026.11.16
 
 ### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)

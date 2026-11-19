@@ -409,9 +409,9 @@ void main() {
         expect(seenHeaders['x-goog-api-key'], 'plain-key');
         expect(
           seenHeaders['x-goog-api-client'],
-          'google-genai-sdk/3.3.0 dart/9.9',
+          'google-genai-sdk/3.6.1 dart/9.9',
         );
-        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.3.0 dart/9.9');
+        expect(seenHeaders['user-agent'], 'google-genai-sdk/3.6.1 dart/9.9');
 
         final sentSetup =
             jsonDecode(channel.sentMessages.single as String)
@@ -2337,7 +2337,7 @@ void main() {
           ['x-goog-api-client'],
         );
         expect(mixedHeaders['user-agent'], contains('first/1 second/2'));
-        expect(mixedHeaders['user-agent'], contains('google-genai-sdk/3.3.0'));
+        expect(mixedHeaders['user-agent'], contains('google-genai-sdk/3.6.1'));
         expect(
           'first/1'.allMatches(mixedHeaders['user-agent']!).length,
           1,
@@ -2669,6 +2669,301 @@ void main() {
           'property_ordering': ['value', 'next'],
         });
         expect(() => jsonEncode(nullableSelfRefSchema), returnsNormally);
+      },
+    );
+
+    test(
+      'Upstream v3.4.0..v3.6.1 parity: gemini-4-neon, file processing metadata on Part & FunctionResponsePart, McpServer.deferLoading, and Live Interactions auth tokens & events',
+      () async {
+        // 1. InteractionModels.gemini4Neon
+        expect(InteractionModels.gemini4Neon, 'gemini-4-neon');
+
+        // 2. DocumentMetadata, SpreadsheetMetadata, AudioMetadata, and VideoMetadata.contentLayers on Part
+        final mediaPart = Part(
+          fileData: FileData(
+            fileUri: 'gs://bucket/report.pdf',
+            mimeType: DocumentMimeTypes.pdf,
+          ),
+          videoMetadata: VideoMetadata(
+            startOffset: '2s',
+            endOffset: '12s',
+            fps: 1.5,
+            contentLayers: const [
+              VideoMetadataContentLayer.FRAMES,
+              VideoMetadataContentLayer.AUDIO,
+              VideoMetadataContentLayer.TRANSCRIPT,
+            ],
+          ),
+          documentMetadata: const DocumentMetadata(
+            startPage: 1,
+            endPage: 4,
+            contentLayers: [
+              DocumentMetadataContentLayer.PAGE_IMAGE,
+              DocumentMetadataContentLayer.PAGE_TEXT,
+            ],
+          ),
+          spreadsheetMetadata: const SpreadsheetMetadata(
+            visibleCells: 'A1:F20',
+            sheetIndex: 2,
+            contentLayers: [
+              SpreadsheetMetadataContentLayer.DATA,
+              SpreadsheetMetadataContentLayer.FORMULAS,
+              SpreadsheetMetadataContentLayer.VISUAL,
+            ],
+          ),
+          audioMetadata: const AudioMetadata(
+            startOffset: '0s',
+            endOffset: '45.5s',
+          ),
+        );
+        final reparsedPart = Part.fromJson(
+          jsonDecode(jsonEncode(mediaPart.toJson())) as Map<String, dynamic>,
+        );
+        expect(reparsedPart.videoMetadata?.contentLayers, [
+          VideoMetadataContentLayer.FRAMES,
+          VideoMetadataContentLayer.AUDIO,
+          VideoMetadataContentLayer.TRANSCRIPT,
+        ]);
+        expect(reparsedPart.documentMetadata?.startPage, 1);
+        expect(reparsedPart.documentMetadata?.endPage, 4);
+        expect(reparsedPart.documentMetadata?.contentLayers, [
+          DocumentMetadataContentLayer.PAGE_IMAGE,
+          DocumentMetadataContentLayer.PAGE_TEXT,
+        ]);
+        expect(reparsedPart.spreadsheetMetadata?.visibleCells, 'A1:F20');
+        expect(reparsedPart.spreadsheetMetadata?.sheetIndex, 2);
+        expect(reparsedPart.spreadsheetMetadata?.contentLayers, [
+          SpreadsheetMetadataContentLayer.DATA,
+          SpreadsheetMetadataContentLayer.FORMULAS,
+          SpreadsheetMetadataContentLayer.VISUAL,
+        ]);
+        expect(reparsedPart.audioMetadata?.startOffset, '0s');
+        expect(reparsedPart.audioMetadata?.endOffset, '45.5s');
+
+        // Snake-case normalization on Part.fromJson
+        final snakePart = Part.fromJson(const {
+          'document_metadata': {
+            'start_page': 2,
+            'end_page': 3,
+            'content_layers': ['PAGE_TEXT'],
+          },
+          'spreadsheet_metadata': {
+            'visible_cells': 'B2:D5',
+            'sheet_index': 1,
+            'content_layers': ['DATA'],
+          },
+          'audio_metadata': {'start_offset': '5s', 'end_offset': '15s'},
+        });
+        expect(snakePart.documentMetadata?.startPage, 2);
+        expect(snakePart.spreadsheetMetadata?.visibleCells, 'B2:D5');
+        expect(snakePart.audioMetadata?.endOffset, '15s');
+
+        // 3. FunctionResponsePart mediaResolution & file processing metadata
+        final fnRespPart = FunctionResponsePart.fromUri(
+          fileUri: 'gs://bucket/deck.pdf',
+          displayName: 'deck.pdf',
+          mediaResolution: PartMediaResolution(
+            level: PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH,
+            numTokens: 512,
+          ),
+          documentMetadata: const DocumentMetadata(
+            startPage: 1,
+            endPage: 2,
+            contentLayers: [DocumentMetadataContentLayer.PAGE_IMAGE],
+          ),
+          spreadsheetMetadata: const SpreadsheetMetadata(
+            visibleCells: 'A1:C10',
+            sheetIndex: 1,
+          ),
+          audioMetadata: const AudioMetadata(
+            startOffset: '1s',
+            endOffset: '9s',
+          ),
+          videoMetadata: VideoMetadata(
+            fps: 2.0,
+            contentLayers: const [VideoMetadataContentLayer.FRAMES],
+          ),
+        );
+        final reparsedFnPart = FunctionResponsePart.fromJson(
+          jsonDecode(jsonEncode(fnRespPart.toJson())) as Map<String, dynamic>,
+        );
+        expect(
+          reparsedFnPart.mediaResolution?.level,
+          PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH,
+        );
+        expect(reparsedFnPart.documentMetadata?.endPage, 2);
+        expect(reparsedFnPart.spreadsheetMetadata?.visibleCells, 'A1:C10');
+        expect(reparsedFnPart.audioMetadata?.endOffset, '9s');
+        expect(reparsedFnPart.videoMetadata?.contentLayers, [
+          VideoMetadataContentLayer.FRAMES,
+        ]);
+
+        // 4. McpServer.deferLoading
+        const mcpServer = McpServer(
+          name: 'warehouse-tools',
+          streamableHttpTransport: StreamableHttpTransport(
+            url: 'https://mcp.example.com',
+          ),
+          deferLoading: true,
+        );
+        final reparsedMcp = McpServer.fromJson(mcpServer.toJson());
+        expect(reparsedMcp.deferLoading, isTrue);
+        expect(
+          McpServer.fromJson(const {
+            'name': 'camel-mcp',
+            'deferLoading': true,
+          }).deferLoading,
+          isTrue,
+        );
+
+        // 5. AuthTokensService.createForInteraction & deleteForInteraction
+        final recordedRequests = <RecordedRequest>[];
+        final recorder = RecordingHttpClient(
+          responder: (request) async {
+            recordedRequests.add(request);
+            if (request.method == 'POST') {
+              return http.Response(
+                jsonEncode({
+                  'auth_token': 'int-token-123',
+                  'expires_at': '2026-11-19T15:00:00Z',
+                }),
+                200,
+                headers: const {'content-type': 'application/json'},
+              );
+            }
+            return http.Response('', 200);
+          },
+        );
+        final genAI = GoogleGenAI(
+          apiKey: 'test-api-key',
+          httpClient: recorder,
+          httpOptions: const HttpOptions(
+            apiVersion: 'v1beta',
+            baseUrl: 'https://example.googleapis.com',
+          ),
+        );
+        final token = await genAI.authTokens.createForInteraction(
+          'interaction-42',
+          params: const InteractionAuthTokenCreateParams(
+            expireTime: '2026-11-19T15:00:00Z',
+          ),
+        );
+        expect(token.authToken, 'int-token-123');
+        expect(token.expiresAt, '2026-11-19T15:00:00Z');
+        expect(
+          recordedRequests.first.uri.toString(),
+          'https://example.googleapis.com/v1beta/interactions/interaction-42/auth_tokens?key=test-api-key',
+        );
+        expect(
+          jsonDecode(recordedRequests.first.body),
+          {'expire_time': '2026-11-19T15:00:00Z'},
+        );
+
+        await genAI.authTokens.deleteForInteraction(
+          'interaction-42',
+          'int-token-123',
+        );
+        expect(recordedRequests.last.method, 'DELETE');
+        expect(
+          recordedRequests.last.uri.toString(),
+          'https://example.googleapis.com/v1beta/interactions/interaction-42/auth_tokens/int-token-123?key=test-api-key',
+        );
+        genAI.close();
+
+        // 6. Live Interactions & World Simulation event round-trips
+        const createEvent = CreateInteractionEvent(
+          model: InteractionModels.gemini4Neon,
+          store: true,
+          systemInstruction: 'Be concise.',
+        );
+        expect(CreateInteractionEvent.fromJson(createEvent.toJson()).toJson(), {
+          'event_type': 'interaction.create',
+          'model': 'gemini-4-neon',
+          'store': true,
+          'system_instruction': 'Be concise.',
+        });
+
+        const connectEvent = ConnectInteractionEvent(
+          id: 'int-1',
+          background: true,
+        );
+        expect(
+          ConnectInteractionEvent.fromJson(connectEvent.toJson()).toJson(),
+          {
+            'event_type': 'interaction.connect',
+            'id': 'int-1',
+            'background': true,
+          },
+        );
+        expect(
+          CompleteInteractionEvent.fromJson(
+            const CompleteInteractionEvent().toJson(),
+          ).eventType,
+          'interaction.complete',
+        );
+        expect(
+          CancelInteractionEvent.fromJson(
+            const CancelInteractionEvent().toJson(),
+          ).eventType,
+          'interaction.cancel',
+        );
+        expect(
+          DisconnectEvent.fromJson(const DisconnectEvent().toJson()).eventType,
+          'interaction.disconnect',
+        );
+        expect(
+          LiveInteractionCreatedEvent.fromJson(
+            const LiveInteractionCreatedEvent(interactionId: 'int-1').toJson(),
+          ).interactionId,
+          'int-1',
+        );
+        expect(
+          InteractionConnectedEvent.fromJson(
+            const InteractionConnectedEvent().toJson(),
+          ).eventType,
+          'interaction.connected',
+        );
+        expect(
+          LiveInteractionCompletedEvent.fromJson(
+            const LiveInteractionCompletedEvent(
+              created: '2026-11-19T12:00:00Z',
+              usage: {'total_tokens': 100},
+            ).toJson(),
+          ).usage?['total_tokens'],
+          100,
+        );
+        expect(
+          InteractionCancelledEvent.fromJson(
+            const InteractionCancelledEvent(usage: {'total_tokens': 5}).toJson(),
+          ).usage?['total_tokens'],
+          5,
+        );
+
+        const worldSetup = WorldSetupEvent(
+          worldPrompt: WorldPromptContent(text: 'A sunlit coastal village'),
+          referenceImage: WorldReferenceImage(
+            uri: 'gs://bucket/start.png',
+            mimeType: 'image/png',
+          ),
+        );
+        expect(WorldSetupEvent.fromJson(worldSetup.toJson()).toJson(), {
+          'event_type': 'world_setup',
+          'reference_image': {
+            'mime_type': 'image/png',
+            'uri': 'gs://bucket/start.png',
+          },
+          'world_prompt': {'text': 'A sunlit coastal village'},
+        });
+
+        const actionInput = UserActionInput(
+          action: UserActionType.keyDown,
+          input: UserActionKey.keyW,
+        );
+        expect(UserActionInput.fromJson(actionInput.toJson()).toJson(), {
+          'event_type': 'user_action',
+          'action': 'key_down',
+          'input': 'key_w',
+        });
       },
     );
   });

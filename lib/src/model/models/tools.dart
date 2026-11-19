@@ -165,11 +165,31 @@ class FunctionResponsePart {
   /// MIME type). Non-video parts ignore this field.
   final MediaProcessing? mediaProcessing;
 
+  /// Optional media tokenization resolution for the input media.
+  final PartMediaResolution? mediaResolution;
+
+  /// Optional video preprocessing metadata for video parts.
+  final VideoMetadata? videoMetadata;
+
+  /// Optional document preprocessing metadata for document parts.
+  final DocumentMetadata? documentMetadata;
+
+  /// Optional spreadsheet preprocessing metadata for spreadsheet parts.
+  final SpreadsheetMetadata? spreadsheetMetadata;
+
+  /// Optional audio preprocessing metadata for audio parts.
+  final AudioMetadata? audioMetadata;
+
   /// Creates a [FunctionResponsePart].
   FunctionResponsePart({
     this.inlineData,
     this.fileData,
     this.mediaProcessing,
+    this.mediaResolution,
+    this.videoMetadata,
+    this.documentMetadata,
+    this.spreadsheetMetadata,
+    this.audioMetadata,
   });
 
   static final RegExp _filesApiUriPattern = RegExp(
@@ -247,12 +267,18 @@ class FunctionResponsePart {
 
   /// Creates an inline binary [FunctionResponsePart] by base64-encoding [data].
   ///
-  /// Optionally attaches a [displayName] and video [mediaProcessing] mode.
+  /// Optionally attaches a [displayName], video [mediaProcessing] mode,
+  /// [mediaResolution], and static media preprocessing metadata.
   factory FunctionResponsePart.fromBytes({
     required List<int> data,
     required String mimeType,
     String? displayName,
     MediaProcessing? mediaProcessing,
+    PartMediaResolution? mediaResolution,
+    VideoMetadata? videoMetadata,
+    DocumentMetadata? documentMetadata,
+    SpreadsheetMetadata? spreadsheetMetadata,
+    AudioMetadata? audioMetadata,
   }) => FunctionResponsePart(
     inlineData: FunctionResponseBlob.fromBytes(
       bytes: data,
@@ -260,6 +286,11 @@ class FunctionResponsePart {
       displayName: displayName,
     ),
     mediaProcessing: mediaProcessing,
+    mediaResolution: mediaResolution,
+    videoMetadata: videoMetadata,
+    documentMetadata: documentMetadata,
+    spreadsheetMetadata: spreadsheetMetadata,
+    audioMetadata: audioMetadata,
   );
 
   /// Creates a URI-referenced [FunctionResponsePart] pointing to [fileUri].
@@ -275,6 +306,11 @@ class FunctionResponsePart {
     String? mimeType,
     String? displayName,
     MediaProcessing? mediaProcessing,
+    PartMediaResolution? mediaResolution,
+    VideoMetadata? videoMetadata,
+    DocumentMetadata? documentMetadata,
+    SpreadsheetMetadata? spreadsheetMetadata,
+    AudioMetadata? audioMetadata,
   }) {
     var resolvedMimeType = mimeType;
     if (resolvedMimeType == null) {
@@ -294,6 +330,11 @@ class FunctionResponsePart {
         displayName: displayName,
       ),
       mediaProcessing: mediaProcessing,
+      mediaResolution: mediaResolution,
+      videoMetadata: videoMetadata,
+      documentMetadata: documentMetadata,
+      spreadsheetMetadata: spreadsheetMetadata,
+      audioMetadata: audioMetadata,
     );
   }
 
@@ -303,6 +344,14 @@ class FunctionResponsePart {
     final rawFile = json['file_data'] ?? json['fileData'];
     final rawMediaProcessing =
         json['media_processing'] ?? json['mediaProcessing'];
+    final rawMediaResolution =
+        json['media_resolution'] ?? json['mediaResolution'];
+    final rawVideoMetadata = json['video_metadata'] ?? json['videoMetadata'];
+    final rawDocumentMetadata =
+        json['document_metadata'] ?? json['documentMetadata'];
+    final rawSpreadsheetMetadata =
+        json['spreadsheet_metadata'] ?? json['spreadsheetMetadata'];
+    final rawAudioMetadata = json['audio_metadata'] ?? json['audioMetadata'];
     return _$FunctionResponsePartFromJson({
       ...json,
       if (rawInline != null)
@@ -317,6 +366,26 @@ class FunctionResponsePart {
         'media_processing': rawMediaProcessing is MediaProcessing
             ? _$MediaProcessingEnumMap[rawMediaProcessing]
             : rawMediaProcessing,
+      if (rawMediaResolution != null)
+        'media_resolution': rawMediaResolution is PartMediaResolution
+            ? rawMediaResolution.toJson()
+            : rawMediaResolution,
+      if (rawVideoMetadata != null)
+        'video_metadata': rawVideoMetadata is VideoMetadata
+            ? rawVideoMetadata.toJson()
+            : rawVideoMetadata,
+      if (rawDocumentMetadata != null)
+        'document_metadata': rawDocumentMetadata is DocumentMetadata
+            ? rawDocumentMetadata.toJson()
+            : rawDocumentMetadata,
+      if (rawSpreadsheetMetadata != null)
+        'spreadsheet_metadata': rawSpreadsheetMetadata is SpreadsheetMetadata
+            ? rawSpreadsheetMetadata.toJson()
+            : rawSpreadsheetMetadata,
+      if (rawAudioMetadata != null)
+        'audio_metadata': rawAudioMetadata is AudioMetadata
+            ? rawAudioMetadata.toJson()
+            : rawAudioMetadata,
     });
   }
 
@@ -654,7 +723,15 @@ class McpServer {
   /// A transport that can stream HTTP requests and responses.
   final StreamableHttpTransport? streamableHttpTransport;
 
-  const McpServer({this.name, this.streamableHttpTransport});
+  /// Whether loading of tools on this MCP server is deferred until requested
+  /// via [ToolSearch].
+  final bool? deferLoading;
+
+  const McpServer({
+    this.name,
+    this.streamableHttpTransport,
+    this.deferLoading,
+  });
 
   factory McpServer.fromJson(Map<String, dynamic> json) =>
       _$McpServerFromJson({
@@ -662,6 +739,9 @@ class McpServer {
         if (!json.containsKey('streamable_http_transport') &&
             json.containsKey('streamableHttpTransport'))
           'streamable_http_transport': json['streamableHttpTransport'],
+        if (!json.containsKey('defer_loading') &&
+            json.containsKey('deferLoading'))
+          'defer_loading': json['deferLoading'],
       });
 
   Map<String, dynamic> toJson() => _$McpServerToJson(this);

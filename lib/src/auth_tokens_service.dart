@@ -171,6 +171,44 @@ class AuthTokensService {
     return AuthToken.fromJson(response);
   }
 
+  /// Creates a short-lived authentication token bound to a Live Interaction.
+  ///
+  /// Calls `POST /{api_version}/interactions/{interactionId}/auth_tokens`.
+  Future<InteractionAuthToken> createForInteraction(
+    String interactionId, {
+    InteractionAuthTokenCreateParams? params,
+    String? apiVersion,
+    HttpOptions? httpOptions,
+  }) async {
+    final encodedId = Uri.encodeComponent(interactionId);
+    final response = await _apiClient.post(
+      'interactions/$encodedId/auth_tokens',
+      params?.toJson() ?? const <String, dynamic>{},
+      apiVersion: apiVersion,
+      httpOptions: httpOptions,
+    );
+    return InteractionAuthToken.fromJson(response);
+  }
+
+  /// Deletes (revokes) a short-lived authentication token bound to a Live
+  /// Interaction.
+  ///
+  /// Calls `DELETE /{api_version}/interactions/{interactionId}/auth_tokens/{authToken}`.
+  Future<void> deleteForInteraction(
+    String interactionId,
+    String authToken, {
+    String? apiVersion,
+    HttpOptions? httpOptions,
+  }) async {
+    final encodedId = Uri.encodeComponent(interactionId);
+    final encodedToken = Uri.encodeComponent(authToken);
+    await _apiClient.delete(
+      'interactions/$encodedId/auth_tokens/$encodedToken',
+      apiVersion: apiVersion,
+      httpOptions: httpOptions,
+    );
+  }
+
   static Map<String, dynamic> superGenerationJson(GenerationConfig config) {
     return GenerationConfig(
       temperature: config.temperature,
