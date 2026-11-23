@@ -1368,3 +1368,41 @@ class UserActionInput {
     if (input != null) 'input': input,
   };
 }
+
+
+/// Configuration for multi-speaker and speech generation in the Interactions
+/// API, including text normalization control.
+class SpeakerConfig {
+  /// Individual speaker speech configurations.
+  final List<SpeechConfig>? speakers;
+
+  /// Controls text normalization before speech synthesis (`'auto'`,
+  /// `'enabled'`, or `'disabled'`).
+  final String? textNormalization;
+
+  /// Creates a [SpeakerConfig].
+  const SpeakerConfig({this.speakers, this.textNormalization});
+
+  /// Creates a [SpeakerConfig] from a JSON map.
+  factory SpeakerConfig.fromJson(Map<String, dynamic> json) {
+    final rawSpeakers = json['speakers'];
+    final rawNorm = json['text_normalization'] ?? json['textNormalization'];
+    return SpeakerConfig(
+      speakers: rawSpeakers is List
+          ? rawSpeakers
+                .whereType<Map>()
+                .map((e) => SpeechConfig.fromJson(Map<String, dynamic>.from(e)))
+                .toList()
+          : null,
+      textNormalization: rawNorm is TextNormalization
+          ? rawNorm.name.toLowerCase()
+          : rawNorm as String?,
+    );
+  }
+
+  /// Serializes this [SpeakerConfig] to a JSON map.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (speakers != null) 'speakers': speakers!.map((e) => e.toJson()).toList(),
+    if (textNormalization != null) 'text_normalization': textNormalization,
+  };
+}

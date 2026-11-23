@@ -642,15 +642,25 @@ class SpeechConfig {
   /// Optional. Direct voice identifier or name shortcut.
   final String? voice;
 
+  /// Optional. Controls text normalization before speech synthesis.
+  ///
+  /// Supported in the Gemini Developer API; not supported in Vertex AI.
+  final TextNormalization? textNormalization;
+
   SpeechConfig({
     this.voiceConfig,
     this.languageCode,
     this.multiSpeakerVoiceConfig,
     this.voice,
+    this.textNormalization,
   });
 
   /// Convenience constructor for single-voice configuration with a given voice name, custom voice ID, or [GeminiLiveVoice].
-  factory SpeechConfig.fromVoice(Object voiceNameOrId, {String? languageCode}) {
+  factory SpeechConfig.fromVoice(
+    Object voiceNameOrId, {
+    String? languageCode,
+    TextNormalization? textNormalization,
+  }) {
     final name = voiceNameOrId is GeminiLiveVoice
         ? voiceNameOrId.voiceName
         : voiceNameOrId.toString();
@@ -658,18 +668,31 @@ class SpeechConfig {
       voiceConfig: VoiceConfig.fromVoiceName(name),
       voice: name,
       languageCode: languageCode,
+      textNormalization: textNormalization,
     );
   }
 
   /// Convenience constructor for single-voice configuration using a [GeminiLiveVoice] enum.
-  factory SpeechConfig.fromLiveVoice(GeminiLiveVoice voice, {String? languageCode}) =>
-      SpeechConfig.fromVoice(voice.voiceName, languageCode: languageCode);
+  factory SpeechConfig.fromLiveVoice(
+    GeminiLiveVoice voice, {
+    String? languageCode,
+    TextNormalization? textNormalization,
+  }) => SpeechConfig.fromVoice(
+    voice.voiceName,
+    languageCode: languageCode,
+    textNormalization: textNormalization,
+  );
 
   /// Convenience constructor for a prebuilt voice by name.
   factory SpeechConfig.withPrebuiltVoice(
     String voiceName, {
     String? languageCode,
-  }) => SpeechConfig.fromVoice(voiceName, languageCode: languageCode);
+    TextNormalization? textNormalization,
+  }) => SpeechConfig.fromVoice(
+    voiceName,
+    languageCode: languageCode,
+    textNormalization: textNormalization,
+  );
 
   /// Convenience constructor for a natural-language prompted or remixed voice
   /// ([PromptedVoice] with optional [baseVoice]).
@@ -677,20 +700,40 @@ class SpeechConfig {
     required String input,
     String? baseVoice,
     String? languageCode,
+    TextNormalization? textNormalization,
   }) => SpeechConfig(
     voiceConfig: VoiceConfig.fromPromptedVoice(
       input: input,
       baseVoice: baseVoice,
     ),
     languageCode: languageCode,
+    textNormalization: textNormalization,
   );
 
   /// Returns the corresponding [GeminiLiveVoice] enum if matched with a prebuilt voice.
   GeminiLiveVoice? get liveVoice =>
       GeminiLiveVoice.fromName(voice ?? voiceConfig?.prebuiltVoiceConfig?.voiceName);
 
-  factory SpeechConfig.fromJson(Map<String, dynamic> json) =>
-      _$SpeechConfigFromJson(json);
+  factory SpeechConfig.fromJson(Map<String, dynamic> json) {
+    final rawNorm = json['text_normalization'] ?? json['textNormalization'];
+    final normalizedNorm = rawNorm is TextNormalization
+        ? _$TextNormalizationEnumMap[rawNorm]
+        : rawNorm is String
+        ? rawNorm.toUpperCase()
+        : rawNorm;
+    return _$SpeechConfigFromJson({
+      ...json,
+      if (!json.containsKey('voice_config') && json.containsKey('voiceConfig'))
+        'voice_config': json['voiceConfig'],
+      if (!json.containsKey('language_code') &&
+          json.containsKey('languageCode'))
+        'language_code': json['languageCode'],
+      if (!json.containsKey('multi_speaker_voice_config') &&
+          json.containsKey('multiSpeakerVoiceConfig'))
+        'multi_speaker_voice_config': json['multiSpeakerVoiceConfig'],
+      'text_normalization': ?normalizedNorm,
+    });
+  }
 
   Map<String, dynamic> toJson() => _$SpeechConfigToJson(this);
 }

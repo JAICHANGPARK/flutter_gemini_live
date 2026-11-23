@@ -175,6 +175,9 @@ abstract final class InteractionAgents {
   static const String antigravityPreview052026 = 'antigravity-preview-05-2026';
 
   /// Deep Research Pro preview agent (`deep-research-pro-preview-12-2025`).
+  @Deprecated(
+    'Removed from upstream Interactions AgentOption. Use deepResearchPreview042026 instead.',
+  )
   static const String deepResearchProPreview122025 =
       'deep-research-pro-preview-12-2025';
 

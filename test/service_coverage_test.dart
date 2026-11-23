@@ -2966,6 +2966,59 @@ void main() {
         });
       },
     );
+
+    test(
+      'Upstream 2026-11-23 parity: TextNormalization on SpeechConfig & SpeakerConfig, and UTF-8 default decoding on text/* responses',
+      () {
+        // 1. SpeechConfig.textNormalization round-trip and camelCase/lowercase normalization
+        final speech = SpeechConfig.fromLiveVoice(
+          GeminiLiveVoice.puck,
+          languageCode: 'en-US',
+          textNormalization: TextNormalization.ENABLED,
+        );
+        expect(speech.toJson()['text_normalization'], 'ENABLED');
+
+        final reparsedSpeech = SpeechConfig.fromJson(speech.toJson());
+        expect(reparsedSpeech.textNormalization, TextNormalization.ENABLED);
+
+        final lowerCamelSpeech = SpeechConfig.fromJson(const {
+          'languageCode': 'ko-KR',
+          'textNormalization': 'disabled',
+        });
+        expect(lowerCamelSpeech.languageCode, 'ko-KR');
+        expect(lowerCamelSpeech.textNormalization, TextNormalization.DISABLED);
+
+        final promptedSpeech = SpeechConfig.withPromptedVoice(
+          input: 'Calm documentary narrator',
+          textNormalization: TextNormalization.AUTO,
+        );
+        expect(promptedSpeech.textNormalization, TextNormalization.AUTO);
+        expect(promptedSpeech.toJson()['text_normalization'], 'AUTO');
+
+        // 2. SpeakerConfig with speakers & text_normalization
+        final speakerConfig = SpeakerConfig(
+          speakers: [speech],
+          textNormalization: 'enabled',
+        );
+        final reparsedSpeaker = SpeakerConfig.fromJson(speakerConfig.toJson());
+        expect(reparsedSpeaker.textNormalization, 'enabled');
+        expect(reparsedSpeaker.speakers?.single.voice, 'Puck');
+        expect(
+          SpeakerConfig.fromJson(const {
+            'textNormalization': TextNormalization.DISABLED,
+          }).textNormalization,
+          'disabled',
+        );
+
+        // 3. UTF-8 default decoding on text/* HTTP responses without explicit charset
+        final textResponse = http.Response.bytes(
+          utf8.encode('안녕 café 🎉'),
+          200,
+          headers: const {'content-type': 'text/plain'},
+        );
+        expect(ApiClient.decodeResponseBody(textResponse), '안녕 café 🎉');
+      },
+    );
   });
 }
 

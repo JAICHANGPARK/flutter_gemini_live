@@ -733,6 +733,27 @@ enum VideoMetadataContentLayer {
   TRANSCRIPT,
 }
 
+/// Text normalization mode for speech synthesis in [SpeechConfig].
+@JsonEnum(alwaysCreate: true)
+enum TextNormalization {
+  /// Unspecified text normalization mode. Defaults to [AUTO].
+  @JsonValue('TEXT_NORMALIZATION_UNSPECIFIED')
+  TEXT_NORMALIZATION_UNSPECIFIED,
+
+  /// Automatically determines whether to apply text normalization based on the
+  /// model and speech mode.
+  @JsonValue('AUTO')
+  AUTO,
+
+  /// Enables text normalization for numbers, currencies, dates, and units.
+  @JsonValue('ENABLED')
+  ENABLED,
+
+  /// Disables text normalization for pre-normalized or phonetic inputs.
+  @JsonValue('DISABLED')
+  DISABLED,
+}
+
 /// Musical scale of generated music.
 @JsonEnum(alwaysCreate: true)
 enum Scale {

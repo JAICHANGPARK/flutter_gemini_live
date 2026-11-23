@@ -1,3 +1,14 @@
+## 2026.11.23
+
+### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)
+- **Speech Synthesis Text Normalization (`TextNormalization`, `SpeechConfig.textNormalization`, `SpeakerConfig`)**:
+  - Added `TextNormalization` enum (`TEXT_NORMALIZATION_UNSPECIFIED`, `AUTO`, `ENABLED`, `DISABLED`) and `SpeechConfig.textNormalization` (also forwarded through `SpeechConfig.fromVoice`, `fromLiveVoice`, `withPrebuiltVoice`, `withPromptedVoice`, and `SpeechConfig.fromJson` with `camelCase`/`snake_case` and case-insensitive normalization).
+  - Added Interactions `SpeakerConfig` (`speakers`, `textNormalization`).
+- **Deprecated Interactions Agent Cleanup (`InteractionAgents.deepResearchProPreview122025`)**:
+  - Deprecated `InteractionAgents.deepResearchProPreview122025` in favor of `InteractionAgents.deepResearchPreview042026`, matching upstream removal from `AgentOption`.
+- **UTF-8 Text & SSE Decoding Regression Coverage**:
+  - Verified default UTF-8 decoding for `text/*` HTTP and SSE responses without an explicit `charset` parameter.
+
 ## 2026.11.19
 
 ### Added & Fixed (Upstream Parity with `js-genai` 3.6.1 & `python-genai` 3.6.1)

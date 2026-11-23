@@ -490,6 +490,10 @@ SpeechConfig _$SpeechConfigFromJson(Map<String, dynamic> json) => SpeechConfig(
           json['multi_speaker_voice_config'] as Map<String, dynamic>,
         ),
   voice: json['voice'] as String?,
+  textNormalization: $enumDecodeNullable(
+    _$TextNormalizationEnumMap,
+    json['text_normalization'],
+  ),
 );
 
 Map<String, dynamic> _$SpeechConfigToJson(SpeechConfig instance) =>
@@ -498,7 +502,17 @@ Map<String, dynamic> _$SpeechConfigToJson(SpeechConfig instance) =>
       'language_code': ?instance.languageCode,
       'multi_speaker_voice_config': ?instance.multiSpeakerVoiceConfig?.toJson(),
       'voice': ?instance.voice,
+      'text_normalization':
+          ?_$TextNormalizationEnumMap[instance.textNormalization],
     };
+
+const _$TextNormalizationEnumMap = {
+  TextNormalization.TEXT_NORMALIZATION_UNSPECIFIED:
+      'TEXT_NORMALIZATION_UNSPECIFIED',
+  TextNormalization.AUTO: 'AUTO',
+  TextNormalization.ENABLED: 'ENABLED',
+  TextNormalization.DISABLED: 'DISABLED',
+};
 
 ThinkingConfig _$ThinkingConfigFromJson(Map<String, dynamic> json) =>
     ThinkingConfig(
