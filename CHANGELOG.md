@@ -1,3 +1,10 @@
+## 2026.11.24
+
+### Added & Fixed (Upstream Parity with `python-genai` & `js-genai`)
+- **HTTP Retry Policy for Timeouts, Transport/Credential Errors, & Transient Status Codes (`HttpRetryOptions`, `ApiClient`)**:
+  - Added typed `HttpRetryOptions` (`attempts`, `initialDelay`, `maxDelay`, `expBase`, `jitter`, `httpStatusCodes` defaulting to `408, 429, 500, 502, 503, 504`, preserving explicit `0.0` delays and clamping `attempts == 0` to `1`).
+  - Added `ApiClient.isRetryableError()`, `ApiClient.computeRetryDelay()`, and retry execution across `ApiClient.get()`, `post()`, and `delete()` when `HttpOptions.retryOptions` is configured — automatically retrying `TimeoutException`s, transient `http.ClientException` network errors (including during `GenAICredentials.resolveToken()`), and retryable HTTP status codes while failing fast on non-retryable 4XX errors.
+
 ## 2026.11.23
 
 ### Added & Fixed (Upstream Parity with `js-genai` & `python-genai`)

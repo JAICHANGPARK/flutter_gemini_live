@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:async' as dart_async;
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -3017,6 +3018,110 @@ void main() {
           headers: const {'content-type': 'text/plain'},
         );
         expect(ApiClient.decodeResponseBody(textResponse), '안녕 café 🎉');
+      },
+    );
+
+    test(
+      'Upstream 2026-11-24 parity: HttpRetryOptions retries timeouts, transport/credential errors, and transient HTTP status codes',
+      () async {
+        // 1. HttpRetryOptions defaults, zero-delay preservation, and attempts==0 -> 1
+        final parsedOptions = HttpRetryOptions.fromJson(const {
+          'attempts': 0,
+          'initialDelay': 0.0,
+          'maxDelay': 0.0,
+          'expBase': 2.0,
+          'jitter': 0.0,
+          'httpStatusCodes': [429, 503],
+        });
+        expect(parsedOptions.effectiveAttempts, 1);
+        expect(parsedOptions.effectiveInitialDelay, 0.0);
+        expect(parsedOptions.effectiveMaxDelay, 0.0);
+        expect(parsedOptions.effectiveJitter, 0.0);
+        expect(parsedOptions.effectiveHttpStatusCodes, [429, 503]);
+        expect(ApiClient.computeRetryDelay(parsedOptions, 0), Duration.zero);
+
+        // 2. Retries TimeoutException, ClientException (including credential refresh), and 503
+        var tokenAttempts = 0;
+        var httpAttempts = 0;
+        final retryRecorder = RecordingHttpClient(
+          responder: (request) async {
+            httpAttempts += 1;
+            if (httpAttempts == 1) {
+              throw dart_async.TimeoutException('request timed out');
+            }
+            if (httpAttempts == 2) {
+              return http.Response(
+                '{"error":{"code":503,"message":"unavailable"}}',
+                503,
+                headers: const {'content-type': 'application/json'},
+              );
+            }
+            return http.Response(
+              '{"ok":true}',
+              200,
+              headers: const {'content-type': 'application/json'},
+            );
+          },
+        );
+        final retryClient = ApiClient(
+          apiKey: '',
+          httpClient: retryRecorder,
+          credentials: GenAICredentials(
+            tokenProvider: () async {
+              tokenAttempts += 1;
+              if (tokenAttempts == 1) {
+                throw http.ClientException('temporary token refresh network drop');
+              }
+              return 'fresh-token';
+            },
+          ),
+          httpOptions: HttpOptions(
+            retryOptions: const HttpRetryOptions(
+              attempts: 5,
+              initialDelay: 0.0,
+              maxDelay: 0.0,
+              jitter: 0.0,
+            ).toJson(),
+          ),
+        );
+
+        final retryResult = await retryClient.post('models', const {'ping': 1});
+        expect(retryResult, {'ok': true});
+        // 1 credential transport failure + 1 HTTP timeout + 1 HTTP 503 + 1 HTTP 200
+        expect(tokenAttempts, 4);
+        expect(httpAttempts, 3);
+
+        // 3. Non-retryable 400 ApiClientError fails immediately without retry
+        var badRequestAttempts = 0;
+        final nonRetryRecorder = RecordingHttpClient(
+          responder: (request) async {
+            badRequestAttempts += 1;
+            return http.Response(
+              '{"error":{"code":400,"message":"invalid argument"}}',
+              400,
+              headers: const {'content-type': 'application/json'},
+            );
+          },
+        );
+        final nonRetryClient = ApiClient(
+          apiKey: 'test-key',
+          httpClient: nonRetryRecorder,
+          httpOptions: HttpOptions(
+            retryOptions: const HttpRetryOptions(
+              attempts: 4,
+              initialDelay: 0.0,
+              jitter: 0.0,
+            ).toJson(),
+          ),
+        );
+        await expectLater(
+          () => nonRetryClient.get('models'),
+          throwsA(isA<ApiClientError>()),
+        );
+        expect(badRequestAttempts, 1);
+
+        retryClient.close();
+        nonRetryClient.close();
       },
     );
   });

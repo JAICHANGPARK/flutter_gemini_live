@@ -649,6 +649,124 @@ class HttpOptions {
   }
 }
 
+/// Configuration for automatic HTTP request retries with exponential backoff
+/// and jitter in [ApiClient].
+///
+/// Mirrors `HttpRetryOptions` in the upstream `google-genai` SDK.
+class HttpRetryOptions {
+  /// Default maximum number of attempts, including the initial request.
+  static const int defaultAttempts = 5;
+
+  /// Default initial backoff delay in seconds.
+  static const double defaultInitialDelay = 1.0;
+
+  /// Default maximum backoff delay in seconds.
+  static const double defaultMaxDelay = 60.0;
+
+  /// Default exponential backoff multiplier.
+  static const double defaultExpBase = 2.0;
+
+  /// Default maximum random jitter in seconds.
+  static const double defaultJitter = 1.0;
+
+  /// Default HTTP status codes considered transient and retryable.
+  static const List<int> defaultHttpStatusCodes = <int>[
+    408,
+    429,
+    500,
+    502,
+    503,
+    504,
+  ];
+
+  /// Maximum number of attempts, including the initial request.
+  ///
+  /// Setting `0` or `1` disables retries (executes once).
+  final int? attempts;
+
+  /// Initial delay before the first retry, in seconds.
+  final double? initialDelay;
+
+  /// Upper bound on exponential delay before jitter, in seconds.
+  final double? maxDelay;
+
+  /// Exponential multiplier applied per attempt (`initialDelay * expBase^n`).
+  final double? expBase;
+
+  /// Maximum uniform random jitter added to each retry delay, in seconds.
+  final double? jitter;
+
+  /// HTTP status codes eligible for retry.
+  final List<int>? httpStatusCodes;
+
+  /// Creates [HttpRetryOptions].
+  const HttpRetryOptions({
+    this.attempts,
+    this.initialDelay,
+    this.maxDelay,
+    this.expBase,
+    this.jitter,
+    this.httpStatusCodes,
+  });
+
+  /// Effective attempt count (defaults to [defaultAttempts]; `<= 0` becomes `1`).
+  int get effectiveAttempts {
+    final raw = attempts;
+    if (raw == null) return defaultAttempts;
+    return raw <= 0 ? 1 : raw;
+  }
+
+  /// Effective initial delay in seconds (`0.0` is preserved).
+  double get effectiveInitialDelay => initialDelay ?? defaultInitialDelay;
+
+  /// Effective maximum delay in seconds (`0.0` is preserved).
+  double get effectiveMaxDelay => maxDelay ?? defaultMaxDelay;
+
+  /// Effective exponential base multiplier.
+  double get effectiveExpBase => expBase ?? defaultExpBase;
+
+  /// Effective jitter upper bound in seconds (`0.0` is preserved).
+  double get effectiveJitter => jitter ?? defaultJitter;
+
+  /// Effective set of retryable HTTP status codes.
+  List<int> get effectiveHttpStatusCodes =>
+      (httpStatusCodes != null && httpStatusCodes!.isNotEmpty)
+      ? httpStatusCodes!
+      : defaultHttpStatusCodes;
+
+  /// Creates [HttpRetryOptions] from a JSON map (supports both `snake_case`
+  /// and `camelCase` keys).
+  factory HttpRetryOptions.fromJson(Map<String, dynamic> json) {
+    final rawAttempts = json['attempts'];
+    final rawInitial = json['initial_delay'] ?? json['initialDelay'];
+    final rawMax = json['max_delay'] ?? json['maxDelay'];
+    final rawBase = json['exp_base'] ?? json['expBase'];
+    final rawJitter = json['jitter'];
+    final rawCodes = json['http_status_codes'] ?? json['httpStatusCodes'];
+    return HttpRetryOptions(
+      attempts: rawAttempts is num ? rawAttempts.toInt() : null,
+      initialDelay: rawInitial is num ? rawInitial.toDouble() : null,
+      maxDelay: rawMax is num ? rawMax.toDouble() : null,
+      expBase: rawBase is num ? rawBase.toDouble() : null,
+      jitter: rawJitter is num ? rawJitter.toDouble() : null,
+      httpStatusCodes: rawCodes is List
+          ? rawCodes.whereType<num>().map((e) => e.toInt()).toList()
+          : null,
+    );
+  }
+
+  /// Serializes this [HttpRetryOptions] to a `snake_case` JSON map suitable
+  /// for [HttpOptions.retryOptions].
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (attempts != null) 'attempts': attempts,
+    if (initialDelay != null) 'initial_delay': initialDelay,
+    if (maxDelay != null) 'max_delay': maxDelay,
+    if (expBase != null) 'exp_base': expBase,
+    if (jitter != null) 'jitter': jitter,
+    if (httpStatusCodes != null) 'http_status_codes': httpStatusCodes,
+  };
+}
+
 /// Bearer token credentials and optional Google Cloud quota project configuration
 /// for API and Live WebSocket requests.
 ///

@@ -1,6 +1,8 @@
 // lib/src/api_client.dart
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -530,6 +532,71 @@ class ApiClient {
     return reqHeaders;
   }
 
+  /// Returns whether [error] is a transient failure eligible for retry under
+  /// [options].
+  ///
+  /// Retries HTTP responses whose status code is in
+  /// [HttpRetryOptions.effectiveHttpStatusCodes] (default: `408`, `429`, `500`,
+  /// `502`, `503`, `504`), [TimeoutException]s, and transient
+  /// [http.ClientException] transport failures (including network failures
+  /// raised during credential token refresh).
+  static bool isRetryableError(Object error, HttpRetryOptions options) {
+    if (error is GoogleGenAiError) {
+      return options.effectiveHttpStatusCodes.contains(error.statusCode);
+    }
+    if (error is TimeoutException || error is http.ClientException) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Computes the backoff [Duration] before retrying after [attemptIndex]
+  /// (`0`-based) under [options].
+  static Duration computeRetryDelay(
+    HttpRetryOptions options,
+    int attemptIndex, {
+    math.Random? random,
+  }) {
+    final expDelay =
+        options.effectiveInitialDelay *
+        math.pow(options.effectiveExpBase, attemptIndex);
+    final cappedSeconds = math.min(
+      options.effectiveMaxDelay,
+      expDelay.toDouble(),
+    );
+    final maxJitter = options.effectiveJitter;
+    final jitterSeconds = maxJitter > 0
+        ? (random ?? math.Random()).nextDouble() * maxJitter
+        : 0.0;
+    final totalMs = ((cappedSeconds + jitterSeconds) * 1000).round();
+    return Duration(milliseconds: totalMs < 0 ? 0 : totalMs);
+  }
+
+  Future<T> _executeWithRetry<T>(
+    Map<String, dynamic>? rawRetryOptions,
+    Future<T> Function() action,
+  ) async {
+    if (rawRetryOptions == null) {
+      return action();
+    }
+    final retryOptions = HttpRetryOptions.fromJson(rawRetryOptions);
+    final maxAttempts = retryOptions.effectiveAttempts;
+    for (var attempt = 0; ; attempt++) {
+      try {
+        return await action();
+      } catch (error) {
+        if (attempt + 1 >= maxAttempts ||
+            !isRetryableError(error, retryOptions)) {
+          rethrow;
+        }
+        final delay = computeRetryDelay(retryOptions, attempt);
+        if (delay > Duration.zero) {
+          await Future<void>.delayed(delay);
+        }
+      }
+    }
+  }
+
   /// Sends a GET request to the specified API [path].
   Future<Map<String, dynamic>> get(
     String path, [
@@ -538,17 +605,20 @@ class ApiClient {
     HttpOptions? httpOptions,
   ]) async {
     final uri = _buildUri(path, queryParams, apiVersion, httpOptions);
-    final reqHeaders = await buildRequestHeaders(
-      const {'Accept': 'application/json'},
-      httpOptions,
-    );
-    final response = await _httpClient.get(uri, headers: reqHeaders);
+    final patched = this.httpOptions.merge(httpOptions);
+    return _executeWithRetry(patched.retryOptions, () async {
+      final reqHeaders = await buildRequestHeaders(
+        const {'Accept': 'application/json'},
+        httpOptions,
+      );
+      final response = await _httpClient.get(uri, headers: reqHeaders);
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
-    } else {
-      throw _buildHttpError(response);
-    }
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
+      } else {
+        throw _buildHttpError(response);
+      }
+    });
   }
 
   /// Sends a POST request to the specified API [path] with a JSON [body].
@@ -563,21 +633,24 @@ class ApiClient {
     final effectiveBody = patched.extraBody != null
         ? <String, dynamic>{...body, ...patched.extraBody!}
         : body;
-    final reqHeaders = await buildRequestHeaders(
-      const {'Content-Type': 'application/json'},
-      httpOptions,
-    );
-    final response = await _httpClient.post(
-      uri,
-      headers: reqHeaders,
-      body: jsonEncode(effectiveBody),
-    );
+    final encodedBody = jsonEncode(effectiveBody);
+    return _executeWithRetry(patched.retryOptions, () async {
+      final reqHeaders = await buildRequestHeaders(
+        const {'Content-Type': 'application/json'},
+        httpOptions,
+      );
+      final response = await _httpClient.post(
+        uri,
+        headers: reqHeaders,
+        body: encodedBody,
+      );
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
-    } else {
-      throw _buildHttpError(response);
-    }
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(decodeResponseBody(response)) as Map<String, dynamic>;
+      } else {
+        throw _buildHttpError(response);
+      }
+    });
   }
 
   /// Sends a DELETE request to the specified API [path].
@@ -587,19 +660,22 @@ class ApiClient {
     HttpOptions? httpOptions,
   }) async {
     final uri = _buildUri(path, null, apiVersion, httpOptions);
-    final reqHeaders = await buildRequestHeaders(
-      const {'Accept': 'application/json'},
-      httpOptions,
-    );
-    final response = await _httpClient.delete(uri, headers: reqHeaders);
+    final patched = this.httpOptions.merge(httpOptions);
+    return _executeWithRetry(patched.retryOptions, () async {
+      final reqHeaders = await buildRequestHeaders(
+        const {'Accept': 'application/json'},
+        httpOptions,
+      );
+      final response = await _httpClient.delete(uri, headers: reqHeaders);
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final decodedBody = decodeResponseBody(response);
-      if (decodedBody.isEmpty) return <String, dynamic>{};
-      return jsonDecode(decodedBody) as Map<String, dynamic>;
-    } else {
-      throw _buildHttpError(response);
-    }
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decodedBody = decodeResponseBody(response);
+        if (decodedBody.isEmpty) return <String, dynamic>{};
+        return jsonDecode(decodedBody) as Map<String, dynamic>;
+      } else {
+        throw _buildHttpError(response);
+      }
+    });
   }
 
   static GoogleGenAiError _buildHttpError(http.Response response) {
