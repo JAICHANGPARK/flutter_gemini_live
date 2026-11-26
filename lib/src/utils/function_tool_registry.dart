@@ -93,7 +93,7 @@ class GeminiLiveFunctionTool implements CallableTool {
   }
 
   /// Executes a single [FunctionCall] against [handler] and returns a
-  /// `Part(functionResponse: ...)` ready to send back to the server.
+  /// [Part.fromFunctionResponse] ready to send back to the server.
   Future<Part> executeSingle(FunctionCall call) async {
     final args = call.args ?? const <String, dynamic>{};
     try {
@@ -101,23 +101,19 @@ class GeminiLiveFunctionTool implements CallableTool {
       final parts = multimodalPartsHandler != null
           ? await multimodalPartsHandler!(args)
           : null;
-      return Part(
-        functionResponse: FunctionResponse(
-          id: call.id,
-          name: call.name ?? name,
-          response: result,
-          scheduling: scheduling,
-          parts: parts,
-        ),
+      return Part.fromFunctionResponse(
+        id: call.id,
+        name: call.name ?? name,
+        response: result,
+        scheduling: scheduling,
+        parts: parts,
       );
     } catch (error) {
-      return Part(
-        functionResponse: FunctionResponse(
-          id: call.id,
-          name: call.name ?? name,
-          response: <String, dynamic>{'error': error.toString()},
-          scheduling: scheduling,
-        ),
+      return Part.fromFunctionResponse(
+        id: call.id,
+        name: call.name ?? name,
+        response: <String, dynamic>{'error': error.toString()},
+        scheduling: scheduling,
       );
     }
   }

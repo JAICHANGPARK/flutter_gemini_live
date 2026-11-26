@@ -118,6 +118,26 @@ class Part {
     this.audioMetadata,
   });
 
+  /// Creates a [Part] wrapping a [FunctionResponse] with an optional call
+  /// [id], multimodal [parts], [scheduling], and [willContinue] flag.
+  factory Part.fromFunctionResponse({
+    required String name,
+    required Map<String, dynamic> response,
+    List<FunctionResponsePart>? parts,
+    String? id,
+    FunctionResponseScheduling? scheduling,
+    bool? willContinue,
+  }) => Part(
+    functionResponse: FunctionResponse(
+      id: id,
+      name: name,
+      response: response,
+      parts: parts,
+      scheduling: scheduling,
+      willContinue: willContinue,
+    ),
+  );
+
   factory Part.fromJson(Map<String, dynamic> json) {
     final normalized = <String, dynamic>{
       ...json,

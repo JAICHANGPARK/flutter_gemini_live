@@ -1224,13 +1224,32 @@ class WorldReferenceImage {
   /// Creates a [WorldReferenceImage].
   const WorldReferenceImage({this.data, this.mimeType, this.uri});
 
+  /// Creates a [WorldReferenceImage] by base64-encoding raw [bytes].
+  factory WorldReferenceImage.fromBytes({
+    required List<int> bytes,
+    String? mimeType,
+    String? uri,
+  }) => WorldReferenceImage(
+    data: base64Encode(bytes),
+    mimeType: mimeType,
+    uri: uri,
+  );
+
   /// Creates a [WorldReferenceImage] from a JSON map.
-  factory WorldReferenceImage.fromJson(Map<String, dynamic> json) =>
-      WorldReferenceImage(
-        data: json['data'] as String?,
-        mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
-        uri: json['uri'] as String?,
-      );
+  ///
+  /// Accepts `data` as either a base64-encoded [String] or raw binary bytes
+  /// (`List<int>`), base64-encoding raw bytes automatically.
+  factory WorldReferenceImage.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
+    final encodedData = rawData is List<int>
+        ? base64Encode(rawData)
+        : rawData as String?;
+    return WorldReferenceImage(
+      data: encodedData,
+      mimeType: (json['mime_type'] ?? json['mimeType']) as String?,
+      uri: json['uri'] as String?,
+    );
+  }
 
   /// Serializes this [WorldReferenceImage] to a JSON map.
   Map<String, dynamic> toJson() => <String, dynamic>{

@@ -3124,6 +3124,89 @@ void main() {
         nonRetryClient.close();
       },
     );
+
+    test(
+      'Upstream 2026-11-26 parity: Part.fromFunctionResponse id propagation, GeminiLiveToolRegistry call id handling, and WorldReferenceImage.fromBytes',
+      () async {
+        // 1. Part.fromFunctionResponse with id, multimodal parts, scheduling, willContinue
+        final partWithId = Part.fromFunctionResponse(
+          name: 'func',
+          response: const {'response': 'value'},
+          id: 'call_1',
+          parts: [
+            FunctionResponsePart.fromBytes(
+              data: const [1, 2, 3],
+              mimeType: 'image/png',
+            ),
+          ],
+          scheduling: FunctionResponseScheduling.WHEN_IDLE,
+          willContinue: true,
+        );
+        expect(partWithId.functionResponse?.id, 'call_1');
+        expect(partWithId.functionResponse?.name, 'func');
+        expect(partWithId.functionResponse?.response, {'response': 'value'});
+        expect(partWithId.functionResponse?.parts?.length, 1);
+        expect(
+          partWithId.functionResponse?.scheduling,
+          FunctionResponseScheduling.WHEN_IDLE,
+        );
+        expect(partWithId.functionResponse?.willContinue, isTrue);
+
+        // 2. GeminiLiveToolRegistry preserves distinct FunctionCall.id on success & error
+        final registry = GeminiLiveToolRegistry([
+          GeminiLiveFunctionTool(
+            name: 'func_under_test',
+            description: 'Increments integer input.',
+            handler: (args) {
+              final a = args['a'] as int;
+              if (a < 0) {
+                throw StateError('negative input');
+              }
+              return {'result': a + 1};
+            },
+          ),
+        ]);
+        final toolParts = await registry.callTool([
+          FunctionCall(id: 'call_1', name: 'func_under_test', args: {'a': 1}),
+          FunctionCall(id: 'call_2', name: 'func_under_test', args: {'a': 2}),
+          FunctionCall(id: 'call_err', name: 'func_under_test', args: {'a': -1}),
+        ]);
+        expect(toolParts.length, 3);
+        expect(toolParts[0].functionResponse?.id, 'call_1');
+        expect(toolParts[0].functionResponse?.name, 'func_under_test');
+        expect(toolParts[0].functionResponse?.response, {'result': 2});
+        expect(toolParts[1].functionResponse?.id, 'call_2');
+        expect(toolParts[1].functionResponse?.response, {'result': 3});
+        expect(toolParts[2].functionResponse?.id, 'call_err');
+        expect(
+          toolParts[2].functionResponse?.response?['error'] as String?,
+          contains('negative input'),
+        );
+
+        // 3. WorldReferenceImage.fromBytes and raw byte/base64 fromJson handling
+        final rawBytes = utf8.encode('fake-png-bytes');
+        final expectedB64 = base64Encode(rawBytes);
+        final imgFromBytes = WorldReferenceImage.fromBytes(
+          bytes: rawBytes,
+          mimeType: 'image/png',
+        );
+        expect(imgFromBytes.data, expectedB64);
+        expect(imgFromBytes.mimeType, 'image/png');
+
+        final imgFromRawJson = WorldReferenceImage.fromJson({
+          'data': rawBytes,
+          'mimeType': 'image/png',
+        });
+        expect(imgFromRawJson.data, expectedB64);
+        expect(imgFromRawJson.mimeType, 'image/png');
+
+        final imgFromB64Json = WorldReferenceImage.fromJson({
+          'data': expectedB64,
+          'mime_type': 'image/png',
+        });
+        expect(imgFromB64Json.data, expectedB64);
+      },
+    );
   });
 }
 

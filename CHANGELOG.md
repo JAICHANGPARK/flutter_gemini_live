@@ -1,3 +1,12 @@
+## 2026.11.26
+
+### Added & Fixed (Upstream Parity with `python-genai` & `js-genai`)
+- **`Part.fromFunctionResponse` Factory & Call ID Propagation (`Part`, `GeminiLiveFunctionTool`)**:
+  - Added `Part.fromFunctionResponse({required name, required response, parts, id, scheduling, willContinue})` on `Part` so manual and automatic function-calling responses preserve the originating `FunctionCall.id` alongside multimodal `parts`.
+  - Updated `GeminiLiveFunctionTool.executeSingle()` to construct success and error tool responses through `Part.fromFunctionResponse(...)`.
+- **`WorldReferenceImage.fromBytes` & Raw Byte Base64 Encoding (`WorldReferenceImage`)**:
+  - Added `WorldReferenceImage.fromBytes({required bytes, mimeType, uri})` and updated `WorldReferenceImage.fromJson()` to automatically base64-encode raw `List<int>` byte inputs while passing pre-encoded base64 strings through unchanged.
+
 ## 2026.11.24
 
 ### Added & Fixed (Upstream Parity with `python-genai` & `js-genai`)
